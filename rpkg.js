@@ -1,10 +1,12 @@
-const config = require("./config")
+const fs = require("fs")
+const path = require("path")
+const config = JSON.parse(fs.readFileSync(path.join(process.cwd(), "config.json")))
 const child_process = require("promisify-child-process")
 require("clarify")
 
 class RPKGInstance {
     constructor() {
-        this.rpkgProcess = child_process.spawn("rpkg-cli", ["-i"])
+        this.rpkgProcess = child_process.spawn(path.join(process.cwd(), "rpkg-cli"), ["-i"])
         this.output = ""
         this.previousOutput = ""
         this.initialised = false
