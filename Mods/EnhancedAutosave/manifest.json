@@ -1,0 +1,19 @@
+{
+	"name": "Enhanced Autosaves",
+	"description": "It is a mod",
+	"authors": ["Atampy26"],
+	"contentFolder": "content",
+	"localisation": {
+		"en": {},
+		"fr": {},
+		"it": {},
+		"de": {},
+		"es": {},
+		"ru": {},
+		"cn": {},
+		"tc": {},
+		"jp": {}
+	},
+	"packagedefinition": [],
+	"undelete": []
+}

@@ -1,0 +1,20 @@
+{
+  "name": "simple-mod-framework",
+  "version": "1.0.0",
+  "description": "",
+  "main": "main.js",
+  "dependencies": {
+    "clarify": "^2.1.0",
+    "decimal.js": "^10.3.1",
+    "empty-folder": "^2.0.4",
+    "lossless-json": "^1.0.5",
+    "promisify-child-process": "^4.1.1",
+    "rfc6902": "^4.0.2"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Atampy26",
+  "license": "MIT"
+}
