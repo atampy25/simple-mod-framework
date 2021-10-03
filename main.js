@@ -146,7 +146,7 @@ async function stageAllMods() {
         switch (brick.type) {
             case "partition":
                 packagedefinitionContent += "\n"
-                packagedefinitionContent += `@partition name=${brick.name} parent=${brick.parent} type=${brick.type} patchlevel=10001`
+                packagedefinitionContent += `@partition name=${brick.name} parent=${brick.parent} type=${brick.partitionType} patchlevel=10001`
                 break;
             case "entity":
                 if (!packagedefinitionContent.includes(brick.path)) {
