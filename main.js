@@ -130,7 +130,10 @@ async function stageAllMods() {
     }
 
     fs.copyFileSync(path.join(process.cwd(), "temp", "packagedefinition.txt.decrypted.encrypted"), path.join(process.cwd(), "Output", "packagedefinition.txt"))
-    fs.copyFileSync(path.join(process.cwd(), "temp", "thumbs.dat.decrypted.encrypted"), path.join(process.cwd(), "Output", "thumbs.dat"))
+
+    if (config.skipIntro) {
+        fs.copyFileSync(path.join(process.cwd(), "temp", "thumbs.dat.decrypted.encrypted"), path.join(process.cwd(), "Output", "thumbs.dat"))
+    }
 
     try {
         await promisify(emptyFolder)("temp", true)
