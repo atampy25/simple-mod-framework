@@ -141,6 +141,9 @@ async function stageAllMods() {
         await rpkgInstance.callFunction(`-generate_rpkg_from "${path.join(process.cwd(), "staging", stagingChunkFolder)}" -output_path "${path.join(process.cwd(), "staging")}"`)
         fs.copyFileSync(path.join(process.cwd(), "staging", stagingChunkFolder + ".rpkg"), path.join(process.cwd(), "Output", stagingChunkFolder + "patch200.rpkg"))
     }
+
+    rpkgInstance.rpkgProcess.kill()
+    process.exit(0)
 }
 
 stageAllMods()
