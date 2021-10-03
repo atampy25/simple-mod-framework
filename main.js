@@ -37,6 +37,8 @@ async function stageAllMods() {
     var packagedefinition = []
     var undelete = []
 
+    var rpkgTypes = {}
+
     for (let mod of config.loadOrder) {
         let manifest = JSON.parse(fs.readFileSync(path.join(process.cwd(), "Mods", mod, "manifest.json")))
         for (let chunkFolder of fs.readdirSync(path.join(process.cwd(), "Mods", mod, manifest.contentFolder))) {
@@ -115,6 +117,13 @@ async function stageAllMods() {
                 } catch {}
                 fs.mkdirSync("temp") // Clear the temp directory
             }
+
+            if (fs.existsSync(path.join(process.cwd(), "Mods", mod, manifest.contentFolder, chunkFolder, chunkFolder + ".meta"))) {
+                fs.copyFileSync(path.join(process.cwd(), "Mods", mod, manifest.contentFolder, chunkFolder, chunkFolder + ".meta"), path.join(process.cwd(), "staging", chunkFolder, chunkFolder + ".meta"))
+                rpkgTypes[chunkFolder] = "base"
+            } else {
+                rpkgTypes[chunkFolder] = "patch"
+            } // Copy chunk meta to staging folder if there is one (adds support for custom chunks)
         } // Content
 
         packagedefinition.push(...manifest.packagedefinition)
@@ -178,7 +187,7 @@ async function stageAllMods() {
 
     for (let stagingChunkFolder of fs.readdirSync(path.join(process.cwd(), "staging"))) {
         await rpkgInstance.callFunction(`-generate_rpkg_from "${path.join(process.cwd(), "staging", stagingChunkFolder)}" -output_path "${path.join(process.cwd(), "staging")}"`)
-        fs.copyFileSync(path.join(process.cwd(), "staging", stagingChunkFolder + ".rpkg"), path.join(process.cwd(), "Output", stagingChunkFolder + "patch200.rpkg"))
+        fs.copyFileSync(path.join(process.cwd(), "staging", stagingChunkFolder + ".rpkg"), path.join(process.cwd(), "Output", (rpkgTypes[chunkFolder] == "base" ? stagingChunkFolder + ".rpkg" : stagingChunkFolder + "patch200.rpkg")))
     }
     
     try {
