@@ -6,7 +6,7 @@ require("clarify")
 
 class RPKGInstance {
     constructor() {
-        this.rpkgProcess = child_process.spawn(path.join(process.cwd(), "rpkg-cli"), ["-i"])
+        this.rpkgProcess = child_process.spawn(path.join(process.cwd(), "bin", "rpkg-cli"), ["-i"])
         this.output = ""
         this.previousOutput = ""
         this.initialised = false
