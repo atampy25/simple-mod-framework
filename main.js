@@ -156,6 +156,7 @@ async function stageAllMods() {
             case "partition":
                 packagedefinitionContent += "\n"
                 packagedefinitionContent += `@partition name=${brick.name} parent=${brick.parent} type=${brick.partitionType} patchlevel=10001`
+                packagedefinitionContent += "\n"
                 break;
             case "entity":
                 if (!packagedefinitionContent.includes(brick.path)) {
@@ -165,7 +166,7 @@ async function stageAllMods() {
         }
     }
 
-    fs.writeFileSync(path.join(process.cwd(), "temp", "packagedefinition.txt.decrypted"), packagedefinitionContent)
+    fs.writeFileSync(path.join(process.cwd(), "temp", "packagedefinition.txt.decrypted"), packagedefinitionContent + "\n\n\n\n\n\n\n\n")
     child_process.execSync(`"Third-Party\\h6xtea.exe" -e --src "${path.join(process.cwd(), "temp", "packagedefinition.txt.decrypted")}" --dst "${path.join(process.cwd(), "temp", "packagedefinition.txt.decrypted.encrypted")}"`)
 
     if (config.skipIntro) {
