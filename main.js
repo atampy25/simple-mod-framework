@@ -119,14 +119,14 @@ async function stageAllMods() {
         undelete.push(...manifest.undelete)
     }
 
-    await rpkgInstance.callFunction(`-decrypt_packagedefinition_thumbs "${path.join(config.runtimePath, "packagedefinition.txt")}" -output_path "${path.join(process.cwd(), "temp")}"`)
+    child_process.execSync(`"Third-Party\\h6xtea.exe" -d --src "${path.join(config.runtimePath, "packagedefinition.txt")}" --dst "${path.join(process.cwd(), "temp", "packagedefinition.txt.decrypted")}"`)
     fs.writeFileSync(path.join(process.cwd(), "temp", "packagedefinition.txt.decrypted"), String(fs.readFileSync(path.join(process.cwd(), "temp", "packagedefinition.txt.decrypted"))).replace(/patchlevel=[0-9]*/g, "patchlevel=10001"))
-    await rpkgInstance.callFunction(`-encrypt_packagedefinition_thumbs "${path.join(process.cwd(), "temp", "packagedefinition.txt.decrypted")}" -output_path "${path.join(process.cwd(), "temp")}"`)
+    child_process.execSync(`"Third-Party\\h6xtea.exe" -e --src "${path.join(process.cwd(), "temp", "packagedefinition.txt.decrypted")}" --dst "${path.join(process.cwd(), "temp", "packagedefinition.txt.decrypted.encrypted")}"`)
 
     if (config.skipIntro) {
-        await rpkgInstance.callFunction(`-decrypt_packagedefinition_thumbs "${path.join(config.runtimePath, "..", "Retail", "thumbs.dat")}" -output_path "${path.join(process.cwd(), "temp")}"`)
+        child_process.execSync(`"Third-Party\\h6xtea.exe" -d --src "${path.join(config.runtimePath, "thumbs.dat")}" --dst "${path.join(process.cwd(), "temp", "thumbs.dat.decrypted")}"`)
         fs.writeFileSync(path.join(process.cwd(), "temp", "thumbs.dat.decrypted"), String(fs.readFileSync(path.join(process.cwd(), "temp", "thumbs.dat.decrypted"))).replace("Boot.entity", "MainMenu.entity"))
-        await rpkgInstance.callFunction(`-encrypt_packagedefinition_thumbs "${path.join(process.cwd(), "temp", "thumbs.dat.decrypted")}" -output_path "${path.join(process.cwd(), "temp")}"`)
+        child_process.execSync(`"Third-Party\\h6xtea.exe" -e --src "${path.join(process.cwd(), "temp", "thumbs.dat.decrypted")}" --dst "${path.join(process.cwd(), "temp", "thumbs.dat.decrypted.encrypted")}"`)
     }
 
     fs.copyFileSync(path.join(process.cwd(), "temp", "packagedefinition.txt.decrypted.encrypted"), path.join(process.cwd(), "Output", "packagedefinition.txt"))
