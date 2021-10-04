@@ -231,6 +231,31 @@ async function stageAllMods() {
                             deepMerge(repoToPatch, entityContent)
                             var repoToWrite = Object.values(repoToWrite)
 
+                            await rpkgInstance.callFunction(`-hash_meta_to_json "${path.join(process.cwd(), "temp", "chunk0", "REPO", "00204D1AFD76AB13.REPO.meta")}"`)
+                            var metaContent = JSON.parse(fs.readFileSync(path.join(process.cwd(), "temp", "chunk0", "REPO", "00204D1AFD76AB13.REPO.meta.JSON")))
+                            for (var repoItem of repoToWrite) {
+                                if (repoItem.Runtime) {
+                                    if (!metaContent["hash_reference_data"].find(a=>a.hash == parseInt(repoItem.Runtime).toString(16).toUpperCase())) {
+                                        metaContent["hash_reference_data"].push({
+                                            "hash": parseInt(repoItem.Runtime).toString(16).toUpperCase(),
+                                            "flag": "9F"
+                                        }) // Add Runtime of any items to REPO depends if not already there
+                                    }
+                                }
+
+                                if (repoItem.Image) {
+                                    if (!metaContent["hash_reference_data"].find(a=>a.hash == "00" + md5(`[assembly:/_pro/online/default/cloudstorage/resources/${repoItem.Image}].pc_gfx`.toLowerCase()).slice(2, 16).toUpperCase())) {
+                                        metaContent["hash_reference_data"].push({
+                                            "hash": "00" + md5(`[assembly:/_pro/online/default/cloudstorage/resources/${repoItem.Image}].pc_gfx`.toLowerCase()).slice(2, 16).toUpperCase(),
+                                            "flag": "9F"
+                                        }) // Add Image of any items to REPO depends if not already there
+                                    }
+                                }
+                            }
+                            fs.writeFileSync(path.join(process.cwd(), "temp", "chunk0", "REPO", "00204D1AFD76AB13.REPO.meta.JSON"), JSON.stringify(metaContent))
+                            fs.rmSync(path.join(process.cwd(), "temp", "chunk0", "REPO", "00204D1AFD76AB13.REPO.meta"))
+                            await rpkgInstance.callFunction(`-json_to_hash_meta "${path.join(process.cwd(), "temp", "chunk0", "REPO", "00204D1AFD76AB13.REPO.meta.JSON")}"`) // Add all runtimes to REPO depends
+
                             fs.writeFileSync(path.join(process.cwd(), "temp", "chunk0", "REPO", "00204D1AFD76AB13.REPO"), JSON.stringify(repoToWrite))
                             fs.copyFileSync(path.join(process.cwd(), "temp", "chunk0", "REPO", "00204D1AFD76AB13.REPO"), path.join(process.cwd(), "staging", "chunk0", "00204D1AFD76AB13.REPO"))
                             fs.copyFileSync(path.join(process.cwd(), "temp", "chunk0", "REPO", "00204D1AFD76AB13.REPO.meta"), path.join(process.cwd(), "staging", "chunk0", "00204D1AFD76AB13.REPO.meta"))
@@ -263,6 +288,7 @@ async function stageAllMods() {
                                 "hash": contractHash,
                                 "flag": "9F"
                             })
+                            fs.writeFileSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "002B07020D21D727.ORES.meta.JSON"), JSON.stringify(metaContent))
                             fs.rmSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "002B07020D21D727.ORES.meta"))
                             await rpkgInstance.callFunction(`-json_to_hash_meta "${path.join(process.cwd(), "temp", oresChunk, "ORES", "002B07020D21D727.ORES.meta.JSON")}"`) // Add the contract to the hash depends of the ORES
 
@@ -294,66 +320,68 @@ async function stageAllMods() {
                 } // Copy chunk meta to staging folder if there is one (adds support for custom chunks)
             } // Content
 
-            try {
-                fs.mkdirSync(path.join(process.cwd(), "staging", "chunk0"))
-            } catch {}
-
-            var oresChunk = await rpkgInstance.getRPKGOfHash("00858D45F5F9E3CA")
-
-            if (!fs.existsSync(path.join(process.cwd(), "staging", "chunk0", "00858D45F5F9E3CA.ORES"))) {
-                await rpkgInstance.callFunction(`-extract_from_rpkg "${path.join(config.runtimePath, oresChunk + ".rpkg")}" -filter "00858D45F5F9E3CA" -output_path temp`) // Extract the unlockables ORES
-            } else {
+            if (fs.readdirSync(path.join(process.cwd(), "Mods", mod, manifest.blobsFolder)).length) {
                 try {
-                    fs.mkdirSync(path.join(process.cwd(), "temp", oresChunk, "ORES"), {
-                        recursive: true
-                    })
+                    fs.mkdirSync(path.join(process.cwd(), "staging", "chunk0"))
                 } catch {}
-                fs.copyFileSync(path.join(process.cwd(), "staging", "chunk0", "00858D45F5F9E3CA.ORES"), path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES")) // Use the staging one (for mod compat - one mod can extract, patch and build, then the next can patch that one instead)
-                fs.copyFileSync(path.join(process.cwd(), "staging", "chunk0", "00858D45F5F9E3CA.ORES.meta"), path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES.meta"))
-            }
 
-            child_process.execSync(`"Third-Party\\OREStool.exe" "${path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES")}"`)
-            var oresContent = JSON.parse(fs.readFileSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES.JSON")))
+                var oresChunk = await rpkgInstance.getRPKGOfHash("00858D45F5F9E3CA")
 
-            await rpkgInstance.callFunction(`-hash_meta_to_json "${path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES.meta")}"`)
-            var metaContent = JSON.parse(fs.readFileSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES.meta.JSON")))
-            
-            for (let blob of glob.sync(path.join(process.cwd(), "Mods", mod, manifest.blobsFolder, "**/*.*"))) {
-                var blobPath = path.resolve(blob).split(path.resolve(process.cwd()))[1].split(path.sep).slice(4).join("/")
-
-                if (path.extname(blob).startsWith(".jp") || path.extname(blob) == ".png") {
-                    var blobHash = "00" + md5((`[assembly:/_pro/online/default/cloudstorage/resources/${blobPath}].pc_gfx`).toLowerCase()).slice(2, 16).toUpperCase()
-                } else if (path.extname(blob) == ".json") {
-                    var blobHash = "00" + md5((`[assembly:/_pro/online/default/cloudstorage/resources/${blobPath}].pc_json`).toLowerCase()).slice(2, 16).toUpperCase()
+                if (!fs.existsSync(path.join(process.cwd(), "staging", "chunk0", "00858D45F5F9E3CA.ORES"))) {
+                    await rpkgInstance.callFunction(`-extract_from_rpkg "${path.join(config.runtimePath, oresChunk + ".rpkg")}" -filter "00858D45F5F9E3CA" -output_path temp`) // Extract the unlockables ORES
                 } else {
-                    var blobHash = "00" + md5((`[assembly:/_pro/online/default/cloudstorage/resources/${blobPath}].pc_${path.extname(blob).slice(1)}`).toLowerCase()).slice(2, 16).toUpperCase()
+                    try {
+                        fs.mkdirSync(path.join(process.cwd(), "temp", oresChunk, "ORES"), {
+                            recursive: true
+                        })
+                    } catch {}
+                    fs.copyFileSync(path.join(process.cwd(), "staging", "chunk0", "00858D45F5F9E3CA.ORES"), path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES")) // Use the staging one (for mod compat - one mod can extract, patch and build, then the next can patch that one instead)
+                    fs.copyFileSync(path.join(process.cwd(), "staging", "chunk0", "00858D45F5F9E3CA.ORES.meta"), path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES.meta"))
                 }
 
-                oresContent[blobHash] = blobPath // Add the blob to the ORES
+                child_process.execSync(`"Third-Party\\OREStool.exe" "${path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES")}"`)
+                var oresContent = JSON.parse(fs.readFileSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES.JSON")))
 
-                if (!metaContent["hash_reference_data"].find(a=>a.hash == blobHash)) {
-                    metaContent["hash_reference_data"].push({
-                        "hash": blobHash,
-                        "flag": "9F"
-                    })
-                }
+                await rpkgInstance.callFunction(`-hash_meta_to_json "${path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES.meta")}"`)
+                var metaContent = JSON.parse(fs.readFileSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES.meta.JSON")))
+                
+                for (let blob of glob.sync(path.join(process.cwd(), "Mods", mod, manifest.blobsFolder, "**/*.*"))) {
+                    var blobPath = path.resolve(blob).split(path.resolve(process.cwd()))[1].split(path.sep).slice(4).join("/")
 
-                fs.copyFileSync(blob, path.join(process.cwd(), "staging", "chunk0", blobHash + "." + ((path.extname(blob) == ".json") ? "JSON" :
-                                                                                                    (path.extname(blob).startsWith(".jp") || path.extname(blob) == ".png") ? "GFXI" :
-                                                                                                    path.extname(blob).slice(1).toUpperCase()))) // Copy the actual blob to the staging directory
-            } // Blobs
+                    if (path.extname(blob).startsWith(".jp") || path.extname(blob) == ".png") {
+                        var blobHash = "00" + md5((`[assembly:/_pro/online/default/cloudstorage/resources/${blobPath}].pc_gfx`).toLowerCase()).slice(2, 16).toUpperCase()
+                    } else if (path.extname(blob) == ".json") {
+                        var blobHash = "00" + md5((`[assembly:/_pro/online/default/cloudstorage/resources/${blobPath}].pc_json`).toLowerCase()).slice(2, 16).toUpperCase()
+                    } else {
+                        var blobHash = "00" + md5((`[assembly:/_pro/online/default/cloudstorage/resources/${blobPath}].pc_${path.extname(blob).slice(1)}`).toLowerCase()).slice(2, 16).toUpperCase()
+                    }
 
-            
-            fs.writeFileSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES.meta.JSON"), JSON.stringify(metaContent))
-            fs.rmSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES.meta"))
-            await rpkgInstance.callFunction(`-json_to_hash_meta "${path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES.meta.JSON")}"`) // Rebuild the meta
+                    oresContent[blobHash] = blobPath // Add the blob to the ORES
 
-            fs.writeFileSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES.JSON"), JSON.stringify(oresContent))
-            fs.rmSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES"))
-            child_process.execSync(`"Third-Party\\OREStool.exe" "${path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES.json")}"`) // Rebuild the ORES
+                    if (!metaContent["hash_reference_data"].find(a=>a.hash == blobHash)) {
+                        metaContent["hash_reference_data"].push({
+                            "hash": blobHash,
+                            "flag": "9F"
+                        })
+                    }
 
-            fs.copyFileSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES"), path.join(process.cwd(), "staging", "chunk0", "00858D45F5F9E3CA.ORES"))
-            fs.copyFileSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES.meta"), path.join(process.cwd(), "staging", "chunk0", "00858D45F5F9E3CA.ORES.meta")) // Copy the ORES to the staging directory
+                    fs.copyFileSync(blob, path.join(process.cwd(), "staging", "chunk0", blobHash + "." + ((path.extname(blob) == ".json") ? "JSON" :
+                                                                                                        (path.extname(blob).startsWith(".jp") || path.extname(blob) == ".png") ? "GFXI" :
+                                                                                                        path.extname(blob).slice(1).toUpperCase()))) // Copy the actual blob to the staging directory
+                } // Blobs
+
+                
+                fs.writeFileSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES.meta.JSON"), JSON.stringify(metaContent))
+                fs.rmSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES.meta"))
+                await rpkgInstance.callFunction(`-json_to_hash_meta "${path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES.meta.JSON")}"`) // Rebuild the meta
+
+                fs.writeFileSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES.JSON"), JSON.stringify(oresContent))
+                fs.rmSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES"))
+                child_process.execSync(`"Third-Party\\OREStool.exe" "${path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES.json")}"`) // Rebuild the ORES
+
+                fs.copyFileSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES"), path.join(process.cwd(), "staging", "chunk0", "00858D45F5F9E3CA.ORES"))
+                fs.copyFileSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES.meta"), path.join(process.cwd(), "staging", "chunk0", "00858D45F5F9E3CA.ORES.meta")) // Copy the ORES to the staging directory
+            }
     
             packagedefinition.push(...manifest.packagedefinition)
             undelete.push(...manifest.undelete)
