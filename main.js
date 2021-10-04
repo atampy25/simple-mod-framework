@@ -1,4 +1,4 @@
-const FrameworkVersion = 0.2
+const FrameworkVersion = 0.3
 
 THREE = require("./three.min")
 const QuickEntity = require("./quickentity")
@@ -14,22 +14,6 @@ const LosslessJSON = require("lossless-json")
 const config = JSON.parse(fs.readFileSync(path.join(process.cwd(), "config.json")))
 
 const rpkgInstance = new RPKG.RPKGInstance()
-
-const getAllFiles = function(dirPath, arrayOfFiles) {
-    files = fs.readdirSync(dirPath)
-  
-    arrayOfFiles = arrayOfFiles || []
-  
-    files.forEach(function(file) {
-      if (fs.statSync(dirPath + "/" + file).isDirectory()) {
-        arrayOfFiles = getAllFiles(dirPath + "/" + file, arrayOfFiles)
-      } else {
-        arrayOfFiles.push(path.join(dirPath, "/", file))
-      }
-    })
-  
-    return arrayOfFiles
-}
 
 async function stageAllMods() {
     await rpkgInstance.waitForInitialised()
@@ -68,10 +52,36 @@ async function stageAllMods() {
                 fs.mkdirSync("temp") // Clear the temp directory
 
                 for (let contentFile of fs.readdirSync(path.join(process.cwd(), "Mods", mod, chunkFolder))) {
-                    await rpkgInstance.callFunction(`-extract_from_rpkg "${contentFile}" -output_path ${path.join(process.cwd(), "temp")}`)
+                    await rpkgInstance.callFunction(`-extract_from_rpkg "${path.join(process.cwd(), "Mods", mod, chunkFolder, contentFile)}" -output_path "${path.join(process.cwd(), "temp")}"`)
+                }
+                
+                rpkgTypes[chunkFolder] = "patch"
+
+                var allFiles = []
+
+                for (let file of fs.readdirSync(path.join(process.cwd(), "temp"))) {
+                    if (fs.statSync(path.join(process.cwd(), "temp", file)).isDirectory()) {
+                        for (let file2 of fs.readdirSync(path.join(process.cwd(), "temp", file))) {
+                            if (fs.statSync(path.join(process.cwd(), "temp", file, file2)).isDirectory()) {
+                                for (let file3 of fs.readdirSync(path.join(process.cwd(), "temp", file, file2))) {
+                                    if (fs.statSync(path.join(process.cwd(), "temp", file, file2, file3)).isDirectory()) {
+                                        for (let file4 of fs.readdirSync(path.join(process.cwd(), "temp", file, file2, file3))) {
+                                            allFiles.push(path.join(process.cwd(), "temp", file, file2, file3, file4))
+                                        }
+                                    } else {
+                                        allFiles.push(path.join(process.cwd(), "temp", file, file2, file3))
+                                    }
+                                }
+                            } else {
+                                allFiles.push(path.join(process.cwd(), "temp", file, file2))
+                            }
+                        }
+                    } else {
+                        allFiles.push(path.join(process.cwd(), "temp", file))
+                    }
                 }
 
-                getAllFiles(path.join(process.cwd(), "temp")).forEach(a=>fs.copyFileSync(a, path.join(process.cwd(), "staging", chunkFolder, path.join(path.basename(a)))))
+                allFiles.forEach(a=>fs.copyFileSync(a, path.join(process.cwd(), "staging", chunkFolder, path.basename(a))))
 
                 try {
                     await promisify(emptyFolder)("temp", true)
@@ -194,18 +204,18 @@ async function stageAllMods() {
     for (let brick of packagedefinition) {
         switch (brick.type) {
             case "partition":
-                packagedefinitionContent += "\n"
-                packagedefinitionContent += `@partition name=${brick.name} parent=${brick.parent} type=${brick.partitionType} patchlevel=10001\n`
+                packagedefinitionContent += "\r\n"
+                packagedefinitionContent += `@partition name=${brick.name} parent=${brick.parent} type=${brick.partitionType} patchlevel=10001\r\n`
                 break;
             case "entity":
                 if (!packagedefinitionContent.includes(brick.path)) {
-                    packagedefinitionContent = packagedefinitionContent.replace(new RegExp(`@partition name=${brick.partition} parent=(.*?) type=(.*?) patchlevel=10001\n`), (a, parent, type) => `@partition name=${brick.partition} parent=${parent} type=${type} patchlevel=10001\n${brick.path}\n`)
+                    packagedefinitionContent = packagedefinitionContent.replace(new RegExp(`@partition name=${brick.partition} parent=(.*?) type=(.*?) patchlevel=10001\r\n`), (a, parent, type) => `@partition name=${brick.partition} parent=${parent} type=${type} patchlevel=10001\r\n${brick.path}\r\n`)
                 }
                 break;
         }
     }
 
-    fs.writeFileSync(path.join(process.cwd(), "temp", "packagedefinition.txt.decrypted"), packagedefinitionContent + "\n\n\n\n\n\n\n\n")
+    fs.writeFileSync(path.join(process.cwd(), "temp", "packagedefinition.txt.decrypted"), packagedefinitionContent + "\r\n\r\n\r\n\r\n")
     child_process.execSync(`"Third-Party\\h6xtea.exe" -e --src "${path.join(process.cwd(), "temp", "packagedefinition.txt.decrypted")}" --dst "${path.join(process.cwd(), "temp", "packagedefinition.txt.decrypted.encrypted")}"`)
 
     if (config.skipIntro) {

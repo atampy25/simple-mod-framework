@@ -7,6 +7,7 @@
     "clarify": "^2.1.0",
     "decimal.js": "^10.3.1",
     "empty-folder": "^2.0.4",
+    "glob": "^7.2.0",
     "lossless-json": "^1.0.5",
     "promisify-child-process": "^4.1.1",
     "rfc6902": "^4.0.2"
