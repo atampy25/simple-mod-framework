@@ -199,7 +199,7 @@ async function stageAllMods() {
                             child_process.execSync(`"Third-Party\\OREStool.exe" "${path.join(process.cwd(), "temp", oresChunk, "ORES", "0057C2C3941115CA.ORES")}"`)
                             var oresContent = JSON.parse(fs.readFileSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "0057C2C3941115CA.ORES.JSON")))
 
-                            var oresToPatch = Object.fromEntries(oresContent.forEach(a=>[a.Id, a]))
+                            var oresToPatch = Object.fromEntries(oresContent.map(a=>[a.Id, a]))
                             deepMerge(oresToPatch, entityContent)
                             var oresToWrite = Object.values(oresToWrite)
 
@@ -227,7 +227,7 @@ async function stageAllMods() {
 
                             var repoContent = JSON.parse(fs.readFileSync(path.join(process.cwd(), "temp", "chunk0", "REPO", "00204D1AFD76AB13.REPO")))
 
-                            var repoToPatch = Object.fromEntries(repoContent.forEach(a=>[a["ID_"], a]))
+                            var repoToPatch = Object.fromEntries(repoContent.map(a=>[a["ID_"], a]))
                             deepMerge(repoToPatch, entityContent)
                             var repoToWrite = Object.values(repoToWrite)
 
