@@ -3,6 +3,7 @@
 	"description": "It is a mod",
 	"authors": ["Atampy26"],
 	"contentFolder": "content",
+	"blobsFolder": "blobs",
 	"localisation": {
 		"en": {},
 		"fr": {},

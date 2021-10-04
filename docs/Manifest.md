@@ -5,7 +5,8 @@ Each mod contains a manifest. Manifests have the following format:
 	"name": "Example Mod",
 	"description": "It is a mod",
 	"authors": ["Atampy26", "No one else"],
-	"contentFolder": "theContentFolder", // Folder next to the manifest to use for the mod content
+	"contentFolder": "content", // Folder next to the manifest to use for the mod content
+	"blobsFolder": "blobs", // Folder next to the manifest to use for blobs (new/edited existing JSON and GFXI files)
 	"localisation": {
 		"en": {
             "UI_THEBESTMOD": "The Best Mod" // You can use UI_THEBESTMOD elsewhere -- NOT YET IMPLEMENTED
