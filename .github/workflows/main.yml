@@ -32,8 +32,23 @@ jobs:
       - name: Build EXE
         run: |
           pkg main.js --targets node14-win-x64 --output Deploy.exe --compress Brotli
+          
+      - name: Download RPKG
+        uses: aochmann/actions-download-artifact@5709392f11b5937bd316e52687ad87f7deced5f5
+        with:
+          repo: glacier-modding/RPKG-Tool
+          name: rpkg
+          latest: true
+          path: "./Third-Party"
+          
+      - name: Download ResourceTool
+        uses: aochmann/actions-download-artifact@5709392f11b5937bd316e52687ad87f7deced5f5
+        with:
+          repo: OrfeasZ/ZHMTools
+          name: ResourceTool-win-x64
+          latest: true
+          path: "./Third-Party"
 
-      # Runs a set of commands using the runners shell
       - name: Ready for zip
         run: |
           mkdir dist
