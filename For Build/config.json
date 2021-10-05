@@ -1,6 +1,7 @@
 {
-    "runtimePath": "C:\\Users\\User\\Documents\\Apps\\Games\\Epic Games\\HITMAN3\\Runtime",
+    "runtimePath": "..\\Runtime",
     "skipIntro": true,
+    "outputToSeparateDirectory": false,
     "loadOrder": [
         "Enhanced Autosave",
         "Focus"
