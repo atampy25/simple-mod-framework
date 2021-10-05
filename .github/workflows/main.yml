@@ -38,11 +38,10 @@ jobs:
         run: |
           mkdir dist
           mkdir dist/Third-Party
-          mkdir "dist/For Build"
           mkdir dist/Info
           xcopy Third-Party dist/Third-Party /s /e /h
-          xcopy "For Build" "dist/For Build" /s /e /h
-          xcopy docs dist/Info /s /e /h
+          xcopy "For Build" dist /s /e /h
+          robocopy /CREATE /COPYALL /DCOPY:T docs dist/Info
           copy Deploy.exe dist
       
       - name: Upload artifact
