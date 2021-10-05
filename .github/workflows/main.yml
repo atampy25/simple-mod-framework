@@ -26,18 +26,9 @@ jobs:
       - name: Ready for zip
         run: |
           mkdir dist
-          robocopy /CREATE /COPYALL /DCOPY:T Third-Party dist
-          robocopy /CREATE /COPYALL /DCOPY:T "For Build" dist
-          robocopy /CREATE /COPYALL /DCOPY:T docs dist
-          copy Deploy.exe dist
-
-      # Runs a set of commands using the runners shell
-      - name: Ready for zip
-        run: |
-          mkdir dist
-          robocopy /CREATE /COPYALL /DCOPY:T Third-Party dist
-          robocopy /CREATE /COPYALL /DCOPY:T "For Build" dist
-          robocopy /CREATE /COPYALL /DCOPY:T docs dist
+          xcopy Third-Party dist /s /e /h
+          xcopy "For Build" dist /s /e /h
+          xcopy docs dist /s /e /h
           copy Deploy.exe dist
           
       - name: Zip files
