@@ -28,6 +28,14 @@ const rpkgInstance = new RPKG.RPKGInstance()
 async function stageAllMods() {
     await rpkgInstance.waitForInitialised()
 
+    for (let chunkPatchFile of fs.readdirSync(config.runtimePath)) {
+        try {
+            if (chunkPatchFile.endsWith("patch200.rpkg") || parseInt(chunkPatchFile.split(".")[0].slice(5)) > 27) {
+                fs.rmSync(path.join(config.runtimePath, chunkPatchFile))
+            }
+        } catch {}
+    }
+
     try {
         await promisify(emptyFolder)("staging", true)
     } catch {}
