@@ -37,20 +37,13 @@ jobs:
       - name: Ready for zip
         run: |
           mkdir dist
-          xcopy Third-Party dist /s /e /h
-          xcopy "For Build" dist /s /e /h
-          xcopy docs dist /s /e /h
+          xcopy Third-Party dist/Third-Party /s /e /h
+          xcopy "For Build" "dist/For Build" /s /e /h
+          xcopy docs dist/Info /s /e /h
           copy Deploy.exe dist
-          
-      - name: Zip files
-        uses: TheDoctor0/zip-release@4fb9e4ff72847dd3d1c111cf63834e353ed7cb3d
-        with:
-          filename: release.zip
-          directory: dist
-          type: zip
       
       - name: Upload artifact
         uses: actions/upload-artifact@v2.2.4
         with:
           name: Mod Framework
-          path: dist/release.zip
+          path: dist
