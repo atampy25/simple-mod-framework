@@ -41,7 +41,7 @@ jobs:
           mkdir dist/Info
           xcopy Third-Party dist/Third-Party /s /e /h
           xcopy "For Build" dist /s /e /h
-          (robocopy ./docs ./dist/Info /COPYALL /E ) ^& exit 0
+          robocopy ./docs ./dist/Info /COPYALL /E; if ($lastexitcode -lt 8) { $global:LASTEXITCODE = $null }
           copy Deploy.exe dist
       
       - name: Upload artifact
