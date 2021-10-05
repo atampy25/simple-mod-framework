@@ -1,0 +1,20 @@
+{
+	"name": "Enhanced Autosaves",
+	"description": "It is a mod",
+	"authors": ["Atampy26"],
+	"contentFolder": "content",
+	"blobsFolder": "blobs",
+	"localisation": {
+		"english": {},
+		"french": {},
+		"italian": {},
+		"german": {},
+		"spanish": {},
+		"russian": {},
+		"chineseSimplified": {},
+		"chineseTraditional": {},
+		"japanese": {}
+	},
+	"packagedefinition": [],
+	"frameworkVersion": 0.2
+}
