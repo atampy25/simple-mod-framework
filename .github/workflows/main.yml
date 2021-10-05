@@ -1,0 +1,54 @@
+name: Build
+
+on:
+  push:
+    branches: [ main ]
+
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Prep
+        run: |
+          npm install
+          npm install -g pkg
+      
+      - name: Build EXE
+        run: |
+          pkg main.js --targets node14-win-x64 --output Deploy.exe --compress Brotli
+
+      # Runs a set of commands using the runners shell
+      - name: Ready for zip
+        run: |
+          mkdir dist
+          robocopy /CREATE /COPYALL /DCOPY:T Third-Party dist
+          robocopy /CREATE /COPYALL /DCOPY:T "For Build" dist
+          robocopy /CREATE /COPYALL /DCOPY:T docs dist
+          copy Deploy.exe dist
+
+      # Runs a set of commands using the runners shell
+      - name: Ready for zip
+        run: |
+          mkdir dist
+          robocopy /CREATE /COPYALL /DCOPY:T Third-Party dist
+          robocopy /CREATE /COPYALL /DCOPY:T "For Build" dist
+          robocopy /CREATE /COPYALL /DCOPY:T docs dist
+          copy Deploy.exe dist
+          
+      - name: Zip files
+        uses: TheDoctor0/zip-release@4fb9e4ff72847dd3d1c111cf63834e353ed7cb3d
+        with:
+          filename: release.zip
+          directory: dist
+          type: zip
+      
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2.2.4
+        with:
+          name: Mod Framework
+          path: release.zip
