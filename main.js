@@ -1,9 +1,3 @@
-/*
-Notes:
-- Currently outputs to Output folder, should output to ../Runtime when released (with thumbs going to Retail)
-- Should remove all chunk*patch200 files before starting, else RPKG will use them for depends extraction
-*/
-
 const FrameworkVersion = 0.3
 
 THREE = require("./three.min")
@@ -44,13 +38,8 @@ async function stageAllMods() {
         await promisify(emptyFolder)("temp", true)
     } catch {}
 
-    try {
-        await promisify(emptyFolder)("Output", true)
-    } catch {}
-
     fs.mkdirSync("staging")
     fs.mkdirSync("temp")
-    fs.mkdirSync("Output")
 
     var packagedefinition = []
     var localisation = []
@@ -550,6 +539,13 @@ async function stageAllMods() {
         fs.copyFileSync(path.join(config.runtimePath, "..", "Retail", "thumbs.dat"), path.join(process.cwd(), "cleanThumbs.dat"))
     } // Check if thumbs.dat is now unmodded and if so overwrite current "clean" version
 
+    if (config.outputToSeparateDirectory) {
+        try {
+            await promisify(emptyFolder)("Output", true)
+        } catch {}
+        fs.mkdirSync("Output")
+    }
+
     child_process.execSync(`"Third-Party\\h6xtea.exe" -d --src "${path.join(process.cwd(), "cleanPackageDefinition.txt")}" --dst "${path.join(process.cwd(), "temp", "packagedefinition.txt.decrypted")}"`)
     let packagedefinitionContent = String(fs.readFileSync(path.join(process.cwd(), "temp", "packagedefinition.txt.decrypted"))).replace(/patchlevel=[0-9]*/g, "patchlevel=10001")
 
@@ -576,10 +572,10 @@ async function stageAllMods() {
         child_process.execSync(`"Third-Party\\h6xtea.exe" -e --src "${path.join(process.cwd(), "temp", "thumbs.dat.decrypted")}" --dst "${path.join(process.cwd(), "temp", "thumbs.dat.decrypted.encrypted")}"`)
     }
 
-    fs.copyFileSync(path.join(process.cwd(), "temp", "packagedefinition.txt.decrypted.encrypted"), path.join(process.cwd(), "Output", "packagedefinition.txt"))
+    fs.copyFileSync(path.join(process.cwd(), "temp", "packagedefinition.txt.decrypted.encrypted"), config.outputToSeparateDirectory ? path.join(process.cwd(), "Output", "packagedefinition.txt") : path.join(config.runtimePath, "packagedefinition.txt"))
 
     if (config.skipIntro) {
-        fs.copyFileSync(path.join(process.cwd(), "temp", "thumbs.dat.decrypted.encrypted"), path.join(process.cwd(), "Output", "thumbs.dat"))
+        fs.copyFileSync(path.join(process.cwd(), "temp", "thumbs.dat.decrypted.encrypted"), config.outputToSeparateDirectory ? path.join(process.cwd(), "Output", "thumbs.dat") : path.join(config.runtimePath, "..", "Retail", "thumbs.dat"))
     }
 
     try {
@@ -589,7 +585,7 @@ async function stageAllMods() {
 
     for (let stagingChunkFolder of fs.readdirSync(path.join(process.cwd(), "staging"))) {
         await rpkgInstance.callFunction(`-generate_rpkg_from "${path.join(process.cwd(), "staging", stagingChunkFolder)}" -output_path "${path.join(process.cwd(), "staging")}"`)
-        fs.copyFileSync(path.join(process.cwd(), "staging", stagingChunkFolder + ".rpkg"), path.join(process.cwd(), "Output", (rpkgTypes[stagingChunkFolder] == "base" ? stagingChunkFolder + ".rpkg" : stagingChunkFolder + "patch200.rpkg")))
+        fs.copyFileSync(path.join(process.cwd(), "staging", stagingChunkFolder + ".rpkg"), config.outputToSeparateDirectory ? path.join(process.cwd(), "Output", (rpkgTypes[stagingChunkFolder] == "base" ? stagingChunkFolder + ".rpkg" : stagingChunkFolder + "patch200.rpkg")) : path.join(config.runtimePath, (rpkgTypes[stagingChunkFolder] == "base" ? stagingChunkFolder + ".rpkg" : stagingChunkFolder + "patch200.rpkg")))
     }
     
     try {
