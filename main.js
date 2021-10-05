@@ -329,6 +329,11 @@ async function stageAllMods() {
 
             if (fs.existsSync(path.join(process.cwd(), "Mods", mod, manifest.blobsFolder)) && fs.readdirSync(path.join(process.cwd(), "Mods", mod, manifest.blobsFolder)).length) {
                 try {
+                    await promisify(emptyFolder)("temp", true)
+                } catch {}
+                fs.mkdirSync("temp") // Clear the temp directory
+
+                try {
                     fs.mkdirSync(path.join(process.cwd(), "staging", "chunk0"))
                 } catch {}
 
@@ -388,6 +393,11 @@ async function stageAllMods() {
 
                 fs.copyFileSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES"), path.join(process.cwd(), "staging", "chunk0", "00858D45F5F9E3CA.ORES"))
                 fs.copyFileSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES.meta"), path.join(process.cwd(), "staging", "chunk0", "00858D45F5F9E3CA.ORES.meta")) // Copy the ORES to the staging directory
+
+                try {
+                    await promisify(emptyFolder)("temp", true)
+                } catch {}
+                fs.mkdirSync("temp") // Clear the temp directory
             } // Blobs
 
             // for (let deletedHash of manifest.undelete) {
@@ -459,6 +469,11 @@ async function stageAllMods() {
             "chineseTraditional": "tc",
             "japanese": "jp"
         }
+
+        try {
+            await promisify(emptyFolder)("temp", true)
+        } catch {}
+        fs.mkdirSync("temp") // Clear the temp directory
 
         let localisationFileRPKG = await rpkgInstance.getRPKGOfHash("00F5817876E691F1")
         await rpkgInstance.callFunction(`-extract_locr_to_json_from "${path.join(config.runtimePath, localisationFileRPKG + ".rpkg")}" -filter "00F5817876E691F1" -output_path temp`)

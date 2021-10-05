@@ -5,9 +5,7 @@
 	"contentFolder": "content",
 	"blobsFolder": "blobs",
 	"localisation": {
-		"english": {
-			"UI_ATAMPY26_EPICSTRING": "Epic String!"
-		},
+		"english": {},
 		"french": {},
 		"italian": {},
 		"german": {},
