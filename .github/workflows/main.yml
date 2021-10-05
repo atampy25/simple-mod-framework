@@ -37,6 +37,9 @@ jobs:
       - name: Ready for zip
         run: |
           mkdir dist
+          mkdir dist/Third-Party
+          mkdir "dist/For Build"
+          mkdir dist/Info
           xcopy Third-Party dist/Third-Party /s /e /h
           xcopy "For Build" "dist/For Build" /s /e /h
           xcopy docs dist/Info /s /e /h
