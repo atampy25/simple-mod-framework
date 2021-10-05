@@ -1,3 +1,9 @@
+/*
+Notes:
+- Currently outputs to Output folder, should output to ../Runtime when released (with thumbs going to Retail)
+- Should remove all chunk*patch200 files before starting, else RPKG will use them for depends extraction
+*/
+
 const FrameworkVersion = 0.3
 
 THREE = require("./three.min")
@@ -13,6 +19,7 @@ const LosslessJSON = require("lossless-json")
 const md5 = require("md5")
 const glob = require("glob")
 const deepMerge = require("lodash.merge")
+const { crc32 } = require("./crc32")
 
 const config = JSON.parse(fs.readFileSync(path.join(process.cwd(), "config.json")))
 
@@ -38,7 +45,7 @@ async function stageAllMods() {
     fs.mkdirSync("Output")
 
     var packagedefinition = []
-    var undelete = []
+    var localisation = []
 
     var rpkgTypes = {}
 
@@ -320,7 +327,7 @@ async function stageAllMods() {
                 } // Copy chunk meta to staging folder if there is one (adds support for custom chunks)
             } // Content
 
-            if (fs.readdirSync(path.join(process.cwd(), "Mods", mod, manifest.blobsFolder)).length) {
+            if (fs.existsSync(path.join(process.cwd(), "Mods", mod, manifest.blobsFolder)) && fs.readdirSync(path.join(process.cwd(), "Mods", mod, manifest.blobsFolder)).length) {
                 try {
                     fs.mkdirSync(path.join(process.cwd(), "staging", "chunk0"))
                 } catch {}
@@ -368,7 +375,7 @@ async function stageAllMods() {
                     fs.copyFileSync(blob, path.join(process.cwd(), "staging", "chunk0", blobHash + "." + ((path.extname(blob) == ".json") ? "JSON" :
                                                                                                         (path.extname(blob).startsWith(".jp") || path.extname(blob) == ".png") ? "GFXI" :
                                                                                                         path.extname(blob).slice(1).toUpperCase()))) // Copy the actual blob to the staging directory
-                } // Blobs
+                }
 
                 
                 fs.writeFileSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES.meta.JSON"), JSON.stringify(metaContent))
@@ -381,12 +388,126 @@ async function stageAllMods() {
 
                 fs.copyFileSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES"), path.join(process.cwd(), "staging", "chunk0", "00858D45F5F9E3CA.ORES"))
                 fs.copyFileSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES.meta"), path.join(process.cwd(), "staging", "chunk0", "00858D45F5F9E3CA.ORES.meta")) // Copy the ORES to the staging directory
-            }
+            } // Blobs
+
+            // for (let deletedHash of manifest.undelete) {
+            //     var hashRPKG = await rpkgInstance.getRPKGOfHash(deletedHash)
+                
+            //     fs.mkdirSync(path.join(process.cwd(), "staging", hashRPKG.replace(/patch[1-9]*/g, "")))
+            //     await rpkgInstance.callFunction(`-extract_from_rpkg "${path.join(config.runtimePath, hashRPKG + ".rpkg")}" -filter "${deletedHash}" -output_path temp`)
+            //     for (let folder of fs.readdirSync(path.join(process.cwd(), "temp", hashRPKG))) {
+            //         if (fs.statSync(path.join(process.cwd(), "temp", hashRPKG, folder)).isDirectory()) {
+            //             for (let file of fs.readdirSync(path.join(process.cwd(), "temp", hashRPKG, folder))) {
+            //                 fs.copyFileSync(path.join(process.cwd(), "temp", hashRPKG, folder, file), path.join(process.cwd(), "staging", hashRPKG.replace(/patch[1-9]*/g, ""), file))
+            //             }
+            //         }
+            //     } // Copy the file itself
+
+            //     try {
+            //         await promisify(emptyFolder)("temp", true)
+            //     } catch {}
+            //     fs.mkdirSync("temp") // Clear the temp directory
+
+            //     await rpkgInstance.callFunction(`-extract_all_hash_depends_from "${path.join(config.runtimePath)}" -filter "${deletedHash}" -output_path temp`)
+
+            //     for (let folder of fs.readdirSync(path.join(process.cwd(), "temp", "ALLDEPENDS", fs.readdirSync(path.join(process.cwd(), "temp", "ALLDEPENDS"))[0]))) {
+            //         if (folder.startsWith("chunk0") || folder == "chunk1" || folder.startsWith("chunk1patch")) {
+            //             fs.rmSync(path.join(path.join(process.cwd(), "temp", "ALLDEPENDS", fs.readdirSync(path.join(process.cwd(), "temp", "ALLDEPENDS"))[0], folder)), {recursive: true, force: true})
+            //         }
+            //     }
+
+            //     for (let folder of fs.readdirSync(path.join(process.cwd(), "temp", "ALLDEPENDS", fs.readdirSync(path.join(process.cwd(), "temp", "ALLDEPENDS"))[0]))) {
+            //         if (fs.statSync(path.join(process.cwd(), "temp", "ALLDEPENDS", fs.readdirSync(path.join(process.cwd(), "temp", "ALLDEPENDS"))[0], folder)).isDirectory()) {
+            //             fs.mkdirSync(path.join(process.cwd(), "staging", folder.replace(/patch[1-9]*/g, "")))
+            //             for (let file of fs.readdirSync(path.join(process.cwd(), "temp", "ALLDEPENDS", fs.readdirSync(path.join(process.cwd(), "temp", "ALLDEPENDS"))[0], folder))) {
+            //                 fs.copyFileSync(path.join(process.cwd(), "temp", "ALLDEPENDS", fs.readdirSync(path.join(process.cwd(), "temp", "ALLDEPENDS"))[0], folder, file), path.join(process.cwd(), "staging", folder.replace(/patch[1-9]*/g, ""), file))
+            //             }
+            //         }
+            //     } // Copy the file's dependencies
+
+            //     try {
+            //         await promisify(emptyFolder)("temp", true)
+            //     } catch {}
+            //     fs.mkdirSync("temp") // Clear the temp directory
+            // } // Undelete
+
+            // This is slow and not really that necessary - mod authors can just include the files in the mod folder themselves as content instead of relying on the framework to do it
     
             packagedefinition.push(...manifest.packagedefinition)
-            undelete.push(...manifest.undelete)
+            
+            for (let language of Object.keys(manifest.localisation)) {
+                for (let string of Object.entries(manifest.localisation[language])) {
+                    localisation.push({
+                        language: language,
+                        locString: string[0],
+                        text: string[1]
+                    })
+                }
+            }
         }
-    }
+    } // Stage all mods
+
+    if (localisation.length) {
+        let languages = {
+            "english": "en",
+            "french": "fr",
+            "italian": "it",
+            "german": "de",
+            "spanish": "es",
+            "russian": "ru",
+            "chineseSimplified": "cn",
+            "chineseTraditional": "tc",
+            "japanese": "jp"
+        }
+
+        let localisationFileRPKG = await rpkgInstance.getRPKGOfHash("00F5817876E691F1")
+        await rpkgInstance.callFunction(`-extract_locr_to_json_from "${path.join(config.runtimePath, localisationFileRPKG + ".rpkg")}" -filter "00F5817876E691F1" -output_path temp`)
+        
+        let localisationContent = JSON.parse(fs.readFileSync(path.join(process.cwd(), "temp", "LOCR", localisationFileRPKG + ".rpkg", "00F5817876E691F1.LOCR.JSON")))
+        let locrContent = {}
+
+        for (let localisationLanguage of localisationContent) {
+            locrContent[localisationLanguage[0].Language] = {}
+            for (let localisationItem of localisationLanguage.slice(1)) {
+                locrContent[localisationLanguage[0].Language]["abc" + localisationItem.StringHash] = localisationItem.String
+            }
+        }
+
+        for (let item of localisation) {
+            let toMerge = {}
+            toMerge["abc" + crc32(item.locString.toUpperCase())] = item.text
+
+            deepMerge(locrContent[languages[item.language]], toMerge)
+
+            if (item.language == "english") {
+                deepMerge(locrContent["xx"], toMerge)
+            }
+        }
+
+        let locrToWrite = []
+
+        for (let language of Object.keys(locrContent)) {
+            locrToWrite.push([{
+                "Language": language
+            }])
+
+            for (let string of Object.keys(locrContent[language])) {
+                locrToWrite[locrToWrite.length - 1].push({
+                    "StringHash": parseInt(string.slice(3)),
+                    "String": locrContent[language][string]
+                })
+            }
+        }
+
+        fs.writeFileSync(path.join(process.cwd(), "temp", "LOCR", localisationFileRPKG + ".rpkg", "00F5817876E691F1.LOCR.JSON"), JSON.stringify(locrToWrite))
+        await rpkgInstance.callFunction(`-rebuild_locr_from_json_from "${path.join(process.cwd(), "temp", "LOCR", localisationFileRPKG + ".rpkg")}"`) // Rebuild the LOCR
+        fs.copyFileSync(path.join(process.cwd(), "temp", "LOCR", localisationFileRPKG + ".rpkg", "LOCR.rebuilt", "00F5817876E691F1.LOCR"), path.join(process.cwd(), "staging", "chunk0", "00F5817876E691F1.LOCR"))
+
+        try {
+            await promisify(emptyFolder)("temp", true)
+        } catch {}
+        fs.mkdirSync("temp") // Clear the temp directory
+    } // Localisation
 
     if (!fs.existsSync(path.join(process.cwd(), "cleanPackageDefinition.txt"))) {
         fs.copyFileSync(path.join(config.runtimePath, "packagedefinition.txt"), path.join(process.cwd(), "cleanPackageDefinition.txt"))

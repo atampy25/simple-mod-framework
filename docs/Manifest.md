@@ -8,17 +8,19 @@ Each mod contains a manifest. Manifests have the following format:
 	"contentFolder": "content", // Folder next to the manifest to use for the mod content
 	"blobsFolder": "blobs", // Folder next to the manifest to use for blobs (new/edited existing JSON and GFXI files)
 	"localisation": {
-		"en": {
-            "UI_THEBESTMOD": "The Best Mod" // You can use UI_THEBESTMOD elsewhere -- NOT YET IMPLEMENTED
-        },
-		"fr": {},
-		"it": {},
-		"de": {},
-		"es": {},
-		"ru": {},
-		"cn": {},
-		"tc": {},
-		"jp": {}
+		"english": {
+			"UI_THEBESTMOD": "The Best Mod" // You can use UI_THEBESTMOD elsewhere
+		},
+		"french": {
+			"UI_THEBESTMOD": "Le Meilleur Mod idk french lmao" // UI_THEBESTMOD will automatically translate depending on language
+		},
+		"italian": {},
+		"german": {},
+		"spanish": {},
+		"russian": {},
+		"chineseSimplified": {},
+		"chineseTraditional": {},
+		"japanese": {}
 	},
 	"packagedefinition": [
         { // For new chunks
@@ -33,7 +35,6 @@ Each mod contains a manifest. Manifests have the following format:
             "path": "[assembly:/_pro/myBricks/myNewChunk28Map.entity].entitytemplate"
         }
     ],
-	"undelete": [], // Hashes to remove from deletion lists -- NOT YET IMPLEMENTED
-	"frameworkVersion": 0.2
+	"frameworkVersion": 0.3
 }
 ```

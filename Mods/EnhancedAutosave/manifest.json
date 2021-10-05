@@ -5,17 +5,18 @@
 	"contentFolder": "content",
 	"blobsFolder": "blobs",
 	"localisation": {
-		"en": {},
-		"fr": {},
-		"it": {},
-		"de": {},
-		"es": {},
-		"ru": {},
-		"cn": {},
-		"tc": {},
-		"jp": {}
+		"english": {
+			"UI_ATAMPY26_EPICSTRING": "Epic String!"
+		},
+		"french": {},
+		"italian": {},
+		"german": {},
+		"spanish": {},
+		"russian": {},
+		"chineseSimplified": {},
+		"chineseTraditional": {},
+		"japanese": {}
 	},
 	"packagedefinition": [],
-	"undelete": [],
 	"frameworkVersion": 0.2
 }
