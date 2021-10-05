@@ -1,1 +1,0 @@
-pkg main.js --targets node14-win-x64 --output Deploy.exe --compress Brotli
