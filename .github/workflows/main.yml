@@ -45,7 +45,7 @@ jobs:
       - name: Zip files
         uses: TheDoctor0/zip-release@4fb9e4ff72847dd3d1c111cf63834e353ed7cb3d
         with:
-          filename: ./release.zip
+          filename: release.zip
           directory: dist
           type: zip
       
@@ -53,4 +53,4 @@ jobs:
         uses: actions/upload-artifact@v2.2.4
         with:
           name: Mod Framework
-          path: ./release.zip
+          path: dist/release.zip
