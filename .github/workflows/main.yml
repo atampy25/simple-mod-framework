@@ -86,7 +86,7 @@ jobs:
           
           $WshShell = New-Object -comObject WScript.Shell
           $Shortcut = $WshShell.CreateShortcut("$dist/Manage Mods.lnk")
-          $Shortcut.TargetPath = "dist/Load Order Manager/Load Order Manager.exe"
+          $Shortcut.TargetPath = Resolve-Path -Path "./dist/Load Order Manager/Load Order Manager.exe" -Relative
           $Shortcut.Save()
       
       - name: Upload artifact
