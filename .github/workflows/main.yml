@@ -85,8 +85,8 @@ jobs:
           copy Deploy.exe dist
           
           $WshShell = New-Object -comObject WScript.Shell
-          $Shortcut = $WshShell.CreateShortcut("$./dist/Manage Mods.lnk")
-          $Shortcut.TargetPath = "./dist/Load Order Manager/Load Order Manager.exe"
+          $Shortcut = $WshShell.CreateShortcut("$dist/Manage Mods.lnk")
+          $Shortcut.TargetPath = "dist/Load Order Manager/Load Order Manager.exe"
           $Shortcut.Save()
       
       - name: Upload artifact
