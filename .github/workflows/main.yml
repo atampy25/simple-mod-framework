@@ -22,6 +22,13 @@ jobs:
         with:
           path: node_modules
           key: buildCache
+
+      - name: Cache
+        id: cache2
+        uses: actions/cache@v2.1.6
+        with:
+          path: Load Order Manager/node_modules
+          key: buildCache2
          
       - name: Install dependencies
         if: steps.cache.outputs.cache-hit != 'true'
@@ -52,10 +59,16 @@ jobs:
           latest: true
           path: "./Third-Party"
       
-      - name: Build GUI
+      - name: Install GUI dependencies
+        if: steps.cache2.outputs.cache-hit != 'true'
         run: |
           cd "Load Order Manager"
           npm install
+          cd ../
+      
+      - name: Build GUI
+        run: |
+          cd "Load Order Manager"
           npm run make
           cd ../
 
