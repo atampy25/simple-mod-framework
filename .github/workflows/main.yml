@@ -51,16 +51,30 @@ jobs:
           name: ResourceTool-win-x64
           latest: true
           path: "./Third-Party"
+      
+      - name: Build GUI
+        run: |
+          cd "Load Order Manager"
+          npm install
+          npm run make
+          cd ../
 
       - name: Ready for zip
         run: |
           mkdir dist
           mkdir dist/Third-Party
           mkdir dist/Info
+          mkdir "dist/Load Order Manager"
           robocopy ./Third-Party ./dist/Third-Party /COPYALL /E; if ($lastexitcode -lt 8) { $global:LASTEXITCODE = $null }
           robocopy "./For Build" ./dist /COPYALL /E; if ($lastexitcode -lt 8) { $global:LASTEXITCODE = $null }
           robocopy ./docs ./dist/Info /COPYALL /E; if ($lastexitcode -lt 8) { $global:LASTEXITCODE = $null }
+          robocopy ".\out\Load Order Manager-win32-x64" "./dist/Load Order Manager" /COPYALL /E; if ($lastexitcode -lt 8) { $global:LASTEXITCODE = $null }          
           copy Deploy.exe dist
+          
+          $WshShell = New-Object -comObject WScript.Shell
+          $Shortcut = $WshShell.CreateShortcut("$./dist/Manage Mods.lnk")
+          $Shortcut.TargetPath = "./dist/Load Order Manager/Load Order Manager.exe"
+          $Shortcut.Save()
       
       - name: Upload artifact
         uses: actions/upload-artifact@v2.2.4
