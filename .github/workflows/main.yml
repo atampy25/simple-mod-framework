@@ -81,7 +81,7 @@ jobs:
           robocopy ./Third-Party ./dist/Third-Party /COPYALL /E; if ($lastexitcode -lt 8) { $global:LASTEXITCODE = $null }
           robocopy "./For Build" ./dist /COPYALL /E; if ($lastexitcode -lt 8) { $global:LASTEXITCODE = $null }
           robocopy ./docs ./dist/Info /COPYALL /E; if ($lastexitcode -lt 8) { $global:LASTEXITCODE = $null }
-          robocopy ".\out\Load Order Manager-win32-x64" "./dist/Load Order Manager" /COPYALL /E; if ($lastexitcode -lt 8) { $global:LASTEXITCODE = $null }          
+          robocopy ".\Load Order Manager\out\Load Order Manager-win32-x64" "./dist/Load Order Manager" /COPYALL /E; if ($lastexitcode -lt 8) { $global:LASTEXITCODE = $null }          
           copy Deploy.exe dist
           
           $WshShell = New-Object -comObject WScript.Shell
