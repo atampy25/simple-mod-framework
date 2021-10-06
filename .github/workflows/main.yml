@@ -83,11 +83,7 @@ jobs:
           robocopy ./docs ./dist/Info /COPYALL /E; if ($lastexitcode -lt 8) { $global:LASTEXITCODE = $null }
           robocopy ".\Load Order Manager\out\Load Order Manager-win32-x64" "./dist/Load Order Manager" /COPYALL /E; if ($lastexitcode -lt 8) { $global:LASTEXITCODE = $null }          
           copy Deploy.exe dist
-          
-          $WshShell = New-Object -comObject WScript.Shell
-          $Shortcut = $WshShell.CreateShortcut("$dist/Manage Mods.lnk")
-          $Shortcut.TargetPath = Resolve-Path -Path "./dist/Load Order Manager/Load Order Manager.exe" -Relative
-          $Shortcut.Save()
+          New-Item -Path dist -Name "Mod Manager.cmd" -ItemType "file" -Value "start \"Load Order Manager/Load Order Manager.exe\""
       
       - name: Upload artifact
         uses: actions/upload-artifact@v2.2.4
