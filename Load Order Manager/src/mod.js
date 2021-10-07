@@ -4,6 +4,7 @@ var fs = require('fs-extra')
 var path = require('path');
 var child_process = require("child_process");
 var AdmZip = require('adm-zip')
+var sanitizeHtml = require('sanitize-html')
 
 window.$ = window.jQuery = require('jquery');
 
@@ -65,10 +66,11 @@ async function refreshMods() {
 				var modManifest = JSON.parse(fs.readFileSync(path.join("..", "Mods", modFolder, "manifest.json")))
 				$("#enabledMods")[0].innerHTML += `<div class="p-12 bg-gray-900 w-full shadow-2xl rounded-md text-white">
 														<div class="mb-2">
-															<h3 class="font-semibold text-2xl inline"><img src="frameworkMod.png" class="w-10 inline align-middle"> <span class="align-middle">${modManifest.name}</span></h3><br>
+															<h3 class="font-semibold text-2xl inline"><img src="frameworkMod.png" class="w-10 inline align-middle"> <span class="align-middle">${sanitise(modManifest.name)}</span></h3><br>
 														</div>
 														<div class="mb-1">
-															<p>${modManifest.description}</p><br>
+															<p>${sanitise(modManifest.description)}</p><br>
+															<p>By ${modManifest.authors.map(a=>sanitise(a)).join(", ")}</p><br>
 														</div>
 														<neo-button label="Disable" gradientFrom="rose-400" gradientTo="red-500" onclick="disableMod('${modFolder}')" style="display: inline">
 															<i class="fas fa-times" slot="icon"></i>
@@ -100,10 +102,11 @@ async function refreshMods() {
 				var modManifest = JSON.parse(fs.readFileSync(path.join("..", "Mods", modFolder, "manifest.json")))
 				$("#availableMods")[0].innerHTML += `<div class="p-12 bg-gray-900 w-full shadow-2xl rounded-md text-white">
 														<div class="mb-2">
-															<h3 class="font-semibold text-2xl inline"><img src="frameworkMod.png" class="w-10 inline align-middle"> <span class="align-middle">${modManifest.name}</span></h3><br>
+															<h3 class="font-semibold text-2xl inline"><img src="frameworkMod.png" class="w-10 inline align-middle"> <span class="align-middle">${sanitise(modManifest.name)}</span></h3><br>
 														</div>
 														<div class="mb-1">
-															<p>${modManifest.description}</p><br>
+															<p>${sanitise(modManifest.description)}</p><br>
+															<p>By ${modManifest.authors.map(a=>sanitise(a)).join(", ")}</p><br>
 														</div>
 														<neo-button label="Enable" gradientFrom="emerald-400" gradientTo="lime-600" onclick="enableMod('${modFolder}')" style="display: inline">
 															<i class="fas fa-plus" slot="icon"></i>
@@ -296,3 +299,9 @@ async function importRPKG() {
 }
 
 execute()
+
+function sanitise(html) {
+	return sanitizeHtml(html, {
+		allowedTags: [ 'b', 'i', 'em', 'strong', 'br']
+	});
+}
