@@ -14,6 +14,7 @@ const md5 = require("md5")
 const glob = require("glob")
 const deepMerge = require("lodash.merge")
 const { crc32 } = require("./crc32")
+const readRecursive = require('fs-readdir-recursive')
 
 const config = JSON.parse(fs.readFileSync(path.join(process.cwd(), "config.json")))
 
@@ -102,7 +103,7 @@ async function stageAllMods() {
                     fs.mkdirSync(path.join(process.cwd(), "staging", chunkFolder))
                 } catch {}
 
-                if (fs.readdirSync(path.join(process.cwd(), "Mods", mod, manifest.contentFolder, chunkFolder)).some(a=>a.endsWith("contract.json"))) {
+                if (readRecursive(path.join(process.cwd(), "Mods", mod, manifest.contentFolder, chunkFolder)).some(a=>a.endsWith("contract.json"))) {
                     try {
                         await promisify(emptyFolder)("temp2", true)
                     } catch {}
@@ -129,8 +130,8 @@ async function stageAllMods() {
                     var contractsORESMetaContent = JSON.parse(fs.readFileSync(path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES.meta.JSON")))
                 } // There are contracts, extract the contracts ORES and copy it to the temp2 directory
     
-                for (let contentFile of fs.readdirSync(path.join(process.cwd(), "Mods", mod, manifest.contentFolder, chunkFolder))) {
-                    var contentType = contentFile.split(".").slice(1).join(".")
+                for (let contentFile of readRecursive(path.join(process.cwd(), "Mods", mod, manifest.contentFolder, chunkFolder))) {
+                    var contentType = path.basename(contentFile).split(".").slice(1).join(".")
                     var contentFilePath = path.join(process.cwd(), "Mods", mod, manifest.contentFolder, chunkFolder, contentFile)
     
                     switch (contentType) {
@@ -306,7 +307,7 @@ async function stageAllMods() {
                             fs.writeFileSync(path.join(process.cwd(), "staging", "chunk0", contractHash + ".JSON"), LosslessJSON.stringify(entityContent)) // Write the actual contract to the staging directory
                             break;
                         default:
-                            fs.copyFileSync(contentFilePath, path.join(process.cwd(), "staging", chunkFolder, contentFile)) // Copy the file to the staging directory
+                            fs.copyFileSync(contentFilePath, path.join(process.cwd(), "staging", chunkFolder, path.basename(contentFile))) // Copy the file to the staging directory
                             break;
                     }
     
