@@ -30,7 +30,7 @@
     }
   },
   "dependencies": {
-    "adm-zip": "^0.5.7",
+    "adm-zip": "^0.5.9",
     "electron-squirrel-startup": "^1.0.0",
     "fs-extra": "^10.0.0",
     "jquery": "^3.6.0",
