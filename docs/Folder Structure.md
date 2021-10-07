@@ -15,6 +15,7 @@ MyAmazingMod/
 │  │  ├─ unlockables/
 │  │  │  ├─ theBestUnlockable.jpg
 ```
+`MyAmazingMod` can be placed in the load order.
 
 The manifest.json controls what the content and blobs folders must be named.
 
