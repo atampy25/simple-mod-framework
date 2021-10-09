@@ -15,7 +15,7 @@ if (!module.parent) {
 const { promisify } = require("util")
 const rfc6902 = require('rfc6902')
 
-const QuickEntityVersion = 1.133
+const QuickEntityVersion = 1.134
 
 if (!module.parent) {
 	forceArgsModeChoice = false
@@ -682,7 +682,7 @@ const entity = LosslessJSON.parse(String(fs.readFileSync(automateQNPath ? automa
 	properties: ["openFile", "dontAddToRecent"]
 })[0])))
 
-if (entity.quickEntityVersion < QuickEntityVersion) {
+if (entity.quickEntityVersion < QuickEntityVersion && !automateGame) {
 	if (!(await Swal.fire({
 		title: 'Outdated QuickEntity JSON',
 		text: `The QuickEntity JSON was created with version ${entity.quickEntityVersion}. The version of QuickEntity you are currently using is ${QuickEntityVersion}. Are you sure you want to continue?`,
@@ -1681,14 +1681,14 @@ async function applyPatchJSON(automateQNPath = false, automatePatchPath = false,
 			if (prop.type == "SEntityTemplateReference") {
 				if (typeof prop.value == "string" && !prop.value.startsWith("SPECIAL")) {
 					prop.value = new LosslessJSON.LosslessNumber(findEntityCache[prop.value])
-				} else if (!prop.value.ref.startsWith("SPECIAL")) {
+				} else if (typeof prop.value != "string" && !prop.value.ref.startsWith("SPECIAL")) {
 					prop.value.ref = new LosslessJSON.LosslessNumber(findEntityCache[prop.value.ref])
 				}
 			} else if (prop.type == "TArray<SEntityTemplateReference>") {
 				for (let subProp in prop.value) {
 					if (typeof prop.value[subProp] == "string" && !prop.value[subProp].startsWith("SPECIAL")) {
 						prop.value[subProp] = new LosslessJSON.LosslessNumber(findEntityCache[prop.value[subProp]])
-					} else if (!prop.value[subProp].ref.startsWith("SPECIAL")) {
+					} else if (typeof !prop.value[subProp] != "string" && !prop.value[subProp].ref.startsWith("SPECIAL")) {
 						prop.value[subProp].ref = new LosslessJSON.LosslessNumber(findEntityCache[prop.value[subProp].ref])
 					}
 				}
@@ -1699,14 +1699,14 @@ async function applyPatchJSON(automateQNPath = false, automatePatchPath = false,
 			if (prop.type == "SEntityTemplateReference") {
 				if (typeof prop.value == "string" && !prop.value.startsWith("SPECIAL")) {
 					prop.value = new LosslessJSON.LosslessNumber(findEntityCache[prop.value])
-				} else if (!prop.value.ref.startsWith("SPECIAL")) {
+				} else if (typeof prop.value != "string" && !prop.value.ref.startsWith("SPECIAL")) {
 					prop.value.ref = new LosslessJSON.LosslessNumber(findEntityCache[prop.value.ref])
 				}
 			} else if (prop.type == "TArray<SEntityTemplateReference>") {
 				for (let subProp in prop.value) {
 					if (typeof prop.value[subProp] == "string" && !prop.value[subProp].startsWith("SPECIAL")) {
 						prop.value[subProp] = new LosslessJSON.LosslessNumber(findEntityCache[prop.value[subProp]])
-					} else if (!prop.value[subProp].ref.startsWith("SPECIAL")) {
+					} else if (typeof !prop.value[subProp] != "string" && !prop.value[subProp].ref.startsWith("SPECIAL")) {
 						prop.value[subProp].ref = new LosslessJSON.LosslessNumber(findEntityCache[prop.value[subProp].ref])
 					}
 				}

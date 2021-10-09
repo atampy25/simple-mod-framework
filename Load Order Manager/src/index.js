@@ -23,6 +23,11 @@ const createWindow = () => {
 
   // and load the index.html of the app.
   mainWindow.loadFile(path.join(__dirname, 'index.html'));
+
+  mainWindow.on('close', function(e) {
+    e.preventDefault();
+    mainWindow.destroy();
+  });
 };
 
 // This method will be called when Electron has finished

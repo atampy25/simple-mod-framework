@@ -21,11 +21,20 @@ const config = JSON.parse(fs.readFileSync(path.join(process.cwd(), "config.json"
 const rpkgInstance = new RPKG.RPKGInstance()
 
 async function stageAllMods() {
+    console.time("StageAllMods")
+
     await rpkgInstance.waitForInitialised()
 
     for (let chunkPatchFile of fs.readdirSync(config.runtimePath)) {
         try {
-            if (chunkPatchFile.endsWith("patch200.rpkg") || parseInt(chunkPatchFile.split(".")[0].slice(5)) > 27) {
+            if (chunkPatchFile.includes("patch")) {
+                chunkPatchNumber = [...chunkPatchFile.matchAll(/chunk[0-9]*patch([1-9]*)\.rpkg/g)]
+                chunkPatchNumber = parseInt(chunkPatchNumber[chunkPatchNumber.length - 1][chunkPatchNumber[chunkPatchNumber.length - 1].length - 1])
+
+                if (chunkPatchNumber >= 200 && chunkPatchNumber < 300) { // The mod framework manages patch files between 200 (inc) and 300 (exc), allowing mods to place runtime files in those ranges
+                    fs.rmSync(path.join(config.runtimePath, chunkPatchFile))
+                }
+            } else if (parseInt(chunkPatchFile.split(".")[0].slice(5)) > 27) {
                 fs.rmSync(path.join(config.runtimePath, chunkPatchFile))
             }
         } catch {}
@@ -44,6 +53,7 @@ async function stageAllMods() {
 
     var packagedefinition = []
     var localisation = []
+    var runtimePackages = []
 
     var rpkgTypes = {}
 
@@ -98,6 +108,9 @@ async function stageAllMods() {
             }
         } else {
             let manifest = JSON.parse(fs.readFileSync(path.join(process.cwd(), "Mods", mod, "manifest.json")))
+
+            console.log("Staging mod: " + manifest.name)
+
             for (let chunkFolder of fs.readdirSync(path.join(process.cwd(), "Mods", mod, manifest.contentFolder))) {
                 try {
                     fs.mkdirSync(path.join(process.cwd(), "staging", chunkFolder))
@@ -178,20 +191,20 @@ async function stageAllMods() {
                                         recursive: true
                                     })
                                 } catch {}
-                                fs.copyFileSync(path.join(process.cwd(), "staging", chunkFolder, entityContent.tbluHash + ".TBLU"), path.join(process.cwd(), "temp", tempRPKG, "TBLU", entityContent.tbluHash + ".TBLU")) // Use the staging one (for mod compat - one mod can extract, patch and build, then the next can patch that one instead)
-                                fs.copyFileSync(path.join(process.cwd(), "staging", chunkFolder, entityContent.tbluHash + ".TBLU.meta"), path.join(process.cwd(), "temp", tempRPKG, "TBLU", entityContent.tbluHash + ".TBLU.meta"))
+                                fs.copyFileSync(path.join(process.cwd(), "staging", chunkFolder, entityContent.tbluHash + ".TBLU"), path.join(process.cwd(), "temp", tbluRPKG, "TBLU", entityContent.tbluHash + ".TBLU")) // Use the staging one (for mod compat - one mod can extract, patch and build, then the next can patch that one instead)
+                                fs.copyFileSync(path.join(process.cwd(), "staging", chunkFolder, entityContent.tbluHash + ".TBLU.meta"), path.join(process.cwd(), "temp", tbluRPKG, "TBLU", entityContent.tbluHash + ".TBLU.meta"))
                             }
     
                             child_process.execSync("\"Third-Party\\ResourceTool.exe\" HM3 convert TEMP \"" + path.join(process.cwd(), "temp", tempRPKG, "TEMP", entityContent.tempHash + ".TEMP") + "\" \"" + path.join(process.cwd(), "temp", tempRPKG, "TEMP", entityContent.tempHash + ".TEMP") + ".json\" --simple")
-                            child_process.execSync("\"Third-Party\\ResourceTool.exe\" HM3 convert TBLU \"" + path.join(process.cwd(), "temp", tempRPKG, "TBLU", entityContent.tbluHash + ".TBLU") + "\" \"" + path.join(process.cwd(), "temp", tempRPKG, "TBLU", entityContent.tbluHash + ".TBLU") + ".json\" --simple")
+                            child_process.execSync("\"Third-Party\\ResourceTool.exe\" HM3 convert TBLU \"" + path.join(process.cwd(), "temp", tbluRPKG, "TBLU", entityContent.tbluHash + ".TBLU") + "\" \"" + path.join(process.cwd(), "temp", tbluRPKG, "TBLU", entityContent.tbluHash + ".TBLU") + ".json\" --simple")
                             await rpkgInstance.callFunction(`-hash_meta_to_json "${path.join(process.cwd(), "temp", tempRPKG, "TEMP", entityContent.tempHash + ".TEMP.meta")}"`)
-                            await rpkgInstance.callFunction(`-hash_meta_to_json "${path.join(process.cwd(), "temp", tempRPKG, "TBLU", entityContent.tbluHash + ".TBLU.meta")}"`) // Generate the RT files from the binary files
+                            await rpkgInstance.callFunction(`-hash_meta_to_json "${path.join(process.cwd(), "temp", tbluRPKG, "TBLU", entityContent.tbluHash + ".TBLU.meta")}"`) // Generate the RT files from the binary files
     
                             await QuickEntity.convert("HM3", "ids",
                                                     path.join(process.cwd(), "temp", tempRPKG, "TEMP", entityContent.tempHash + ".TEMP.json"),
                                                     path.join(process.cwd(), "temp", tempRPKG, "TEMP", entityContent.tempHash + ".TEMP.meta.json"),
-                                                    path.join(process.cwd(), "temp", tempRPKG, "TBLU", entityContent.tbluHash + ".TBLU.json"),
-                                                    path.join(process.cwd(), "temp", tempRPKG, "TBLU", entityContent.tbluHash + ".TBLU.meta.json"),
+                                                    path.join(process.cwd(), "temp", tbluRPKG, "TBLU", entityContent.tbluHash + ".TBLU.json"),
+                                                    path.join(process.cwd(), "temp", tbluRPKG, "TBLU", entityContent.tbluHash + ".TBLU.meta.json"),
                                                     path.join(process.cwd(), "temp", "QuickEntityJSON.json")) // Generate the QN json from the RT files
     
                             await QuickEntity.applyPatchJSON(path.join(process.cwd(), "temp", "QuickEntityJSON.json"), contentFilePath, path.join(process.cwd(), "temp", "PatchedQuickEntityJSON.json")) // Patch the QN json
@@ -318,16 +331,20 @@ async function stageAllMods() {
                 }
 
                 if (fs.readdirSync(path.join(process.cwd(), "Mods", mod, manifest.contentFolder, chunkFolder)).some(a=>a.endsWith("contract.json"))) {
-                    fs.writeFileSync(path.join(process.cwd(), "temp", contractsORESChunk, "ORES", "002B07020D21D727.ORES.meta.JSON"), JSON.stringify(contractsORESMetaContent))
-                    fs.rmSync(path.join(process.cwd(), "temp", contractsORESChunk, "ORES", "002B07020D21D727.ORES.meta"))
-                    await rpkgInstance.callFunction(`-json_to_hash_meta "${path.join(process.cwd(), "temp", contractsORESChunk, "ORES", "002B07020D21D727.ORES.meta.JSON")}"`) // Rebuild the ORES meta
+                    fs.writeFileSync(path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES.meta.JSON"), JSON.stringify(contractsORESMetaContent))
+                    fs.rmSync(path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES.meta"))
+                    await rpkgInstance.callFunction(`-json_to_hash_meta "${path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES.meta.JSON")}"`) // Rebuild the ORES meta
 
-                    fs.writeFileSync(path.join(process.cwd(), "temp", contractsORESChunk, "ORES", "002B07020D21D727.ORES.JSON"), JSON.stringify(contractsORESContent))
-                    fs.rmSync(path.join(process.cwd(), "temp", contractsORESChunk, "ORES", "002B07020D21D727.ORES"))
-                    child_process.execSync(`"Third-Party\\OREStool.exe" "${path.join(process.cwd(), "temp", contractsORESChunk, "ORES", "002B07020D21D727.ORES.json")}"`) // Rebuild the ORES
+                    fs.writeFileSync(path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES.JSON"), JSON.stringify(contractsORESContent))
+                    fs.rmSync(path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES"))
+                    child_process.execSync(`"Third-Party\\OREStool.exe" "${path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES.json")}"`) // Rebuild the ORES
 
-                    fs.copyFileSync(path.join(process.cwd(), "temp", contractsORESChunk, "ORES", "002B07020D21D727.ORES"), path.join(process.cwd(), "staging", "chunk0", "002B07020D21D727.ORES"))
-                    fs.copyFileSync(path.join(process.cwd(), "temp", contractsORESChunk, "ORES", "002B07020D21D727.ORES.meta"), path.join(process.cwd(), "staging", "chunk0", "002B07020D21D727.ORES.meta")) // Copy the ORES to the staging directory
+                    fs.copyFileSync(path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES"), path.join(process.cwd(), "staging", "chunk0", "002B07020D21D727.ORES"))
+                    fs.copyFileSync(path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES.meta"), path.join(process.cwd(), "staging", "chunk0", "002B07020D21D727.ORES.meta")) // Copy the ORES to the staging directory
+                
+                    try {
+                        await promisify(emptyFolder)("temp2", true)
+                    } catch {}
                 } // There are contracts, repackage the contracts ORES from the temp2 directory
     
                 if (fs.existsSync(path.join(process.cwd(), "Mods", mod, manifest.contentFolder, chunkFolder, chunkFolder + ".meta"))) {
@@ -411,6 +428,14 @@ async function stageAllMods() {
                 fs.mkdirSync("temp") // Clear the temp directory
             } // Blobs
 
+            runtimePackages.push(...manifest.runtimePackages.map(a=>{
+                return {
+                    chunk: a.chunk,
+                    path: a.path,
+                    mod: mod
+                }
+            })) // Runtime packages
+
             // for (let deletedHash of manifest.undelete) {
             //     var hashRPKG = await rpkgInstance.getRPKGOfHash(deletedHash)
                 
@@ -467,6 +492,22 @@ async function stageAllMods() {
             }
         }
     } // Stage all mods
+
+    let runtimePatchNumber = 205
+    for (let runtimeFile of runtimePackages) {
+        // {
+        //     "chunk": 0,
+        //     "path": "portedhashes.rpkg"
+        // }
+
+        fs.copyFileSync(path.join(process.cwd(), "Mods", runtimeFile.mod, runtimeFile.path), config.outputToSeparateDirectory ? path.join(process.cwd(), "Output", "chunk" + runtimeFile.chunk + "patch" + runtimePatchNumber + ".rpkg") : path.join(config.runtimePath, "chunk" + runtimeFile.chunk + "patch" + runtimePatchNumber + ".rpkg"))
+        runtimePatchNumber ++
+
+        if (runtimePatchNumber >= 300) {
+            console.log("ERROR: More than 94 total runtime packages!")
+            process.exit(1)
+        } // Framework only manages patch200-300
+    } // Runtime packages
 
     if (localisation.length) {
         let languages = {
@@ -608,6 +649,8 @@ async function stageAllMods() {
     try {
         await promisify(emptyFolder)("temp", true)
     } catch {}
+
+    console.timeEnd("StageAllMods")
 
     rpkgInstance.rpkgProcess.kill()
     process.exit(0)
