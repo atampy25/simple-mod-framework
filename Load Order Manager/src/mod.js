@@ -196,31 +196,25 @@ async function moveMod(modID) {
 }
 
 async function deployMods() {
+	Swal.fire({
+		title: 'Deploying your mods',
+		html: 'Please wait - your mods are being saved and deployed.',
+		didOpen: () => {
+			Swal.showLoading()
+		},
+		allowEnterKey: false,
+		allowOutsideClick: false,
+		allowEscapeKey: false,
+		showConfirmButton: false
+	})
+
 	child_process.execSync("../Deploy.exe", {
 		cwd: '..'
 	})
-	showMessage("Deployed successfully", "Your mods have been deployed.", "success")
-}
 
-async function importZip() {
-	var modPath = electron.remote.dialog.showOpenDialogSync({
-		title: "Import a Framework ZIP file",
-		buttonLabel: "Import",
-		filters: [{ name: 'Framework ZIP Files', extensions: ['framework.zip'] }],
-		properties: ["openFile", "dontAddToRecent"]
-	})[0]
+	Swal.close()
 
-	try {
-		fs.readdirSync("./staging").forEach(function(filePath) {
-			fs.unlinkSync(path.join("./staging", filePath))
-		})
-	} catch {}
-
-	if (!fs.existsSync('./staging')) { fs.mkdirSync('./staging') }
-
-	new AdmZip(modPath).extractAllTo("./staging")
-
-	fs.copySync("./staging", "../Mods")
+	showMessage("Deployed successfully", "Successfully deployed. You can now play the game with mods!", "success")
 }
 
 async function importZIP() {
@@ -231,17 +225,25 @@ async function importZIP() {
 		properties: ["openFile", "dontAddToRecent"]
 	})[0]
 
-	try {
-		fs.readdirSync("./staging").forEach(function(filePath) {
-			fs.unlinkSync(path.join("./staging", filePath))
-		})
-	} catch {}
+	Swal.fire({
+		title: 'Installing the mod',
+		html: 'Please wait - the ZIP file is being extracted and installed as a framework mod.',
+		didOpen: () => {
+			Swal.showLoading()
+		},
+		allowEnterKey: false,
+		allowOutsideClick: false,
+		allowEscapeKey: false,
+		showConfirmButton: false
+	})
 
-	if (!fs.existsSync('./staging')) { fs.mkdirSync('./staging') }
+	fs.emptyDirSync("./staging")
 
 	new AdmZip(modPath).extractAllTo("./staging")
 
 	fs.copySync("./staging", "../Mods")
+
+	Swal.close()
 
 	refreshMods()
 }
@@ -292,10 +294,24 @@ async function importRPKG() {
 		if (!chunk) {return}
 	}
 
+	Swal.fire({
+		title: 'Installing the mod',
+		html: 'Please wait - the RPKG file is being installed as a framework mod.',
+		didOpen: () => {
+			Swal.showLoading()
+		},
+		allowEnterKey: false,
+		allowOutsideClick: false,
+		allowEscapeKey: false,
+		showConfirmButton: false
+	})
+
 	fs.ensureDirSync(path.join("..", "Mods", name, chunk))
 	fs.copyFileSync(modPath, path.join("..", "Mods", name, chunk, path.basename(modPath)))
 
-	await refreshMods()
+	Swal.close()
+
+	refreshMods()
 }
 
 execute()
