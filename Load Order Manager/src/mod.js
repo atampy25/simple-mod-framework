@@ -1,10 +1,10 @@
-var electron = require("electron")
 var Swal = require("sweetalert2")
 var fs = require('fs-extra')
 var path = require('path');
 var child_process = require("child_process");
 var AdmZip = require('adm-zip')
 var sanitizeHtml = require('sanitize-html')
+var remote = require('@electron/remote')
 
 window.$ = window.jQuery = require('jquery');
 
@@ -218,7 +218,7 @@ async function deployMods() {
 }
 
 async function importZIP() {
-	var modPath = electron.remote.dialog.showOpenDialogSync({
+	var modPath = remote.dialog.showOpenDialogSync({
 		title: "Import a Framework ZIP file",
 		buttonLabel: "Import",
 		filters: [{ name: 'Framework ZIP Files', extensions: ['framework.zip'] }],
@@ -249,7 +249,7 @@ async function importZIP() {
 }
 
 async function importRPKG() {
-	var modPath = electron.remote.dialog.showOpenDialogSync({
+	var modPath = remote.dialog.showOpenDialogSync({
 		title: "Import an RPKG file",
 		buttonLabel: "Import",
 		filters: [{ name: 'RPKG Files', extensions: ['rpkg'] }],
