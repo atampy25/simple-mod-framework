@@ -1,7 +1,7 @@
 const fs = require("fs")
 const path = require("path")
 const config = JSON.parse(fs.readFileSync(path.join(process.cwd(), "config.json")))
-const child_process = require("promisify-child-process")
+const child_process = require("child_process")
 require("clarify")
 
 class RPKGInstance {
@@ -48,13 +48,17 @@ class RPKGInstance {
         let result = [...(await this.callFunction("-hash_probe \"" + config.runtimePath + "\" -filter \"" + hash + "\"")).matchAll(/is in RPKG file: (chunk[0-9]*(?:patch[1-9])?)\.rpkg/g)]
         return result[result.length - 1][result[result.length - 1].length - 1] // enjoy lmao
     }
+
+    exit() {
+        this.rpkgProcess.kill()
+    }
 }
 
 function waitForInitialised(resolve) { // yes, bad, pls tell me how to make good
     if (this.initialised) {
         resolve(this.previousOutput)
     } else {
-        setTimeout(waitForInitialised.bind(this, resolve), 500);
+        setTimeout(waitForInitialised.bind(this, resolve), 100);
     }
 }
 
@@ -62,7 +66,7 @@ function waitForReady(resolve) { // yes, bad, pls tell me how to make good
     if (this.ready) {
         resolve(this.previousOutput.slice(0, -8).replace(/Running command: .*\r\n\r\n/g, ""))
     } else {
-        setTimeout(waitForReady.bind(this, resolve), 500);
+        setTimeout(waitForReady.bind(this, resolve), 100);
     }
 }
 

@@ -4,7 +4,7 @@ THREE = require("./three.min")
 const QuickEntity = require("./quickentity")
 const RPKG = require("./rpkg")
 
-const fs = require("fs")
+const fs = require("fs-extra")
 const path = require("path")
 const emptyFolder = require("empty-folder")
 const { promisify } = require("util")
@@ -15,6 +15,9 @@ const glob = require("glob")
 const deepMerge = require("lodash.merge")
 const { crc32 } = require("./crc32")
 const readRecursive = require('fs-readdir-recursive')
+const os = require("os")
+
+const Piscina = require('piscina');
 
 const config = JSON.parse(fs.readFileSync(path.join(process.cwd(), "config.json")))
 
@@ -28,7 +31,7 @@ async function stageAllMods() {
     for (let chunkPatchFile of fs.readdirSync(config.runtimePath)) {
         try {
             if (chunkPatchFile.includes("patch")) {
-                chunkPatchNumber = [...chunkPatchFile.matchAll(/chunk[0-9]*patch([1-9]*)\.rpkg/g)]
+                chunkPatchNumber = [...chunkPatchFile.matchAll(/chunk[0-9]*patch([0-9]*)\.rpkg/g)]
                 chunkPatchNumber = parseInt(chunkPatchNumber[chunkPatchNumber.length - 1][chunkPatchNumber[chunkPatchNumber.length - 1].length - 1])
 
                 if (chunkPatchNumber >= 200 && chunkPatchNumber < 300) { // The mod framework manages patch files between 200 (inc) and 300 (exc), allowing mods to place runtime files in those ranges
@@ -143,6 +146,8 @@ async function stageAllMods() {
                     var contractsORESMetaContent = JSON.parse(fs.readFileSync(path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES.meta.JSON")))
                 } // There are contracts, extract the contracts ORES and copy it to the temp2 directory
     
+                let entityPatches = []
+
                 for (let contentFile of readRecursive(path.join(process.cwd(), "Mods", mod, manifest.contentFolder, chunkFolder))) {
                     var contentType = path.basename(contentFile).split(".").slice(1).join(".")
                     var contentFilePath = path.join(process.cwd(), "Mods", mod, manifest.contentFolder, chunkFolder, contentFile)
@@ -168,62 +173,14 @@ async function stageAllMods() {
                             break;
                         case "entity.patch.json":
                             var entityContent = LosslessJSON.parse(String(fs.readFileSync(contentFilePath)))
-                            var tempRPKG = await rpkgInstance.getRPKGOfHash(entityContent.tempHash)
-                            var tbluRPKG = await rpkgInstance.getRPKGOfHash(entityContent.tbluHash)
-    
-                            if (!fs.existsSync(path.join(process.cwd(), "staging", chunkFolder, entityContent.tempHash + ".TEMP"))) {
-                                await rpkgInstance.callFunction(`-extract_from_rpkg "${path.join(config.runtimePath, tempRPKG + ".rpkg")}" -filter "${entityContent.tempHash}" -output_path temp`) // Extract the binary files
-                            } else {
-                                try {
-                                    fs.mkdirSync(path.join(process.cwd(), "temp", tempRPKG, "TEMP"), {
-                                        recursive: true
-                                    })
-                                } catch {}
-                                fs.copyFileSync(path.join(process.cwd(), "staging", chunkFolder, entityContent.tempHash + ".TEMP"), path.join(process.cwd(), "temp", tempRPKG, "TEMP", entityContent.tempHash + ".TEMP")) // Use the staging one (for mod compat - one mod can extract, patch and build, then the next can patch that one instead)
-                                fs.copyFileSync(path.join(process.cwd(), "staging", chunkFolder, entityContent.tempHash + ".TEMP.meta"), path.join(process.cwd(), "temp", tempRPKG, "TEMP", entityContent.tempHash + ".TEMP.meta"))
-                            }
 
-                            if (!fs.existsSync(path.join(process.cwd(), "staging", chunkFolder, entityContent.tbluHash + ".TBLU"))) {
-                                await rpkgInstance.callFunction(`-extract_from_rpkg "${path.join(config.runtimePath, tbluRPKG + ".rpkg")}" -filter "${entityContent.tbluHash}" -output_path temp`) // Extract the binary files
-                            } else {
-                                try {
-                                    fs.mkdirSync(path.join(process.cwd(), "temp", tempRPKG, "TBLU"), {
-                                        recursive: true
-                                    })
-                                } catch {}
-                                fs.copyFileSync(path.join(process.cwd(), "staging", chunkFolder, entityContent.tbluHash + ".TBLU"), path.join(process.cwd(), "temp", tbluRPKG, "TBLU", entityContent.tbluHash + ".TBLU")) // Use the staging one (for mod compat - one mod can extract, patch and build, then the next can patch that one instead)
-                                fs.copyFileSync(path.join(process.cwd(), "staging", chunkFolder, entityContent.tbluHash + ".TBLU.meta"), path.join(process.cwd(), "temp", tbluRPKG, "TBLU", entityContent.tbluHash + ".TBLU.meta"))
-                            }
-    
-                            child_process.execSync("\"Third-Party\\ResourceTool.exe\" HM3 convert TEMP \"" + path.join(process.cwd(), "temp", tempRPKG, "TEMP", entityContent.tempHash + ".TEMP") + "\" \"" + path.join(process.cwd(), "temp", tempRPKG, "TEMP", entityContent.tempHash + ".TEMP") + ".json\" --simple")
-                            child_process.execSync("\"Third-Party\\ResourceTool.exe\" HM3 convert TBLU \"" + path.join(process.cwd(), "temp", tbluRPKG, "TBLU", entityContent.tbluHash + ".TBLU") + "\" \"" + path.join(process.cwd(), "temp", tbluRPKG, "TBLU", entityContent.tbluHash + ".TBLU") + ".json\" --simple")
-                            await rpkgInstance.callFunction(`-hash_meta_to_json "${path.join(process.cwd(), "temp", tempRPKG, "TEMP", entityContent.tempHash + ".TEMP.meta")}"`)
-                            await rpkgInstance.callFunction(`-hash_meta_to_json "${path.join(process.cwd(), "temp", tbluRPKG, "TBLU", entityContent.tbluHash + ".TBLU.meta")}"`) // Generate the RT files from the binary files
-    
-                            await QuickEntity.convert("HM3", "ids",
-                                                    path.join(process.cwd(), "temp", tempRPKG, "TEMP", entityContent.tempHash + ".TEMP.json"),
-                                                    path.join(process.cwd(), "temp", tempRPKG, "TEMP", entityContent.tempHash + ".TEMP.meta.json"),
-                                                    path.join(process.cwd(), "temp", tbluRPKG, "TBLU", entityContent.tbluHash + ".TBLU.json"),
-                                                    path.join(process.cwd(), "temp", tbluRPKG, "TBLU", entityContent.tbluHash + ".TBLU.meta.json"),
-                                                    path.join(process.cwd(), "temp", "QuickEntityJSON.json")) // Generate the QN json from the RT files
-    
-                            await QuickEntity.applyPatchJSON(path.join(process.cwd(), "temp", "QuickEntityJSON.json"), contentFilePath, path.join(process.cwd(), "temp", "PatchedQuickEntityJSON.json")) // Patch the QN json
-    
-                            await QuickEntity.generate("HM3", path.join(process.cwd(), "temp", "PatchedQuickEntityJSON.json"),
-                                                        path.join(process.cwd(), "temp", "temp.TEMP.json"),
-                                                        path.join(process.cwd(), "temp", "temp.TEMP.meta.json"),
-                                                        path.join(process.cwd(), "temp", "temp.TBLU.json"),
-                                                        path.join(process.cwd(), "temp", "temp.TBLU.meta.json")) // Generate the RT files from the QN json
-                            
-                            child_process.execSync("\"Third-Party\\ResourceTool.exe\" HM3 generate TEMP \"" + path.join(process.cwd(), "temp", "temp.TEMP.json") + "\" \"" + path.join(process.cwd(), "temp", "temp.TEMP") + "\" --simple")
-                            child_process.execSync("\"Third-Party\\ResourceTool.exe\" HM3 generate TBLU \"" + path.join(process.cwd(), "temp", "temp.TBLU.json") + "\" \"" + path.join(process.cwd(), "temp", "temp.TBLU") + "\" --simple")
-                            await rpkgInstance.callFunction(`-json_to_hash_meta "${path.join(process.cwd(), "temp", "temp.TEMP.meta.json")}"`)
-                            await rpkgInstance.callFunction(`-json_to_hash_meta "${path.join(process.cwd(), "temp", "temp.TBLU.meta.json")}"`) // Generate the binary files from the RT json
-    
-                            fs.copyFileSync(path.join(process.cwd(), "temp", "temp.TEMP"), path.join(process.cwd(), "staging", chunkFolder, entityContent.tempHash + ".TEMP"))
-                            fs.copyFileSync(path.join(process.cwd(), "temp", "temp.TEMP.meta"), path.join(process.cwd(), "staging", chunkFolder, entityContent.tempHash + ".TEMP.meta"))
-                            fs.copyFileSync(path.join(process.cwd(), "temp", "temp.TBLU"), path.join(process.cwd(), "staging", chunkFolder, entityContent.tbluHash + ".TBLU"))
-                            fs.copyFileSync(path.join(process.cwd(), "temp", "temp.TBLU.meta"), path.join(process.cwd(), "staging", chunkFolder, entityContent.tbluHash + ".TBLU.meta")) // Copy the binary files to the staging directory
+                            entityPatches.push({
+                                contentFilePath,
+                                chunkFolder,
+                                entityContent,
+                                tempRPKG: await rpkgInstance.getRPKGOfHash(entityContent.tempHash),
+                                tbluRPKG: await rpkgInstance.getRPKGOfHash(entityContent.tbluHash)
+                            })
                             break;
                         case "unlockables.json":
                             var entityContent = LosslessJSON.parse(String(fs.readFileSync(contentFilePath)))
@@ -330,6 +287,7 @@ async function stageAllMods() {
                     fs.mkdirSync("temp") // Clear the temp directory
                 }
 
+                /* --------- There are contracts, repackage the contracts ORES from the temp2 directory --------- */
                 if (fs.readdirSync(path.join(process.cwd(), "Mods", mod, manifest.contentFolder, chunkFolder)).some(a=>a.endsWith("contract.json"))) {
                     fs.writeFileSync(path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES.meta.JSON"), JSON.stringify(contractsORESMetaContent))
                     fs.rmSync(path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES.meta"))
@@ -345,16 +303,40 @@ async function stageAllMods() {
                     try {
                         await promisify(emptyFolder)("temp2", true)
                     } catch {}
-                } // There are contracts, repackage the contracts ORES from the temp2 directory
-    
+                }
+
+                /* ------------------------------------- Convert all patches ------------------------------------ */
+                let index = 0
+
+                let workerPool = new Piscina({
+                    filename: "patchWorker.js",
+                    maxThreads: os.cpus().length / 4 // For an 8-core CPU with 16 logical processors there are 4 max threads
+                });
+
+                await Promise.all(entityPatches.map(({contentFilePath, chunkFolder, entityContent, tempRPKG, tbluRPKG}) => {
+                    index ++
+                    return workerPool.run({
+                        contentFilePath,
+                        chunkFolder,
+                        entityContent,
+                        tempRPKG,
+                        tbluRPKG,
+                        assignedTemporaryDirectory: "patchWorker" + index
+                    })
+                })); // Run each patch in the worker queue and wait for all of them to finish
+
+                /* ------------------------------ Copy chunk meta to staging folder ----------------------------- */
                 if (fs.existsSync(path.join(process.cwd(), "Mods", mod, manifest.contentFolder, chunkFolder, chunkFolder + ".meta"))) {
                     fs.copyFileSync(path.join(process.cwd(), "Mods", mod, manifest.contentFolder, chunkFolder, chunkFolder + ".meta"), path.join(process.cwd(), "staging", chunkFolder, chunkFolder + ".meta"))
                     rpkgTypes[chunkFolder] = "base"
                 } else {
                     rpkgTypes[chunkFolder] = "patch"
-                } // Copy chunk meta to staging folder if there is one (adds support for custom chunks)
-            } // Content
+                }
+            }
 
+            /* ---------------------------------------------------------------------------------------------- */
+            /*                                              Blobs                                             */
+            /* ---------------------------------------------------------------------------------------------- */
             if (fs.existsSync(path.join(process.cwd(), "Mods", mod, manifest.blobsFolder)) && fs.readdirSync(path.join(process.cwd(), "Mods", mod, manifest.blobsFolder)).length) {
                 try {
                     await promisify(emptyFolder)("temp", true)
@@ -426,15 +408,18 @@ async function stageAllMods() {
                     await promisify(emptyFolder)("temp", true)
                 } catch {}
                 fs.mkdirSync("temp") // Clear the temp directory
-            } // Blobs
+            }
 
+            /* ---------------------------------------------------------------------------------------------- */
+            /*                                        Runtime packages                                        */
+            /* ---------------------------------------------------------------------------------------------- */
             runtimePackages.push(...manifest.runtimePackages.map(a=>{
                 return {
                     chunk: a.chunk,
                     path: a.path,
                     mod: mod
                 }
-            })) // Runtime packages
+            }))
 
             // for (let deletedHash of manifest.undelete) {
             //     var hashRPKG = await rpkgInstance.getRPKGOfHash(deletedHash)
@@ -492,6 +477,13 @@ async function stageAllMods() {
             }
         }
     } // Stage all mods
+
+    if (config.outputToSeparateDirectory) {
+        try {
+            await promisify(emptyFolder)("Output", true)
+        } catch {}
+        fs.mkdirSync("Output")
+    }
 
     let runtimePatchNumber = 205
     for (let runtimeFile of runtimePackages) {
@@ -594,13 +586,6 @@ async function stageAllMods() {
         fs.copyFileSync(path.join(config.runtimePath, "..", "Retail", "thumbs.dat"), path.join(process.cwd(), "cleanThumbs.dat"))
     } // Check if thumbs.dat is now unmodded and if so overwrite current "clean" version
 
-    if (config.outputToSeparateDirectory) {
-        try {
-            await promisify(emptyFolder)("Output", true)
-        } catch {}
-        fs.mkdirSync("Output")
-    }
-
     child_process.execSync(`"Third-Party\\h6xtea.exe" -d --src "${path.join(process.cwd(), "cleanPackageDefinition.txt")}" --dst "${path.join(process.cwd(), "temp", "packagedefinition.txt.decrypted")}"`)
     let packagedefinitionContent = String(fs.readFileSync(path.join(process.cwd(), "temp", "packagedefinition.txt.decrypted"))).replace(/patchlevel=[0-9]*/g, "patchlevel=10001")
 
@@ -652,7 +637,7 @@ async function stageAllMods() {
 
     console.timeEnd("StageAllMods")
 
-    rpkgInstance.rpkgProcess.kill()
+    rpkgInstance.exit()
     process.exit(0)
 }
 
