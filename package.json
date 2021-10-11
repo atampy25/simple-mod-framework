@@ -22,7 +22,10 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "pkg": {
-    "scripts": ["patchWorker.js"]
+    "scripts": [
+      "node_modules/piscina/dist/src/worker.js",
+      "patchWorker.js"
+    ]
   },
   "author": "Atampy26",
   "license": "MIT"
