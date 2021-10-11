@@ -21,6 +21,9 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "pkg": {
+    "scripts": ["patchWorker.js"]
+  },
   "author": "Atampy26",
   "license": "MIT"
 }

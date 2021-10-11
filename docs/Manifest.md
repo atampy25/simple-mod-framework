@@ -41,6 +41,8 @@ Each mod contains a manifest. Manifests have the following format:
 			"path": "portedhashes.rpkg"
 		}
 	],
-	"frameworkVersion": 0.3
+	"modVersion": 1, // The mod's version, used to compare against the linked JSON
+	"updateCheck": "https://hitman-resources.netlify.app/framework/updates/exampleMod.json", // A JSON that will be checked for updates - contact Atampy26 for hosting on hitman-resources.netlify.app
+	"frameworkVersion": 0.3 // The framework version the mod is designed for
 }
 ```
