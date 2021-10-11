@@ -40,7 +40,7 @@ jobs:
       
       - name: Build EXE
         run: |
-          pkg main.js --targets node14-win-x64 --output Deploy.exe --compress Brotli
+          pkg package.json --targets node14-win-x64 --output Deploy.exe --compress Brotli
           
       - name: Download RPKG
         uses: aochmann/actions-download-artifact@5709392f11b5937bd316e52687ad87f7deced5f5
