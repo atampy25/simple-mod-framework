@@ -13,7 +13,6 @@
     "lodash.merge": "^4.6.2",
     "lossless-json": "^1.0.5",
     "md5": "^2.3.0",
-    "piscina": "^3.1.0",
     "promisify-child-process": "^4.1.1",
     "rfc6902": "^4.0.2"
   },

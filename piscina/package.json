@@ -1,0 +1,121 @@
+{
+  "_from": "piscina",
+  "_id": "piscina@3.1.0",
+  "_inBundle": false,
+  "_integrity": "sha512-KTW4sjsCD34MHrUbx9eAAbuUSpVj407hQSgk/6Epkg0pbRBmv4a3UX7Sr8wxm9xYqQLnsN4mFOjqGDzHAdgKQg==",
+  "_location": "/piscina",
+  "_phantomChildren": {},
+  "_requested": {
+    "type": "tag",
+    "registry": true,
+    "raw": "piscina",
+    "name": "piscina",
+    "escapedName": "piscina",
+    "rawSpec": "",
+    "saveSpec": null,
+    "fetchSpec": "latest"
+  },
+  "_requiredBy": [
+    "#USER",
+    "/"
+  ],
+  "_resolved": "https://registry.npmjs.org/piscina/-/piscina-3.1.0.tgz",
+  "_shasum": "2333636865b6cb69c5a370bbc499a98cabcf3e04",
+  "_spec": "piscina",
+  "_where": "C:\\Users\\User\\Documents\\Github\\simple-mod-framework",
+  "author": {
+    "name": "James M Snell",
+    "email": "jasnell@gmail.com"
+  },
+  "bugs": {
+    "url": "https://github.com/piscinajs/piscina/issues"
+  },
+  "bundleDependencies": false,
+  "contributors": [
+    {
+      "name": "Anna Henningsen",
+      "email": "anna@addaleax.net"
+    },
+    {
+      "name": "Matteo Collina",
+      "email": "matteo.collina@gmail.com"
+    }
+  ],
+  "dependencies": {
+    "eventemitter-asyncresource": "^1.0.0",
+    "hdr-histogram-js": "^2.0.1",
+    "hdr-histogram-percentiles-obj": "^3.0.0",
+    "nice-napi": "^1.0.2"
+  },
+  "deprecated": false,
+  "description": "A fast, efficient Node.js Worker Thread Pool implementation",
+  "devDependencies": {
+    "@types/node": "^15.0.1",
+    "@typescript-eslint/eslint-plugin": "^4.22.0",
+    "@typescript-eslint/parser": "^4.22.0",
+    "abort-controller": "^3.0.0",
+    "concat-stream": "^2.0.0",
+    "gen-esm-wrapper": "^1.1.1",
+    "snazzy": "^9.0.0",
+    "standardx": "^7.0.0",
+    "tap": "^15.0.6",
+    "ts-node": "^9.1.1",
+    "typescript": "^4.2.4"
+  },
+  "directories": {
+    "example": "examples"
+  },
+  "eslintConfig": {
+    "rules": {
+      "semi": [
+        "error",
+        "always"
+      ],
+      "no-unused-vars": "off",
+      "no-use-before-define": "off",
+      "no-unreachable-loop": "off",
+      "no-dupe-class-members": "off",
+      "@typescript-eslint/no-unused-vars": "error"
+    },
+    "globals": {
+      "SharedArrayBuffer": true,
+      "Atomics": true,
+      "AbortController": true,
+      "MessageChannel": true
+    }
+  },
+  "exports": {
+    "import": "./dist/esm-wrapper.mjs",
+    "require": "./dist/src/index.js"
+  },
+  "homepage": "https://github.com/piscinajs/piscina#readme",
+  "keywords": [
+    "fast",
+    "worker threads",
+    "thread pool",
+    "wade wilson"
+  ],
+  "license": "MIT",
+  "main": "./dist/src/index.js",
+  "name": "piscina",
+  "optionalDependencies": {
+    "nice-napi": "^1.0.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/piscinajs/piscina.git"
+  },
+  "scripts": {
+    "build": "tsc && gen-esm-wrapper . dist/esm-wrapper.mjs",
+    "lint": "standardx \"**/*.{ts,mjs,js,cjs}\" | snazzy",
+    "prepack": "npm run build"
+  },
+  "standardx": {
+    "parser": "@typescript-eslint/parser",
+    "plugins": [
+      "@typescript-eslint/eslint-plugin"
+    ]
+  },
+  "types": "./dist/src/index.d.ts",
+  "version": "3.1.0"
+}
