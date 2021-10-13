@@ -75,10 +75,10 @@ jobs:
 
       - name: Ready for zip
         run: |
-          mkdir dist
-          mkdir dist/Third-Party
-          mkdir dist/Info
-          mkdir "dist/Load Order Manager"
+          New-Item -ItemType Directory dist
+          New-Item -ItemType Directory dist/Third-Party
+          New-Item -ItemType Directory dist/Info
+          New-Item -ItemType Directory "dist/Load Order Manager"
           robocopy ./Third-Party ./dist/Third-Party /COPYALL /E; if ($lastexitcode -lt 8) { $global:LASTEXITCODE = $null }
           robocopy "./For Build" ./dist /COPYALL /E; if ($lastexitcode -lt 8) { $global:LASTEXITCODE = $null }
           robocopy ./docs ./dist/Info /COPYALL /E; if ($lastexitcode -lt 8) { $global:LASTEXITCODE = $null }
