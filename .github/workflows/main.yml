@@ -40,7 +40,7 @@ jobs:
       
       - name: Build EXE
         run: |
-          mkdir ./node_modules/piscina
+          New-Item -ItemType Directory -Force -Path ./node_modules/piscina
           robocopy ./piscina ./node_modules/piscina /COPYALL /E /is /it; if ($lastexitcode -lt 8) { $global:LASTEXITCODE = $null }
           pkg package.json --targets node14-win-x64 --output Deploy.exe --compress Brotli
           
