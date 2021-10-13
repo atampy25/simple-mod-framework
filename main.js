@@ -114,224 +114,229 @@ async function stageAllMods() {
 
             console.log("Staging mod: " + manifest.name)
 
-            for (let chunkFolder of fs.readdirSync(path.join(process.cwd(), "Mods", mod, manifest.contentFolder))) {
-                try {
-                    fs.mkdirSync(path.join(process.cwd(), "staging", chunkFolder))
-                } catch {}
-
-                if (readRecursive(path.join(process.cwd(), "Mods", mod, manifest.contentFolder, chunkFolder)).some(a=>a.endsWith("contract.json"))) {
+            /* ---------------------------------------------------------------------------------------------- */
+            /*                                             Content                                            */
+            /* ---------------------------------------------------------------------------------------------- */
+            if (manifest.contentFolder && manifest.contentFolder.length && fs.existsSync(path.join(process.cwd(), "Mods", mod, manifest.contentFolder)) && fs.readdirSync(path.join(process.cwd(), "Mods", mod, manifest.contentFolder)).length) {
+                for (let chunkFolder of fs.readdirSync(path.join(process.cwd(), "Mods", mod, manifest.contentFolder))) {
                     try {
-                        await promisify(emptyFolder)("temp2", true)
+                        fs.mkdirSync(path.join(process.cwd(), "staging", chunkFolder))
                     } catch {}
-                    fs.mkdirSync("temp2") // Make/clear the temp2 directory
-
-                    var contractsORESChunk = await rpkgInstance.getRPKGOfHash("002B07020D21D727")
-
-                    if (!fs.existsSync(path.join(process.cwd(), "staging", "chunk0", "002B07020D21D727.ORES"))) {
-                        await rpkgInstance.callFunction(`-extract_from_rpkg "${path.join(config.runtimePath, contractsORESChunk + ".rpkg")}" -filter "002B07020D21D727" -output_path temp2`) // Extract the contracts ORES
-                    } else {
-                        fs.ensureDirSync(path.join(process.cwd(), "temp2", contractsORESChunk, "ORES"))
-                        fs.copyFileSync(path.join(process.cwd(), "staging", "chunk0", "002B07020D21D727.ORES"), path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES")) // Use the staging one (for mod compat - one mod can extract, patch and build, then the next can patch that one instead)
-                        fs.copyFileSync(path.join(process.cwd(), "staging", "chunk0", "002B07020D21D727.ORES.meta"), path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES.meta"))
-                    }
-                    
-                    child_process.execSync(`"Third-Party\\OREStool.exe" "${path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES")}"`)
-                    var contractsORESContent = JSON.parse(fs.readFileSync(path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES.JSON")))
-
-                    await rpkgInstance.callFunction(`-hash_meta_to_json "${path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES.meta")}"`)
-                    var contractsORESMetaContent = JSON.parse(fs.readFileSync(path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES.meta.JSON")))
-                } // There are contracts, extract the contracts ORES and copy it to the temp2 directory
     
-                let entityPatches = []
-
-                for (let contentFile of readRecursive(path.join(process.cwd(), "Mods", mod, manifest.contentFolder, chunkFolder))) {
-                    var contentType = path.basename(contentFile).split(".").slice(1).join(".")
-                    var contentFilePath = path.join(process.cwd(), "Mods", mod, manifest.contentFolder, chunkFolder, contentFile)
+                    if (readRecursive(path.join(process.cwd(), "Mods", mod, manifest.contentFolder, chunkFolder)).some(a=>a.endsWith("contract.json"))) {
+                        try {
+                            await promisify(emptyFolder)("temp2", true)
+                        } catch {}
+                        fs.mkdirSync("temp2") // Make/clear the temp2 directory
     
-                    switch (contentType) {
-                        case "entity.json":
-                            var entityContent = LosslessJSON.parse(String(fs.readFileSync(contentFilePath)))
-                            await QuickEntity.generate("HM3", contentFilePath,
-                                                        path.join(process.cwd(), "temp", "temp.TEMP.json"),
-                                                        path.join(process.cwd(), "temp", "temp.TEMP.meta.json"),
-                                                        path.join(process.cwd(), "temp", "temp.TBLU.json"),
-                                                        path.join(process.cwd(), "temp", "temp.TBLU.meta.json")) // Generate the RT files from the QN json
-                            
-                            child_process.execSync("\"Third-Party\\ResourceTool.exe\" HM3 generate TEMP \"" + path.join(process.cwd(), "temp", "temp.TEMP.json") + "\" \"" + path.join(process.cwd(), "temp", "temp.TEMP") + "\" --simple")
-                            child_process.execSync("\"Third-Party\\ResourceTool.exe\" HM3 generate TBLU \"" + path.join(process.cwd(), "temp", "temp.TBLU.json") + "\" \"" + path.join(process.cwd(), "temp", "temp.TBLU") + "\" --simple")
-                            await rpkgInstance.callFunction(`-json_to_hash_meta "${path.join(process.cwd(), "temp", "temp.TEMP.meta.json")}"`)
-                            await rpkgInstance.callFunction(`-json_to_hash_meta "${path.join(process.cwd(), "temp", "temp.TBLU.meta.json")}"`) // Generate the binary files from the RT json
+                        var contractsORESChunk = await rpkgInstance.getRPKGOfHash("002B07020D21D727")
     
-                            fs.copyFileSync(path.join(process.cwd(), "temp", "temp.TEMP"), path.join(process.cwd(), "staging", chunkFolder, entityContent.tempHash + ".TEMP"))
-                            fs.copyFileSync(path.join(process.cwd(), "temp", "temp.TEMP.meta"), path.join(process.cwd(), "staging", chunkFolder, entityContent.tempHash + ".TEMP.meta"))
-                            fs.copyFileSync(path.join(process.cwd(), "temp", "temp.TBLU"), path.join(process.cwd(), "staging", chunkFolder, entityContent.tbluHash + ".TBLU"))
-                            fs.copyFileSync(path.join(process.cwd(), "temp", "temp.TBLU.meta"), path.join(process.cwd(), "staging", chunkFolder, entityContent.tbluHash + ".TBLU.meta")) // Copy the binary files to the staging directory
-                            break;
-                        case "entity.patch.json":
-                            var entityContent = LosslessJSON.parse(String(fs.readFileSync(contentFilePath)))
-
-                            entityPatches.push({
-                                contentFilePath,
-                                chunkFolder,
-                                entityContent,
-                                tempRPKG: await rpkgInstance.getRPKGOfHash(entityContent.tempHash),
-                                tbluRPKG: await rpkgInstance.getRPKGOfHash(entityContent.tbluHash)
-                            })
-                            break;
-                        case "unlockables.json":
-                            var entityContent = LosslessJSON.parse(String(fs.readFileSync(contentFilePath)))
-                            var oresChunk = await rpkgInstance.getRPKGOfHash("0057C2C3941115CA")
-
-                            if (!fs.existsSync(path.join(process.cwd(), "staging", "chunk0", "0057C2C3941115CA.ORES"))) {
-                                await rpkgInstance.callFunction(`-extract_from_rpkg "${path.join(config.runtimePath, oresChunk + ".rpkg")}" -filter "0057C2C3941115CA" -output_path temp`) // Extract the unlockables ORES
-                            } else {
-                                fs.ensureDirSync(path.join(process.cwd(), "temp", oresChunk, "ORES"))
-                                fs.copyFileSync(path.join(process.cwd(), "staging", "chunk0", "0057C2C3941115CA.ORES"), path.join(process.cwd(), "temp", oresChunk, "ORES", "0057C2C3941115CA.ORES")) // Use the staging one (for mod compat - one mod can extract, patch and build, then the next can patch that one instead)
-                                fs.copyFileSync(path.join(process.cwd(), "staging", "chunk0", "0057C2C3941115CA.ORES.meta"), path.join(process.cwd(), "temp", oresChunk, "ORES", "0057C2C3941115CA.ORES.meta"))
-                            }
-
-                            child_process.execSync(`"Third-Party\\OREStool.exe" "${path.join(process.cwd(), "temp", oresChunk, "ORES", "0057C2C3941115CA.ORES")}"`)
-                            var oresContent = JSON.parse(fs.readFileSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "0057C2C3941115CA.ORES.JSON")))
-
-                            var oresToPatch = Object.fromEntries(oresContent.map(a=>[a.Id, a]))
-                            deepMerge(oresToPatch, entityContent)
-                            var oresToWrite = Object.values(oresToWrite)
-
-                            fs.writeFileSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "0057C2C3941115CA.ORES.JSON"), JSON.stringify(oresToWrite))
-                            fs.rmSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "0057C2C3941115CA.ORES"))
-                            child_process.execSync(`"Third-Party\\OREStool.exe" "${path.join(process.cwd(), "temp", oresChunk, "ORES", "0057C2C3941115CA.ORES.json")}"`)
-
-                            fs.copyFileSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "0057C2C3941115CA.ORES"), path.join(process.cwd(), "staging", "chunk0", "0057C2C3941115CA.ORES"))
-                            fs.copyFileSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "0057C2C3941115CA.ORES.meta"), path.join(process.cwd(), "staging", "chunk0", "0057C2C3941115CA.ORES.meta"))
-                            break;
-                        case "repository.json":
-                            var entityContent = LosslessJSON.parse(String(fs.readFileSync(contentFilePath)))
-
-                            var repoRPKG = await rpkgInstance.getRPKGOfHash("00204D1AFD76AB13")
-
-                            if (!fs.existsSync(path.join(process.cwd(), "staging", "chunk0", "00204D1AFD76AB13.REPO"))) {
-                                await rpkgInstance.callFunction(`-extract_from_rpkg "${path.join(config.runtimePath, repoRPKG + ".rpkg")}" -filter "00204D1AFD76AB13" -output_path temp`) // Extract the unlockables ORES
-                            } else {
-                                fs.ensureDirSync(path.join(process.cwd(), "temp", repoRPKG, "REPO"))
-                                fs.copyFileSync(path.join(process.cwd(), "staging", "chunk0", "00204D1AFD76AB13.REPO"), path.join(process.cwd(), "temp", repoRPKG, "REPO", "00204D1AFD76AB13.REPO")) // Use the staging one (for mod compat - one mod can extract, patch and build, then the next can patch that one instead)
-                                fs.copyFileSync(path.join(process.cwd(), "staging", "chunk0", "00204D1AFD76AB13.REPO.meta"), path.join(process.cwd(), "temp", repoRPKG, "REPO", "00204D1AFD76AB13.REPO.meta"))
-                            }
-
-                            var repoContent = JSON.parse(fs.readFileSync(path.join(process.cwd(), "temp", repoRPKG, "REPO", "00204D1AFD76AB13.REPO")))
-
-                            var repoToPatch = Object.fromEntries(repoContent.map(a=>[a["ID_"], a]))
-                            deepMerge(repoToPatch, entityContent)
-                            var repoToWrite = Object.values(repoToPatch)
-
-                            var editedItems = new Set(Object.values(entityContent).map(a=>a.ID_))
-
-                            await rpkgInstance.callFunction(`-hash_meta_to_json "${path.join(process.cwd(), "temp", repoRPKG, "REPO", "00204D1AFD76AB13.REPO.meta")}"`)
-                            var metaContent = JSON.parse(fs.readFileSync(path.join(process.cwd(), "temp", repoRPKG, "REPO", "00204D1AFD76AB13.REPO.meta.JSON")))
-                            for (var repoItem of repoToWrite) {
-                                if (editedItems.has(repoItem.ID_)) {
-                                    if (repoItem.Runtime) {
-                                        if (!metaContent["hash_reference_data"].find(a=>a.hash == parseInt(repoItem.Runtime).toString(16).toUpperCase())) {
-                                            metaContent["hash_reference_data"].push({
-                                                "hash": parseInt(repoItem.Runtime).toString(16).toUpperCase(),
-                                                "flag": "9F"
-                                            }) // Add Runtime of any items to REPO depends if not already there
+                        if (!fs.existsSync(path.join(process.cwd(), "staging", "chunk0", "002B07020D21D727.ORES"))) {
+                            await rpkgInstance.callFunction(`-extract_from_rpkg "${path.join(config.runtimePath, contractsORESChunk + ".rpkg")}" -filter "002B07020D21D727" -output_path temp2`) // Extract the contracts ORES
+                        } else {
+                            fs.ensureDirSync(path.join(process.cwd(), "temp2", contractsORESChunk, "ORES"))
+                            fs.copyFileSync(path.join(process.cwd(), "staging", "chunk0", "002B07020D21D727.ORES"), path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES")) // Use the staging one (for mod compat - one mod can extract, patch and build, then the next can patch that one instead)
+                            fs.copyFileSync(path.join(process.cwd(), "staging", "chunk0", "002B07020D21D727.ORES.meta"), path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES.meta"))
+                        }
+                        
+                        child_process.execSync(`"Third-Party\\OREStool.exe" "${path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES")}"`)
+                        var contractsORESContent = JSON.parse(fs.readFileSync(path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES.JSON")))
+    
+                        await rpkgInstance.callFunction(`-hash_meta_to_json "${path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES.meta")}"`)
+                        var contractsORESMetaContent = JSON.parse(fs.readFileSync(path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES.meta.JSON")))
+                    } // There are contracts, extract the contracts ORES and copy it to the temp2 directory
+        
+                    let entityPatches = []
+    
+                    for (let contentFile of readRecursive(path.join(process.cwd(), "Mods", mod, manifest.contentFolder, chunkFolder))) {
+                        var contentType = path.basename(contentFile).split(".").slice(1).join(".")
+                        var contentFilePath = path.join(process.cwd(), "Mods", mod, manifest.contentFolder, chunkFolder, contentFile)
+        
+                        switch (contentType) {
+                            case "entity.json":
+                                var entityContent = LosslessJSON.parse(String(fs.readFileSync(contentFilePath)))
+                                await QuickEntity.generate("HM3", contentFilePath,
+                                                            path.join(process.cwd(), "temp", "temp.TEMP.json"),
+                                                            path.join(process.cwd(), "temp", "temp.TEMP.meta.json"),
+                                                            path.join(process.cwd(), "temp", "temp.TBLU.json"),
+                                                            path.join(process.cwd(), "temp", "temp.TBLU.meta.json")) // Generate the RT files from the QN json
+                                
+                                child_process.execSync("\"Third-Party\\ResourceTool.exe\" HM3 generate TEMP \"" + path.join(process.cwd(), "temp", "temp.TEMP.json") + "\" \"" + path.join(process.cwd(), "temp", "temp.TEMP") + "\" --simple")
+                                child_process.execSync("\"Third-Party\\ResourceTool.exe\" HM3 generate TBLU \"" + path.join(process.cwd(), "temp", "temp.TBLU.json") + "\" \"" + path.join(process.cwd(), "temp", "temp.TBLU") + "\" --simple")
+                                await rpkgInstance.callFunction(`-json_to_hash_meta "${path.join(process.cwd(), "temp", "temp.TEMP.meta.json")}"`)
+                                await rpkgInstance.callFunction(`-json_to_hash_meta "${path.join(process.cwd(), "temp", "temp.TBLU.meta.json")}"`) // Generate the binary files from the RT json
+        
+                                fs.copyFileSync(path.join(process.cwd(), "temp", "temp.TEMP"), path.join(process.cwd(), "staging", chunkFolder, entityContent.tempHash + ".TEMP"))
+                                fs.copyFileSync(path.join(process.cwd(), "temp", "temp.TEMP.meta"), path.join(process.cwd(), "staging", chunkFolder, entityContent.tempHash + ".TEMP.meta"))
+                                fs.copyFileSync(path.join(process.cwd(), "temp", "temp.TBLU"), path.join(process.cwd(), "staging", chunkFolder, entityContent.tbluHash + ".TBLU"))
+                                fs.copyFileSync(path.join(process.cwd(), "temp", "temp.TBLU.meta"), path.join(process.cwd(), "staging", chunkFolder, entityContent.tbluHash + ".TBLU.meta")) // Copy the binary files to the staging directory
+                                break;
+                            case "entity.patch.json":
+                                var entityContent = LosslessJSON.parse(String(fs.readFileSync(contentFilePath)))
+    
+                                entityPatches.push({
+                                    contentFilePath,
+                                    chunkFolder,
+                                    entityContent,
+                                    tempRPKG: await rpkgInstance.getRPKGOfHash(entityContent.tempHash),
+                                    tbluRPKG: await rpkgInstance.getRPKGOfHash(entityContent.tbluHash)
+                                })
+                                break;
+                            case "unlockables.json":
+                                var entityContent = LosslessJSON.parse(String(fs.readFileSync(contentFilePath)))
+                                var oresChunk = await rpkgInstance.getRPKGOfHash("0057C2C3941115CA")
+    
+                                if (!fs.existsSync(path.join(process.cwd(), "staging", "chunk0", "0057C2C3941115CA.ORES"))) {
+                                    await rpkgInstance.callFunction(`-extract_from_rpkg "${path.join(config.runtimePath, oresChunk + ".rpkg")}" -filter "0057C2C3941115CA" -output_path temp`) // Extract the unlockables ORES
+                                } else {
+                                    fs.ensureDirSync(path.join(process.cwd(), "temp", oresChunk, "ORES"))
+                                    fs.copyFileSync(path.join(process.cwd(), "staging", "chunk0", "0057C2C3941115CA.ORES"), path.join(process.cwd(), "temp", oresChunk, "ORES", "0057C2C3941115CA.ORES")) // Use the staging one (for mod compat - one mod can extract, patch and build, then the next can patch that one instead)
+                                    fs.copyFileSync(path.join(process.cwd(), "staging", "chunk0", "0057C2C3941115CA.ORES.meta"), path.join(process.cwd(), "temp", oresChunk, "ORES", "0057C2C3941115CA.ORES.meta"))
+                                }
+    
+                                child_process.execSync(`"Third-Party\\OREStool.exe" "${path.join(process.cwd(), "temp", oresChunk, "ORES", "0057C2C3941115CA.ORES")}"`)
+                                var oresContent = JSON.parse(fs.readFileSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "0057C2C3941115CA.ORES.JSON")))
+    
+                                var oresToPatch = Object.fromEntries(oresContent.map(a=>[a.Id, a]))
+                                deepMerge(oresToPatch, entityContent)
+                                var oresToWrite = Object.values(oresToWrite)
+    
+                                fs.writeFileSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "0057C2C3941115CA.ORES.JSON"), JSON.stringify(oresToWrite))
+                                fs.rmSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "0057C2C3941115CA.ORES"))
+                                child_process.execSync(`"Third-Party\\OREStool.exe" "${path.join(process.cwd(), "temp", oresChunk, "ORES", "0057C2C3941115CA.ORES.json")}"`)
+    
+                                fs.copyFileSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "0057C2C3941115CA.ORES"), path.join(process.cwd(), "staging", "chunk0", "0057C2C3941115CA.ORES"))
+                                fs.copyFileSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "0057C2C3941115CA.ORES.meta"), path.join(process.cwd(), "staging", "chunk0", "0057C2C3941115CA.ORES.meta"))
+                                break;
+                            case "repository.json":
+                                var entityContent = LosslessJSON.parse(String(fs.readFileSync(contentFilePath)))
+    
+                                var repoRPKG = await rpkgInstance.getRPKGOfHash("00204D1AFD76AB13")
+    
+                                if (!fs.existsSync(path.join(process.cwd(), "staging", "chunk0", "00204D1AFD76AB13.REPO"))) {
+                                    await rpkgInstance.callFunction(`-extract_from_rpkg "${path.join(config.runtimePath, repoRPKG + ".rpkg")}" -filter "00204D1AFD76AB13" -output_path temp`) // Extract the unlockables ORES
+                                } else {
+                                    fs.ensureDirSync(path.join(process.cwd(), "temp", repoRPKG, "REPO"))
+                                    fs.copyFileSync(path.join(process.cwd(), "staging", "chunk0", "00204D1AFD76AB13.REPO"), path.join(process.cwd(), "temp", repoRPKG, "REPO", "00204D1AFD76AB13.REPO")) // Use the staging one (for mod compat - one mod can extract, patch and build, then the next can patch that one instead)
+                                    fs.copyFileSync(path.join(process.cwd(), "staging", "chunk0", "00204D1AFD76AB13.REPO.meta"), path.join(process.cwd(), "temp", repoRPKG, "REPO", "00204D1AFD76AB13.REPO.meta"))
+                                }
+    
+                                var repoContent = JSON.parse(fs.readFileSync(path.join(process.cwd(), "temp", repoRPKG, "REPO", "00204D1AFD76AB13.REPO")))
+    
+                                var repoToPatch = Object.fromEntries(repoContent.map(a=>[a["ID_"], a]))
+                                deepMerge(repoToPatch, entityContent)
+                                var repoToWrite = Object.values(repoToPatch)
+    
+                                var editedItems = new Set(Object.values(entityContent).map(a=>a.ID_))
+    
+                                await rpkgInstance.callFunction(`-hash_meta_to_json "${path.join(process.cwd(), "temp", repoRPKG, "REPO", "00204D1AFD76AB13.REPO.meta")}"`)
+                                var metaContent = JSON.parse(fs.readFileSync(path.join(process.cwd(), "temp", repoRPKG, "REPO", "00204D1AFD76AB13.REPO.meta.JSON")))
+                                for (var repoItem of repoToWrite) {
+                                    if (editedItems.has(repoItem.ID_)) {
+                                        if (repoItem.Runtime) {
+                                            if (!metaContent["hash_reference_data"].find(a=>a.hash == parseInt(repoItem.Runtime).toString(16).toUpperCase())) {
+                                                metaContent["hash_reference_data"].push({
+                                                    "hash": parseInt(repoItem.Runtime).toString(16).toUpperCase(),
+                                                    "flag": "9F"
+                                                }) // Add Runtime of any items to REPO depends if not already there
+                                            }
                                         }
-                                    }
-    
-                                    if (repoItem.Image) {
-                                        if (!metaContent["hash_reference_data"].find(a=>a.hash == "00" + md5(`[assembly:/_pro/online/default/cloudstorage/resources/${repoItem.Image}].pc_gfx`.toLowerCase()).slice(2, 16).toUpperCase())) {
-                                            metaContent["hash_reference_data"].push({
-                                                "hash": "00" + md5(`[assembly:/_pro/online/default/cloudstorage/resources/${repoItem.Image}].pc_gfx`.toLowerCase()).slice(2, 16).toUpperCase(),
-                                                "flag": "9F"
-                                            }) // Add Image of any items to REPO depends if not already there
+        
+                                        if (repoItem.Image) {
+                                            if (!metaContent["hash_reference_data"].find(a=>a.hash == "00" + md5(`[assembly:/_pro/online/default/cloudstorage/resources/${repoItem.Image}].pc_gfx`.toLowerCase()).slice(2, 16).toUpperCase())) {
+                                                metaContent["hash_reference_data"].push({
+                                                    "hash": "00" + md5(`[assembly:/_pro/online/default/cloudstorage/resources/${repoItem.Image}].pc_gfx`.toLowerCase()).slice(2, 16).toUpperCase(),
+                                                    "flag": "9F"
+                                                }) // Add Image of any items to REPO depends if not already there
+                                            }
                                         }
                                     }
                                 }
-                            }
-                            fs.writeFileSync(path.join(process.cwd(), "temp", repoRPKG, "REPO", "00204D1AFD76AB13.REPO.meta.JSON"), JSON.stringify(metaContent))
-                            fs.rmSync(path.join(process.cwd(), "temp", repoRPKG, "REPO", "00204D1AFD76AB13.REPO.meta"))
-                            await rpkgInstance.callFunction(`-json_to_hash_meta "${path.join(process.cwd(), "temp", repoRPKG, "REPO", "00204D1AFD76AB13.REPO.meta.JSON")}"`) // Add all runtimes to REPO depends
-
-                            fs.writeFileSync(path.join(process.cwd(), "temp", repoRPKG, "REPO", "00204D1AFD76AB13.REPO"), JSON.stringify(repoToWrite))
-                            fs.copyFileSync(path.join(process.cwd(), "temp", repoRPKG, "REPO", "00204D1AFD76AB13.REPO"), path.join(process.cwd(), "staging", "chunk0", "00204D1AFD76AB13.REPO"))
-                            fs.copyFileSync(path.join(process.cwd(), "temp", repoRPKG, "REPO", "00204D1AFD76AB13.REPO.meta"), path.join(process.cwd(), "staging", "chunk0", "00204D1AFD76AB13.REPO.meta"))
-                            break;
-                        case "contract.json":
-                            var entityContent = LosslessJSON.parse(String(fs.readFileSync(contentFilePath)))
-
-                            var contractHash = "00" + md5(("smfContract" + entityContent.Metadata.Id).toLowerCase()).slice(2, 16).toUpperCase()
-
-                            contractsORESContent[contractHash] = entityContent.Metadata.Id // Add the contract to the ORES
-
-                            contractsORESMetaContent["hash_reference_data"].push({
-                                "hash": contractHash,
-                                "flag": "9F"
-                            })
-
-                            fs.writeFileSync(path.join(process.cwd(), "staging", "chunk0", contractHash + ".JSON"), LosslessJSON.stringify(entityContent)) // Write the actual contract to the staging directory
-                            break;
-                        default:
-                            fs.copyFileSync(contentFilePath, path.join(process.cwd(), "staging", chunkFolder, path.basename(contentFile))) // Copy the file to the staging directory
-                            break;
+                                fs.writeFileSync(path.join(process.cwd(), "temp", repoRPKG, "REPO", "00204D1AFD76AB13.REPO.meta.JSON"), JSON.stringify(metaContent))
+                                fs.rmSync(path.join(process.cwd(), "temp", repoRPKG, "REPO", "00204D1AFD76AB13.REPO.meta"))
+                                await rpkgInstance.callFunction(`-json_to_hash_meta "${path.join(process.cwd(), "temp", repoRPKG, "REPO", "00204D1AFD76AB13.REPO.meta.JSON")}"`) // Add all runtimes to REPO depends
+    
+                                fs.writeFileSync(path.join(process.cwd(), "temp", repoRPKG, "REPO", "00204D1AFD76AB13.REPO"), JSON.stringify(repoToWrite))
+                                fs.copyFileSync(path.join(process.cwd(), "temp", repoRPKG, "REPO", "00204D1AFD76AB13.REPO"), path.join(process.cwd(), "staging", "chunk0", "00204D1AFD76AB13.REPO"))
+                                fs.copyFileSync(path.join(process.cwd(), "temp", repoRPKG, "REPO", "00204D1AFD76AB13.REPO.meta"), path.join(process.cwd(), "staging", "chunk0", "00204D1AFD76AB13.REPO.meta"))
+                                break;
+                            case "contract.json":
+                                var entityContent = LosslessJSON.parse(String(fs.readFileSync(contentFilePath)))
+    
+                                var contractHash = "00" + md5(("smfContract" + entityContent.Metadata.Id).toLowerCase()).slice(2, 16).toUpperCase()
+    
+                                contractsORESContent[contractHash] = entityContent.Metadata.Id // Add the contract to the ORES
+    
+                                contractsORESMetaContent["hash_reference_data"].push({
+                                    "hash": contractHash,
+                                    "flag": "9F"
+                                })
+    
+                                fs.writeFileSync(path.join(process.cwd(), "staging", "chunk0", contractHash + ".JSON"), LosslessJSON.stringify(entityContent)) // Write the actual contract to the staging directory
+                                break;
+                            default:
+                                fs.copyFileSync(contentFilePath, path.join(process.cwd(), "staging", chunkFolder, path.basename(contentFile))) // Copy the file to the staging directory
+                                break;
+                        }
+        
+                        try {
+                            await promisify(emptyFolder)("temp", true)
+                        } catch {}
+                        fs.mkdirSync("temp") // Clear the temp directory
                     }
     
-                    try {
-                        await promisify(emptyFolder)("temp", true)
-                    } catch {}
-                    fs.mkdirSync("temp") // Clear the temp directory
-                }
-
-                /* --------- There are contracts, repackage the contracts ORES from the temp2 directory --------- */
-                if (fs.readdirSync(path.join(process.cwd(), "Mods", mod, manifest.contentFolder, chunkFolder)).some(a=>a.endsWith("contract.json"))) {
-                    fs.writeFileSync(path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES.meta.JSON"), JSON.stringify(contractsORESMetaContent))
-                    fs.rmSync(path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES.meta"))
-                    await rpkgInstance.callFunction(`-json_to_hash_meta "${path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES.meta.JSON")}"`) // Rebuild the ORES meta
-
-                    fs.writeFileSync(path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES.JSON"), JSON.stringify(contractsORESContent))
-                    fs.rmSync(path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES"))
-                    child_process.execSync(`"Third-Party\\OREStool.exe" "${path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES.json")}"`) // Rebuild the ORES
-
-                    fs.copyFileSync(path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES"), path.join(process.cwd(), "staging", "chunk0", "002B07020D21D727.ORES"))
-                    fs.copyFileSync(path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES.meta"), path.join(process.cwd(), "staging", "chunk0", "002B07020D21D727.ORES.meta")) // Copy the ORES to the staging directory
-                
-                    try {
-                        await promisify(emptyFolder)("temp2", true)
-                    } catch {}
-                }
-
-                /* ------------------------------------- Convert all patches ------------------------------------ */
-                let index = 0
-
-                let workerPool = new Piscina({
-                    filename: "patchWorker.js",
-                    maxThreads: os.cpus().length / 4 // For an 8-core CPU with 16 logical processors there are 4 max threads
-                });
-
-                await Promise.all(entityPatches.map(({contentFilePath, chunkFolder, entityContent, tempRPKG, tbluRPKG}) => {
-                    index ++
-                    return workerPool.run({
-                        contentFilePath,
-                        chunkFolder,
-                        entityContent,
-                        tempRPKG,
-                        tbluRPKG,
-                        assignedTemporaryDirectory: "patchWorker" + index
-                    })
-                })); // Run each patch in the worker queue and wait for all of them to finish
-
-                /* ------------------------------ Copy chunk meta to staging folder ----------------------------- */
-                if (fs.existsSync(path.join(process.cwd(), "Mods", mod, manifest.contentFolder, chunkFolder, chunkFolder + ".meta"))) {
-                    fs.copyFileSync(path.join(process.cwd(), "Mods", mod, manifest.contentFolder, chunkFolder, chunkFolder + ".meta"), path.join(process.cwd(), "staging", chunkFolder, chunkFolder + ".meta"))
-                    rpkgTypes[chunkFolder] = "base"
-                } else {
-                    rpkgTypes[chunkFolder] = "patch"
+                    /* --------- There are contracts, repackage the contracts ORES from the temp2 directory --------- */
+                    if (fs.readdirSync(path.join(process.cwd(), "Mods", mod, manifest.contentFolder, chunkFolder)).some(a=>a.endsWith("contract.json"))) {
+                        fs.writeFileSync(path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES.meta.JSON"), JSON.stringify(contractsORESMetaContent))
+                        fs.rmSync(path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES.meta"))
+                        await rpkgInstance.callFunction(`-json_to_hash_meta "${path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES.meta.JSON")}"`) // Rebuild the ORES meta
+    
+                        fs.writeFileSync(path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES.JSON"), JSON.stringify(contractsORESContent))
+                        fs.rmSync(path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES"))
+                        child_process.execSync(`"Third-Party\\OREStool.exe" "${path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES.json")}"`) // Rebuild the ORES
+    
+                        fs.copyFileSync(path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES"), path.join(process.cwd(), "staging", "chunk0", "002B07020D21D727.ORES"))
+                        fs.copyFileSync(path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES.meta"), path.join(process.cwd(), "staging", "chunk0", "002B07020D21D727.ORES.meta")) // Copy the ORES to the staging directory
+                    
+                        try {
+                            await promisify(emptyFolder)("temp2", true)
+                        } catch {}
+                    }
+    
+                    /* ------------------------------------- Convert all patches ------------------------------------ */
+                    let index = 0
+    
+                    let workerPool = new Piscina({
+                        filename: "patchWorker.js",
+                        maxThreads: os.cpus().length / 4 // For an 8-core CPU with 16 logical processors there are 4 max threads
+                    });
+    
+                    await Promise.all(entityPatches.map(({contentFilePath, chunkFolder, entityContent, tempRPKG, tbluRPKG}) => {
+                        index ++
+                        return workerPool.run({
+                            contentFilePath,
+                            chunkFolder,
+                            entityContent,
+                            tempRPKG,
+                            tbluRPKG,
+                            assignedTemporaryDirectory: "patchWorker" + index
+                        })
+                    })); // Run each patch in the worker queue and wait for all of them to finish
+    
+                    /* ------------------------------ Copy chunk meta to staging folder ----------------------------- */
+                    if (fs.existsSync(path.join(process.cwd(), "Mods", mod, manifest.contentFolder, chunkFolder, chunkFolder + ".meta"))) {
+                        fs.copyFileSync(path.join(process.cwd(), "Mods", mod, manifest.contentFolder, chunkFolder, chunkFolder + ".meta"), path.join(process.cwd(), "staging", chunkFolder, chunkFolder + ".meta"))
+                        rpkgTypes[chunkFolder] = "base"
+                    } else {
+                        rpkgTypes[chunkFolder] = "patch"
+                    }
                 }
             }
 
             /* ---------------------------------------------------------------------------------------------- */
             /*                                              Blobs                                             */
             /* ---------------------------------------------------------------------------------------------- */
-            if (fs.existsSync(path.join(process.cwd(), "Mods", mod, manifest.blobsFolder)) && fs.readdirSync(path.join(process.cwd(), "Mods", mod, manifest.blobsFolder)).length) {
+            if (manifest.blobsFolder && manifest.blobsFolder.length && fs.existsSync(path.join(process.cwd(), "Mods", mod, manifest.blobsFolder)) && fs.readdirSync(path.join(process.cwd(), "Mods", mod, manifest.blobsFolder)).length) {
                 try {
                     await promisify(emptyFolder)("temp", true)
                 } catch {}
@@ -403,13 +408,15 @@ async function stageAllMods() {
             /* ---------------------------------------------------------------------------------------------- */
             /*                                        Runtime packages                                        */
             /* ---------------------------------------------------------------------------------------------- */
-            runtimePackages.push(...manifest.runtimePackages.map(a=>{
-                return {
-                    chunk: a.chunk,
-                    path: a.path,
-                    mod: mod
-                }
-            }))
+            if (manifest.runtimePackages) {
+                    runtimePackages.push(...manifest.runtimePackages.map(a=>{
+                    return {
+                        chunk: a.chunk,
+                        path: a.path,
+                        mod: mod
+                    }
+                }))
+            }
 
             // for (let deletedHash of manifest.undelete) {
             //     var hashRPKG = await rpkgInstance.getRPKGOfHash(deletedHash)
@@ -454,15 +461,19 @@ async function stageAllMods() {
 
             // This is slow and not really that necessary - mod authors can just include the files in the mod folder themselves as content instead of relying on the framework to do it
     
-            packagedefinition.push(...manifest.packagedefinition)
+            if (manifest.packagedefinition) {
+                packagedefinition.push(...manifest.packagedefinition)
+            }
             
-            for (let language of Object.keys(manifest.localisation)) {
-                for (let string of Object.entries(manifest.localisation[language])) {
-                    localisation.push({
-                        language: language,
-                        locString: string[0],
-                        text: string[1]
-                    })
+            if (manifest.localisation) {
+                for (let language of Object.keys(manifest.localisation)) {
+                    for (let string of Object.entries(manifest.localisation[language])) {
+                        localisation.push({
+                            language: language,
+                            locString: string[0],
+                            text: string[1]
+                        })
+                    }
                 }
             }
         }
