@@ -37,7 +37,7 @@
     "jquery": "^3.6.0",
     "run-async": "^2.4.1",
     "sanitize-html": "^2.5.2",
-    "sweetalert2": "^11.1.7"
+    "sweetalert2": "^11.1.8"
   },
   "devDependencies": {
     "@electron-forge/cli": "^6.0.0-beta.61",
