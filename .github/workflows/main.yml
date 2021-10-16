@@ -97,3 +97,16 @@ jobs:
         continue-on-error: true
         with:
           age: 5 minutes
+          
+      - name: Zip
+        uses: TheDoctor0/zip-release@4fb9e4ff72847dd3d1c111cf63834e353ed7cb3d
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          filename: release.zip
+          path: dist
+          
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: Release.txt
