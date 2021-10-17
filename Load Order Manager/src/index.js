@@ -15,7 +15,8 @@ const createWindow = () => {
       preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: true,
       contextIsolation: false
-    }
+    },
+    show: false
   });
 
   require("@electron/remote/main").initialize()
@@ -23,6 +24,9 @@ const createWindow = () => {
 
   // and load the index.html of the app.
   mainWindow.loadFile(path.join(__dirname, 'index.html'));
+
+  mainWindow.maximize()
+  mainWindow.show()
 
   mainWindow.on('close', function(e) {
     e.preventDefault();
