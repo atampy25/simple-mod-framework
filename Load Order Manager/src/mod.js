@@ -83,12 +83,41 @@ async function fetchModUpdates() {
 															<div class="flex flex-initial flex-wrap flex-row justify-center w-full">
 																<div>
 																	<span class="font-bold">${sanitise(modManifest.name)}</span> v<span>${sanitise(modManifest.version)}</span> -> v<span>${sanitise(modUpdateData.version)}</span><br>
-																	<span>${sanitise(modManifest.description)}</span>
+																	<span>${sanitise(modManifest.changelog)}</span>
 																</div>
 															</div>
 														</div>`
 				}
 			}
+		}
+	}
+}
+
+async function updateMod(modFolder) {
+	if (fs.existsSync(path.join("..", "Mods", modFolder, "manifest.json"))) {
+		var modManifest = JSON.parse(fs.readFileSync(path.join("..", "Mods", modFolder, "manifest.json")))
+		if (modManifest.updateCheck) {
+			var updateData = await (await fetch(modManifest.updateCheck)).json()
+
+			await downloadFile((await fetch(updateData.url)).url, {
+				directory: ".",
+				filename: "mod.zip"
+			});
+
+			for (var managedFile of updateData.managedFilesAndFolders) {
+				if (managedFile.includes("..")) {
+					break
+				}
+				fs.removeSync(path.join("..", "Mods", managedFile))
+			}
+
+			fs.emptyDirSync("./staging")
+
+			new AdmZip("./mod.zip").extractAllTo("./staging")
+
+			fs.copySync("./staging", "../Mods")
+
+			window.location.reload()
 		}
 	}
 }
