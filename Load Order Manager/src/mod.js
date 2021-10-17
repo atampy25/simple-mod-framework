@@ -24,7 +24,8 @@ async function updateFramework() {
 				// https://github.com/hitman-resources/simple-mod-framework/releases/latest/download/Release.zip
 				await downloadFile((await fetch("https://nightly.link/hitman-resources/simple-mod-framework/workflows/main/main/Mod%20Framework.zip?h=6ea9fd5ddf66c9e4adbcbe858e65b9de8ce44998")).url, {
 					directory: ".",
-					filename: "latest-release.zip"
+					filename: "latest-release.zip",
+					timeout: 999999999
 				});
 				
 				fs.emptyDirSync("./staging")
@@ -101,7 +102,8 @@ async function updateMod(modFolder) {
 
 			await downloadFile((await fetch(updateData.url)).url, {
 				directory: ".",
-				filename: "mod.zip"
+				filename: "mod.zip",
+				timeout: 999999999
 			});
 
 			for (var managedFile of updateData.managedFilesAndFolders) {
