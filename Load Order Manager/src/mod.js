@@ -6,7 +6,7 @@ var AdmZip = require('adm-zip')
 var sanitizeHtml = require('sanitize-html')
 var remote = require('@electron/remote')
 var semver = require('semver');
-var http = require('https');
+var downloadFile = require("async-get-file");
 
 window.$ = window.jQuery = require('jquery');
 
@@ -16,17 +16,16 @@ async function updateFramework() {
 	var frameworkUpdateData = await (await fetch("https://hitman-resources.netlify.app/framework/framework.json")).json()
 	Swal.fire({
 		title: 'Updating the framework',
-		html: 'Please wait - the framework is being updated to the latest version (' + frameworkUpdateData.version + '):<br><i>' + frameworkUpdateData.changelog + "</i>",
+		html: 'Please wait - the framework is being updated to the latest version (' + frameworkUpdateData.version + '):<br><br><i>' + frameworkUpdateData.changelog + "</i>",
 		didOpen: async () => {
 			Swal.showLoading()
 
 			setTimeout(async () => {
-				var file = fs.createWriteStream("./latest-release.zip");
-				http.get("https://nightly.link/hitman-resources/simple-mod-framework/workflows/main/main/Mod%20Framework.zip?h=6ea9fd5ddf66c9e4adbcbe858e65b9de8ce44998", function(response) {
-					response.pipe(file);
-				});
-				
 				// https://github.com/hitman-resources/simple-mod-framework/releases/latest/download/Release.zip
+				await downloadFile("https://nightly.link/hitman-resources/simple-mod-framework/workflows/main/main/Mod%20Framework.zip?h=6ea9fd5ddf66c9e4adbcbe858e65b9de8ce44998", {
+					directory: ".",
+					filename: "latest-release.zip"
+				});
 				
 				fs.emptyDirSync("./staging")
 				new AdmZip("./latest-release.zip").extractAllTo("./staging")
