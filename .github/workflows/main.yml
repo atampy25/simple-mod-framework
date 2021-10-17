@@ -86,17 +86,17 @@ jobs:
           copy Deploy.exe dist
           New-Item -Path dist -Name "Mod Manager.cmd" -ItemType "file" -Value "@echo off`ncd `"Load Order Manager`"`n`"Load Order Manager.exe`""
       
-      - name: Upload artifact
-        uses: actions/upload-artifact@v2.2.4
-        with:
-          name: Mod Framework
-          path: dist
-      
       - name: Remove old artifacts
         uses: c-hive/gha-remove-artifacts@24dc23384a1fa6a058b79c73727ae0cb2200ca4c
         continue-on-error: true
         with:
           age: 5 minutes
+      
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2.2.4
+        with:
+          name: Mod Framework
+          path: dist
           
       - name: Zip
         uses: TheDoctor0/zip-release@4fb9e4ff72847dd3d1c111cf63834e353ed7cb3d
