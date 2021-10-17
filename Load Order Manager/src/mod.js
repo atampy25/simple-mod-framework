@@ -47,7 +47,7 @@ async function updateFramework() {
 				fs.removeSync("./staging/Load Order Manager/resources.pak")
 				fs.removeSync("./staging/Load Order Manager/v8_context_snapshot.bi")
 
-				fs.copySync("./staging", ".")
+				fs.copySync("./staging", "..")
 			
 				Swal.close()
 				window.location.reload()
