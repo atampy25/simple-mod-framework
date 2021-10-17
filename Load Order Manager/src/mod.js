@@ -5,11 +5,94 @@ var child_process = require("child_process");
 var AdmZip = require('adm-zip')
 var sanitizeHtml = require('sanitize-html')
 var remote = require('@electron/remote')
-var runAsync = require('run-async');
+var semver = require('semver');
 
 window.$ = window.jQuery = require('jquery');
 
+frameworkVersion = "0.1.0"
+
+async function updateFramework() {
+	var frameworkUpdateData = await (await fetch("https://hitman-resources.netlify.app/framework/framework.json")).json()
+	Swal.fire({
+		title: 'Updating the framework',
+		html: 'Please wait - the framework is being updated to the latest version (' + frameworkUpdateData.version + '):\n<i>' + frameworkUpdateData.changelog + "</i>",
+		didOpen: async () => {
+			Swal.showLoading()
+
+			setTimeout(async () => {
+				fs.writeFileSync("./latest-release.zip", await (await fetch("https://nightly.link/hitman-resources/simple-mod-framework/workflows/main/main/Mod%20Framework.zip?h=6ea9fd5ddf66c9e4adbcbe858e65b9de8ce44998")).blob())
+				// fs.writeFileSync("./latest-release.zip", await (await fetch("http://github.com/hitman-resources/simple-mod-framework/releases/latest/download/Release.zip")).blob())
+				
+				fs.emptyDirSync("./staging")
+				new AdmZip("./latest-release.zip").extractAllTo("./staging")
+
+				fs.removeSync("./staging/Mods")
+				fs.removeSync("./staging/cleanPackageDefinition.txt")
+				fs.removeSync("./staging/cleanThumbs.dat")
+				fs.removeSync("./staging/config.json")
+				fs.removeSync("./staging/Load Order Manager/chrome_100_percent.pak")
+				fs.removeSync("./staging/Load Order Manager/chrome_200_percent.pak")
+				fs.removeSync("./staging/Load Order Manager/d3dcompiler_47.dll")
+				fs.removeSync("./staging/Load Order Manager/ffmpeg.dll")
+				fs.removeSync("./staging/Load Order Manager/icudtl.dat")
+				fs.removeSync("./staging/Load Order Manager/libEGL.dll")
+				fs.removeSync("./staging/Load Order Manager/libGLESv2.dll")
+				fs.removeSync("./staging/Load Order Manager/Load Order Manager.exe")
+				fs.removeSync("./staging/Load Order Manager/locales")
+				fs.removeSync("./staging/Load Order Manager/resources.pak")
+				fs.removeSync("./staging/Load Order Manager/v8_context_snapshot.bi")
+
+				fs.copySync("./staging", ".")
+			
+				Swal.close()
+				window.location.reload()
+			}, 500)
+		},
+		allowEnterKey: false,
+		allowOutsideClick: false,
+		allowEscapeKey: false,
+		showConfirmButton: false
+	})
+}
+
+async function fetchUpdates() {
+	var frameworkUpdateData = await (await fetch("https://hitman-resources.netlify.app/framework/framework.json")).json()
+	if (semver.lt(frameworkVersion, frameworkUpdateData.version)) {
+		document.getElementById("frameworkUpdateAvailableText").innerHTML = ({patch: "Patch available", minor: "Minor update available", major: "Major update available"})[semver.diff(frameworkVersion, frameworkUpdateData.version)] || "Update available"
+		document.getElementById("frameworkUpdateProcessText").innerHTML = frameworkUpdateData.processText
+		document.getElementById("frameworkVersionCurrent").innerHTML = frameworkVersion
+		document.getElementById("frameworkVersionNext").innerHTML = frameworkUpdateData.version
+		document.getElementById("frameworkChangelog").innerHTML = frameworkUpdateData.changelog
+		document.getElementById("frameworkUpdateAvailable").style.display = "block"
+	}
+}
+
+async function fetchModUpdates() {
+	for (var modFolder of fs.readdirSync("../Mods")) {
+		if (fs.existsSync(path.join("..", "Mods", modFolder, "manifest.json"))) {
+			var modManifest = JSON.parse(fs.readFileSync(path.join("..", "Mods", modFolder, "manifest.json")))
+			if (modManifest.updateCheck) {
+				var modUpdateData = await (await fetch(modManifest.updateCheck)).json()
+				if (semver.lt(modManifest.version, modUpdateData.version)) {
+					$("#modUpdateAvailable")[0].style.display = "block"
+					$("#modUpdateCards")[0].innerHTML += `<div class="text-lg text-center p-4 m-4 shadow-2xl bg-gradient-to-br from-gray-800 to-gray-900 cursor-pointer" onclick="updateMod('${modFolder}')">
+															<div class="flex flex-initial flex-wrap flex-row justify-center w-full">
+																<div>
+																	<span class="font-bold">${sanitise(modManifest.name)}</span> v<span>${sanitise(modManifest.version)}</span> -> v<span>${sanitise(modUpdateData.version)}</span><br>
+																	<span>${sanitise(modManifest.description)}</span>
+																</div>
+															</div>
+														</div>`
+				}
+			}
+		}
+	}
+}
+
 async function execute() {
+	setTimeout(fetchUpdates, 1000)
+	setTimeout(fetchModUpdates, 1000)
+
 	// if (!config.hasUsedGUI) {
 	// 	await swal.fire({
 	// 		title: "Select your game folder",
@@ -197,7 +280,7 @@ async function moveMod(modID) {
 async function deployMods() {
 	Swal.fire({
 		title: 'Deploying your mods',
-		html: 'Please wait - your mods are being saved and deployed.',
+		html: 'Grab a coffee or something - your enabled mods are being applied to the game.',
 		didOpen: async () => {
 			Swal.showLoading()
 

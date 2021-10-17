@@ -17,6 +17,42 @@
 </head>
 
 <body style="font-family: Inter; text-underline-position: under;">
+	<section class="w-full pt-16 pb-12 bg-gradient-to-br from-blue-500 to-lightBlue-500 text-white" id="frameworkUpdateAvailable" style="display: none">
+		<h1 class="text-4xl text-center font-bold">
+			<span id="frameworkUpdateAvailableText">Update available</span>
+		</h1>
+		<h2 class="text-xl text-center">
+			<span id="frameworkUpdateProcessText">The update can be automatically applied.</span>
+		</h2><br>
+		<h2 class="text-lg text-center">
+			v<span id="frameworkVersionCurrent">1.0</span> -> v<span id="frameworkVersionNext">1.1</span><br>
+			<span id="frameworkChangelog">Added extra stuff and things.</span>
+		</h2>
+		<div class="flex flex-initial flex-wrap flex-row justify-center mt-8 px-2 w-full">
+			<neo-button label="Update" gradientFrom="emerald-400" gradientTo="emerald-500" onclick="this.parentElement.style = 'display: none'; updateFramework()">
+				<i class="fas fa-cog" slot="icon"></i>
+			</neo-button>
+			<neo-button label="Close" gradientFrom="rose-400" gradientTo="red-500" onclick="this.parentElement.style = 'display: none'">
+				<i class="fas fa-times" slot="icon"></i>
+			</neo-button>
+		</div>
+	</section>
+
+	<section class="absolute py-12 pr-8 pl-6 bg-gray-900 shadow-2xl rounded-md text-white flex flex-col justify-between overflow-auto" style="height: 95%; display: none" id="modUpdateAvailable">
+		<div>
+			<h1 class="text-4xl text-center font-bold">
+				Mod updates available
+				<h2 class="text-xl text-center">
+					These updates can be automatically applied.
+				</h2>
+			</h1><br>
+		</div>
+		<div class="overflow-auto" id="modUpdateCards"></div>
+		<neo-button label="Close" gradientFrom="rose-400" gradientTo="red-500" onclick="this.parentElement.style = 'display: none'">
+			<i class="fas fa-times" slot="icon"></i>
+		</neo-button>
+	</section>
+
 	<section class="flex justify-center mt-8">
 		<img src="logo.png" style="width: 50rem" alt="">
 	</section>
