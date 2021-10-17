@@ -22,7 +22,7 @@ async function updateFramework() {
 
 			setTimeout(async () => {
 				// https://github.com/hitman-resources/simple-mod-framework/releases/latest/download/Release.zip
-				await downloadFile("https://nightly.link/hitman-resources/simple-mod-framework/workflows/main/main/Mod%20Framework.zip?h=6ea9fd5ddf66c9e4adbcbe858e65b9de8ce44998", {
+				await downloadFile((await fetch("https://nightly.link/hitman-resources/simple-mod-framework/workflows/main/main/Mod%20Framework.zip?h=6ea9fd5ddf66c9e4adbcbe858e65b9de8ce44998")).url, {
 					directory: ".",
 					filename: "latest-release.zip"
 				});
