@@ -45,7 +45,7 @@ async function updateFramework() {
 				fs.removeSync("./staging/Load Order Manager/Load Order Manager.exe")
 				fs.removeSync("./staging/Load Order Manager/locales")
 				fs.removeSync("./staging/Load Order Manager/resources.pak")
-				fs.removeSync("./staging/Load Order Manager/v8_context_snapshot.bi")
+				fs.removeSync("./staging/Load Order Manager/v8_context_snapshot.bin")
 
 				fs.copySync("./staging", "..")
 			
@@ -100,26 +100,41 @@ async function updateMod(modFolder) {
 		if (modManifest.updateCheck) {
 			var updateData = await (await fetch(modManifest.updateCheck)).json()
 
-			await downloadFile((await fetch(updateData.url)).url, {
-				directory: ".",
-				filename: "mod.zip",
-				timeout: 999999999
-			});
-
-			for (var managedFile of updateData.managedFilesAndFolders) {
-				if (managedFile.includes("..")) {
-					break
-				}
-				fs.removeSync(path.join("..", "Mods", managedFile))
-			}
-
-			fs.emptyDirSync("./staging")
-
-			new AdmZip("./mod.zip").extractAllTo("./staging")
-
-			fs.copySync("./staging", "../Mods")
-
-			window.location.reload()
+			Swal.fire({
+				title: 'Updating ' + sanitise(modManifest.name),
+				html: 'Please wait - the mod is being updated to the latest version (' + sanitise(updateData.version) + '):<br><br><i>' + sanitise(updateData.changelog) + "</i>",
+				didOpen: async () => {
+					Swal.showLoading()
+		
+					setTimeout(async () => {
+						await downloadFile((await fetch(updateData.url.startsWith("https://") ? updateData.url : new Error())).url, {
+							directory: ".",
+							filename: "mod.zip",
+							timeout: 999999999
+						});
+			
+						for (var managedFile of updateData.managedFilesAndFolders) {
+							if (managedFile.includes("..")) {
+								break
+							}
+							fs.removeSync(path.join("..", "Mods", managedFile))
+						}
+			
+						fs.emptyDirSync("./staging")
+			
+						new AdmZip("./mod.zip").extractAllTo("./staging")
+			
+						fs.copySync("./staging", "../Mods")
+					
+						Swal.close()
+						window.location.reload()
+					}, 500)
+				},
+				allowEnterKey: false,
+				allowOutsideClick: false,
+				allowEscapeKey: false,
+				showConfirmButton: false
+			})
 		}
 	}
 }
