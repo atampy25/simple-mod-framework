@@ -102,11 +102,11 @@ jobs:
         uses: TheDoctor0/zip-release@4fb9e4ff72847dd3d1c111cf63834e353ed7cb3d
         if: startsWith(github.ref, 'refs/tags/')
         with:
-          filename: release.zip
+          filename: Release.zip
           path: dist
           
       - name: Release
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
         with:
-          files: Release.txt
+          files: Release.zip
