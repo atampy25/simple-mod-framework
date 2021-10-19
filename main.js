@@ -20,6 +20,7 @@ const os = require("os")
 const Piscina = require('piscina');
 
 const config = JSON.parse(fs.readFileSync(path.join(process.cwd(), "config.json")))
+config.runtimePath = path.resolve(process.cwd(), config.runtimePath)
 
 const rpkgInstance = new RPKG.RPKGInstance()
 

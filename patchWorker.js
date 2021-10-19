@@ -16,6 +16,8 @@ module.exports = async ({
 	tbluRPKG
 }) => {
 	try {
+		console.log("Applying patch " + contentFilePath)
+
 		fs.ensureDirSync(path.join(process.cwd(), assignedTemporaryDirectory))
 
 		let rpkgInstance = new RPKG.RPKGInstance()
