@@ -92,6 +92,18 @@ jobs:
           filename: Release.zip
           path: dist
           
+      - name: Create tag
+        uses: actions/github-script@v3
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            github.git.createRef({
+              owner: "hitman-resources",
+              repo: "mod-framework-releases",
+              ref: "refs/tags/" + Math.round(Math.random() * 10000),
+              sha: context.sha
+            })
+          
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
