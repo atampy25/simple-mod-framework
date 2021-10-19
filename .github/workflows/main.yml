@@ -95,7 +95,7 @@ jobs:
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
-          name: Automatic release
+          name: Bleeding edge release
           body: Generated automatically on commit.
           tag_name: aaaaaaaaaa
           repository: hitman-resources/mod-framework-releases
