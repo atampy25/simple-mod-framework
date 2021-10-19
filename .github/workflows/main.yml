@@ -99,4 +99,5 @@ jobs:
           body: Generated automatically on commit.
           tag_name: aaaaaaaaaa
           repository: hitman-resources/mod-framework-releases
+          token: ${{ secrets.RELEASETOKEN }}
           files: Release.zip
