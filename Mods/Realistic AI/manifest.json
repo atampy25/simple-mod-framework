@@ -1,0 +1,22 @@
+{
+	"name": "Realistic AI",
+	"description": "It is a mod",
+	"authors": ["Atampy26"],
+	"contentFolder": "content",
+	"blobsFolder": "blobs",
+	"localisation": {
+		"english": {},
+		"french": {},
+		"italian": {},
+		"german": {},
+		"spanish": {},
+		"russian": {},
+		"chineseSimplified": {},
+		"chineseTraditional": {},
+		"japanese": {}
+	},
+	"packagedefinition": [],
+	"runtimePackages": [],
+	"modVersion": 1,
+	"frameworkVersion": 0.2
+}

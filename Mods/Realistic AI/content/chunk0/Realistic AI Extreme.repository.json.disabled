@@ -1,0 +1,272 @@
+{
+    "fd8f852f-df46-4226-9086-19ba6005ad1c": {
+        "Value": 500
+    },
+    "fc471a2e-198d-4c35-97d9-54b8bbce927e": {
+        "Value": 0.15
+    },
+    "f8706aaf-1027-4d56-a558-e71bdec56d44": {
+        "Value": 500
+    },
+    "f5e03cf2-b101-474e-9683-fca714fe4386": {
+        "Value": 500
+    },
+    "f1addf4c-ec01-4d1e-a6a1-72b53eece213": {
+        "Value": 500
+    },
+    "f045ad91-9a20-4c78-9be2-39f69cc695ad": {
+        "Value": 500,
+        "Toggle": true
+    },
+    "f0338a69-774a-477e-b7b7-3c9d00b0f05a": {
+        "Value": 500
+    },
+    "ec1f1e15-b40a-49ee-9de1-2c56cb0eb057": {
+        "Value": 500,
+        "Toggle": true
+    },
+    "e7d25aff-6b75-4067-865d-e81d8e8f3fba": {
+        "Value": 500
+    },
+    "e4bde55d-4c44-4c44-998b-53272694bd3f": {
+        "Value": 500
+    },
+    "e45e4dea-17f4-4f72-8359-3409054e022d": {
+        "Value": 500
+    },
+    "e0cff39f-aaef-406c-ab2a-a0d812923c11": {
+        "Toggle": true,
+        "Value": 500
+    },
+    "e0a56f5a-5b4b-4e0e-b27f-8c41aab84d49": {
+        "Value": 500
+    },
+    "dd8a9eec-ec0c-4d0b-8abc-637eb4951409": {
+        "Value": 500
+    },
+    "dcaa50ed-9f6e-4acf-b5e0-92b3e2443474": {
+        "Value": 500
+    },
+    "d317ac83-34a0-48cd-9c48-1ee92e6dd6e5": {
+        "Value": 500,
+        "Toggle": true
+    },
+    "cdba5bbd-628e-4385-a566-b3c2d654dab1": {
+        "Value": 500
+    },
+    "c725bc0b-c69a-4ad5-9fa8-fd35e0522bea": {
+        "Value": 500
+    },
+    "baa0fa2c-84be-4453-9103-b2445a3211b3": {
+        "Value": 500
+    },
+    "b9eb73bd-123b-4f7d-b5d0-55cae8d10ff7": {
+        "Value": 500,
+        "Toggle": true
+    },
+    "b616cda4-6aa9-4277-b8ac-ac86c9116270": {
+        "Value": 40
+    },
+    "b3212567-cbdb-4c09-a134-7e6e00236704": {
+        "Value": 500
+    },
+    "aeb8bae9-dacf-4578-a1ae-1562b308ed60": {
+        "Value": 500
+    },
+    "ada4f50d-a34d-41e1-b49f-b7d1c7acf7c2": {
+        "Value": 500
+    },
+    "a94ac179-16f5-4061-930c-42c239368b5f": {
+        "Value": 500,
+        "Toggle": true
+    },
+    "a8319f65-09fe-46be-a914-b98039c4d831": {
+        "Value": 1500
+    },
+    "a477ea7c-9ab0-420d-b812-0cafbdb6c28b": {
+        "Value": 500,
+        "Toggle": true
+    },
+    "a38f8be9-2205-4d3a-ba86-5967868b79b6": {
+        "Value": 500
+    },
+    "949174e2-ae30-44f2-9e33-3b4fae32d334": {
+        "Value": 500
+    },
+    "92488ee1-9f97-42d5-a5f6-8c4d30dffdf9": {
+        "Value": 0.2
+    },
+    "919f3326-85fe-44df-9498-4d9cc6fe609f": {
+        "Value": 500
+    },
+    "8ee82e76-26ad-4c5f-8979-7582ee48ad3f": {
+        "Value": 500
+    },
+    "85543cd3-bd77-48b5-b2d8-28a53b73f020": {
+        "Value": 500
+    },
+    "82b7c618-d93f-4557-b55c-bc7dda47c7b3": {
+        "Value": 500
+    },
+    "8206fa1c-601c-44e2-b455-8b0e296f9e3d": {
+        "Value": 500,
+        "Toggle": true
+    },
+    "7f5e1546-cbdf-4713-bbaf-8defe94bdc67": {
+        "Value": 500
+    },
+    "7dc0f2af-76da-4ac8-9a3c-9ff77d782cdb": {
+        "Value": 500
+    },
+    "7881f87a-2425-41c0-8f59-9c006eee6879": {
+        "Value": 500,
+        "Toggle": true
+    },
+    "7864c92c-e246-4fd6-b540-316fddac2e82": {
+        "Value": 0.4
+    },
+    "707d625e-d2d2-40b5-9d2d-39b7ba74e80b": {
+        "Value": 500
+    },
+    "6fe10af7-e60e-4924-bd78-c1c596dc84d9": {
+        "Value": 2.5
+    },
+    "6a26d2b3-5363-461d-a699-d38b44ba48b4": {
+        "Value": 500,
+        "Toggle": true
+    },
+    "6a1e6009-3013-46bd-ada1-1b4b471920dc": {
+        "Value": 0.2
+    },
+    "6919c884-c3a0-4857-ad3d-06f86dcd631e": {
+        "Value": 500
+    },
+    "6894918e-1df6-4041-9d79-f9c0f31d8722": {
+        "Value": 500
+    },
+    "67be05fb-8213-4c38-9c19-7755df388978": {
+        "Value": 500
+    },
+    "66a12d4c-056c-4af1-abe1-1c4b5c90408a": {
+        "Value": 500
+    },
+    "6596a368-959c-4663-8245-5785d91780fe": {
+        "Value": 500
+    },
+    "63fc82a9-5d7c-4b05-ae6c-a60b36648afe": {
+        "Toggle": true,
+        "Value": 500
+    },
+    "634ce53b-cbfb-4267-8d6e-769f9ae9ece4": {
+        "Value": 500
+    },
+    "5b08fd7f-7b17-4d76-853e-f4c67caf1134": {
+        "Value": 500
+    },
+    "57f89493-0364-46e9-a1e8-9897c1474f8f": {
+        "Value": 500,
+        "Toggle": true
+    },
+    "56713430-9981-410c-9c5b-a911c55424c6": {
+        "Value": 500
+    },
+    "512e40b0-959b-455c-8804-e06f14fd475a": {
+        "Value": 500
+    },
+    "4d748b2e-b5f8-4b38-954f-ed6187051db3": {
+        "Value": 500
+    },
+    "4b20a51f-546a-4ede-a93d-32c8a3834b0a": {
+        "Value": 500,
+        "Toggle": true
+    },
+    "4aee33d7-8a05-4df8-96ac-15bfa97e160c": {
+        "Value": 1525
+    },
+    "455a46f9-7b81-453d-9a38-cd45308e37c8": {
+        "Value": 500,
+        "Toggle": true
+    },
+    "4498fdc6-55c5-479d-b860-d38ac9e8abb2": {
+        "Value": 500
+    },
+    "432c4282-8792-4982-b35f-eb7660c9c834": {
+        "Value": 500,
+        "Toggle": true
+    },
+    "42d815f8-92c6-4742-940a-59c9bf6f08d5": {
+        "Value": 500
+    },
+    "417cb806-d136-49e8-ba7e-cb6d98b30f01": {
+        "Value": 500
+    },
+    "40fff25c-09bd-430e-a3c2-406abadc4934": {
+        "Value": 500
+    },
+    "322bd377-9753-4108-924c-b3046fdc34d6": {
+        "Value": 500
+    },
+    "31aaf1ae-c3aa-4ea5-af01-8dc61d910c8d": {
+        "Value": 500
+    },
+    "2f4fbc5f-55bf-4687-bb72-3ddab9ad4646": {
+        "Value": 500
+    },
+    "2ee241a5-8dc2-413d-ac46-477a99c74e03": {
+        "Value": 500,
+        "Toggle": true
+    },
+    "2ea18b2c-7520-4d03-b8a3-800aee3ed850": {
+        "Value": 500
+    },
+    "2c8d639e-2606-457f-9bc4-ec2fe823fb69": {
+        "Value": 500
+    },
+    "2c068a58-7dbe-40f6-943a-1aef5b80e3e7": {
+        "Value": 500
+    },
+    "1bde01b1-d873-4d67-9af8-4461c3a1fee8": {
+        "Value": 40
+    },
+    "18a82b47-fa05-40a3-a076-157fb7797394": {
+        "Value": 500
+    },
+    "17d26f17-4e58-483e-9923-4118559a1a83": {
+        "Value": 3600
+    },
+    "168fead8-6ef5-4a21-95d9-99758c611571": {
+        "Value": 500,
+        "Toggle": true
+    },
+    "1250b905-0a94-423b-b1a7-020d7d6d9161": {
+        "Value": 500
+    },
+    "11c7f0dc-bb0c-4c83-9e27-4c7debe93c03": {
+        "Value": 500
+    },
+    "1094dd4e-c277-4bd1-a637-8c8b428c9add": {
+        "Value": 500,
+        "Toggle": true
+    },
+    "0e2ed06f-d48b-4e90-bf7c-6e1b0f0175f7": {
+        "Value": 500
+    },
+    "0cf3b48b-8d9c-4aaa-9984-b386bfdea1ab": {
+        "Value": 3
+    },
+    "09b4abc7-0f82-4ce4-b275-801e27f53afe": {
+        "Value": 500
+    },
+    "047cb532-1791-4a28-a9da-6aa7cfcfc178": {
+        "Value": 0.25
+    },
+    "040a54a7-13fb-41b4-ae96-c920fa12418d": {
+        "Value": 500
+    },
+    "03a4296f-977f-4418-83d9-18746659ff4b": {
+        "Value": 500
+    },
+    "03971149-3aba-40d8-ad06-d07c7ad957db": {
+        "Value": 500
+    }
+}

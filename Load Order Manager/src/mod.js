@@ -198,32 +198,32 @@ async function refreshMods() {
 		for (modFolder of config.loadOrder) {
 			if (fs.existsSync(path.join("..", "Mods", modFolder, "manifest.json"))) {
 				var modManifest = JSON.parse(fs.readFileSync(path.join("..", "Mods", modFolder, "manifest.json")))
-				$("#enabledMods")[0].innerHTML += `<div class="p-12 bg-gray-900 w-full shadow-2xl rounded-md text-white">
+				$("#enabledMods")[0].innerHTML += `<div class="p-8 bg-gray-900 w-full shadow-xl rounded-md text-white">
 														<div class="mb-2">
-															<h3 class="font-semibold text-2xl inline"><img src="frameworkMod.png" class="w-10 inline align-middle"> <span class="align-middle">${sanitise(modManifest.name)} <span class="font-light">by ${modManifest.authors.map(a=>sanitise(a)).join(", ")}</span></span></h3><br>
+															<h3 class="font-semibold text-xl inline"><img src="frameworkMod.png" class="w-8 inline align-middle">  <span class="align-middle">${sanitise(modManifest.name)} <span class="font-light">by ${modManifest.authors.map(a=>sanitise(a)).join(", ")}</span></span></h3><br>
 														</div>
-														<div class="mb-1">
+														<div>
 															<p>${sanitise(modManifest.description)}</p><br>
 														</div>
-														<neo-button label="Disable" gradientFrom="rose-400" gradientTo="red-500" onclick="disableMod('${modFolder}')" style="display: inline">
+														<neo-button small label="Disable" gradientFrom="rose-400" gradientTo="red-500" onclick="disableMod('${modFolder}')" style="display: inline">
 															<i class="fas fa-times" slot="icon"></i>
 														</neo-button>
-														<neo-button label="Move" gradientFrom="fuchsia-400" gradientTo="violet-400" onclick="moveMod('${modFolder}')" style="display: inline">
+														<neo-button small label="Move" gradientFrom="fuchsia-400" gradientTo="violet-400" onclick="moveMod('${modFolder}')" style="display: inline">
 															<i class="fas fa-arrows-alt" slot="icon"></i>
 														</neo-button>
 													</div><br>`
 			} else {
-				$("#enabledMods")[0].innerHTML += `<div class="p-12 bg-gray-900 w-full shadow-2xl rounded-md text-white">
+				$("#enabledMods")[0].innerHTML += `<div class="p-8 bg-gray-900 w-full shadow-xl rounded-md text-white">
 														<div class="mb-2">
-															<h3 class="font-semibold text-2xl inline"><img src="rpkgMod.png" class="w-10 inline align-middle"> <span class="align-middle">${modFolder}</span></h3><br>
+															<h3 class="font-semibold text-xl inline"><img src="rpkgMod.png" class="w-8 inline align-middle">  <span class="align-middle">${modFolder}</span></h3><br>
 														</div>
-														<div class="mb-1">
+														<div>
 															<p>RPKG-only mod</p><br>
 														</div>
-														<neo-button label="Disable" gradientFrom="rose-400" gradientTo="red-500" onclick="disableMod('${modFolder}')" style="display: inline">
+														<neo-button small label="Disable" gradientFrom="rose-400" gradientTo="red-500" onclick="disableMod('${modFolder}')" style="display: inline">
 															<i class="fas fa-times" slot="icon"></i>
 														</neo-button>
-														<neo-button label="Move" gradientFrom="fuchsia-400" gradientTo="violet-400" onclick="moveMod('${modFolder}')" style="display: inline">
+														<neo-button small label="Move" gradientFrom="fuchsia-400" gradientTo="violet-400" onclick="moveMod('${modFolder}')" style="display: inline">
 															<i class="fas fa-arrows-alt" slot="icon"></i>
 														</neo-button>
 													</div><br>`
@@ -233,26 +233,26 @@ async function refreshMods() {
 		for (modFolder of fs.readdirSync("../Mods").filter(folder => !config.loadOrder.includes(folder))) {
 			if (fs.existsSync(path.join("..", "Mods", modFolder, "manifest.json"))) {
 				var modManifest = JSON.parse(fs.readFileSync(path.join("..", "Mods", modFolder, "manifest.json")))
-				$("#availableMods")[0].innerHTML += `<div class="p-12 bg-gray-900 w-full shadow-2xl rounded-md text-white">
+				$("#availableMods")[0].innerHTML += `<div class="p-8 bg-gray-900 w-full shadow-xl rounded-md text-white">
 														<div class="mb-2">
-															<h3 class="font-semibold text-2xl inline"><img src="frameworkMod.png" class="w-10 inline align-middle"> <span class="align-middle">${sanitise(modManifest.name)} <span class="font-light">by ${modManifest.authors.map(a=>sanitise(a)).join(", ")}</span></span></h3><br>
+															<h3 class="font-semibold text-xl inline"><img src="frameworkMod.png" class="w-8 inline align-middle">  <span class="align-middle">${sanitise(modManifest.name)} <span class="font-light">by ${modManifest.authors.map(a=>sanitise(a)).join(", ")}</span></span></h3><br>
 														</div>
-														<div class="mb-1">
+														<div>
 															<p>${sanitise(modManifest.description)}</p><br>
 														</div>
-														<neo-button label="Enable" gradientFrom="emerald-400" gradientTo="lime-600" onclick="enableMod('${modFolder}')" style="display: inline">
+														<neo-button small label="Enable" gradientFrom="emerald-400" gradientTo="lime-600" onclick="enableMod('${modFolder}')" style="display: inline">
 															<i class="fas fa-plus" slot="icon"></i>
 														</neo-button>
 													</div><br>`
 			} else {
-				$("#availableMods")[0].innerHTML += `<div class="p-12 bg-gray-900 w-full shadow-2xl rounded-md text-white">
+				$("#availableMods")[0].innerHTML += `<div class="p-8 bg-gray-900 w-full shadow-xl rounded-md text-white">
 														<div class="mb-2">
-															<h3 class="font-semibold text-2xl inline"><img src="rpkgMod.png" class="w-10 inline align-middle"> <span class="align-middle">${modFolder}</span></h3><br>
+															<h3 class="font-semibold text-xl inline"><img src="rpkgMod.png" class="w-8 inline align-middle">  <span class="align-middle">${modFolder}</span></h3><br>
 														</div>
-														<div class="mb-1">
+														<div>
 															<p>RPKG-only mod</p><br>
 														</div>
-														<neo-button label="Enable" gradientFrom="emerald-400" gradientTo="lime-600" onclick="enableMod('${modFolder}')" style="display: inline">
+														<neo-button small label="Enable" gradientFrom="emerald-400" gradientTo="lime-600" onclick="enableMod('${modFolder}')" style="display: inline">
 															<i class="fas fa-plus" slot="icon"></i>
 														</neo-button>
 													</div><br>`

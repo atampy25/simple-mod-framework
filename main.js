@@ -303,26 +303,6 @@ async function stageAllMods() {
                         } catch {}
                     }
     
-                    /* ------------------------------------- Convert all patches ------------------------------------ */
-                    let index = 0
-    
-                    let workerPool = new Piscina({
-                        filename: "patchWorker.js",
-                        maxThreads: os.cpus().length / 4 // For an 8-core CPU with 16 logical processors there are 4 max threads
-                    });
-    
-                    await Promise.all(entityPatches.map(({contentFilePath, chunkFolder, entityContent, tempRPKG, tbluRPKG}) => {
-                        index ++
-                        return workerPool.run({
-                            contentFilePath,
-                            chunkFolder,
-                            entityContent,
-                            tempRPKG,
-                            tbluRPKG,
-                            assignedTemporaryDirectory: "patchWorker" + index
-                        })
-                    })); // Run each patch in the worker queue and wait for all of them to finish
-    
                     /* ------------------------------ Copy chunk meta to staging folder ----------------------------- */
                     if (fs.existsSync(path.join(process.cwd(), "Mods", mod, manifest.contentFolder, chunkFolder, chunkFolder + ".meta"))) {
                         fs.copyFileSync(path.join(process.cwd(), "Mods", mod, manifest.contentFolder, chunkFolder, chunkFolder + ".meta"), path.join(process.cwd(), "staging", chunkFolder, chunkFolder + ".meta"))
@@ -332,6 +312,26 @@ async function stageAllMods() {
                     }
                 }
             }
+    
+            /* ------------------------------------- Multithreaded patching ------------------------------------ */
+            let index = 0
+
+            let workerPool = new Piscina({
+                filename: "patchWorker.js",
+                maxThreads: os.cpus().length / 4 // For an 8-core CPU with 16 logical processors there are 4 max threads
+            });
+
+            await Promise.all(entityPatches.map(({contentFilePath, chunkFolder, entityContent, tempRPKG, tbluRPKG}) => {
+                index ++
+                return workerPool.run({
+                    contentFilePath,
+                    chunkFolder,
+                    entityContent,
+                    tempRPKG,
+                    tbluRPKG,
+                    assignedTemporaryDirectory: "patchWorker" + index
+                })
+            })); // Run each patch in the worker queue and wait for all of them to finish
 
             /* ---------------------------------------------------------------------------------------------- */
             /*                                              Blobs                                             */

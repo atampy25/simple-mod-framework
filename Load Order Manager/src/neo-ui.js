@@ -251,17 +251,32 @@ customElements.define('neo-button', class AppDrawer extends HTMLElement {
 		super();
 
 		this.shadowDOM = this.attachShadow({mode: 'open'})
-		this.shadowDOM.innerHTML = `
-			<link rel="stylesheet" href="tailwind.min.css">
-			<style>
-				:host {
-					display: block;
-				}
-			</style>
-			<button type="button" class="bg-gradient-to-r text-white font-light px-3.5 py-3 rounded-md m-2" style="font-family: 'Fira Code'">
-				<slot name="icon"></slot> <span></span>
-			</button>
-		`
+
+		if (this.small) {
+			this.shadowDOM.innerHTML = `
+				<link rel="stylesheet" href="tailwind.min.css">
+				<style>
+					:host {
+						display: block;
+					}
+				</style>
+				<button type="button" class="bg-gradient-to-r text-white font-light px-2 py-1.5 rounded-md m-1" style="font-family: 'Fira Code'">
+					<slot name="icon"></slot> <span></span>
+				</button>
+			`
+		} else {
+			this.shadowDOM.innerHTML = `
+				<link rel="stylesheet" href="tailwind.min.css">
+				<style>
+					:host {
+						display: block;
+					}
+				</style>
+				<button type="button" class="bg-gradient-to-r text-white font-light px-3.5 py-3 rounded-md m-2" style="font-family: 'Fira Code'">
+					<slot name="icon"></slot> <span></span>
+				</button>
+			`
+		}
 	}
 
 	attributeChangedCallback(name, oldValue, newValue) {
