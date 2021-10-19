@@ -90,7 +90,7 @@ jobs:
         uses: TheDoctor0/zip-release@4fb9e4ff72847dd3d1c111cf63834e353ed7cb3d
         with:
           filename: Release.zip
-          path: dist
+          directory: dist
           
       - name: Release
         uses: softprops/action-gh-release@v1
@@ -100,4 +100,4 @@ jobs:
           tag_name: aaaaaaaaaa
           repository: hitman-resources/mod-framework-releases
           token: ${{ secrets.RELEASETOKEN }}
-          files: Release.zip
+          files: dist/Release.zip
