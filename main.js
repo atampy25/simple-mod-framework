@@ -117,6 +117,8 @@ async function stageAllMods() {
             /* ---------------------------------------------------------------------------------------------- */
             /*                                             Content                                            */
             /* ---------------------------------------------------------------------------------------------- */
+            let entityPatches = []
+            
             if (manifest.contentFolder && manifest.contentFolder.length && fs.existsSync(path.join(process.cwd(), "Mods", mod, manifest.contentFolder)) && fs.readdirSync(path.join(process.cwd(), "Mods", mod, manifest.contentFolder)).length) {
                 for (let chunkFolder of fs.readdirSync(path.join(process.cwd(), "Mods", mod, manifest.contentFolder))) {
                     try {
@@ -145,8 +147,6 @@ async function stageAllMods() {
                         await rpkgInstance.callFunction(`-hash_meta_to_json "${path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES.meta")}"`)
                         var contractsORESMetaContent = JSON.parse(fs.readFileSync(path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES.meta.JSON")))
                     } // There are contracts, extract the contracts ORES and copy it to the temp2 directory
-        
-                    let entityPatches = []
     
                     for (let contentFile of readRecursive(path.join(process.cwd(), "Mods", mod, manifest.contentFolder, chunkFolder))) {
                         var contentType = path.basename(contentFile).split(".").slice(1).join(".")
