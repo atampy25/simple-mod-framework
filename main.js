@@ -17,12 +17,20 @@ const { crc32 } = require("./crc32")
 const readRecursive = require('fs-readdir-recursive')
 const os = require("os")
 
-const Piscina = require('piscina');
+const Piscina = require('piscina')
 
 const config = JSON.parse(fs.readFileSync(path.join(process.cwd(), "config.json")))
 config.runtimePath = path.resolve(process.cwd(), config.runtimePath)
 
 const rpkgInstance = new RPKG.RPKGInstance()
+
+function cleanExit() {
+    rpkgInstance.exit()
+    global.currentWorkerPool.destroy()
+    process.exit()
+};
+process.on('SIGINT', cleanExit)
+process.on('SIGTERM', cleanExit)
 
 async function stageAllMods() {
     console.time("StageAllMods")
@@ -322,6 +330,8 @@ async function stageAllMods() {
                 maxThreads: os.cpus().length / 4 // For an 8-core CPU with 16 logical processors there are 4 max threads
             });
 
+            global.currentWorkerPool = workerPool
+
             await Promise.all(entityPatches.map(({contentFilePath, chunkFolder, entityContent, tempRPKG, tbluRPKG}) => {
                 index ++
                 return workerPool.run({
@@ -499,7 +509,7 @@ async function stageAllMods() {
 
         if (runtimePatchNumber >= 300) {
             console.log("ERROR: More than 94 total runtime packages!")
-            process.exit(1)
+            cleanExit()
         } // Framework only manages patch200-300
     } // Runtime packages
 
@@ -639,8 +649,7 @@ async function stageAllMods() {
 
     console.timeEnd("StageAllMods")
 
-    rpkgInstance.exit()
-    process.exit(0)
+    cleanExit()
 }
 
 stageAllMods()
