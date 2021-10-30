@@ -98,6 +98,5 @@ jobs:
           name: Bleeding edge release
           body: Generated automatically on commit.
           tag_name: aaaaaaaaaa
-          repository: hitman-resources/mod-framework-releases
-          token: ${{ secrets.RELEASETOKEN }}
+          repository: hitman-resources/simple-mod-framework
           files: dist/Release.zip
