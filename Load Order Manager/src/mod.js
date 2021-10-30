@@ -267,12 +267,10 @@ async function refreshMods() {
 function showMessage(title, message, icon) {
 	Swal.fire({
 		showConfirmButton: false,
-		allowEnterKey: false,
+		allowEnterKey: true,
 		title: title,
 		html: message,
-		icon: icon,
-		timer: 6000,
-		timerProgressBar: true
+		icon: icon
 	})
 }
 
@@ -349,14 +347,14 @@ async function deployMods() {
 				})
 				
 				deployProcess.on("close", (data) => {
-					if (output == "Deployed all mods successfully.") {
+					if (output.split("\n").slice(output.endsWith("\n") ? -2 : -1)[0] == "Deployed all mods successfully.") {
 						Swal.close()
 					
 						showMessage("Deployed successfully", "Successfully deployed. You can now play the game with mods!", "success")
 					} else {
 						Swal.close()
 					
-						showMessage("Error in deployment", "<i>" + sanitise(output) + "</i>", "error")
+						showMessage("Error in deployment", "<i>" + sanitise(output.split("\n").slice(output.endsWith("\n") ? -2 : -1)[0]) + "</i>", "error")
 					}
 				})
 			}, 500)
