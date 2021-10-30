@@ -338,23 +338,26 @@ async function deployMods() {
 				})
 
 				let output = ""
+				let fullOutput = ""
 			
 				deployProcess.stdout.on("data", (data) => {
 					output += String(data)
+					fullOutput += String(data)
+
 					output = output.split("\n").slice(output.endsWith("\n") ? -2 : -1)[0]
 
-					Swal.getHtmlContainer().querySelector('i').textContent = output
+					Swal.getHtmlContainer().querySelector('i').textContent = output.split("\n").slice(output.endsWith("\n") ? -2 : -1)[0]
 				})
 				
 				deployProcess.on("close", (data) => {
-					if (output.split("\n").slice(output.endsWith("\n") ? -2 : -1)[0] == "Deployed all mods successfully.") {
+					if (fullOutput.includes("Deployed all mods successfully.")) {
 						Swal.close()
 					
 						showMessage("Deployed successfully", "Successfully deployed. You can now play the game with mods!", "success")
 					} else {
 						Swal.close()
 					
-						showMessage("Error in deployment", "<i>" + sanitise(output.split("\n").slice(output.endsWith("\n") ? -2 : -1)[0]) + "</i>", "error")
+						showMessage("Error in deployment", "<i>" + sanitise(fullOutput.split("\n").slice(fullOutput.endsWith("\n") ? -2 : -1)[0]) + "</i>", "error")
 					}
 				})
 			}, 500)

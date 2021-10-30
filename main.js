@@ -21,7 +21,7 @@ const semver = require('semver');
 
 const Piscina = require('piscina')
 
-const config = JSON.parse(fs.readFileSync(path.join(process.cwd(), "config.json")))
+const config = json5.parse(fs.readFileSync(path.join(process.cwd(), "config.json")))
 config.runtimePath = path.resolve(process.cwd(), config.runtimePath)
 
 const rpkgInstance = new RPKG.RPKGInstance()
@@ -224,6 +224,8 @@ async function stageAllMods() {
                             case "entity.patch.json":
                                 var entityContent = LosslessJSON.parse(String(fs.readFileSync(contentFilePath)))
     
+		                        console.log("Preparing to apply patch " + contentFilePath)
+
                                 entityPatches.push({
                                     contentFilePath,
                                     chunkFolder,
@@ -538,6 +540,8 @@ async function stageAllMods() {
         fs.mkdirSync("Output")
     }
 
+    console.log("Copying runtime packages")
+
     let runtimePatchNumber = 205
     for (let runtimeFile of runtimePackages) {
         // {
@@ -553,6 +557,8 @@ async function stageAllMods() {
             cleanExit()
         } // Framework only manages patch200-300
     } // Runtime packages
+
+    console.log("Localising text")
 
     if (localisation.length) {
         let languages = {
@@ -642,6 +648,8 @@ async function stageAllMods() {
     child_process.execSync(`"Third-Party\\h6xtea.exe" -d --src "${path.join(process.cwd(), "cleanPackageDefinition.txt")}" --dst "${path.join(process.cwd(), "temp", "packagedefinition.txt.decrypted")}"`)
     let packagedefinitionContent = String(fs.readFileSync(path.join(process.cwd(), "temp", "packagedefinition.txt.decrypted"))).replace(/patchlevel=[0-9]*/g, "patchlevel=10001")
 
+    console.log("Patching packagedefinition")
+
     for (let brick of packagedefinition) {
         switch (brick.type) {
             case "partition":
@@ -675,6 +683,8 @@ async function stageAllMods() {
         await promisify(emptyFolder)("temp", true)
     } catch {}
     fs.mkdirSync("temp")
+
+    console.log("Generating RPKGs")
 
     for (let stagingChunkFolder of fs.readdirSync(path.join(process.cwd(), "staging"))) {
         await rpkgInstance.callFunction(`-generate_rpkg_from "${path.join(process.cwd(), "staging", stagingChunkFolder)}" -output_path "${path.join(process.cwd(), "staging")}"`)
