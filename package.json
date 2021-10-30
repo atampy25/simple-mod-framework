@@ -7,17 +7,19 @@
     "clarify": "^2.1.0",
     "decimal.js": "^10.3.1",
     "empty-folder": "^2.0.4",
+    "eventemitter-asyncresource": "^1.0.0",
     "fs-extra": "^10.0.0",
     "fs-readdir-recursive": "^1.1.0",
     "glob": "^7.2.0",
+    "hdr-histogram-js": "^2.0.1",
+    "hdr-histogram-percentiles-obj": "^3.0.0",
+    "json5": "^2.2.0",
     "lodash.merge": "^4.6.2",
     "lossless-json": "^1.0.5",
     "md5": "^2.3.0",
     "promisify-child-process": "^4.1.1",
     "rfc6902": "^4.0.2",
-    "eventemitter-asyncresource": "^1.0.0",
-    "hdr-histogram-js": "^2.0.1",
-    "hdr-histogram-percentiles-obj": "^3.0.0"
+    "semver": "^7.3.5"
   },
   "devDependencies": {},
   "scripts": {

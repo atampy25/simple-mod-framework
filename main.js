@@ -1,4 +1,4 @@
-const FrameworkVersion = 0.3
+const FrameworkVersion = "1.0.0"
 
 THREE = require("./three.min")
 const QuickEntity = require("./quickentity")
@@ -16,6 +16,8 @@ const deepMerge = require("lodash.merge")
 const { crc32 } = require("./crc32")
 const readRecursive = require('fs-readdir-recursive')
 const os = require("os")
+const json5 = require("json5")
+const semver = require('semver');
 
 const Piscina = require('piscina')
 
@@ -31,6 +33,24 @@ function cleanExit() {
 };
 process.on('SIGINT', cleanExit)
 process.on('SIGTERM', cleanExit)
+
+process.on('uncaughtException', (err, origin) => {
+    fs.writeSync(
+        process.stderr.fd,
+        `Caught exception: ${err}\n` +
+        `Exception origin: ${origin}`
+    );
+    cleanExit()
+})
+
+process.on('unhandledRejection', (err, origin) => {
+    fs.writeSync(
+        process.stderr.fd,
+        `Unhandled promise rejection: ${err}\n` +
+        `Exception origin: ${origin}`
+    );
+    cleanExit()
+})
 
 async function stageAllMods() {
     console.time("StageAllMods")
@@ -119,9 +139,28 @@ async function stageAllMods() {
                 fs.mkdirSync("temp") // Clear the temp directory
             }
         } else {
-            let manifest = JSON.parse(fs.readFileSync(path.join(process.cwd(), "Mods", mod, "manifest.json")))
+            let manifest = json5.parse(fs.readFileSync(path.join(process.cwd(), "Mods", mod, "manifest.json")))
 
             console.log("Staging mod: " + manifest.name)
+
+            for (let key of ["name", "description", "authors", "version", "frameworkVersion"]) {
+                if (typeof manifest[key] == "undefined") {
+                    console.log(`ERROR: Mod ${manifest.name} is missing manifest field "${key}"!`)
+                    cleanExit()
+                }
+            }
+
+            if (semver.lt(manifest.frameworkVersion, FrameworkVersion)) {
+                if (semver.diff(manifest.frameworkVersion, FrameworkVersion) == "major") {
+                    console.log(`ERROR: Mod ${manifest.name} is designed for an older version of the framework and is likely incompatible!`)
+                    cleanExit()
+                }
+            }
+
+            if (semver.gt(manifest.frameworkVersion, FrameworkVersion)) {
+                console.log(`ERROR: Mod ${manifest.name} is designed for a newer version of the framework and is likely incompatible!`)
+                cleanExit()
+            }
 
             /* ---------------------------------------------------------------------------------------------- */
             /*                                             Content                                            */
@@ -192,7 +231,7 @@ async function stageAllMods() {
                                 })
                                 break;
                             case "unlockables.json":
-                                var entityContent = LosslessJSON.parse(String(fs.readFileSync(contentFilePath)))
+                                var entityContent = JSON.parse(String(fs.readFileSync(contentFilePath)))
                                 var oresChunk = await rpkgInstance.getRPKGOfHash("0057C2C3941115CA")
     
                                 if (!fs.existsSync(path.join(process.cwd(), "staging", "chunk0", "0057C2C3941115CA.ORES"))) {
@@ -218,7 +257,7 @@ async function stageAllMods() {
                                 fs.copyFileSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "0057C2C3941115CA.ORES.meta"), path.join(process.cwd(), "staging", "chunk0", "0057C2C3941115CA.ORES.meta"))
                                 break;
                             case "repository.json":
-                                var entityContent = LosslessJSON.parse(String(fs.readFileSync(contentFilePath)))
+                                var entityContent = JSON.parse(String(fs.readFileSync(contentFilePath)))
     
                                 var repoRPKG = await rpkgInstance.getRPKGOfHash("00204D1AFD76AB13")
     
@@ -648,6 +687,8 @@ async function stageAllMods() {
     } catch {}
 
     console.timeEnd("StageAllMods")
+
+    console.log("Deployed all mods successfully.")
 
     cleanExit()
 }

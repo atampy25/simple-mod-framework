@@ -2,7 +2,6 @@
     "runtimePath": "..\\Runtime",
     "skipIntro": true,
     "outputToSeparateDirectory": false,
-    "hasUsedGUI": false,
     "loadOrder": [
         "Enhanced Autosave",
         "Focus"

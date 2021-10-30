@@ -1,13 +1,13 @@
 # Manifests
 Each mod contains a manifest. Manifests have the following format:
-```json
+```jsonc
 {
-	"name": "Example Mod",
-	"description": "It is a mod",
-	"authors": ["Atampy26", "No one else"],
-	"contentFolder": "content", // Folder next to the manifest to use for the mod content
-	"blobsFolder": "blobs", // Folder next to the manifest to use for blobs (new/edited existing JSON and GFXI files)
-	"localisation": {
+	"name": "Example Mod", // Cannot be omitted
+	"description": "It is a mod", // Cannot be omitted
+	"authors": ["Atampy26", "No one else"], // Cannot be omitted
+	"contentFolder": "content", // Folder next to the manifest to use for the mod content - Can be omitted
+	"blobsFolder": "blobs", // Folder next to the manifest to use for blobs (new/edited existing JSON and GFXI files) - Can be omitted
+	"localisation": { // Can be omitted
 		"english": {
 			"UI_THEBESTMOD": "The Best Mod" // You can use UI_THEBESTMOD elsewhere
 		},
@@ -22,7 +22,7 @@ Each mod contains a manifest. Manifests have the following format:
 		"chineseTraditional": {},
 		"japanese": {}
 	},
-	"packagedefinition": [
+	"packagedefinition": [ // Can be omitted
         { // For new chunks
             "type": "partition",
             "name": "myNewChunk28",
@@ -35,14 +35,16 @@ Each mod contains a manifest. Manifests have the following format:
             "path": "[assembly:/_pro/myBricks/myNewChunk28Map.entity].entitytemplate"
         }
     ],
-	"runtimePackages": [ // RPKG files to place (and automatically name) in RPKG
+	"runtimePackages": [ // RPKG files to place (and automatically name) in RPKG - Can be omitted
 		{
 			"chunk": 0, // This for example would become chunk0patch205 if no other mods added RPKGs (numbers are incremented automatically)
 			"path": "portedhashes.rpkg"
 		}
 	],
-	"modVersion": 1, // The mod's version, used to compare against the linked JSON
-	"updateCheck": "https://hitman-resources.netlify.app/framework/updates/exampleMod.json", // A JSON that will be checked for updates - contact Atampy26 for hosting on hitman-resources.netlify.app
-	"frameworkVersion": 0.3 // The framework version the mod is designed for
+	"version": "1.0.0", // The mod's version, used to compare against the linked JSON - make sure to use semantic versioning (Major.Minor.Patch) - Cannot be omitted
+	"updateCheck": "https://hitman-resources.netlify.app/framework/updates/exampleMod.json", // A JSON that will be checked for updates (MUST BE HTTPS) - contact Atampy26 for hosting on hitman-resources.netlify.app - Can be omitted
+	"frameworkVersion": "1.0.0" // The framework version the mod is designed for - Cannot be omitted
 }
 ```
+
+Manifests are parsed with JSON5. That means you can use comments in them.

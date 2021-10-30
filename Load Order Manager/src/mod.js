@@ -7,6 +7,7 @@ var sanitizeHtml = require('sanitize-html')
 var remote = require('@electron/remote')
 var semver = require('semver');
 var downloadFile = require("async-get-file");
+var json5 = require("json5");
 
 window.$ = window.jQuery = require('jquery');
 
@@ -21,8 +22,7 @@ async function updateFramework() {
 			Swal.showLoading()
 
 			setTimeout(async () => {
-				// https://github.com/hitman-resources/simple-mod-framework/releases/latest/download/Release.zip
-				await downloadFile((await fetch("https://nightly.link/hitman-resources/simple-mod-framework/workflows/main/main/Mod%20Framework.zip?h=6ea9fd5ddf66c9e4adbcbe858e65b9de8ce44998")).url, {
+				await downloadFile((await fetch("https://github.com/hitman-resources/simple-mod-framework/releases/latest/download/Release.zip")).url, {
 					directory: ".",
 					filename: "latest-release.zip",
 					timeout: 999999999
@@ -75,7 +75,7 @@ async function fetchUpdates() {
 async function fetchModUpdates() {
 	for (var modFolder of fs.readdirSync("../Mods")) {
 		if (fs.existsSync(path.join("..", "Mods", modFolder, "manifest.json"))) {
-			var modManifest = JSON.parse(fs.readFileSync(path.join("..", "Mods", modFolder, "manifest.json")))
+			var modManifest = json5.parse(fs.readFileSync(path.join("..", "Mods", modFolder, "manifest.json")))
 			if (modManifest.updateCheck) {
 				var modUpdateData = await (await fetch(modManifest.updateCheck)).json()
 				if (semver.lt(modManifest.version, modUpdateData.version)) {
@@ -96,7 +96,7 @@ async function fetchModUpdates() {
 
 async function updateMod(modFolder) {
 	if (fs.existsSync(path.join("..", "Mods", modFolder, "manifest.json"))) {
-		var modManifest = JSON.parse(fs.readFileSync(path.join("..", "Mods", modFolder, "manifest.json")))
+		var modManifest = json5.parse(fs.readFileSync(path.join("..", "Mods", modFolder, "manifest.json")))
 		if (modManifest.updateCheck) {
 			var updateData = await (await fetch(modManifest.updateCheck)).json()
 
@@ -173,12 +173,12 @@ async function execute() {
 	// 		})[0]
 	// 	}
 
-	// 	var config = JSON.parse(fs.readFileSync("../config.json"))
+	// 	var config = json5.parse(fs.readFileSync("../config.json"))
 
 	// 	config.hasUsedGUI = true
 	// 	config.runtimePath = path.join(gameDirectory, 'Runtime')
 
-	// 	fs.writeFileSync("../config.json", JSON.stringify(config))
+	// 	fs.writeFileSync("../config.json", json5.stringify(config))
 
 	// 	showMessage("All set!", "You can begin using the Simple Mod Framework.", "success")
 	// }
@@ -192,12 +192,12 @@ async function refreshMods() {
 	$("#enabledMods")[0].innerHTML = ""
 	$("#availableMods")[0].innerHTML = ""
 
-	var config = JSON.parse(fs.readFileSync("../config.json"))
+	var config = json5.parse(fs.readFileSync("../config.json"))
 	
 	if (fs.readdirSync("../Mods").length > 0) {
 		for (modFolder of config.loadOrder) {
 			if (fs.existsSync(path.join("..", "Mods", modFolder, "manifest.json"))) {
-				var modManifest = JSON.parse(fs.readFileSync(path.join("..", "Mods", modFolder, "manifest.json")))
+				var modManifest = json5.parse(fs.readFileSync(path.join("..", "Mods", modFolder, "manifest.json")))
 				$("#enabledMods")[0].innerHTML += `<div class="p-8 bg-gray-900 w-full shadow-xl rounded-md text-white">
 														<div class="mb-2">
 															<h3 class="font-semibold text-xl inline"><img src="frameworkMod.png" class="w-8 inline align-middle">  <span class="align-middle">${sanitise(modManifest.name)} <span class="font-light">by ${modManifest.authors.map(a=>sanitise(a)).join(", ")}</span></span></h3><br>
@@ -232,7 +232,7 @@ async function refreshMods() {
 		
 		for (modFolder of fs.readdirSync("../Mods").filter(folder => !config.loadOrder.includes(folder))) {
 			if (fs.existsSync(path.join("..", "Mods", modFolder, "manifest.json"))) {
-				var modManifest = JSON.parse(fs.readFileSync(path.join("..", "Mods", modFolder, "manifest.json")))
+				var modManifest = json5.parse(fs.readFileSync(path.join("..", "Mods", modFolder, "manifest.json")))
 				$("#availableMods")[0].innerHTML += `<div class="p-8 bg-gray-900 w-full shadow-xl rounded-md text-white">
 														<div class="mb-2">
 															<h3 class="font-semibold text-xl inline"><img src="frameworkMod.png" class="w-8 inline align-middle">  <span class="align-middle">${sanitise(modManifest.name)} <span class="font-light">by ${modManifest.authors.map(a=>sanitise(a)).join(", ")}</span></span></h3><br>
@@ -277,27 +277,27 @@ function showMessage(title, message, icon) {
 }
 
 async function enableMod(mod) {
-	var config = JSON.parse(fs.readFileSync("../config.json"))
+	var config = json5.parse(fs.readFileSync("../config.json"))
 
 	config.loadOrder.push(mod)
 
-	fs.writeFileSync("../config.json", JSON.stringify(config))
+	fs.writeFileSync("../config.json", json5.stringify(config))
 
 	await refreshMods()
 }
 
 async function disableMod(mod) {
-	var config = JSON.parse(fs.readFileSync("../config.json"))
+	var config = json5.parse(fs.readFileSync("../config.json"))
 
 	config.loadOrder = config.loadOrder.filter(a => a != mod)
 
-	fs.writeFileSync("../config.json", JSON.stringify(config))
+	fs.writeFileSync("../config.json", json5.stringify(config))
 
 	await refreshMods()
 }
 
 async function moveMod(modID) {
-	var config = JSON.parse(fs.readFileSync("../config.json"))
+	var config = json5.parse(fs.readFileSync("../config.json"))
 
 	var index = (await Swal.fire({
 		title: "Move Objective",
@@ -322,7 +322,7 @@ async function moveMod(modID) {
 		config.loadOrder.splice(parseInt(index) - 1, 0, removed)
 	}
 	
-	fs.writeFileSync("../config.json", JSON.stringify(config))
+	fs.writeFileSync("../config.json", json5.stringify(config))
 
 	await refreshMods()
 }
@@ -335,13 +335,28 @@ async function deployMods() {
 			Swal.showLoading()
 
 			setTimeout(() => {
-				child_process.execSync(`"${path.join(process.cwd(), "..", "Deploy.exe")}"`, {
+				let deployProcess = child_process.spawn(path.join(process.cwd(), "..", "Deploy.exe"), [], {
 					cwd: '..'
 				})
+
+				let output = ""
 			
-				Swal.close()
-			
-				showMessage("Deployed successfully", "Successfully deployed. You can now play the game with mods!", "success")
+				deployProcess.stdout.on("data", (data) => {
+					output += String(data)
+					output = output.split("\n").slice(-1)
+				})
+				
+				deployProcess.on("close", (data) => {
+					if (output == "Deployed all mods successfully.") {
+						Swal.close()
+					
+						showMessage("Deployed successfully", "Successfully deployed. You can now play the game with mods!", "success")
+					} else {
+						Swal.close()
+					
+						showMessage("Error in deployment", "<i>" + sanitise(output) + "</i>", "error")
+					}
+				})
 			}, 500)
 		},
 		allowEnterKey: false,
