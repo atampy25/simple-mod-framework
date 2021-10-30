@@ -330,7 +330,7 @@ async function moveMod(modID) {
 async function deployMods() {
 	Swal.fire({
 		title: 'Deploying your mods',
-		html: 'Grab a coffee or something - your enabled mods are being applied to the game.',
+		html: 'Grab a coffee or something - your enabled mods are being applied to the game.<br><br><i></i>',
 		didOpen: async () => {
 			Swal.showLoading()
 
@@ -343,7 +343,9 @@ async function deployMods() {
 			
 				deployProcess.stdout.on("data", (data) => {
 					output += String(data)
-					output = output.split("\n").slice(-1)
+					output = output.split("\n").slice(-1)[0]
+
+					Swal.getHtmlContainer().querySelector('i').textContent = output
 				})
 				
 				deployProcess.on("close", (data) => {
