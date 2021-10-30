@@ -28,7 +28,9 @@ const rpkgInstance = new RPKG.RPKGInstance()
 
 function cleanExit() {
     rpkgInstance.exit()
-    global.currentWorkerPool.destroy()
+    try {
+        global.currentWorkerPool.destroy()
+    } catch {}
     process.exit()
 };
 process.on('SIGINT', cleanExit)

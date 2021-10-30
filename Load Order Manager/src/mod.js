@@ -11,7 +11,7 @@ var json5 = require("json5");
 
 window.$ = window.jQuery = require('jquery');
 
-frameworkVersion = "0.1.0"
+frameworkVersion = "1.0.0"
 
 async function updateFramework() {
 	var frameworkUpdateData = await (await fetch("https://hitman-resources.netlify.app/framework/framework.json")).json()
