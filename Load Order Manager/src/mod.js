@@ -343,7 +343,7 @@ async function deployMods() {
 			
 				deployProcess.stdout.on("data", (data) => {
 					output += String(data)
-					output = output.split("\n").slice(-1)[0]
+					output = output.split("\n").slice(output.endsWith("\n") ? -2 : -1)[0]
 
 					Swal.getHtmlContainer().querySelector('i').textContent = output
 				})
