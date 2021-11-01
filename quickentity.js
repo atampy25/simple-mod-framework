@@ -15,7 +15,7 @@ if (!module.parent) {
 const { promisify } = require("util")
 const rfc6902 = require('rfc6902')
 
-const QuickEntityVersion = 1.134
+const QuickEntityVersion = 1.135
 
 if (!module.parent) {
 	forceArgsModeChoice = false
@@ -26,10 +26,12 @@ if (!module.parent) {
 		storage.set("forceArgsModeChoice", false)
 		document.getElementById("forceArgsModeChoiceCheckbox").checked = false
 	}
+
+	document.getElementById("gameSelect").value = storage.getSync("game") || "HM3"
 }
 
-// oi anthony shut up yeah?
-// ur only gonna find shoddy programming here
+// oi sieni shut up yeah?
+// you've got ur select box
 // - Atampy26
 
 async function parseProperty(property, argsMode, TEMP, TBLU, TEMPmeta, TBLUmeta, entity, entry) {
@@ -1260,18 +1262,8 @@ async function convertedToPackaged() {
 	execSync("rpkg-cli.exe -json_to_hash_meta \"" + x.tbluMetaRebuildPath + "\"")
 }
 
-async function setGame() {
-	await (promisify(storage.set))("game", (await Swal.fire({
-		title: 'Game',
-		text: "Enter the game for ResourceTool to use (HM2016, HM2, HM3).",
-		input: 'text',
-		inputAttributes: {
-		  autocapitalize: 'off'
-		},
-		showCancelButton: true,
-		confirmButtonText: 'OK',
-		allowOutsideClick: false
-	})).value)
+async function setGame(game) {
+	await (promisify(storage.set))("game", game)
 }
 
 function patchCheckLosslessNumber(input, output, pointer) {
@@ -1299,59 +1291,69 @@ async function createPatchJSON(automateQN1Path = false, automateQN2Path = false,
 		properties: ["openFile", "dontAddToRecent"]
 	})[0])))
 
+	const findEntityCacheEntity1 = {}
+	for (var entry in entity1.entities) {
+		findEntityCacheEntity1[entity1.entities[entry].refID] = Number(entry)
+	}
+
+	const findEntityCacheEntity2 = {}
+	for (var entry in entity2.entities) {
+		findEntityCacheEntity2[entity2.entities[entry].refID] = Number(entry)
+	}
+
 	for (let entry of entity1.entities) {
 		delete entry.refID
 
 		if (entry.parent.ref.value) {
-			entry.parent.ref = entity1.entities[entry.parent.ref.value].entityID
+			entry.parent.ref = entity1.entities[findEntityCacheEntity1[entry.parent.ref.value]].entityID
 		}
 
 		if (entry.events)
 		for (let pin of entry.events) {
-			pin.onEntity = entity1.entities[pin.onEntity.value].entityID
+			pin.onEntity = entity1.entities[findEntityCacheEntity1[pin.onEntity.value]].entityID
 		}
 
 		if (entry.inputCopying)
 		for (let pin of entry.inputCopying) {
-			pin.onEntity = entity1.entities[pin.onEntity.value].entityID
+			pin.onEntity = entity1.entities[findEntityCacheEntity1[pin.onEntity.value]].entityID
 		}
 
 		if (entry.outputCopying)
 		for (let pin of entry.outputCopying) {
-			pin.onEntity = entity1.entities[pin.onEntity.value].entityID
+			pin.onEntity = entity1.entities[findEntityCacheEntity1[pin.onEntity.value]].entityID
 		}
 
 		if (entry.exposedInterfaces)
 		for (let interface of entry.exposedInterfaces) {
-			interface[1] = entity1.entities[interface[1]].entityID
+			interface[1] = entity1.entities[findEntityCacheEntity1[interface[1]]].entityID
 		}
 
 		if (entry.entitySubsets)
 		for (let subset of entry.entitySubsets) {
 			for (let subSubset in subset[1].entities) {
-				subset[1].entities[subSubset] = entity1.entities[subset[1].entities[subSubset]].entityID
+				subset[1].entities[subSubset] = entity1.entities[findEntityCacheEntity1[subset[1].entities[subSubset]]].entityID
 			}
 		}
 
 		if (entry.propertyAliases)
 		for (let alias of entry.propertyAliases) {
-			alias.entityID = entity1.entities[alias.entityID].entityID
+			alias.entityID = entity1.entities[findEntityCacheEntity1[alias.entityID]].entityID
 		}
 
 		for (let prop of entry.properties) {
 			if (prop.type == "SEntityTemplateReference" && (prop.value.value || (prop.value.ref && prop.value.ref.value))) {
 				if (prop.value.value) {
-					prop.value = entity1.entities[prop.value.value].entityID
+					prop.value = entity1.entities[findEntityCacheEntity1[prop.value.value]].entityID
 				} else {
-					prop.value.ref = entity1.entities[prop.value.ref.value].entityID
+					prop.value.ref = entity1.entities[findEntityCacheEntity1[prop.value.ref.value]].entityID
 				}
 			} else if (prop.type == "TArray<SEntityTemplateReference>") {
 				for (let subProp in prop.value) {
 					if (prop.value[subProp].value || prop.value[subProp].ref.value) {
 						if (prop.value[subProp].value) {
-							prop.value[subProp] = entity1.entities[prop.value[subProp].value].entityID
+							prop.value[subProp] = entity1.entities[findEntityCacheEntity1[prop.value[subProp].value]].entityID
 						} else {
-							prop.value[subProp].ref = entity1.entities[prop.value[subProp].ref.value].entityID
+							prop.value[subProp].ref = entity1.entities[findEntityCacheEntity1[prop.value[subProp].ref.value]].entityID
 						}
 					}
 				}
@@ -1361,17 +1363,17 @@ async function createPatchJSON(automateQN1Path = false, automateQN2Path = false,
 		for (let prop of entry.postInitProperties) {
 			if (prop.type == "SEntityTemplateReference" && (prop.value.value || (prop.value.ref && prop.value.ref.value))) {
 				if (prop.value.value) {
-					prop.value = entity1.entities[prop.value.value].entityID
+					prop.value = entity1.entities[findEntityCacheEntity1[prop.value.value]].entityID
 				} else {
-					prop.value.ref = entity1.entities[prop.value.ref.value].entityID
+					prop.value.ref = entity1.entities[findEntityCacheEntity1[prop.value.ref.value]].entityID
 				}
 			} else if (prop.type == "TArray<SEntityTemplateReference>") {
 				for (let subProp in prop.value) {
 					if (prop.value[subProp].value || prop.value[subProp].ref.value) {
 						if (prop.value[subProp].value) {
-							prop.value[subProp] = entity1.entities[prop.value[subProp].value].entityID
+							prop.value[subProp] = entity1.entities[findEntityCacheEntity1[prop.value[subProp].value]].entityID
 						} else {
-							prop.value[subProp].ref = entity1.entities[prop.value[subProp].ref.value].entityID
+							prop.value[subProp].ref = entity1.entities[findEntityCacheEntity1[prop.value[subProp].ref.value]].entityID
 						}
 					}
 				}
@@ -1383,55 +1385,55 @@ async function createPatchJSON(automateQN1Path = false, automateQN2Path = false,
 		delete entry.refID
 
 		if (entry.parent.ref.value) {
-			entry.parent.ref = entity2.entities[entry.parent.ref.value].entityID
+			entry.parent.ref = entity2.entities[findEntityCacheEntity2[entry.parent.ref.value]].entityID
 		}
 
 		if (entry.events)
 		for (let pin of entry.events) {
-			pin.onEntity = entity2.entities[pin.onEntity.value].entityID
+			pin.onEntity = entity2.entities[findEntityCacheEntity2[pin.onEntity.value]].entityID
 		}
 
 		if (entry.inputCopying)
 		for (let pin of entry.inputCopying) {
-			pin.onEntity = entity2.entities[pin.onEntity.value].entityID
+			pin.onEntity = entity2.entities[findEntityCacheEntity2[pin.onEntity.value]].entityID
 		}
 
 		if (entry.outputCopying)
 		for (let pin of entry.outputCopying) {
-			pin.onEntity = entity2.entities[pin.onEntity.value].entityID
+			pin.onEntity = entity2.entities[findEntityCacheEntity2[pin.onEntity.value]].entityID
 		}
 
 		if (entry.exposedInterfaces)
 		for (let interface of entry.exposedInterfaces) {
-			interface[1] = entity2.entities[interface[1]].entityID
+			interface[1] = entity2.entities[findEntityCacheEntity2[interface[1]]].entityID
 		}
 
 		if (entry.entitySubsets)
 		for (let subset of entry.entitySubsets) {
 			for (let subSubset in subset[1].entities) {
-				subset[1].entities[subSubset] = entity2.entities[subset[1].entities[subSubset]].entityID
+				subset[1].entities[subSubset] = entity2.entities[findEntityCacheEntity2[subset[1].entities[subSubset]]].entityID
 			}
 		}
 
 		if (entry.propertyAliases)
 		for (let alias of entry.propertyAliases) {
-			alias.entityID = entity2.entities[alias.entityID].entityID
+			alias.entityID = entity2.entities[findEntityCacheEntity2[alias.entityID]].entityID
 		}
 
 		for (let prop of entry.properties) {
 			if (prop.type == "SEntityTemplateReference" && (prop.value.value || (prop.value.ref && prop.value.ref.value))) {
 				if (prop.value.value) {
-					prop.value = entity2.entities[prop.value.value].entityID
+					prop.value = entity2.entities[findEntityCacheEntity2[prop.value.value]].entityID
 				} else {
-					prop.value.ref = entity2.entities[prop.value.ref.value].entityID
+					prop.value.ref = entity2.entities[findEntityCacheEntity2[prop.value.ref.value]].entityID
 				}
 			} else if (prop.type == "TArray<SEntityTemplateReference>") {
 				for (let subProp in prop.value) {
 					if (prop.value[subProp].value || prop.value[subProp].ref.value) {
 						if (prop.value[subProp].value) {
-							prop.value[subProp] = entity2.entities[prop.value[subProp].value].entityID
+							prop.value[subProp] = entity2.entities[findEntityCacheEntity2[prop.value[subProp].value]].entityID
 						} else {
-							prop.value[subProp].ref = entity2.entities[prop.value[subProp].ref.value].entityID
+							prop.value[subProp].ref = entity2.entities[findEntityCacheEntity2[prop.value[subProp].ref.value]].entityID
 						}
 					}
 				}
@@ -1441,17 +1443,17 @@ async function createPatchJSON(automateQN1Path = false, automateQN2Path = false,
 		for (let prop of entry.postInitProperties) {
 			if (prop.type == "SEntityTemplateReference" && (prop.value.value || (prop.value.ref && prop.value.ref.value))) {
 				if (prop.value.value) {
-					prop.value = entity2.entities[prop.value.value].entityID
+					prop.value = entity2.entities[findEntityCacheEntity2[prop.value.value]].entityID
 				} else {
-					prop.value.ref = entity2.entities[prop.value.ref.value].entityID
+					prop.value.ref = entity2.entities[findEntityCacheEntity2[prop.value.ref.value]].entityID
 				}
 			} else if (prop.type == "TArray<SEntityTemplateReference>") {
 				for (let subProp in prop.value) {
 					if (prop.value[subProp].value || prop.value[subProp].ref.value) {
 						if (prop.value[subProp].value) {
-							prop.value[subProp] = entity2.entities[prop.value[subProp].value].entityID
+							prop.value[subProp] = entity2.entities[findEntityCacheEntity2[prop.value[subProp].value]].entityID
 						} else {
-							prop.value[subProp].ref = entity2.entities[prop.value[subProp].ref.value].entityID
+							prop.value[subProp].ref = entity2.entities[findEntityCacheEntity2[prop.value[subProp].ref.value]].entityID
 						}
 					}
 				}
@@ -1524,59 +1526,64 @@ async function applyPatchJSON(automateQNPath = false, automatePatchPath = false,
 		properties: ["openFile", "dontAddToRecent"]
 	})[0])))
 
+	const findEntityCache = {}
+	for (var entry in entity.entities) {
+		findEntityCache[entity.entities[entry].refID] = Number(entry)
+	}
+
 	for (let entry of entity.entities) {
 		delete entry.refID
 
 		if (entry.parent.ref.value) {
-			entry.parent.ref = entity.entities[entry.parent.ref.value].entityID
+			entry.parent.ref = entity.entities[findEntityCache[entry.parent.ref.value]].entityID
 		}
 
 		if (entry.events)
 		for (let pin of entry.events) {
-			pin.onEntity = entity.entities[pin.onEntity.value].entityID
+			pin.onEntity = entity.entities[findEntityCache[pin.onEntity.value]].entityID
 		}
 
 		if (entry.inputCopying)
 		for (let pin of entry.inputCopying) {
-			pin.onEntity = entity.entities[pin.onEntity.value].entityID
+			pin.onEntity = entity.entities[findEntityCache[pin.onEntity.value]].entityID
 		}
 
 		if (entry.outputCopying)
 		for (let pin of entry.outputCopying) {
-			pin.onEntity = entity.entities[pin.onEntity.value].entityID
+			pin.onEntity = entity.entities[findEntityCache[pin.onEntity.value]].entityID
 		}
 
 		if (entry.exposedInterfaces)
 		for (let interface of entry.exposedInterfaces) {
-			interface[1] = entity.entities[interface[1]].entityID
+			interface[1] = entity.entities[findEntityCache[interface[1]]].entityID
 		}
 
 		if (entry.entitySubsets)
 		for (let subset of entry.entitySubsets) {
 			for (let subSubset in subset[1].entities) {
-				subset[1].entities[subSubset] = entity.entities[subset[1].entities[subSubset]].entityID
+				subset[1].entities[subSubset] = entity.entities[findEntityCache[subset[1].entities[subSubset]]].entityID
 			}
 		}
 
 		if (entry.propertyAliases)
 		for (let alias of entry.propertyAliases) {
-			alias.entityID = entity.entities[alias.entityID].entityID
+			alias.entityID = entity.entities[findEntityCache[alias.entityID]].entityID
 		}
 
 		for (let prop of entry.properties) {
 			if (prop.type == "SEntityTemplateReference" && (prop.value.value || (prop.value.ref && prop.value.ref.value))) {
 				if (prop.value.value) {
-					prop.value = entity.entities[prop.value.value].entityID
+					prop.value = entity.entities[findEntityCache[prop.value.value]].entityID
 				} else {
-					prop.value.ref = entity.entities[prop.value.ref.value].entityID
+					prop.value.ref = entity.entities[findEntityCache[prop.value.ref.value]].entityID
 				}
 			} else if (prop.type == "TArray<SEntityTemplateReference>") {
 				for (let subProp in prop.value) {
 					if (prop.value[subProp].value || prop.value[subProp].ref.value) {
 						if (prop.value[subProp].value) {
-							prop.value[subProp] = entity.entities[prop.value[subProp].value].entityID
+							prop.value[subProp] = entity.entities[findEntityCache[prop.value[subProp].value]].entityID
 						} else {
-							prop.value[subProp].ref = entity.entities[prop.value[subProp].ref.value].entityID
+							prop.value[subProp].ref = entity.entities[findEntityCache[prop.value[subProp].ref.value]].entityID
 						}
 					}
 				}
@@ -1586,17 +1593,17 @@ async function applyPatchJSON(automateQNPath = false, automatePatchPath = false,
 		for (let prop of entry.postInitProperties) {
 			if (prop.type == "SEntityTemplateReference" && (prop.value.value || (prop.value.ref && prop.value.ref.value))) {
 				if (prop.value.value) {
-					prop.value = entity.entities[prop.value.value].entityID
+					prop.value = entity.entities[findEntityCache[prop.value.value]].entityID
 				} else {
-					prop.value.ref = entity.entities[prop.value.ref.value].entityID
+					prop.value.ref = entity.entities[findEntityCache[prop.value.ref.value]].entityID
 				}
 			} else if (prop.type == "TArray<SEntityTemplateReference>") {
 				for (let subProp in prop.value) {
 					if (prop.value[subProp].value || prop.value[subProp].ref.value) {
 						if (prop.value[subProp].value) {
-							prop.value[subProp] = entity.entities[prop.value[subProp].value].entityID
+							prop.value[subProp] = entity.entities[findEntityCache[prop.value[subProp].value]].entityID
 						} else {
-							prop.value[subProp].ref = entity.entities[prop.value[subProp].ref.value].entityID
+							prop.value[subProp].ref = entity.entities[findEntityCache[prop.value[subProp].ref.value]].entityID
 						}
 					}
 				}
@@ -1633,63 +1640,63 @@ async function applyPatchJSON(automateQNPath = false, automatePatchPath = false,
 		index++
 	}
 
-	var findEntityCache = {}
+	const newFindEntityCache = {}
 
 	for (let entry in newEntity.entities) {
 		newEntity.entities[entry].refID = new LosslessJSON.LosslessNumber(entry)
-		findEntityCache[newEntity.entities[entry].entityID] = entry
+		newFindEntityCache[newEntity.entities[entry].entityID] = entry
 	}
 
 	for (let entry of newEntity.entities) {
 		if (!entry.parent.ref.startsWith("SPECIAL")) {
-			entry.parent.ref = new LosslessJSON.LosslessNumber(findEntityCache[entry.parent.ref])
+			entry.parent.ref = new LosslessJSON.LosslessNumber(newFindEntityCache[entry.parent.ref])
 		}
 
 		if (entry.events)
 		for (let pin of entry.events) {
-			pin.onEntity = new LosslessJSON.LosslessNumber(findEntityCache[pin.onEntity])
+			pin.onEntity = new LosslessJSON.LosslessNumber(newFindEntityCache[pin.onEntity])
 		}
 
 		if (entry.inputCopying)
 		for (let pin of entry.inputCopying) {
-			pin.onEntity = new LosslessJSON.LosslessNumber(findEntityCache[pin.onEntity])
+			pin.onEntity = new LosslessJSON.LosslessNumber(newFindEntityCache[pin.onEntity])
 		}
 
 		if (entry.outputCopying)
 		for (let pin of entry.outputCopying) {
-			pin.onEntity = new LosslessJSON.LosslessNumber(findEntityCache[pin.onEntity])
+			pin.onEntity = new LosslessJSON.LosslessNumber(newFindEntityCache[pin.onEntity])
 		}
 
 		if (entry.exposedInterfaces)
 		for (let interface of entry.exposedInterfaces) {
-			interface[1] = new LosslessJSON.LosslessNumber(findEntityCache[interface[1]])
+			interface[1] = new LosslessJSON.LosslessNumber(newFindEntityCache[interface[1]])
 		}
 
 		if (entry.entitySubsets)
 		for (let subset of entry.entitySubsets) {
 			for (let subSubset in subset[1].entities) {
-				subset[1].entities[subSubset] = new LosslessJSON.LosslessNumber(findEntityCache[subset[1].entities[subSubset]])
+				subset[1].entities[subSubset] = new LosslessJSON.LosslessNumber(newFindEntityCache[subset[1].entities[subSubset]])
 			}
 		}
 
 		if (entry.propertyAliases)
 		for (let alias of entry.propertyAliases) {
-			alias.entityID = new LosslessJSON.LosslessNumber(findEntityCache[alias.entityID])
+			alias.entityID = new LosslessJSON.LosslessNumber(newFindEntityCache[alias.entityID])
 		}
 
 		for (let prop of entry.properties) {
 			if (prop.type == "SEntityTemplateReference") {
 				if (typeof prop.value == "string" && !prop.value.startsWith("SPECIAL")) {
-					prop.value = new LosslessJSON.LosslessNumber(findEntityCache[prop.value])
+					prop.value = new LosslessJSON.LosslessNumber(newFindEntityCache[prop.value])
 				} else if (typeof prop.value != "string" && !prop.value.ref.startsWith("SPECIAL")) {
-					prop.value.ref = new LosslessJSON.LosslessNumber(findEntityCache[prop.value.ref])
+					prop.value.ref = new LosslessJSON.LosslessNumber(newFindEntityCache[prop.value.ref])
 				}
 			} else if (prop.type == "TArray<SEntityTemplateReference>") {
 				for (let subProp in prop.value) {
 					if (typeof prop.value[subProp] == "string" && !prop.value[subProp].startsWith("SPECIAL")) {
-						prop.value[subProp] = new LosslessJSON.LosslessNumber(findEntityCache[prop.value[subProp]])
+						prop.value[subProp] = new LosslessJSON.LosslessNumber(newFindEntityCache[prop.value[subProp]])
 					} else if (typeof !prop.value[subProp] != "string" && !prop.value[subProp].ref.startsWith("SPECIAL")) {
-						prop.value[subProp].ref = new LosslessJSON.LosslessNumber(findEntityCache[prop.value[subProp].ref])
+						prop.value[subProp].ref = new LosslessJSON.LosslessNumber(newFindEntityCache[prop.value[subProp].ref])
 					}
 				}
 			}
@@ -1698,16 +1705,16 @@ async function applyPatchJSON(automateQNPath = false, automatePatchPath = false,
 		for (let prop of entry.postInitProperties) {
 			if (prop.type == "SEntityTemplateReference") {
 				if (typeof prop.value == "string" && !prop.value.startsWith("SPECIAL")) {
-					prop.value = new LosslessJSON.LosslessNumber(findEntityCache[prop.value])
+					prop.value = new LosslessJSON.LosslessNumber(newFindEntityCache[prop.value])
 				} else if (typeof prop.value != "string" && !prop.value.ref.startsWith("SPECIAL")) {
-					prop.value.ref = new LosslessJSON.LosslessNumber(findEntityCache[prop.value.ref])
+					prop.value.ref = new LosslessJSON.LosslessNumber(newFindEntityCache[prop.value.ref])
 				}
 			} else if (prop.type == "TArray<SEntityTemplateReference>") {
 				for (let subProp in prop.value) {
 					if (typeof prop.value[subProp] == "string" && !prop.value[subProp].startsWith("SPECIAL")) {
-						prop.value[subProp] = new LosslessJSON.LosslessNumber(findEntityCache[prop.value[subProp]])
+						prop.value[subProp] = new LosslessJSON.LosslessNumber(newFindEntityCache[prop.value[subProp]])
 					} else if (typeof !prop.value[subProp] != "string" && !prop.value[subProp].ref.startsWith("SPECIAL")) {
-						prop.value[subProp].ref = new LosslessJSON.LosslessNumber(findEntityCache[prop.value[subProp].ref])
+						prop.value[subProp].ref = new LosslessJSON.LosslessNumber(newFindEntityCache[prop.value[subProp].ref])
 					}
 				}
 			}
