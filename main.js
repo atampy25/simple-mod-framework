@@ -18,6 +18,7 @@ const readRecursive = require('fs-readdir-recursive')
 const os = require("os")
 const json5 = require("json5")
 const semver = require('semver');
+require("clarify")
 
 const Piscina = require('piscina')
 

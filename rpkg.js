@@ -1,8 +1,10 @@
 const fs = require("fs")
 const path = require("path")
-const config = JSON.parse(fs.readFileSync(path.join(process.cwd(), "config.json")))
+const json5 = require("json5")
 const child_process = require("child_process")
 require("clarify")
+
+const config = json5.parse(fs.readFileSync(path.join(process.cwd(), "config.json")))
 
 class RPKGInstance {
     constructor() {

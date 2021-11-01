@@ -4,8 +4,10 @@ const RPKG = require("./rpkg")
 const fs = require("fs-extra")
 const path = require("path")
 const child_process = require("child_process")
+const json5 = require("json5")
+require("clarify")
 
-const config = JSON.parse(fs.readFileSync(path.join(process.cwd(), "config.json")))
+const config = json5.parse(fs.readFileSync(path.join(process.cwd(), "config.json")))
 
 module.exports = async ({
 	contentFilePath,
