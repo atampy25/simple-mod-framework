@@ -1360,6 +1360,8 @@ async function createPatchJSON(automateQN1Path = false, automateQN2Path = false,
 			}
 		}
 
+		entry.properties = Object.fromEntries(entry.properties.map(a=>{ return [a.name, {type: a.type, value: a.value}] }))
+
 		for (let prop of entry.postInitProperties) {
 			if (prop.type == "SEntityTemplateReference" && (prop.value.value || (prop.value.ref && prop.value.ref.value))) {
 				if (prop.value.value) {
@@ -1379,6 +1381,8 @@ async function createPatchJSON(automateQN1Path = false, automateQN2Path = false,
 				}
 			}
 		}
+
+		entry.postInitProperties = Object.fromEntries(entry.postInitProperties.map(a=>{ return [a.name, {type: a.type, value: a.value}] }))
 	}
 
 	for (let entry of entity2.entities) {
@@ -1440,6 +1444,8 @@ async function createPatchJSON(automateQN1Path = false, automateQN2Path = false,
 			}
 		}
 
+		entry.properties = Object.fromEntries(entry.properties.map(a=>{ return [a.name, {type: a.type, value: a.value}] }))
+
 		for (let prop of entry.postInitProperties) {
 			if (prop.type == "SEntityTemplateReference" && (prop.value.value || (prop.value.ref && prop.value.ref.value))) {
 				if (prop.value.value) {
@@ -1459,6 +1465,8 @@ async function createPatchJSON(automateQN1Path = false, automateQN2Path = false,
 				}
 			}
 		}
+
+		entry.postInitProperties = Object.fromEntries(entry.postInitProperties.map(a=>{ return [a.name, {type: a.type, value: a.value}] }))
 	}
 
 	let candidate1 = Object.fromEntries(entity1.entities.map(a => [a.entityID, a]))
@@ -1590,6 +1598,8 @@ async function applyPatchJSON(automateQNPath = false, automatePatchPath = false,
 			}
 		}
 
+		entry.properties = Object.fromEntries(entry.properties.map(a=>{ return [a.name, {type: a.type, value: a.value}] }))
+
 		for (let prop of entry.postInitProperties) {
 			if (prop.type == "SEntityTemplateReference" && (prop.value.value || (prop.value.ref && prop.value.ref.value))) {
 				if (prop.value.value) {
@@ -1609,6 +1619,8 @@ async function applyPatchJSON(automateQNPath = false, automatePatchPath = false,
 				}
 			}
 		}
+
+		entry.postInitProperties = Object.fromEntries(entry.postInitProperties.map(a=>{ return [a.name, {type: a.type, value: a.value}] }))
 	}
 
 	let candidate = Object.fromEntries(entity.entities.map(a => [a.entityID, a]))
@@ -1684,6 +1696,8 @@ async function applyPatchJSON(automateQNPath = false, automatePatchPath = false,
 			alias.entityID = new LosslessJSON.LosslessNumber(newFindEntityCache[alias.entityID])
 		}
 
+		entry.properties = Object.entries(entry.properties).map(a=>{ return {name: a[0], type: a[1].type, value: a[1].value} })
+
 		for (let prop of entry.properties) {
 			if (prop.type == "SEntityTemplateReference") {
 				if (typeof prop.value == "string" && !prop.value.startsWith("SPECIAL")) {
@@ -1701,6 +1715,8 @@ async function applyPatchJSON(automateQNPath = false, automatePatchPath = false,
 				}
 			}
 		}
+
+		entry.postInitProperties = Object.entries(entry.postInitProperties).map(a=>{ return {name: a[0], type: a[1].type, value: a[1].value} })
 
 		for (let prop of entry.postInitProperties) {
 			if (prop.type == "SEntityTemplateReference") {
