@@ -84,7 +84,7 @@ async function fetchModUpdates() {
 															<div class="flex flex-initial flex-wrap flex-row justify-center w-full">
 																<div>
 																	<span class="font-bold">${sanitise(modManifest.name)}</span> v<span>${sanitise(modManifest.version)}</span> -> v<span>${sanitise(modUpdateData.version)}</span><br>
-																	<span>${sanitise(modManifest.changelog)}</span>
+																	<span>${sanitise(modUpdateData.changelog)}</span>
 																</div>
 															</div>
 														</div>`
