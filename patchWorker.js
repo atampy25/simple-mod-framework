@@ -1,4 +1,4 @@
-THREE = require("./three.min")
+THREE = require("./three-onlymath.min")
 const QuickEntity = require("./quickentity")
 const QuickEntityLegacy = require("./quickentityLegacy")
 const RPKG = require("./rpkg")
