@@ -2,6 +2,7 @@ const FrameworkVersion = "1.0.0"
 
 THREE = require("./three.min")
 const QuickEntity = require("./quickentity")
+const QuickEntityLegacy = require("./quickentityLegacy")
 const RPKG = require("./rpkg")
 
 const fs = require("fs-extra")
@@ -206,7 +207,7 @@ async function stageAllMods() {
                         switch (contentType) {
                             case "entity.json":
                                 var entityContent = LosslessJSON.parse(String(fs.readFileSync(contentFilePath)))
-                                await QuickEntity.generate("HM3", contentFilePath,
+                                await (entityContent.quickEntityVersion < 2 ? QuickEntityLegacy : QuickEntity).generate("HM3", contentFilePath,
                                                             path.join(process.cwd(), "temp", "temp.TEMP.json"),
                                                             path.join(process.cwd(), "temp", "temp.TEMP.meta.json"),
                                                             path.join(process.cwd(), "temp", "temp.TBLU.json"),

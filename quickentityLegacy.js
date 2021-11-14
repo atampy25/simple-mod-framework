@@ -1,139 +1,40 @@
-/** @typedef {Object} TEMP
-* @property {Number} blueprintIndexInResourceHeader
-* @property {Array} externalSceneTypeIndicesInResourceHeader
-* @property {Array} propertyOverrides
-* @property {Number} rootEntityIndex
-* @property {Array} [subEntities]
-* @property {Array} [entityTemplates]
-* @property {Number} subType
-*/
-
-/** @typedef {Object} TBLU
-* @property {Array} externalSceneTypeIndicesInResourceHeader
-* @property {Array} inputPinForwardings
-* @property {Array} outputPinForwardings
-* @property {Array} overrideDeletes
-* @property {Array} [pinConnectionOverrideDeletes]
-* @property {Array} [pinConnectionOverrides]
-* @property {Array} pinConnections
-* @property {Number} rootEntityIndex
-* @property {Array} [subEntities]
-* @property {Array} [entityTemplates]
-* @property {Number} subType
-*/
-
-/** @typedef {Object} HashMeta
-* @property {Number} hash_offset
-* @property {Array} hash_reference_data
-* @property {Number} hash_reference_table_dummy
-* @property {Number} hash_reference_table_size
-* @property {String} hash_resource_type
-* @property {Number} hash_size
-* @property {Number} hash_size_final
-* @property {Number} hash_size_in_memory
-* @property {Number} hash_size_in_video_memory
-* @property {String} hash_value
-*/
-
-/** @typedef {object} Entity
- * @property {string} tempHash
- * @property {string} tbluHash
- * @property {string} rootEntity
- * @property {Object.<string, SubEntity>} entities
- * @property {string[]} externalScenes
- * @property {object[]} propertyOverrides
- * @property {object[]} overrideDeletes
- * @property {object[]} pinConnectionOverrides
- * @property {object[]} pinConnectionOverrideDeletes
- * @property {number} subType
- * @property {number} quickEntityVersion
- */
-
-/** @typedef {object} SubEntity
- * @property {object} parent
- * @property {string} parent.ref
- * @property {string} parent.exposedEntity
- * @property {string} parent.externalScene
- * @property {string} parent.entityID
-
- * @property {string} name
- * @property {string} template
- * @property {string} [templateFlag]
- * @property {string} blueprint
- * @property {boolean} editorOnly
- * @property {object[]} platformSpecificPropertyValues
- * @property {array[]|string[]|object[]} entitySubsets
-
- * @property {Object.<string, { type: string; value: any; }>} properties
- * @property {object[]} [propertyValues]
-
- * @property {Object.<string, { type: string; value: any; }>} postInitProperties
- * @property {object[]} [postInitPropertyValues]
-
- * @property {object[]} propertyAliases
-
- * @property {object[]} events
- * @property {string} events.onEvent
- * @property {string} events.shouldTrigger
- * @property {string} events.onEntity
- * @property {object} [events.value]
-
- * @property {object[]} inputCopying
- * @property {string} inputCopying.whenTriggered
- * @property {string} inputCopying.alsoTrigger
- * @property {string} inputCopying.onEntity
- * @property {object} [inputCopying.value]
-
- * @property {object[]} outputCopying
- * @property {string} outputCopying.onEvent
- * @property {string} outputCopying.propagateEvent
- * @property {string} outputCopying.onEntity
- * @property {object} [outputCopying.value]
-
- * @property {object} exposedEntities
- * @property {object} exposedInterfaces
-*/
-
-let electron, Swal, storage;
-
-// @ts-ignore
 if (!module.parent) {
 	electron = require("electron")
 }
 const fs = require('fs')
 const path = require("path")
 const LosslessJSON = require('lossless-json')
-// @ts-ignore
 if (!module.parent) {
 	Swal = require("sweetalert2")
 }
 const { execSync } = require("child_process")
-const Decimal = require('decimal.js').Decimal
-// @ts-ignore
+const Decimal = require('decimal.js')
 if (!module.parent) {
 	storage = require('electron-json-storage')
 }
 const { promisify } = require("util")
 const rfc6902 = require('rfc6902')
 
-var THREE = require("./three-onlymath.min.js")
+const QuickEntityVersion = 1.135
 
-const QuickEntityVersion = 2.0
+if (!module.parent) {
+	forceArgsModeChoice = false
+	if (JSON.stringify(storage.getSync("forceArgsModeChoice")) != "{}") {
+		forceArgsModeChoice = storage.getSync("forceArgsModeChoice")
+		document.getElementById("forceArgsModeChoiceCheckbox").checked = storage.getSync("forceArgsModeChoice")
+	} else {
+		storage.set("forceArgsModeChoice", false)
+		document.getElementById("forceArgsModeChoiceCheckbox").checked = false
+	}
+
+	document.getElementById("gameSelect").value = storage.getSync("game") || "HM3"
+}
 
 // oi sieni shut up yeah?
 // you've got ur select box
 // - Atampy26
 
-/**
- * @param {{ nPropertyID?: string|number; value: any; }} property
- * @param {TEMP} TEMP
- * @param {TBLU} TBLU
- * @param {HashMeta} TEMPmeta
- * @param {HashMeta} TBLUmeta
- * @param {Entity} entity
- * @param {{ name: string; }} entry
- */
-async function parseProperty(property, TEMP, TBLU, TEMPmeta, TBLUmeta, entity, entry) {
+async function parseProperty(property, argsMode, TEMP, TBLU, TEMPmeta, TBLUmeta, entity, entry) {
 	if (property.value["$type"].startsWith("TArray<")) {
 		for (var prop in property.value["$val"]) {
 			var usedProp = {}
@@ -143,7 +44,7 @@ async function parseProperty(property, TEMP, TBLU, TEMPmeta, TBLUmeta, entity, e
 				"$val": property.value["$val"][prop]
 			}
 
-			parseProperty(usedProp, TEMP, TBLU, TEMPmeta, TBLUmeta, entity, entry)
+			parseProperty(usedProp, argsMode, TEMP, TBLU, TEMPmeta, TBLUmeta, entity, entry)
 
 			property.value["$val"][prop] = usedProp.value["$val"]
 		}
@@ -156,14 +57,27 @@ async function parseProperty(property, TEMP, TBLU, TEMPmeta, TBLUmeta, entity, e
 			case "SEntityTemplateReference":
 				try {
 					if (property.value["$val"].exposedEntity.length || property.value["$val"].externalSceneIndex != -1) {
-						property.value["$val"] = {
-							"ref": property.value["$val"].entityIndex == -2 ? "SPECIAL: Use EntityID" : new Decimal(TBLU.subEntities[property.value["$val"].entityIndex].entityId.value).toHex().substring(2),
-							"entityID": new Decimal(property.value["$val"].entityID.value).toHex().substring(2),
-							"externalScene": property.value["$val"].externalSceneIndex != -1 ? TEMPmeta.hash_reference_data[TEMP.externalSceneTypeIndicesInResourceHeader[property.value["$val"].externalSceneIndex]].hash : "SPECIAL: None",
-							"exposedEntity": property.value["$val"].exposedEntity
+						if (argsMode != "ids") {
+							property.value["$val"] = {
+								"ref": property.value["$val"].entityIndex == -2 ? "SPECIAL: Use EntityID" : entity.entities[property.value["$val"].entityIndex].name,
+								"entityID": new Decimal(property.value["$val"].entityID.value).toHex().substring(2),
+								"externalScene": property.value["$val"].externalSceneIndex != -1 ? TEMPmeta.hash_reference_data[TEMP.externalSceneTypeIndicesInResourceHeader[property.value["$val"].externalSceneIndex]].hash : "SPECIAL: None",
+								"exposedEntity": property.value["$val"].exposedEntity
+							}
+						} else {
+							property.value["$val"] = {
+								"ref": property.value["$val"].entityIndex == -2 ? "SPECIAL: Use EntityID" : property.value["$val"].entityIndex,
+								"entityID": new Decimal(property.value["$val"].entityID.value).toHex().substring(2),
+								"externalScene": property.value["$val"].externalSceneIndex != -1 ? TEMPmeta.hash_reference_data[TEMP.externalSceneTypeIndicesInResourceHeader[property.value["$val"].externalSceneIndex]].hash : "SPECIAL: None",
+								"exposedEntity": property.value["$val"].exposedEntity
+							}
 						}
 					} else {
-						property.value["$val"] = property.value["$val"].entityIndex == -2 ? "SPECIAL: Use EntityID" : property.value["$val"].entityIndex == -1 ? "SPECIAL: None" : new Decimal(TBLU.subEntities[property.value["$val"].entityIndex].entityId.value).toHex().substring(2)
+						if (argsMode != "ids") {
+							property.value["$val"] = property.value["$val"].entityIndex == -2 ? "SPECIAL: Use EntityID" : property.value["$val"].entityIndex == -1 ? "SPECIAL: None" : entity.entities[property.value["$val"].entityIndex].name
+						} else {
+							property.value["$val"] = property.value["$val"].entityIndex == -2 ? "SPECIAL: Use EntityID" : property.value["$val"].entityIndex == -1 ? "SPECIAL: None" : property.value["$val"].entityIndex
+						}
 					}
 				} catch (e) {
 					console.log("Error in custom property parse (SEntityTemplateReference type) for " + entry.name + ": " + e)
@@ -175,14 +89,7 @@ async function parseProperty(property, TEMP, TBLU, TEMPmeta, TBLUmeta, entity, e
 					if (property.value["$val"]["m_IDLow"] == 4294967295 && property.value["$val"]["m_IDHigh"] == 4294967295) {
 						property.value["$val"] = "SPECIAL: None"
 					} else {
-						if (TEMPmeta["hash_reference_data"][property.value["$val"]["m_IDLow"]].flag != "1F") {
-							property.value["$val"] = {
-								resource: TEMPmeta["hash_reference_data"][property.value["$val"]["m_IDLow"]].hash,
-								flag: TEMPmeta["hash_reference_data"][property.value["$val"]["m_IDLow"]].flag
-							}
-						} else {
-							property.value["$val"] = TEMPmeta["hash_reference_data"][property.value["$val"]["m_IDLow"]].hash
-						}
+						property.value["$val"] = TEMPmeta["hash_reference_data"][property.value["$val"]["m_IDLow"]].hash
 					}
 				} catch (e) {
 					console.log("Error in custom property parse (ZRuntimeResourceID type) for " + entry.name + ": " + e)
@@ -259,20 +166,8 @@ async function parseProperty(property, TEMP, TBLU, TEMPmeta, TBLUmeta, entity, e
 	}
 }
 
-/**
- * @param {[name: string|number, value: { type: any; value: any; }]} property
- * @param {string} propertyValues
- * @param {TEMP} TEMP
- * @param {TBLU} TBLU
- * @param {HashMeta} TEMPmeta
- * @param {HashMeta} TBLUmeta
- * @param {Entity} entity
- * @param {any} entry
- * @param {{}} findEntityCache
- * @returns {Promise<{nPropertyID: string|number; value: { $type: string; $val: any }}>}
- */
-async function rebuildSpecificProp(property, propertyValues, TEMP, TBLU, TEMPmeta, TBLUmeta, entity, entry, findEntityCache) {
-	switch (property[1].type) {
+async function rebuildSpecificProp(property, propertyValues, TEMP, TBLU, TEMPmeta, TBLUmeta, argsMode, entity, entry, findEntityCache) {
+	switch (property.type) {
 		// case "ZGameTimeSeconds":
 		//     return {
 		//         "nPropertyID": property.name,
@@ -285,57 +180,57 @@ async function rebuildSpecificProp(property, propertyValues, TEMP, TBLU, TEMPmet
 
 		case "SColorRGB":
 			return {
-				"nPropertyID": property[0],
+				"nPropertyID": property.name,
 				"value": {
 					"$type": "SColorRGB",
 					"$val": {
-						"r": new LosslessJSON.LosslessNumber((parseInt(property[1].value.substring(1).slice(0,2), 16) / 255).toString()),
-						"g": new LosslessJSON.LosslessNumber((parseInt(property[1].value.substring(1).slice(2,4), 16) / 255).toString()),
-						"b": new LosslessJSON.LosslessNumber((parseInt(property[1].value.substring(1).slice(4,6), 16) / 255).toString())
+						"r": new LosslessJSON.LosslessNumber((parseInt(property.value.substring(1).slice(0,2), 16) / 255).toString()),
+						"g": new LosslessJSON.LosslessNumber((parseInt(property.value.substring(1).slice(2,4), 16) / 255).toString()),
+						"b": new LosslessJSON.LosslessNumber((parseInt(property.value.substring(1).slice(4,6), 16) / 255).toString())
 					}
 				}
 			}
 			break
 		case "SColorRGBA":
 			return {
-				"nPropertyID": property[0],
+				"nPropertyID": property.name,
 				"value": {
 					"$type": "SColorRGBA",
 					"$val": {
-						"r": new LosslessJSON.LosslessNumber((parseInt(property[1].value.substring(1).slice(0,2), 16) / 255).toString()),
-						"g": new LosslessJSON.LosslessNumber((parseInt(property[1].value.substring(1).slice(2,4), 16) / 255).toString()),
-						"b": new LosslessJSON.LosslessNumber((parseInt(property[1].value.substring(1).slice(4,6), 16) / 255).toString()),
-						"a": new LosslessJSON.LosslessNumber((parseInt(property[1].value.substring(1).slice(6,8), 16) / 255).toString())
+						"r": new LosslessJSON.LosslessNumber((parseInt(property.value.substring(1).slice(0,2), 16) / 255).toString()),
+						"g": new LosslessJSON.LosslessNumber((parseInt(property.value.substring(1).slice(2,4), 16) / 255).toString()),
+						"b": new LosslessJSON.LosslessNumber((parseInt(property.value.substring(1).slice(4,6), 16) / 255).toString()),
+						"a": new LosslessJSON.LosslessNumber((parseInt(property.value.substring(1).slice(6,8), 16) / 255).toString())
 					}
 				}
 			}
 			break
 		case "ZGuid":
 			return {
-				"nPropertyID": property[0],
+				"nPropertyID": property.name,
 				"value": {
 					"$type": "ZGuid",
 					"$val": {
-						"_a": parseInt(property[1].value.split("-")[0], 16),
-						"_b": parseInt(property[1].value.split("-")[1], 16),
-						"_c": parseInt(property[1].value.split("-")[2], 16),
-						"_d": parseInt(property[1].value.split("-")[3].slice(0,2), 16),
-						"_e": parseInt(property[1].value.split("-")[3].slice(2,4), 16),
-						"_f": parseInt(property[1].value.split("-")[4].slice(0,2), 16),
-						"_g": parseInt(property[1].value.split("-")[4].slice(2,4), 16),
-						"_h": parseInt(property[1].value.split("-")[4].slice(4,6), 16),
-						"_i": parseInt(property[1].value.split("-")[4].slice(6,8), 16),
-						"_j": parseInt(property[1].value.split("-")[4].slice(8,10), 16),
-						"_k": parseInt(property[1].value.split("-")[4].slice(10,12), 16)
+						"_a": parseInt(property.value.split("-")[0], 16),
+						"_b": parseInt(property.value.split("-")[1], 16),
+						"_c": parseInt(property.value.split("-")[2], 16),
+						"_d": parseInt(property.value.split("-")[3].slice(0,2), 16),
+						"_e": parseInt(property.value.split("-")[3].slice(2,4), 16),
+						"_f": parseInt(property.value.split("-")[4].slice(0,2), 16),
+						"_g": parseInt(property.value.split("-")[4].slice(2,4), 16),
+						"_h": parseInt(property.value.split("-")[4].slice(4,6), 16),
+						"_i": parseInt(property.value.split("-")[4].slice(6,8), 16),
+						"_j": parseInt(property.value.split("-")[4].slice(8,10), 16),
+						"_k": parseInt(property.value.split("-")[4].slice(10,12), 16)
 					}
 				}
 			}
 			break
 		case "SMatrix43":
-			var matrix = new THREE.Matrix4().makeRotationFromEuler(new THREE.Euler(new Decimal(property[1].value.rotation.x.value).times(THREE.Math.DEG2RAD), new Decimal(property[1].value.rotation.y.value).times(THREE.Math.DEG2RAD), new Decimal(property[1].value.rotation.z.value).times(THREE.Math.DEG2RAD), "XYZ"))
+			var matrix = new THREE.Matrix4().makeRotationFromEuler(new THREE.Euler(new Decimal(property.value.rotation.x.value) * THREE.Math.DEG2RAD, new Decimal(property.value.rotation.y.value) * THREE.Math.DEG2RAD, new Decimal(property.value.rotation.z.value) * THREE.Math.DEG2RAD, "XYZ"))
 
 			return {
-				"nPropertyID": property[0],
+				"nPropertyID": property.name,
 				"value": {
 					"$type": "SMatrix43",
 					"$val": {
@@ -355,9 +250,9 @@ async function rebuildSpecificProp(property, propertyValues, TEMP, TBLU, TEMPmet
 							"z": Number(matrix.elements[10])
 						},
 						"Trans": {
-							"x": property[1].value.position.x,
-							"y": property[1].value.position.y,
-							"z": property[1].value.position.z
+							"x": property.value.position.x,
+							"y": property.value.position.y,
+							"z": property.value.position.z
 						}
 					}
 				}
@@ -365,29 +260,29 @@ async function rebuildSpecificProp(property, propertyValues, TEMP, TBLU, TEMPmet
 			break
 		case "SEntityTemplateReference":
 			return {
-				"nPropertyID": property[0],
+				"nPropertyID": property.name,
 				"value": {
-					"$type": property[1].type,
-					"$val": typeof property[1].value == "object" && property[1].value.ref ? {
-						"entityID": new LosslessJSON.LosslessNumber(new Decimal("0x" + property[1].value.entityID).toFixed()),
-						"externalSceneIndex": property[1].value.externalScene,
-						"entityIndex": findEntity(findEntityCache, property[1].value.ref),
-						"exposedEntity": property[1].value.exposedEntity
+					"$type": property.type,
+					"$val": typeof property.value == "object" && property.value.ref ? {
+						"entityID": new LosslessJSON.LosslessNumber(new Decimal("0x" + property.value.entityID).toFixed()),
+						"externalSceneIndex": property.value.externalScene,
+						"entityIndex": findEntity(findEntityCache, property.value.ref),
+						"exposedEntity": property.value.exposedEntity
 					} : {
 						"entityID": new LosslessJSON.LosslessNumber("18446744073709551615"),
 						"externalSceneIndex": -1,
-						"entityIndex": findEntity(findEntityCache, property[1].value),
+						"entityIndex": findEntity(findEntityCache, property.value),
 						"exposedEntity": ""
 					}
 				}
 			}
 			break
 		case "ZRuntimeResourceID":
-			if (property[1].value == "SPECIAL: None") {
+			if (property.value == "SPECIAL: None") {
 				return {
-					"nPropertyID": property[0],
+					"nPropertyID": property.name,
 					"value": {
-						"$type": property[1].type,
+						"$type": property.type,
 						"$val": {
 							"m_IDHigh": 4294967295,
 							"m_IDLow": 4294967295
@@ -398,73 +293,53 @@ async function rebuildSpecificProp(property, propertyValues, TEMP, TBLU, TEMPmet
 				break
 			}
 
-			if (!TEMPmeta.hash_reference_data.some(a => a.hash == (property[1].value.flag ? property[1].value.resource : property[1].value))) {
+			if (!TEMPmeta.hash_reference_data.find(a => a.hash == property.value)) {
 				TEMPmeta.hash_reference_data.push({
-					"hash": property[1].value.flag ? property[1].value.resource : property[1].value,
-					"flag": property[1].value.flag ? property[1].value.flag : "1F"
+					"hash": property.value,
+					"flag": "1F"
 				})
 			}
 
 			return {
-				"nPropertyID": property[0],
+				"nPropertyID": property.name,
 				"value": {
-					"$type": property[1].type,
+					"$type": property.type,
 					"$val": {
 						"m_IDHigh": 0,
-						"m_IDLow": TEMPmeta["hash_reference_data"].findIndex(a => a.hash == (property[1].value.flag ? property[1].value.resource : property[1].value))
+						"m_IDLow": TEMPmeta["hash_reference_data"].findIndex(a => a.hash == property.value)
 					}
 				}
 			}
 			break
 		default:
 			return {
-				"nPropertyID": property[0],
-				"value": property[1].type ? {
-					"$type": property[1].type,
-					"$val": property[1].value
+				"nPropertyID": property.name,
+				"value": property.type ? {
+					"$type": property.type,
+					"$val": property.value
 				} : undefined
 			}
 			break
 	}
 }
 
-/**
- * @param {[name: string|number, value: { type: string; value: any; }]} property
- * @param {string} propertyValues
- * @param {TEMP} TEMP
- * @param {TBLU} TBLU
- * @param {HashMeta} TEMPmeta
- * @param {HashMeta} TBLUmeta
- * @param {Entity} entity
- * @param {any} entry
- * @param {number} index
- * @param {{}} findEntityCache
- */
-async function rebuildProperty(property, propertyValues, TEMP, TBLU, TEMPmeta, TBLUmeta, entity, entry, index, findEntityCache, isOverrides = false) {
-	if (isOverrides) {
-		// @ts-ignore
-		property = [property.name, {type: property.type, value: property.value}]
-	}
-
-	if (property[1].type.startsWith("TArray<")) {
-		var propertyToAdd = {
-			"nPropertyID": property[0],
-			"value": property[1].type ? {
-				"$type": property[1].type,
-				"$val": property[1].value
+async function rebuildProperty(property, propertyValues, TEMP, TBLU, TEMPmeta, TBLUmeta, argsMode, entity, entry, index, findEntityCache, isOverrides = false) {
+	if (property.type.startsWith("TArray<")) {
+		propertyToAdd = {
+			"nPropertyID": property.name,
+			"value": property.type ? {
+				"$type": property.type,
+				"$val": property.value
 			} : undefined
 		}
 
 		for (var prop in propertyToAdd.value["$val"]) {
-			var usedProp = []
-			usedProp.push("")
-			usedProp.push({
-				type: property[1].type.slice(7, -1),
-				value: propertyToAdd.value["$val"][prop]
-			})
+			var usedProp = {}
+			usedProp.name = ""
+			usedProp.type = property.type.slice(7, -1)
+			usedProp.value = propertyToAdd.value["$val"][prop]
 
-			// @ts-ignore
-			propertyToAdd.value["$val"][prop] = (await rebuildSpecificProp(usedProp, propertyValues, TEMP, TBLU, TEMPmeta, TBLUmeta, entity, entry, findEntityCache)).value["$val"]
+			propertyToAdd.value["$val"][prop] = (await rebuildSpecificProp(usedProp, propertyValues, TEMP, TBLU, TEMPmeta, TBLUmeta, argsMode, entity, entry, findEntityCache)).value["$val"]
 		}
 
 		if (isOverrides) {
@@ -476,13 +351,7 @@ async function rebuildProperty(property, propertyValues, TEMP, TBLU, TEMPmeta, T
 		return
 	}
 
-	var propertyToAdd = await rebuildSpecificProp(property, propertyValues, TEMP, TBLU, TEMPmeta, TBLUmeta, entity, entry, findEntityCache)
-
-	// @ts-ignore
-	if (!isNaN(parseInt(propertyToAdd.nPropertyID))) {
-		// @ts-ignore
-		propertyToAdd.nPropertyID = parseInt(propertyToAdd.nPropertyID)
-	}
+	propertyToAdd = await rebuildSpecificProp(property, propertyValues, TEMP, TBLU, TEMPmeta, TBLUmeta, argsMode, entity, entry, findEntityCache)
 
 	if (isOverrides) {
 		TEMP["propertyOverrides"][index][propertyValues] = propertyToAdd
@@ -491,7 +360,10 @@ async function rebuildProperty(property, propertyValues, TEMP, TBLU, TEMPmeta, T
 	}
 }
 
-async function convert(automateGame = false, automateTempPath = false, automateTempMetaPath = false, automateTbluPath = false, automateTbluMetaPath = false, automateQNPath = false) {
+async function convert(automateGame = false, automateMode = false, automateTempPath = false, automateTempMetaPath = false, automateTbluPath = false, automateTbluMetaPath = false, automateQNPath = false) {
+
+const args = process.argv.slice(2)
+
 
 const tempPath = automateTempPath ? automateTempPath : electron.remote.dialog.showOpenDialogSync({
 	title: "Select the TEMP's JSON",
@@ -500,10 +372,7 @@ const tempPath = automateTempPath ? automateTempPath : electron.remote.dialog.sh
 	properties: ["openFile", "dontAddToRecent"]
 })[0]
 
-/** @type {TEMP} */
 const TEMP = LosslessJSON.parse(String(fs.readFileSync(tempPath)))
-
-/** @type {HashMeta} */
 const TEMPmeta = LosslessJSON.parse(String(fs.readFileSync(automateTempMetaPath ? automateTempMetaPath : electron.remote.dialog.showOpenDialogSync({
 	title: "Select the TEMP's meta's JSON",
 	buttonLabel: "Select",
@@ -518,10 +387,7 @@ const tbluPath = automateTbluPath ? automateTbluPath : electron.remote.dialog.sh
 	properties: ["openFile", "dontAddToRecent"]
 })[0]
 
-/** @type {TBLU} */
 const TBLU = LosslessJSON.parse(String(fs.readFileSync(tbluPath)))
-
-/** @type {HashMeta} */
 const TBLUmeta = LosslessJSON.parse(String(fs.readFileSync(automateTbluMetaPath ? automateTbluMetaPath : electron.remote.dialog.showOpenDialogSync({
 	title: "Select the TBLU's meta's JSON",
 	buttonLabel: "Select",
@@ -537,15 +403,40 @@ if ((automateGame ? automateGame : storage.getSync("game")) === "HM2016") {
 	delete TBLU.entityTemplates
 }
 
-if (new Set(TBLU.subEntities.map(a=>a.entityId.value)).size != TBLU.subEntities.map(a=>a.entityId.value).length) {
-	await Swal.fire({
-		title: 'Duplicate Entity IDs',
-		text: `The entity you're converting contains duplicate entity IDs - QuickEntity can't convert it.`,
-		showCancelButton: false,
-		confirmButtonText: 'bruh',
-		allowOutsideClick: false
-	})
-	return
+var argsMode = automateMode ? automateMode : undefined
+
+if (!automateMode) {
+	if (forceArgsModeChoice) {
+		argsMode = (await Swal.fire({
+			title: 'Mode',
+			text: "You have selected to always ask for a conversion mode. Type 'ids' or 'names'.",
+			input: 'text',
+			inputAttributes: {
+			  autocapitalize: 'off'
+			},
+			showCancelButton: true,
+			confirmButtonText: 'OK',
+			allowOutsideClick: false
+		})).value
+	} else {
+		var allEntityNames = TBLU.subEntities.map(object => object.entityName)
+	
+		if (new Set(allEntityNames).size == allEntityNames.length) {
+			argsMode = "names"
+		} else {
+			argsMode = (await Swal.fire({
+				title: 'Mode',
+				text: "There are duplicate subEntity names in this entity. If you convert with names mode, you will not be able to convert back to ResourceTool Source from the resultant QuickEntity JSON. Type 'ids' or 'names'.",
+				input: 'text',
+				inputAttributes: {
+				  autocapitalize: 'off'
+				},
+				showCancelButton: true,
+				confirmButtonText: 'OK',
+				allowOutsideClick: false
+			})).value
+		}
+	}
 }
 
 // {
@@ -569,101 +460,104 @@ if (new Set(TBLU.subEntities.map(a=>a.entityId.value)).size != TBLU.subEntities.
 //     ]
 // }
 
-/** @type {Entity} */
 var entity =  {
 	"tempHash": path.basename(tempPath).slice(0, -10),
 	"tbluHash": path.basename(tbluPath).slice(0, -10),
 	"rootEntity": TBLU.subEntities[TEMP.rootEntityIndex].entityName,
-	"entities": {},
+	"entities": [],
+	"externalScenes": [],
 	"propertyOverrides": TEMP.propertyOverrides,
 	"overrideDeletes": TBLU.overrideDeletes,
 	"pinConnectionOverrides": TBLU.pinConnectionOverrides,
 	"pinConnectionOverrideDeletes": TBLU.pinConnectionOverrideDeletes,
-	"externalScenes": [],
 	"subType": TEMP.subType,
-	"quickEntityVersion": QuickEntityVersion
+	"quickEntityVersion": QuickEntityVersion,
+	"quickEntityMode": argsMode
 }
 
-let index = 0
+index = 0
 for (var entry of TEMP.subEntities) {
+	var subsets = []
+
 	try {
-		for (let subset of TBLU.subEntities[index].entitySubsets) {
-			for (let subSubset in subset[1].entities) {
-				subset[1].entities[subSubset] = new Decimal(TBLU.subEntities[subset[1].entities[subSubset]].entityId.value).toHex().substring(2)
+		for (var subset of TBLU.subEntities[index].entitySubsets) {
+			var subsetData = subset[1]
+			for (var subsetEntity in subsetData.entities) {
+				subsetData.entities[subsetEntity] = argsMode == "ids" ? subsetData.entities[subsetEntity] : TBLU.subEntities[subsetData.entities[subsetEntity]].entityName
 			}
+			subsets.push([subset[0], subsetData])
 		}
 	} catch (e) {
 		console.log("Error deindexing entitySubsets for entity " + index + ": " + e)
 	}
 
-	entity.entities[new Decimal(TBLU.subEntities[index].entityId.value).toHex().substring(2)] = {
+	entity.entities.push({
 		"parent": {
-			"ref": entry.logicalParent.entityIndex >= 0 ? new Decimal(TBLU.subEntities[entry.logicalParent.entityIndex].entityId.value).toHex().substring(2) : (entry.logicalParent.entityIndex == -2 ? "SPECIAL: Use EntityID" : "SPECIAL: None"),
+			"ref": argsMode == "ids" ? (entry.logicalParent.entityIndex >= 0 ? entry.logicalParent.entityIndex : (entry.logicalParent.entityIndex == -2 ? "SPECIAL: Use EntityID" : "SPECIAL: None")) : (entry.logicalParent.entityIndex >= 0 ? TBLU.subEntities[entry.logicalParent.entityIndex].entityName : (entry.logicalParent.entityIndex == -2 ? "SPECIAL: Use EntityID" : "SPECIAL: None")),
 			"exposedEntity": entry.logicalParent.exposedEntity,
 			"externalScene": entry.logicalParent.externalSceneIndex >= 0 ? TEMPmeta["hash_reference_data"][TEMP.externalSceneTypeIndicesInResourceHeader[entry.logicalParent.externalSceneIndex]].hash : "SPECIAL: None",
 			"entityID": new Decimal(entry.logicalParent.entityID.value).toHex().substring(2)
 		},
 		"name": TBLU.subEntities[index].entityName,
 		"template": TEMPmeta["hash_reference_data"][entry.entityTypeResourceIndex].hash,
-		"templateFlag": TEMPmeta["hash_reference_data"][entry.entityTypeResourceIndex].flag != "1F" ? TEMPmeta["hash_reference_data"][entry.entityTypeResourceIndex].flag : undefined,
 		"blueprint": TBLUmeta["hash_reference_data"][TBLU.subEntities[index].entityTypeResourceIndex].hash,
-		"properties": {},
-		"postInitProperties": {},
+		"properties": [],
+		"postInitProperties": [],
 		"editorOnly": TBLU.subEntities[index].editorOnly,
 		"propertyValues": entry.propertyValues,
 		"postInitPropertyValues": entry.postInitPropertyValues,
 		"platformSpecificPropertyValues": entry.platformSpecificPropertyValues ? entry.platformSpecificPropertyValues : [],
-		"propertyAliases": TBLU.subEntities[index].propertyAliases.map(a=>{return {
-            "sAliasName": a.sAliasName,
-            "entityID": new Decimal(TBLU.subEntities[a.entityID].entityId.value).toHex().substring(2),
-            "sPropertyName": a.sPropertyName
-        }}),
+		"propertyAliases": TBLU.subEntities[index].propertyAliases,
 		"exposedEntities": TBLU.subEntities[index].exposedEntities,
-		"exposedInterfaces": TBLU.subEntities[index].exposedInterfaces.map(a=>[a[0], new Decimal(TBLU.subEntities[a[1]].entityId.value).toHex().substring(2)]),
-		"entitySubsets": TBLU.subEntities[index].entitySubsets,
-		"events": [],
-		"inputCopying": [],
-		"outputCopying": []
+		"exposedInterfaces": TBLU.subEntities[index].exposedInterfaces,
+		"entitySubsets": subsets,
+		"entityID": new Decimal(TBLU.subEntities[index].entityId.value).toHex().substring(2)
+	})
+
+	if (argsMode == "ids") {
+		entity.entities[index].refID = index
 	}
 
 	index ++
 }
 
-for (let entry of Object.values(entity.entities)) {
+for (var entry of entity.entities) {
 	var propertyValues = LosslessJSON.parse(LosslessJSON.stringify(entry.propertyValues))
 	for (var property of propertyValues) {
-		await parseProperty(property, TEMP, TBLU, TEMPmeta, TBLUmeta, entity, entry)
+		await parseProperty(property, argsMode, TEMP, TBLU, TEMPmeta, TBLUmeta, entity, entry)
 	}
 
-	entry.properties = {}
+	entry.properties = []
 	for (var property of propertyValues) {
-		entry.properties[property.nPropertyID] = {
+		entry.properties.push({
+			name: property.nPropertyID,
 			type: property.value ? property.value["$type"] : undefined,
 			value: property.value ? property.value["$val"] : undefined
-		}
+		})
 	}
 
 	delete entry.propertyValues
 }
 
-for (let entry of Object.values(entity.entities)) {
+for (var entry of entity.entities) {
 	var postInitPropertyValues = LosslessJSON.parse(LosslessJSON.stringify(entry.postInitPropertyValues))
 	for (var property of postInitPropertyValues) {
-		await parseProperty(property, TEMP, TBLU, TEMPmeta, TBLUmeta, entity, entry)
+		await parseProperty(property, argsMode, TEMP, TBLU, TEMPmeta, TBLUmeta, entity, entry)
 	}
 
-	entry.postInitProperties = {}
+	entry.postInitProperties = []
 	for (var property of postInitPropertyValues) {
-		entry.postInitProperties[property.nPropertyID] = {
+		entry.postInitProperties.push({
+			name: property.nPropertyID,
 			type: property.value ? property.value["$type"] : undefined,
 			value: property.value ? property.value["$val"] : undefined
-		}
+		})
 	}
 
 	delete entry.postInitPropertyValues
 }
 
-for (let entry of Object.values(entity.entities)) {
+for (var entry of entity.entities) {
 	if (!entry.propertyAliases.length) {
 		delete entry.propertyAliases
 	}
@@ -686,14 +580,14 @@ for (var sceneTypeIndex of TEMP.externalSceneTypeIndicesInResourceHeader) {
 }
 
 for (var pin of TBLU.pinConnections) {
-	if (!entity.entities[new Decimal(TBLU.subEntities[pin.fromID].entityId.value).toHex().substring(2)].events) {
-		entity.entities[new Decimal(TBLU.subEntities[pin.fromID].entityId.value).toHex().substring(2)].events = []
+	if (!entity.entities[pin.fromID].events) {
+		entity.entities[pin.fromID].events = []
 	}
 
-	entity.entities[new Decimal(TBLU.subEntities[pin.fromID].entityId.value).toHex().substring(2)].events.push({
+	entity.entities[pin.fromID].events.push({
 		onEvent: pin.fromPinName,
 		shouldTrigger: pin.toPinName,
-		onEntity: new Decimal(TBLU.subEntities[pin.toID].entityId.value).toHex().substring(2),
+		onEntity: argsMode == "ids" ? pin.toID : entity.entities[pin.toID].name,
 		value: pin.constantPinValue ? (pin.constantPinValue["$type"] == "void" ? undefined : {
 			type: pin.constantPinValue["$type"],
 			value: pin.constantPinValue["$val"],
@@ -702,14 +596,14 @@ for (var pin of TBLU.pinConnections) {
 }
 
 for (var pin of TBLU.inputPinForwardings) {
-	if (!entity.entities[new Decimal(TBLU.subEntities[pin.fromID].entityId.value).toHex().substring(2)].inputCopying) {
-		entity.entities[new Decimal(TBLU.subEntities[pin.fromID].entityId.value).toHex().substring(2)].inputCopying = []
+	if (!entity.entities[pin.fromID].inputCopying) {
+		entity.entities[pin.fromID].inputCopying = []
 	}
 
-	entity.entities[new Decimal(TBLU.subEntities[pin.fromID].entityId.value).toHex().substring(2)].inputCopying.push({
+	entity.entities[pin.fromID].inputCopying.push({
 		whenTriggered: pin.fromPinName,
 		alsoTrigger: pin.toPinName,
-		onEntity: new Decimal(TBLU.subEntities[pin.toID].entityId.value).toHex().substring(2),
+		onEntity: argsMode == "ids" ? pin.toID : entity.entities[pin.toID].name,
 		value: pin.constantPinValue ? (pin.constantPinValue["$type"] == "void" ? undefined : {
 			type: pin.constantPinValue["$type"],
 			value: pin.constantPinValue["$val"],
@@ -718,14 +612,14 @@ for (var pin of TBLU.inputPinForwardings) {
 }
 
 for (var pin of TBLU.outputPinForwardings) {
-	if (!entity.entities[new Decimal(TBLU.subEntities[pin.fromID].entityId.value).toHex().substring(2)].outputCopying) {
-		entity.entities[new Decimal(TBLU.subEntities[pin.fromID].entityId.value).toHex().substring(2)].outputCopying = []
+	if (!entity.entities[pin.fromID].outputCopying) {
+		entity.entities[pin.fromID].outputCopying = []
 	}
 
-	entity.entities[new Decimal(TBLU.subEntities[pin.fromID].entityId.value).toHex().substring(2)].outputCopying.push({
+	entity.entities[pin.fromID].outputCopying.push({
 		onEvent: pin.fromPinName,
 		propagateEvent: pin.toPinName,
-		onEntity: new Decimal(TBLU.subEntities[pin.toID].entityId.value).toHex().substring(2),
+		onEntity: argsMode == "ids" ? pin.toID : entity.entities[pin.toID].name,
 		value: pin.constantPinValue ? (pin.constantPinValue["$type"] == "void" ? undefined : {
 			type: pin.constantPinValue["$type"],
 			value: pin.constantPinValue["$val"],
@@ -737,7 +631,7 @@ for (var entry of entity.propertyOverrides) {
 	entry.propertyOwner.externalScene = entry.propertyOwner.externalSceneIndex >= 0 ? TBLUmeta["hash_reference_data"][TBLU.externalSceneTypeIndicesInResourceHeader[entry.propertyOwner.externalSceneIndex]].hash : "SPECIAL: None"
 	delete entry.propertyOwner.externalSceneIndex
 
-	await parseProperty(entry.propertyValue, TEMP, TBLU, TEMPmeta, TBLUmeta, entity, entry)
+	await parseProperty(entry.propertyValue, argsMode, TEMP, TBLU, TEMPmeta, TBLUmeta, entity, entry)
 
 	entry.propertyValue = {
 		name: entry.propertyValue.nPropertyID,
@@ -767,9 +661,6 @@ if ((automateGame ? automateGame : storage.getSync("game")) !== "HM2016") {
 		entry.toEntity.externalScene = entry.toEntity.externalSceneIndex >= 0 ? TBLUmeta["hash_reference_data"][TBLU.externalSceneTypeIndicesInResourceHeader[entry.toEntity.externalSceneIndex]].hash : "SPECIAL: None"
 		delete entry.toEntity.externalSceneIndex
 	}
-} else {
-	entity.pinConnectionOverrides = []
-	entity.pinConnectionOverrideDeletes = []
 }
 
 fs.writeFileSync(automateQNPath ? automateQNPath : electron.remote.dialog.showSaveDialogSync({
@@ -786,7 +677,6 @@ function findEntity(cache, ref) {
 
 async function generate(automateGame = false, automateQNPath = false, automateTempPath = false, automateTempMetaPath = false, automateTbluPath = false, automateTbluMetaPath = false) {
 
-/** @type {Entity} */
 const entity = LosslessJSON.parse(String(fs.readFileSync(automateQNPath ? automateQNPath : electron.remote.dialog.showOpenDialogSync({
 	title: "Select the QuickEntity JSON",
 	buttonLabel: "Select",
@@ -806,24 +696,45 @@ if (entity.quickEntityVersion < QuickEntityVersion && !automateGame) {
 	}
 }
 
+const argsMode = entity.quickEntityMode
+
+if (argsMode != "ids") {
+	var allEntityNames = entity.entities.map(object => object.name)
+	if (new Set(allEntityNames).size != allEntityNames.length) {
+		if (!(await Swal.fire({
+			title: 'Duplicate entity names',
+			text: `The QuickEntity JSON was converted using names mode but contains duplicate entity names. Converting to ResourceTool Source will likely result in loss of rebuilding integrity. Are you sure you want to continue?`,
+			showCancelButton: true,
+			confirmButtonText: 'Continue',
+			allowOutsideClick: false
+		})).isConfirmed) {
+			return
+		}
+	}
+}
+
 const findEntityCache = {}
-for (let entry in Object.keys(entity.entities)) {
-	findEntityCache[Object.keys(entity.entities)[entry]] = Number(entry)
+if (argsMode == "ids") {
+	for (var entry in entity.entities) {
+		findEntityCache[entity.entities[entry].refID] = Number(entry)
+	}
+} else {
+	for (var entry in entity.entities) {
+		findEntityCache[entity.entities[entry].name] = Number(entry)
+	}
 }
 
 console.time('init')
 
-/** @type {TEMP} */
 var TEMP = {
 	"subType": entity.subType,
 	"blueprintIndexInResourceHeader": 0,
-	"rootEntityIndex": Object.values(entity.entities).findIndex(a => a.name == entity.rootEntity),
+	"rootEntityIndex": entity.entities.findIndex(a => a.name == entity.rootEntity),
 	"subEntities": [],
 	"propertyOverrides": entity.propertyOverrides,
 	"externalSceneTypeIndicesInResourceHeader": []
 }
 
-/** @type {HashMeta} */
 var TEMPmeta = {
 	"hash_value": entity.tempHash,
 	"hash_offset": 1367,
@@ -837,21 +748,16 @@ var TEMPmeta = {
 	"hash_reference_data": []
 }
 
-/** @type {TBLU} */
 var TBLU = {
 	"subType": entity.subType,
-	"rootEntityIndex": Object.values(entity.entities).findIndex(a => a.name == entity.rootEntity),
+	"rootEntityIndex": entity.entities.findIndex(a => a.name == entity.rootEntity),
 	"subEntities": [],
 	"externalSceneTypeIndicesInResourceHeader": [],
 	"overrideDeletes": entity.overrideDeletes,
 	"pinConnectionOverrides": (automateGame ? automateGame : storage.getSync("game")) !== "HM2016" ? entity.pinConnectionOverrides : undefined,
-	"pinConnectionOverrideDeletes": (automateGame ? automateGame : storage.getSync("game")) !== "HM2016" ? entity.pinConnectionOverrideDeletes : undefined,
-	"pinConnections": [],
-	"inputPinForwardings": [],
-	"outputPinForwardings": []
+	"pinConnectionOverrideDeletes": (automateGame ? automateGame : storage.getSync("game")) !== "HM2016" ? entity.pinConnectionOverrideDeletes : undefined
 }
 
-/** @type {HashMeta} */
 var TBLUmeta = {
 	"hash_value": entity.tbluHash,
 	"hash_offset": 359,
@@ -901,11 +807,11 @@ var tbluInitialIndex = TBLUmeta.hash_reference_data.length
 var soFarUsedTEMP = new Set()
 var soFarUsedTBLU = new Set()
 
-for (let entry of Object.values(entity.entities)) {
+for (var entry of entity.entities) {
 	if (!soFarUsedTEMP.has(entry.template)) {
 		TEMPmeta.hash_reference_data.push({
 			"hash": entry.template,
-			"flag": entry.templateFlag || "1F"
+			"flag": "1F"
 		})
 		soFarUsedTEMP.add(entry.template)
 	}
@@ -919,10 +825,10 @@ for (let entry of Object.values(entity.entities)) {
 	}
 }
 
-let soFarUsedTEMPArray = [...soFarUsedTEMP]
-let soFarUsedTBLUArray = [...soFarUsedTBLU]
+soFarUsedTEMP = [...soFarUsedTEMP]
+soFarUsedTBLU = [...soFarUsedTBLU]
 
-for (let entry of Object.entries(entity.entities)) {
+for (var entry of entity.entities) {
 	TEMP.subEntities.push({
 		"logicalParent": {
 			"entityID": new LosslessJSON.LosslessNumber("18446744073709551615"),
@@ -930,10 +836,10 @@ for (let entry of Object.entries(entity.entities)) {
 			"entityIndex": 0,
 			"exposedEntity": ""
 		},
-		"entityTypeResourceIndex": soFarUsedTEMPArray.indexOf(entry[1].template) + tempInitialIndex,
+		"entityTypeResourceIndex": soFarUsedTEMP.indexOf(entry.template) + tempInitialIndex,
 		"propertyValues": [],
 		"postInitPropertyValues": [],
-		"platformSpecificPropertyValues": entry[1].platformSpecificPropertyValues ? entry[1].platformSpecificPropertyValues : []
+		"platformSpecificPropertyValues": entry.platformSpecificPropertyValues ? entry.platformSpecificPropertyValues : []
 	})
 
 	TBLU.subEntities.push({
@@ -943,18 +849,14 @@ for (let entry of Object.entries(entity.entities)) {
 			"entityIndex": 0,
 			"exposedEntity": ""
 		},
-		"entityTypeResourceIndex": soFarUsedTBLUArray.indexOf(entry[1].blueprint) + tbluInitialIndex,
-		"entityId": new LosslessJSON.LosslessNumber(new Decimal("0x" + entry[0]).toFixed()),
-		"editorOnly": entry[1].editorOnly ? true : false,
-		"entityName": entry[1].name,
-		"propertyAliases": entry[1].propertyAliases ? entry[1].propertyAliases.map(a=>{return {
-            "sAliasName": a.sAliasName,
-            "entityID": findEntity(findEntityCache, a.entityID),
-            "sPropertyName": a.sPropertyName
-        }}) : [],
-		"exposedEntities": entry[1].exposedEntities ? entry[1].exposedEntities : [],
-		"exposedInterfaces": entry[1].exposedInterfaces ? entry[1].exposedInterfaces.map(a=>[a[0], findEntity(findEntityCache, a[1])]) : [],
-		"entitySubsets": entry[1].entitySubsets ? entry[1].entitySubsets : []
+		"entityTypeResourceIndex": soFarUsedTBLU.indexOf(entry.blueprint) + tbluInitialIndex,
+		"entityId": new LosslessJSON.LosslessNumber(new Decimal("0x" + entry.entityID).toFixed()),
+		"editorOnly": entry.editorOnly ? true : false,
+		"entityName": entry.name,
+		"propertyAliases": entry.propertyAliases ? entry.propertyAliases : [],
+		"exposedEntities": entry.exposedEntities ? entry.exposedEntities : [],
+		"exposedInterfaces": entry.exposedInterfaces ? entry.exposedInterfaces : [],
+		"entitySubsets": entry.entitySubsets ? entry.entitySubsets : []
 	})
 }
 
@@ -965,8 +867,8 @@ console.time('reIndexES/LP')
 	REINDEX: entitySubsets, logicalParent
 */
 
-let index = 0
-for (let entry of Object.values(entity.entities)) {
+index = 0
+for (var entry of entity.entities) {
 	if (entry.entitySubsets) {
 		for (var subset of entry.entitySubsets) {
 			for (var item in subset[1]["entities"]) {
@@ -998,13 +900,13 @@ console.time('generatePV/PIPV')
 */
 
 index = 0
-for (let entry of Object.values(entity.entities)) {
-	for (let property of Object.entries(entry.properties)) {
-		await rebuildProperty(property, "propertyValues", TEMP, TBLU, TEMPmeta, TBLUmeta, entity, entry, index, findEntityCache)
+for (var entry of entity.entities) {
+	for (var property of entry.properties) {
+		await rebuildProperty(property, "propertyValues", TEMP, TBLU, TEMPmeta, TBLUmeta, argsMode, entity, entry, index, findEntityCache)
 	}
 
-	for (let property of Object.entries(entry.postInitProperties)) {
-		await rebuildProperty(property, "postInitPropertyValues", TEMP, TBLU, TEMPmeta, TBLUmeta, entity, entry, index, findEntityCache)
+	for (var property of entry.postInitProperties) {
+		await rebuildProperty(property, "postInitPropertyValues", TEMP, TBLU, TEMPmeta, TBLUmeta, argsMode, entity, entry, index, findEntityCache)
 	}
 	index ++
 }
@@ -1018,7 +920,7 @@ console.time('rebuildPO')
 
 index = 0
 for (var entry of TEMP.propertyOverrides) {
-	await rebuildProperty(entry.propertyValue, "propertyValue", TEMP, TBLU, TEMPmeta, TBLUmeta, entity, entry, index, findEntityCache, true)
+	await rebuildProperty(entry.propertyValue, "propertyValue", TEMP, TBLU, TEMPmeta, TBLUmeta, argsMode, entity, entry, index, findEntityCache, true)
 	index++
 }
 
@@ -1082,7 +984,7 @@ console.time('reIndexTEMPESILP/ESIPV')
 for (var entry of TEMP.subEntities) {
 	entry.logicalParent.externalSceneIndex = TEMP.externalSceneTypeIndicesInResourceHeader.findIndex(a => TEMPmeta.hash_reference_data[a].hash == entry.logicalParent.externalSceneIndex)
 
-	for (let property of entry.propertyValues) {
+	for (var property of entry.propertyValues) {
 		if (property.value["$type"] == "TArray<SEntityTemplateReference>") {
 			for (var property2 of property.value["$val"]) {
 				if (typeof property2.externalSceneIndex == "string") {
@@ -1096,7 +998,7 @@ for (var entry of TEMP.subEntities) {
 		}
 	}
 
-	for (let property of entry.postInitPropertyValues) {
+	for (var property of entry.postInitPropertyValues) {
 		if (property.value["$type"] == "TArray<SEntityTemplateReference>") {
 			for (var property2 of property.value["$val"]) {
 				if (typeof property2.externalSceneIndex == "string") {
@@ -1129,12 +1031,16 @@ console.time('addPins')
 	ADD: pins
 */
 
+TBLU.pinConnections = []
+TBLU.inputPinForwardings = []
+TBLU.outputPinForwardings = []
+
 const game = (automateGame ? automateGame : storage.getSync("game"))
 
 index = 0
-for (let entry of Object.values(entity.entities)) {
+for (var entry of entity.entities) {
 	if (entry.events) {
-		for (let pin of entry.events) {
+		for (var pin of entry.events) {
 			TBLU.pinConnections.push({
 				"fromID": index,
 				"toID": findEntity(findEntityCache, pin.onEntity),
@@ -1149,7 +1055,7 @@ for (let entry of Object.values(entity.entities)) {
 	}
 
 	if (entry.inputCopying) {
-		for (let pin of entry.inputCopying) {
+		for (var pin of entry.inputCopying) {
 			TBLU.inputPinForwardings.push({
 				"fromID": index,
 				"toID": findEntity(findEntityCache, pin.onEntity),
@@ -1164,7 +1070,7 @@ for (let entry of Object.values(entity.entities)) {
 	}
 
 	if (entry.outputCopying) {
-		for (let pin of entry.outputCopying) {
+		for (var pin of entry.outputCopying) {
 			TBLU.outputPinForwardings.push({
 				"fromID": index,
 				"toID": findEntity(findEntityCache, pin.onEntity),
@@ -1344,8 +1250,7 @@ async function packagedToConverted() {
 	execSync("rpkg-cli.exe -hash_meta_to_json \"" + tempMetaPath + "\"")
 	execSync("rpkg-cli.exe -hash_meta_to_json \"" + tbluMetaPath + "\"")
 
-	// @ts-ignore
-	convert(storage.getSync("game"), tempPath + ".json", tempMetaPath + ".json", tbluPath + ".json", tbluMetaPath + ".json")
+	convert(storage.getSync("game"), false, tempPath + ".json", tempMetaPath + ".json", tbluPath + ".json", tbluMetaPath + ".json")
 }
 
 async function convertedToPackaged() {
@@ -1386,19 +1291,222 @@ async function createPatchJSON(automateQN1Path = false, automateQN2Path = false,
 		properties: ["openFile", "dontAddToRecent"]
 	})[0])))
 
+	const findEntityCacheEntity1 = {}
+	for (var entry in entity1.entities) {
+		findEntityCacheEntity1[entity1.entities[entry].refID] = Number(entry)
+	}
+
+	const findEntityCacheEntity2 = {}
+	for (var entry in entity2.entities) {
+		findEntityCacheEntity2[entity2.entities[entry].refID] = Number(entry)
+	}
+
+	for (let entry of entity1.entities) {
+		delete entry.refID
+
+		if (entry.parent.ref.value) {
+			entry.parent.ref = entity1.entities[findEntityCacheEntity1[entry.parent.ref.value]].entityID
+		}
+
+		if (entry.events)
+		for (let pin of entry.events) {
+			pin.onEntity = entity1.entities[findEntityCacheEntity1[pin.onEntity.value]].entityID
+		}
+
+		if (entry.inputCopying)
+		for (let pin of entry.inputCopying) {
+			pin.onEntity = entity1.entities[findEntityCacheEntity1[pin.onEntity.value]].entityID
+		}
+
+		if (entry.outputCopying)
+		for (let pin of entry.outputCopying) {
+			pin.onEntity = entity1.entities[findEntityCacheEntity1[pin.onEntity.value]].entityID
+		}
+
+		if (entry.exposedInterfaces)
+		for (let interface of entry.exposedInterfaces) {
+			interface[1] = entity1.entities[findEntityCacheEntity1[interface[1]]].entityID
+		}
+
+		if (entry.entitySubsets)
+		for (let subset of entry.entitySubsets) {
+			for (let subSubset in subset[1].entities) {
+				subset[1].entities[subSubset] = entity1.entities[findEntityCacheEntity1[subset[1].entities[subSubset]]].entityID
+			}
+		}
+
+		if (entry.propertyAliases)
+		for (let alias of entry.propertyAliases) {
+			alias.entityID = entity1.entities[findEntityCacheEntity1[alias.entityID]].entityID
+		}
+
+		for (let prop of entry.properties) {
+			if (prop.type == "SEntityTemplateReference" && (prop.value.value || (prop.value.ref && prop.value.ref.value))) {
+				if (prop.value.value) {
+					prop.value = entity1.entities[findEntityCacheEntity1[prop.value.value]].entityID
+				} else {
+					prop.value.ref = entity1.entities[findEntityCacheEntity1[prop.value.ref.value]].entityID
+				}
+			} else if (prop.type == "TArray<SEntityTemplateReference>") {
+				for (let subProp in prop.value) {
+					if (prop.value[subProp].value || prop.value[subProp].ref.value) {
+						if (prop.value[subProp].value) {
+							prop.value[subProp] = entity1.entities[findEntityCacheEntity1[prop.value[subProp].value]].entityID
+						} else {
+							prop.value[subProp].ref = entity1.entities[findEntityCacheEntity1[prop.value[subProp].ref.value]].entityID
+						}
+					}
+				}
+			}
+		}
+
+		entry.properties = Object.fromEntries(entry.properties.map(a=>{ return [a.name, {type: a.type, value: a.value}] }))
+
+		for (let prop of entry.postInitProperties) {
+			if (prop.type == "SEntityTemplateReference" && (prop.value.value || (prop.value.ref && prop.value.ref.value))) {
+				if (prop.value.value) {
+					prop.value = entity1.entities[findEntityCacheEntity1[prop.value.value]].entityID
+				} else {
+					prop.value.ref = entity1.entities[findEntityCacheEntity1[prop.value.ref.value]].entityID
+				}
+			} else if (prop.type == "TArray<SEntityTemplateReference>") {
+				for (let subProp in prop.value) {
+					if (prop.value[subProp].value || prop.value[subProp].ref.value) {
+						if (prop.value[subProp].value) {
+							prop.value[subProp] = entity1.entities[findEntityCacheEntity1[prop.value[subProp].value]].entityID
+						} else {
+							prop.value[subProp].ref = entity1.entities[findEntityCacheEntity1[prop.value[subProp].ref.value]].entityID
+						}
+					}
+				}
+			}
+		}
+
+		entry.postInitProperties = Object.fromEntries(entry.postInitProperties.map(a=>{ return [a.name, {type: a.type, value: a.value}] }))
+	}
+
+	for (let entry of entity2.entities) {
+		delete entry.refID
+
+		if (entry.parent.ref.value) {
+			entry.parent.ref = entity2.entities[findEntityCacheEntity2[entry.parent.ref.value]].entityID
+		}
+
+		if (entry.events)
+		for (let pin of entry.events) {
+			pin.onEntity = entity2.entities[findEntityCacheEntity2[pin.onEntity.value]].entityID
+		}
+
+		if (entry.inputCopying)
+		for (let pin of entry.inputCopying) {
+			pin.onEntity = entity2.entities[findEntityCacheEntity2[pin.onEntity.value]].entityID
+		}
+
+		if (entry.outputCopying)
+		for (let pin of entry.outputCopying) {
+			pin.onEntity = entity2.entities[findEntityCacheEntity2[pin.onEntity.value]].entityID
+		}
+
+		if (entry.exposedInterfaces)
+		for (let interface of entry.exposedInterfaces) {
+			interface[1] = entity2.entities[findEntityCacheEntity2[interface[1]]].entityID
+		}
+
+		if (entry.entitySubsets)
+		for (let subset of entry.entitySubsets) {
+			for (let subSubset in subset[1].entities) {
+				subset[1].entities[subSubset] = entity2.entities[findEntityCacheEntity2[subset[1].entities[subSubset]]].entityID
+			}
+		}
+
+		if (entry.propertyAliases)
+		for (let alias of entry.propertyAliases) {
+			alias.entityID = entity2.entities[findEntityCacheEntity2[alias.entityID]].entityID
+		}
+
+		for (let prop of entry.properties) {
+			if (prop.type == "SEntityTemplateReference" && (prop.value.value || (prop.value.ref && prop.value.ref.value))) {
+				if (prop.value.value) {
+					prop.value = entity2.entities[findEntityCacheEntity2[prop.value.value]].entityID
+				} else {
+					prop.value.ref = entity2.entities[findEntityCacheEntity2[prop.value.ref.value]].entityID
+				}
+			} else if (prop.type == "TArray<SEntityTemplateReference>") {
+				for (let subProp in prop.value) {
+					if (prop.value[subProp].value || prop.value[subProp].ref.value) {
+						if (prop.value[subProp].value) {
+							prop.value[subProp] = entity2.entities[findEntityCacheEntity2[prop.value[subProp].value]].entityID
+						} else {
+							prop.value[subProp].ref = entity2.entities[findEntityCacheEntity2[prop.value[subProp].ref.value]].entityID
+						}
+					}
+				}
+			}
+		}
+
+		entry.properties = Object.fromEntries(entry.properties.map(a=>{ return [a.name, {type: a.type, value: a.value}] }))
+
+		for (let prop of entry.postInitProperties) {
+			if (prop.type == "SEntityTemplateReference" && (prop.value.value || (prop.value.ref && prop.value.ref.value))) {
+				if (prop.value.value) {
+					prop.value = entity2.entities[findEntityCacheEntity2[prop.value.value]].entityID
+				} else {
+					prop.value.ref = entity2.entities[findEntityCacheEntity2[prop.value.ref.value]].entityID
+				}
+			} else if (prop.type == "TArray<SEntityTemplateReference>") {
+				for (let subProp in prop.value) {
+					if (prop.value[subProp].value || prop.value[subProp].ref.value) {
+						if (prop.value[subProp].value) {
+							prop.value[subProp] = entity2.entities[findEntityCacheEntity2[prop.value[subProp].value]].entityID
+						} else {
+							prop.value[subProp].ref = entity2.entities[findEntityCacheEntity2[prop.value[subProp].ref.value]].entityID
+						}
+					}
+				}
+			}
+		}
+
+		entry.postInitProperties = Object.fromEntries(entry.postInitProperties.map(a=>{ return [a.name, {type: a.type, value: a.value}] }))
+	}
+
+	let candidate1 = Object.fromEntries(entity1.entities.map(a => [a.entityID, a]))
+	if (entity1.entities.length != Object.keys(candidate1).length) {
+		await Swal.fire({
+			title: 'Duplicate entity IDs',
+			text: `The first QuickEntity JSON contains duplicate entity IDs. A patch JSON cannot be created.`,
+			showCancelButton: false,
+			confirmButtonText: 'OK',
+			allowOutsideClick: false
+		})
+		return
+	}
+
+	let candidate2 = Object.fromEntries(entity2.entities.map(a => [a.entityID, a]))
+	if (entity2.entities.length != Object.keys(candidate2).length) {
+		await Swal.fire({
+			title: 'Duplicate entity IDs',
+			text: `The second QuickEntity JSON contains duplicate entity IDs. A patch JSON cannot be created.`,
+			showCancelButton: false,
+			confirmButtonText: 'OK',
+			allowOutsideClick: false
+		})
+		return
+	}
+
+	entity1.entities = candidate1
+	entity2.entities = candidate2
+
 	delete entity1.quickEntityVersion
 	delete entity2.quickEntityVersion
 
 	console.time("genPatch")
-	// @ts-ignore
 	let patch = rfc6902.createPatch(entity1, entity2, patchCheckLosslessNumber)
 	console.timeEnd("genPatch")
 
 	let outputPatchJSON = {
 		tempHash: entity2.tempHash,
     	tbluHash: entity2.tbluHash,
-		patch: patch,
-		patchVersion: 3
+		patch: patch
 	}
 
 	let outputPath = automateOutputPath ? automateOutputPath : electron.remote.dialog.showSaveDialogSync({
@@ -1426,9 +1534,208 @@ async function applyPatchJSON(automateQNPath = false, automatePatchPath = false,
 		properties: ["openFile", "dontAddToRecent"]
 	})[0])))
 
+	const findEntityCache = {}
+	for (var entry in entity.entities) {
+		findEntityCache[entity.entities[entry].refID] = Number(entry)
+	}
+
+	for (let entry of entity.entities) {
+		delete entry.refID
+
+		if (entry.parent.ref.value) {
+			entry.parent.ref = entity.entities[findEntityCache[entry.parent.ref.value]].entityID
+		}
+
+		if (entry.events)
+		for (let pin of entry.events) {
+			pin.onEntity = entity.entities[findEntityCache[pin.onEntity.value]].entityID
+		}
+
+		if (entry.inputCopying)
+		for (let pin of entry.inputCopying) {
+			pin.onEntity = entity.entities[findEntityCache[pin.onEntity.value]].entityID
+		}
+
+		if (entry.outputCopying)
+		for (let pin of entry.outputCopying) {
+			pin.onEntity = entity.entities[findEntityCache[pin.onEntity.value]].entityID
+		}
+
+		if (entry.exposedInterfaces)
+		for (let interface of entry.exposedInterfaces) {
+			interface[1] = entity.entities[findEntityCache[interface[1]]].entityID
+		}
+
+		if (entry.entitySubsets)
+		for (let subset of entry.entitySubsets) {
+			for (let subSubset in subset[1].entities) {
+				subset[1].entities[subSubset] = entity.entities[findEntityCache[subset[1].entities[subSubset]]].entityID
+			}
+		}
+
+		if (entry.propertyAliases)
+		for (let alias of entry.propertyAliases) {
+			alias.entityID = entity.entities[findEntityCache[alias.entityID]].entityID
+		}
+
+		for (let prop of entry.properties) {
+			if (prop.type == "SEntityTemplateReference" && (prop.value.value || (prop.value.ref && prop.value.ref.value))) {
+				if (prop.value.value) {
+					prop.value = entity.entities[findEntityCache[prop.value.value]].entityID
+				} else {
+					prop.value.ref = entity.entities[findEntityCache[prop.value.ref.value]].entityID
+				}
+			} else if (prop.type == "TArray<SEntityTemplateReference>") {
+				for (let subProp in prop.value) {
+					if (prop.value[subProp].value || prop.value[subProp].ref.value) {
+						if (prop.value[subProp].value) {
+							prop.value[subProp] = entity.entities[findEntityCache[prop.value[subProp].value]].entityID
+						} else {
+							prop.value[subProp].ref = entity.entities[findEntityCache[prop.value[subProp].ref.value]].entityID
+						}
+					}
+				}
+			}
+		}
+
+		entry.properties = Object.fromEntries(entry.properties.map(a=>{ return [a.name, {type: a.type, value: a.value}] }))
+
+		for (let prop of entry.postInitProperties) {
+			if (prop.type == "SEntityTemplateReference" && (prop.value.value || (prop.value.ref && prop.value.ref.value))) {
+				if (prop.value.value) {
+					prop.value = entity.entities[findEntityCache[prop.value.value]].entityID
+				} else {
+					prop.value.ref = entity.entities[findEntityCache[prop.value.ref.value]].entityID
+				}
+			} else if (prop.type == "TArray<SEntityTemplateReference>") {
+				for (let subProp in prop.value) {
+					if (prop.value[subProp].value || prop.value[subProp].ref.value) {
+						if (prop.value[subProp].value) {
+							prop.value[subProp] = entity.entities[findEntityCache[prop.value[subProp].value]].entityID
+						} else {
+							prop.value[subProp].ref = entity.entities[findEntityCache[prop.value[subProp].ref.value]].entityID
+						}
+					}
+				}
+			}
+		}
+
+		entry.postInitProperties = Object.fromEntries(entry.postInitProperties.map(a=>{ return [a.name, {type: a.type, value: a.value}] }))
+	}
+
+	let candidate = Object.fromEntries(entity.entities.map(a => [a.entityID, a]))
+	if (entity.entities.length != Object.keys(candidate).length) {
+		await Swal.fire({
+			title: 'Duplicate entity IDs',
+			text: `The QuickEntity JSON contains duplicate entity IDs. A patch JSON cannot be applied.`,
+			showCancelButton: false,
+			confirmButtonText: 'OK',
+			allowOutsideClick: false
+		})
+		return
+	}
+
+	entity.entities = candidate
+
 	console.time("applyPatch")
 	rfc6902.applyPatch(entity, patch.patch)
 	console.timeEnd("applyPatch")
+
+	let newEntity = LosslessJSON.parse(LosslessJSON.stringify(entity))
+	newEntity.entities = []
+
+	var index = 0
+	for (let entry of Object.entries(entity.entities)) {
+		newEntity.entities.push(entry[1])
+		newEntity.entities[index].entityID = entry[0]
+		
+		index++
+	}
+
+	const newFindEntityCache = {}
+
+	for (let entry in newEntity.entities) {
+		newEntity.entities[entry].refID = new LosslessJSON.LosslessNumber(entry)
+		newFindEntityCache[newEntity.entities[entry].entityID] = entry
+	}
+
+	for (let entry of newEntity.entities) {
+		if (!entry.parent.ref.startsWith("SPECIAL")) {
+			entry.parent.ref = new LosslessJSON.LosslessNumber(newFindEntityCache[entry.parent.ref])
+		}
+
+		if (entry.events)
+		for (let pin of entry.events) {
+			pin.onEntity = new LosslessJSON.LosslessNumber(newFindEntityCache[pin.onEntity])
+		}
+
+		if (entry.inputCopying)
+		for (let pin of entry.inputCopying) {
+			pin.onEntity = new LosslessJSON.LosslessNumber(newFindEntityCache[pin.onEntity])
+		}
+
+		if (entry.outputCopying)
+		for (let pin of entry.outputCopying) {
+			pin.onEntity = new LosslessJSON.LosslessNumber(newFindEntityCache[pin.onEntity])
+		}
+
+		if (entry.exposedInterfaces)
+		for (let interface of entry.exposedInterfaces) {
+			interface[1] = new LosslessJSON.LosslessNumber(newFindEntityCache[interface[1]])
+		}
+
+		if (entry.entitySubsets)
+		for (let subset of entry.entitySubsets) {
+			for (let subSubset in subset[1].entities) {
+				subset[1].entities[subSubset] = new LosslessJSON.LosslessNumber(newFindEntityCache[subset[1].entities[subSubset]])
+			}
+		}
+
+		if (entry.propertyAliases)
+		for (let alias of entry.propertyAliases) {
+			alias.entityID = new LosslessJSON.LosslessNumber(newFindEntityCache[alias.entityID])
+		}
+
+		entry.properties = Object.entries(entry.properties).map(a=>{ return {name: a[0], type: a[1].type, value: a[1].value} })
+
+		for (let prop of entry.properties) {
+			if (prop.type == "SEntityTemplateReference") {
+				if (typeof prop.value == "string" && !prop.value.startsWith("SPECIAL")) {
+					prop.value = new LosslessJSON.LosslessNumber(newFindEntityCache[prop.value])
+				} else if (typeof prop.value != "string" && !prop.value.ref.startsWith("SPECIAL")) {
+					prop.value.ref = new LosslessJSON.LosslessNumber(newFindEntityCache[prop.value.ref])
+				}
+			} else if (prop.type == "TArray<SEntityTemplateReference>") {
+				for (let subProp in prop.value) {
+					if (typeof prop.value[subProp] == "string" && !prop.value[subProp].startsWith("SPECIAL")) {
+						prop.value[subProp] = new LosslessJSON.LosslessNumber(newFindEntityCache[prop.value[subProp]])
+					} else if (typeof !prop.value[subProp] != "string" && !prop.value[subProp].ref.startsWith("SPECIAL")) {
+						prop.value[subProp].ref = new LosslessJSON.LosslessNumber(newFindEntityCache[prop.value[subProp].ref])
+					}
+				}
+			}
+		}
+
+		entry.postInitProperties = Object.entries(entry.postInitProperties).map(a=>{ return {name: a[0], type: a[1].type, value: a[1].value} })
+
+		for (let prop of entry.postInitProperties) {
+			if (prop.type == "SEntityTemplateReference") {
+				if (typeof prop.value == "string" && !prop.value.startsWith("SPECIAL")) {
+					prop.value = new LosslessJSON.LosslessNumber(newFindEntityCache[prop.value])
+				} else if (typeof prop.value != "string" && !prop.value.ref.startsWith("SPECIAL")) {
+					prop.value.ref = new LosslessJSON.LosslessNumber(newFindEntityCache[prop.value.ref])
+				}
+			} else if (prop.type == "TArray<SEntityTemplateReference>") {
+				for (let subProp in prop.value) {
+					if (typeof prop.value[subProp] == "string" && !prop.value[subProp].startsWith("SPECIAL")) {
+						prop.value[subProp] = new LosslessJSON.LosslessNumber(newFindEntityCache[prop.value[subProp]])
+					} else if (typeof !prop.value[subProp] != "string" && !prop.value[subProp].ref.startsWith("SPECIAL")) {
+						prop.value[subProp].ref = new LosslessJSON.LosslessNumber(newFindEntityCache[prop.value[subProp].ref])
+					}
+				}
+			}
+		}
+	}
 
 	let outputPath = automateOutputPath ? automateOutputPath : electron.remote.dialog.showSaveDialogSync({
 		title: "Save the resulting JSON",
@@ -1437,7 +1744,7 @@ async function applyPatchJSON(automateQNPath = false, automatePatchPath = false,
 		filters: [{ name: 'JSON file', extensions: ['json'] }],
 		properties: ["dontAddToRecent"]
 	})
-	fs.writeFileSync(outputPath, LosslessJSON.stringify(entity).replace(/"LN\|((?:[0-9]|\.|-|e)*)"/g, (a,b) => new LosslessJSON.LosslessNumber(b).value))
+	fs.writeFileSync(outputPath, LosslessJSON.stringify(newEntity).replace(/"LN\|((?:[0-9]|\.|-|e)*)"/g, (a,b) => new LosslessJSON.LosslessNumber(b).value))
 }
 
 module.exports = {
