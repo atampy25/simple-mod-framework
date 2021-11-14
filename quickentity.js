@@ -734,6 +734,11 @@ for (var pin of TBLU.outputPinForwardings) {
 }
 
 for (var entry of entity.propertyOverrides) {
+	entry.propertyOwner.entityID = new Decimal(entry.propertyOwner.entityID.value).toHex().substring(2)
+
+	entry.propertyOwner.ref = entry.propertyOwner.entityIndex == -2 ? "SPECIAL: Use EntityID" : entry.propertyOwner.entityIndex == -1 ? "SPECIAL: None" : entry.propertyOwner.entityIndex
+	delete entry.propertyOwner.entityIndex
+
 	entry.propertyOwner.externalScene = entry.propertyOwner.externalSceneIndex >= 0 ? TBLUmeta["hash_reference_data"][TBLU.externalSceneTypeIndicesInResourceHeader[entry.propertyOwner.externalSceneIndex]].hash : "SPECIAL: None"
 	delete entry.propertyOwner.externalSceneIndex
 
@@ -747,6 +752,11 @@ for (var entry of entity.propertyOverrides) {
 }
 
 for (var entry of entity.overrideDeletes) {
+	entry.entityID = new Decimal(entry.entityID.value).toHex().substring(2)
+
+	entry.ref = entry.entityIndex == -2 ? "SPECIAL: Use EntityID" : entry.entityIndex == -1 ? "SPECIAL: None" : entry.entityIndex
+	delete entry.entityIndex
+
 	entry.externalScene = entry.externalSceneIndex >= 0 ? TBLUmeta["hash_reference_data"][TBLU.externalSceneTypeIndicesInResourceHeader[entry.externalSceneIndex]].hash : "SPECIAL: None"
 	delete entry.externalSceneIndex
 }
@@ -1018,6 +1028,11 @@ console.time('rebuildPO')
 
 index = 0
 for (var entry of TEMP.propertyOverrides) {
+	entry.propertyOwner.entityID = new LosslessJSON.LosslessNumber(new Decimal("0x" + entry.propertyOwner.entityID).toFixed())
+	
+	entry.propertyOwner.entityIndex = entry.propertyOwner.ref == "SPECIAL: Use EntityID" ? -2 : entry.propertyOwner.ref == "SPECIAL: None" ? -1 : entry.propertyOwner.ref
+	delete entry.propertyOwner.ref
+
 	await rebuildProperty(entry.propertyValue, "propertyValue", TEMP, TBLU, TEMPmeta, TBLUmeta, entity, entry, index, findEntityCache, true)
 	index++
 }
@@ -1047,6 +1062,11 @@ for (var entry of TEMP.propertyOverrides) {
 }
 
 for (var entry of TBLU.overrideDeletes) {
+	entry.entityID = new LosslessJSON.LosslessNumber(new Decimal("0x" + entry.entityID).toFixed())
+	
+	entry.entityIndex = entry.ref == "SPECIAL: Use EntityID" ? -2 : entry.ref == "SPECIAL: None" ? -1 : entry.ref
+	delete entry.ref
+
 	entry.externalSceneIndex = TBLU.externalSceneTypeIndicesInResourceHeader.findIndex(a => TBLUmeta.hash_reference_data[a].hash == entry.externalScene)
 	delete entry.externalScene
 }
