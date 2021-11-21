@@ -207,6 +207,9 @@ async function stageAllMods() {
                         switch (contentType) {
                             case "entity.json":
                                 var entityContent = LosslessJSON.parse(String(fs.readFileSync(contentFilePath)))
+
+		                        console.log("Converting entity " + contentFilePath)
+
                                 await (entityContent.quickEntityVersion < 2 ? QuickEntityLegacy : QuickEntity).generate("HM3", contentFilePath,
                                                             path.join(process.cwd(), "temp", "temp.TEMP.json"),
                                                             path.join(process.cwd(), "temp", "temp.TEMP.meta.json"),
@@ -239,6 +242,8 @@ async function stageAllMods() {
                             case "unlockables.json":
                                 var entityContent = JSON.parse(String(fs.readFileSync(contentFilePath)))
                                 var oresChunk = await rpkgInstance.getRPKGOfHash("0057C2C3941115CA")
+
+		                        console.log("Applying unlockable patch " + contentFilePath)
     
                                 if (!fs.existsSync(path.join(process.cwd(), "staging", "chunk0", "0057C2C3941115CA.ORES"))) {
                                     await rpkgInstance.callFunction(`-extract_from_rpkg "${path.join(config.runtimePath, oresChunk + ".rpkg")}" -filter "0057C2C3941115CA" -output_path temp`) // Extract the unlockables ORES
@@ -266,6 +271,8 @@ async function stageAllMods() {
                                 var entityContent = JSON.parse(String(fs.readFileSync(contentFilePath)))
     
                                 var repoRPKG = await rpkgInstance.getRPKGOfHash("00204D1AFD76AB13")
+
+		                        console.log("Applying repository patch " + contentFilePath)
     
                                 if (!fs.existsSync(path.join(process.cwd(), "staging", "chunk0", "00204D1AFD76AB13.REPO"))) {
                                     await rpkgInstance.callFunction(`-extract_from_rpkg "${path.join(config.runtimePath, repoRPKG + ".rpkg")}" -filter "00204D1AFD76AB13" -output_path temp`) // Extract the unlockables ORES
@@ -318,6 +325,8 @@ async function stageAllMods() {
                                 var entityContent = LosslessJSON.parse(String(fs.readFileSync(contentFilePath)))
     
                                 var contractHash = "00" + md5(("smfContract" + entityContent.Metadata.Id).toLowerCase()).slice(2, 16).toUpperCase()
+
+		                        console.log("Adding contract " + contentFilePath)
     
                                 contractsORESContent[contractHash] = entityContent.Metadata.Id // Add the contract to the ORES
     
