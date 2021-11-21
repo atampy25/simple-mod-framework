@@ -816,11 +816,16 @@ if (entity.quickEntityVersion < QuickEntityVersion && !automateGame) {
 	}
 }
 
+console.time('buildEntityCache')
+
 const findEntityCache = {}
-for (let entry in Object.keys(entity.entities)) {
-	findEntityCache[Object.keys(entity.entities)[entry]] = Number(entry)
+let index = 0
+for (let entry of Object.keys(entity.entities)) {
+	findEntityCache[entry] = index
+	index ++
 }
 
+console.timeEnd('buildEntityCache')
 console.time('init')
 
 /** @type {TEMP} */
@@ -975,7 +980,7 @@ console.time('reIndexES/LP')
 	REINDEX: entitySubsets, logicalParent
 */
 
-let index = 0
+index = 0
 for (let entry of Object.values(entity.entities)) {
 	if (entry.entitySubsets) {
 		for (var subset of entry.entitySubsets) {
