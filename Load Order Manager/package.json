@@ -38,7 +38,7 @@
     "jquery": "^3.6.0",
     "json5": "^2.2.0",
     "run-async": "^2.4.1",
-    "sanitize-html": "^2.5.3",
+    "sanitize-html": "^2.6.0",
     "semver": "^7.3.5",
     "sweetalert2": "^11.2.0",
     "tailwindcss": "^2.2.19"
