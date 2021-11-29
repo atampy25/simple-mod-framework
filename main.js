@@ -592,7 +592,7 @@ async function stageAllMods() {
         let localisationFileRPKG = await rpkgInstance.getRPKGOfHash("00F5817876E691F1")
         await rpkgInstance.callFunction(`-extract_locr_to_json_from "${path.join(config.runtimePath, localisationFileRPKG + ".rpkg")}" -filter "00F5817876E691F1" -output_path temp`)
         
-        fs.ensureDirSync(path.join(process.cwd(), "temp", "LOCR", localisationFileRPKG + ".rpkg"))
+        fs.ensureDirSync(path.join(process.cwd(), "temp", "LOCR", localisationFileRPKG + ".rpkg", "abcensuredir"))
 
         let localisationContent = JSON.parse(fs.readFileSync(path.join(process.cwd(), "temp", "LOCR", localisationFileRPKG + ".rpkg", "00F5817876E691F1.LOCR.JSON")))
         let locrContent = {}
