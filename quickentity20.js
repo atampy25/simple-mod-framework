@@ -50,9 +50,11 @@
  */
 
 /** @typedef {object} SubEntity
- * @property {string} [type]
-
  * @property {object} parent
+ * @property {string} parent.ref
+ * @property {string} parent.exposedEntity
+ * @property {string} parent.externalScene
+ * @property {string} parent.entityID
 
  * @property {string} name
  * @property {string} template
@@ -70,19 +72,19 @@
 
  * @property {object[]} propertyAliases
 
- * @property {object[]} [events]
+ * @property {object[]} events
  * @property {string} events.onEvent
  * @property {string} events.shouldTrigger
  * @property {string} events.onEntity
  * @property {object} [events.value]
 
- * @property {object[]} [inputCopying]
+ * @property {object[]} inputCopying
  * @property {string} inputCopying.whenTriggered
  * @property {string} inputCopying.alsoTrigger
  * @property {string} inputCopying.onEntity
  * @property {object} [inputCopying.value]
 
- * @property {object[]} [outputCopying]
+ * @property {object[]} outputCopying
  * @property {string} outputCopying.onEvent
  * @property {string} outputCopying.propagateEvent
  * @property {string} outputCopying.onEntity
@@ -113,8 +115,6 @@ if (!module.parent) {
 }
 const { promisify } = require("util")
 const rfc6902 = require('rfc6902')
-const deepEqual = require('lodash.isequal')
-const deepMerge = require('lodash.merge')
 
 var THREE = require("./three-onlymath.min.js")
 
@@ -123,40 +123,6 @@ const QuickEntityVersion = 2.0
 // oi sieni shut up yeah?
 // you've got ur select box
 // - Atampy26
-
-/**
- * @param {{ exposedEntity: string | any[]; externalSceneIndex: LosslessJSON.LosslessNumber; entityIndex: LosslessJSON.LosslessNumber; entityID: { value: LosslessJSON.LosslessNumber; }; }} reference
- * @param {TEMP} TEMP
- * @param {TBLU} TBLU
- * @param {HashMeta} TEMPmeta
- */
-function convertReferenceToQuickEntity(reference, TEMP, TBLU, TEMPmeta) {
-	return (reference.exposedEntity.length || reference.externalSceneIndex.value != "-1") ?	{
-		"ref": reference.entityIndex.value == "-2" ? new Decimal(reference.entityID.value).toHex().substring(2) : reference.entityIndex.value == "-1" ? null : new Decimal(TBLU.subEntities[Number(reference.entityIndex.value)].entityId.value).toHex().substring(2),
-		"externalScene": reference.externalSceneIndex.value == "-1" ? null : TEMPmeta.hash_reference_data[TEMP.externalSceneTypeIndicesInResourceHeader[Number(reference.externalSceneIndex)]].hash,
-		"exposedEntity": reference.exposedEntity === "" ? undefined : reference.exposedEntity
-	} : reference.entityIndex.value == "-1" ? null : new Decimal(TBLU.subEntities[Number(reference.entityIndex)].entityId.value).toHex().substring(2)
-}
-
-/**
- * @param {{ ref: string | null; externalScene: string | null; exposedEntity: string | undefined } | string | null} reference
- * @param {TEMP} TEMP
- * @param {HashMeta} TEMPmeta
- * @param {{}} findEntityCache
- */
-function convertReferenceToRT(reference, TEMP, TEMPmeta, findEntityCache) {
-	return reference && reference.hasOwnProperty("ref") ? {
-		"entityID": reference.externalScene ? new LosslessJSON.LosslessNumber(new Decimal("0x" + reference.ref).toFixed()) : new LosslessJSON.LosslessNumber("18446744073709551615"),
-		"externalSceneIndex": reference.externalScene ? TEMP.externalSceneTypeIndicesInResourceHeader.findIndex(a => TEMPmeta.hash_reference_data[a].hash == reference.externalScene) : new LosslessJSON.LosslessNumber("-1"),
-		"entityIndex": reference.externalScene ? new LosslessJSON.LosslessNumber("-2") : findEntity(findEntityCache, reference.ref),
-		"exposedEntity": reference.exposedEntity || ""
-	} : {
-		"entityID": new LosslessJSON.LosslessNumber("18446744073709551615"),
-		"externalSceneIndex": -1,
-		"entityIndex": findEntity(findEntityCache, reference),
-		"exposedEntity": ""
-	}
-}
 
 /**
  * @param {{ nPropertyID?: string|number; value: any; }} property
@@ -189,7 +155,16 @@ async function parseProperty(property, TEMP, TBLU, TEMPmeta, TBLUmeta, entity, e
 		switch (property.value["$type"]) {
 			case "SEntityTemplateReference":
 				try {
-					property.value["$val"] = convertReferenceToQuickEntity(property.value["$val"], TEMP, TBLU, TEMPmeta)
+					if (property.value["$val"].exposedEntity.length || property.value["$val"].externalSceneIndex != -1) {
+						property.value["$val"] = {
+							"ref": property.value["$val"].entityIndex == -2 ? "SPECIAL: Use EntityID" : new Decimal(TBLU.subEntities[property.value["$val"].entityIndex].entityId.value).toHex().substring(2),
+							"entityID": new Decimal(property.value["$val"].entityID.value).toHex().substring(2),
+							"externalScene": property.value["$val"].externalSceneIndex != -1 ? TEMPmeta.hash_reference_data[TEMP.externalSceneTypeIndicesInResourceHeader[property.value["$val"].externalSceneIndex]].hash : "SPECIAL: None",
+							"exposedEntity": property.value["$val"].exposedEntity
+						}
+					} else {
+						property.value["$val"] = property.value["$val"].entityIndex == -2 ? "SPECIAL: Use EntityID" : property.value["$val"].entityIndex == -1 ? "SPECIAL: None" : new Decimal(TBLU.subEntities[property.value["$val"].entityIndex].entityId.value).toHex().substring(2)
+					}
 				} catch (e) {
 					console.log("Error in custom property parse (SEntityTemplateReference type) for " + entry.name + ": " + e)
 				}
@@ -198,7 +173,7 @@ async function parseProperty(property, TEMP, TBLU, TEMPmeta, TBLUmeta, entity, e
 			case "ZRuntimeResourceID":
 				try {
 					if (property.value["$val"]["m_IDLow"] == 4294967295 && property.value["$val"]["m_IDHigh"] == 4294967295) {
-						property.value["$val"] = null
+						property.value["$val"] = "SPECIAL: None"
 					} else {
 						if (TEMPmeta["hash_reference_data"][property.value["$val"]["m_IDLow"]].flag != "1F") {
 							property.value["$val"] = {
@@ -393,12 +368,22 @@ async function rebuildSpecificProp(property, propertyValues, TEMP, TBLU, TEMPmet
 				"nPropertyID": property[0],
 				"value": {
 					"$type": property[1].type,
-					"$val": convertReferenceToRT(property[1].value, TEMP, TEMPmeta, findEntityCache)
+					"$val": typeof property[1].value == "object" && property[1].value.ref ? {
+						"entityID": new LosslessJSON.LosslessNumber(new Decimal("0x" + property[1].value.entityID).toFixed()),
+						"externalSceneIndex": property[1].value.externalScene,
+						"entityIndex": findEntity(findEntityCache, property[1].value.ref),
+						"exposedEntity": property[1].value.exposedEntity
+					} : {
+						"entityID": new LosslessJSON.LosslessNumber("18446744073709551615"),
+						"externalSceneIndex": -1,
+						"entityIndex": findEntity(findEntityCache, property[1].value),
+						"exposedEntity": ""
+					}
 				}
 			}
 			break
 		case "ZRuntimeResourceID":
-			if (property[1].value === null) {
+			if (property[1].value == "SPECIAL: None") {
 				return {
 					"nPropertyID": property[0],
 					"value": {
@@ -456,6 +441,11 @@ async function rebuildSpecificProp(property, propertyValues, TEMP, TBLU, TEMPmet
  * @param {{}} findEntityCache
  */
 async function rebuildProperty(property, propertyValues, TEMP, TBLU, TEMPmeta, TBLUmeta, entity, entry, index, findEntityCache, isOverrides = false) {
+	if (isOverrides) {
+		// @ts-ignore
+		property = [property.name, {type: property.type, value: property.value}]
+	}
+
 	if (property[1].type.startsWith("TArray<")) {
 		var propertyToAdd = {
 			"nPropertyID": property[0],
@@ -558,11 +548,32 @@ if (new Set(TBLU.subEntities.map(a=>a.entityId.value)).size != TBLU.subEntities.
 	return
 }
 
+// {
+//     "rootEntityIndex": 0,
+//     "subEntities": [
+//         {
+//             "entityTemplate": "",
+//             "entityBlueprint": "",
+//             "propertyValues": [],
+//             "postInitPropertyValues": [],
+//             "platformSpecificPropertyValues": [],
+//             "entityName": "Scene",
+//             "propertyAliases": [],
+//             "exposedEntities": [],
+//             "exposedInterfaces": [],
+//             "entitySubsets": []
+//         },
+//     ],
+//     "propertyOverrides": [],
+//     "externalSceneTypeIndicesInResourceHeader": [
+//     ]
+// }
+
 /** @type {Entity} */
 var entity =  {
 	"tempHash": path.basename(tempPath).slice(0, -10),
 	"tbluHash": path.basename(tbluPath).slice(0, -10),
-	"rootEntity": new Decimal(TBLU.subEntities[TEMP.rootEntityIndex].entityId.value).toHex().substring(2),
+	"rootEntity": TBLU.subEntities[TEMP.rootEntityIndex].entityName,
 	"entities": {},
 	"propertyOverrides": TEMP.propertyOverrides,
 	"overrideDeletes": TBLU.overrideDeletes,
@@ -586,7 +597,12 @@ for (var entry of TEMP.subEntities) {
 	}
 
 	entity.entities[new Decimal(TBLU.subEntities[index].entityId.value).toHex().substring(2)] = {
-		"parent": convertReferenceToQuickEntity(entry.logicalParent, TEMP, TBLU, TEMPmeta),
+		"parent": {
+			"ref": entry.logicalParent.entityIndex >= 0 ? new Decimal(TBLU.subEntities[entry.logicalParent.entityIndex].entityId.value).toHex().substring(2) : (entry.logicalParent.entityIndex == -2 ? "SPECIAL: Use EntityID" : "SPECIAL: None"),
+			"exposedEntity": entry.logicalParent.exposedEntity,
+			"externalScene": entry.logicalParent.externalSceneIndex >= 0 ? TEMPmeta["hash_reference_data"][TEMP.externalSceneTypeIndicesInResourceHeader[entry.logicalParent.externalSceneIndex]].hash : "SPECIAL: None",
+			"entityID": new Decimal(entry.logicalParent.entityID.value).toHex().substring(2)
+		},
 		"name": TBLU.subEntities[index].entityName,
 		"template": TEMPmeta["hash_reference_data"][entry.entityTypeResourceIndex].hash,
 		"templateFlag": TEMPmeta["hash_reference_data"][entry.entityTypeResourceIndex].flag != "1F" ? TEMPmeta["hash_reference_data"][entry.entityTypeResourceIndex].flag : undefined,
@@ -598,17 +614,16 @@ for (var entry of TEMP.subEntities) {
 		"postInitPropertyValues": entry.postInitPropertyValues,
 		"platformSpecificPropertyValues": entry.platformSpecificPropertyValues ? entry.platformSpecificPropertyValues : [],
 		"propertyAliases": TBLU.subEntities[index].propertyAliases.map(a=>{return {
-            "exposeProperty": a.sAliasName,
-            "onEntity": new Decimal(TBLU.subEntities[a.entityID].entityId.value).toHex().substring(2),
-            "asProperty": a.sPropertyName
+            "sAliasName": a.sAliasName,
+            "entityID": new Decimal(TBLU.subEntities[a.entityID].entityId.value).toHex().substring(2),
+            "sPropertyName": a.sPropertyName
         }}),
-		"exposedEntities": TBLU.subEntities[index].exposedEntities.map(a=>{ return {
-            "name": a.sName,
-            "isArray": a.bIsArray,
-            "targets": a.aTargets.map(b=>convertReferenceToQuickEntity(b, TEMP, TBLU, TEMPmeta))
-        }}),
+		"exposedEntities": TBLU.subEntities[index].exposedEntities,
 		"exposedInterfaces": TBLU.subEntities[index].exposedInterfaces.map(a=>[a[0], new Decimal(TBLU.subEntities[a[1]].entityId.value).toHex().substring(2)]),
-		"entitySubsets": TBLU.subEntities[index].entitySubsets
+		"entitySubsets": TBLU.subEntities[index].entitySubsets,
+		"events": [],
+		"inputCopying": [],
+		"outputCopying": []
 	}
 
 	index ++
@@ -719,52 +734,48 @@ for (var pin of TBLU.outputPinForwardings) {
 }
 
 for (var entry of entity.propertyOverrides) {
-	entry.entities = [convertReferenceToQuickEntity(entry.propertyOwner, TEMP, TBLU, TEMPmeta)]
-	delete entry.propertyOwner
+	entry.propertyOwner.entityID = new Decimal(entry.propertyOwner.entityID.value).toHex().substring(2)
+
+	entry.propertyOwner.ref = entry.propertyOwner.entityIndex == -2 ? "SPECIAL: Use EntityID" : entry.propertyOwner.entityIndex == -1 ? "SPECIAL: None" : entry.propertyOwner.entityIndex
+	delete entry.propertyOwner.entityIndex
+
+	entry.propertyOwner.externalScene = entry.propertyOwner.externalSceneIndex >= 0 ? TBLUmeta["hash_reference_data"][TBLU.externalSceneTypeIndicesInResourceHeader[entry.propertyOwner.externalSceneIndex]].hash : "SPECIAL: None"
+	delete entry.propertyOwner.externalSceneIndex
 
 	await parseProperty(entry.propertyValue, TEMP, TBLU, TEMPmeta, TBLUmeta, entity, entry)
 
-	entry.properties = {}
-	entry.properties[entry.propertyValue.nPropertyID] = {
+	entry.propertyValue = {
+		name: entry.propertyValue.nPropertyID,
 		type: entry.propertyValue.value ? entry.propertyValue.value["$type"] : undefined,
 		value: entry.propertyValue.value ? entry.propertyValue.value["$val"] : undefined
 	}
-	delete entry.propertyValue
 }
 
-let propOverridesTemp = [] // Collect properties
-for (var entry of entity.propertyOverrides) {
-	if (propOverridesTemp.some(a=>deepEqual(entry.entities, a.entities))) {
-		deepMerge(propOverridesTemp.find(a=>deepEqual(entry.entities, a.entities)).properties, entry.properties)
-	} else {
-		propOverridesTemp.push(entry)
-	}
-}
+for (var entry of entity.overrideDeletes) {
+	entry.entityID = new Decimal(entry.entityID.value).toHex().substring(2)
 
-let propOverridesTemp2 = [] // Collect entities
-for (var entry of propOverridesTemp) {
-	if (propOverridesTemp2.some(a=>deepEqual(entry.properties, a.properties))) {
-		propOverridesTemp2.find(a=>deepEqual(entry.properties, a.properties)).entities.push(...entry.entities)
-	} else {
-		propOverridesTemp2.push(entry)
-	}
-}
+	entry.ref = entry.entityIndex == -2 ? "SPECIAL: Use EntityID" : entry.entityIndex == -1 ? "SPECIAL: None" : entry.entityIndex
+	delete entry.entityIndex
 
-entity.propertyOverrides = LosslessJSON.parse(LosslessJSON.stringify(propOverridesTemp2))
-
-for (let entry in entity.overrideDeletes) {
-	entity.overrideDeletes[entry] = convertReferenceToQuickEntity(entity.overrideDeletes[entry], TEMP, TBLU, TEMPmeta)
+	entry.externalScene = entry.externalSceneIndex >= 0 ? TBLUmeta["hash_reference_data"][TBLU.externalSceneTypeIndicesInResourceHeader[entry.externalSceneIndex]].hash : "SPECIAL: None"
+	delete entry.externalSceneIndex
 }
 
 if ((automateGame ? automateGame : storage.getSync("game")) !== "HM2016") {
 	for (var entry of entity.pinConnectionOverrides) {
-		entry.fromEntity = convertReferenceToQuickEntity(entry.fromEntity, TEMP, TBLU, TEMPmeta)
-		entry.toEntity = convertReferenceToQuickEntity(entry.toEntity, TEMP, TBLU, TEMPmeta)
+		entry.fromEntity.externalScene = entry.fromEntity.externalSceneIndex >= 0 ? TBLUmeta["hash_reference_data"][TBLU.externalSceneTypeIndicesInResourceHeader[entry.fromEntity.externalSceneIndex]].hash : "SPECIAL: None"
+		delete entry.fromEntity.externalSceneIndex
+
+		entry.toEntity.externalScene = entry.toEntity.externalSceneIndex >= 0 ? TBLUmeta["hash_reference_data"][TBLU.externalSceneTypeIndicesInResourceHeader[entry.toEntity.externalSceneIndex]].hash : "SPECIAL: None"
+		delete entry.toEntity.externalSceneIndex
 	}
 
 	for (var entry of entity.pinConnectionOverrideDeletes) {
-		entry.fromEntity = convertReferenceToQuickEntity(entry.fromEntity, TEMP, TBLU, TEMPmeta)
-		entry.toEntity = convertReferenceToQuickEntity(entry.toEntity, TEMP, TBLU, TEMPmeta)
+		entry.fromEntity.externalScene = entry.fromEntity.externalSceneIndex >= 0 ? TBLUmeta["hash_reference_data"][TBLU.externalSceneTypeIndicesInResourceHeader[entry.fromEntity.externalSceneIndex]].hash : "SPECIAL: None"
+		delete entry.fromEntity.externalSceneIndex
+
+		entry.toEntity.externalScene = entry.toEntity.externalSceneIndex >= 0 ? TBLUmeta["hash_reference_data"][TBLU.externalSceneTypeIndicesInResourceHeader[entry.toEntity.externalSceneIndex]].hash : "SPECIAL: None"
+		delete entry.toEntity.externalSceneIndex
 	}
 } else {
 	entity.pinConnectionOverrides = []
@@ -780,7 +791,7 @@ fs.writeFileSync(automateQNPath ? automateQNPath : electron.remote.dialog.showSa
 }
 
 function findEntity(cache, ref) {
-	return ref === null ? -1 : cache.hasOwnProperty(ref) ? cache[ref] : -1
+	return ref == "SPECIAL: None" ? -1 : ref == "SPECIAL: Use EntityID" ? -2 : cache.hasOwnProperty(ref) ? cache[ref] : -1
 }
 
 async function generate(automateGame = false, automateQNPath = false, automateTempPath = false, automateTempMetaPath = false, automateTbluPath = false, automateTbluMetaPath = false) {
@@ -805,11 +816,6 @@ if (entity.quickEntityVersion < QuickEntityVersion && !automateGame) {
 	}
 }
 
-console.time('removeComments')
-
-entity.entities = Object.fromEntries(Object.entries(entity.entities).filter(a=>a[1].type != "comment"))
-
-console.timeEnd('removeComments')
 console.time('buildEntityCache')
 
 const findEntityCache = {}
@@ -826,7 +832,7 @@ console.time('init')
 var TEMP = {
 	"subType": entity.subType,
 	"blueprintIndexInResourceHeader": 0,
-	"rootEntityIndex": findEntity(findEntityCache, entity.rootEntity),
+	"rootEntityIndex": Object.values(entity.entities).findIndex(a => a.name == entity.rootEntity),
 	"subEntities": [],
 	"propertyOverrides": entity.propertyOverrides,
 	"externalSceneTypeIndicesInResourceHeader": []
@@ -849,7 +855,7 @@ var TEMPmeta = {
 /** @type {TBLU} */
 var TBLU = {
 	"subType": entity.subType,
-	"rootEntityIndex": findEntity(findEntityCache, entity.rootEntity),
+	"rootEntityIndex": Object.values(entity.entities).findIndex(a => a.name == entity.rootEntity),
 	"subEntities": [],
 	"externalSceneTypeIndicesInResourceHeader": [],
 	"overrideDeletes": entity.overrideDeletes,
@@ -933,7 +939,12 @@ let soFarUsedTBLUArray = [...soFarUsedTBLU]
 
 for (let entry of Object.entries(entity.entities)) {
 	TEMP.subEntities.push({
-		"logicalParent": convertReferenceToRT(entry[1].parent, TEMP, TEMPmeta, findEntityCache),
+		"logicalParent": {
+			"entityID": new LosslessJSON.LosslessNumber("18446744073709551615"),
+			"externalSceneIndex": -1,
+			"entityIndex": 0,
+			"exposedEntity": ""
+		},
 		"entityTypeResourceIndex": soFarUsedTEMPArray.indexOf(entry[1].template) + tempInitialIndex,
 		"propertyValues": [],
 		"postInitPropertyValues": [],
@@ -941,31 +952,32 @@ for (let entry of Object.entries(entity.entities)) {
 	})
 
 	TBLU.subEntities.push({
-		"logicalParent": convertReferenceToRT(entry[1].parent, TEMP, TEMPmeta, findEntityCache),
+		"logicalParent": {
+			"entityID": new LosslessJSON.LosslessNumber("18446744073709551615"),
+			"externalSceneIndex": -1,
+			"entityIndex": 0,
+			"exposedEntity": ""
+		},
 		"entityTypeResourceIndex": soFarUsedTBLUArray.indexOf(entry[1].blueprint) + tbluInitialIndex,
 		"entityId": new LosslessJSON.LosslessNumber(new Decimal("0x" + entry[0]).toFixed()),
 		"editorOnly": entry[1].editorOnly ? true : false,
 		"entityName": entry[1].name,
 		"propertyAliases": entry[1].propertyAliases ? entry[1].propertyAliases.map(a=>{return {
-            "sAliasName": a.exposeProperty,
-            "entityID": findEntity(findEntityCache, a.onEntity),
-            "sPropertyName": a.asProperty
+            "sAliasName": a.sAliasName,
+            "entityID": findEntity(findEntityCache, a.entityID),
+            "sPropertyName": a.sPropertyName
         }}) : [],
-		"exposedEntities": entry[1].exposedEntities ? entry[1].exposedEntities.map(a=>{ return {
-            "sName": a.name,
-            "bIsArray": a.isArray,
-            "aTargets": a.targets.map(b=>convertReferenceToRT(b, TEMP, TEMPmeta, findEntityCache))
-        }}) : [],
+		"exposedEntities": entry[1].exposedEntities ? entry[1].exposedEntities : [],
 		"exposedInterfaces": entry[1].exposedInterfaces ? entry[1].exposedInterfaces.map(a=>[a[0], findEntity(findEntityCache, a[1])]) : [],
-		"entitySubsets": entry[1].entitySubsets || []
+		"entitySubsets": entry[1].entitySubsets ? entry[1].entitySubsets : []
 	})
 }
 
 console.timeEnd('skeletonData')
-console.time('reIndexES')
+console.time('reIndexES/LP')
 
 /*
-	REINDEX: entitySubsets
+	REINDEX: entitySubsets, logicalParent
 */
 
 index = 0
@@ -978,10 +990,22 @@ for (let entry of Object.values(entity.entities)) {
 		}
 	}
 
+	TEMP.subEntities[index].logicalParent.entityIndex = findEntity(findEntityCache, entry.parent.ref)
+	TBLU.subEntities[index].logicalParent.entityIndex = findEntity(findEntityCache, entry.parent.ref)
+
+	TEMP.subEntities[index].logicalParent.entityID = new LosslessJSON.LosslessNumber(new Decimal("0x" + entry.parent.entityID).toFixed())
+	TBLU.subEntities[index].logicalParent.entityID = new LosslessJSON.LosslessNumber(new Decimal("0x" + entry.parent.entityID).toFixed())
+
+	TEMP.subEntities[index].logicalParent.exposedEntity = entry.parent.exposedEntity
+	TBLU.subEntities[index].logicalParent.exposedEntity = entry.parent.exposedEntity
+
+	TEMP.subEntities[index].logicalParent.externalSceneIndex = entry.parent.externalScene
+	TBLU.subEntities[index].logicalParent.externalSceneIndex = entry.parent.externalScene
+
 	index ++
 }
 
-console.timeEnd('reIndexES')
+console.timeEnd('reIndexES/LP')
 console.time('generatePV/PIPV')
 
 /*
@@ -1004,44 +1028,126 @@ console.timeEnd('generatePV/PIPV')
 console.time('rebuildPO')
 
 /*
-	REBUILD: overrides
+	REBUILD: propertyOverrides
 */
 
 index = 0
-let propOvers = TEMP.propertyOverrides
-TEMP.propertyOverrides = []
-for (let override of propOvers) {
-    for (let overridenEntity of override.entities) {
-        for (let overridenProperty of Object.entries(override.properties)) {
-            TEMP.propertyOverrides.push({
-                propertyOwner: convertReferenceToRT(overridenEntity, TEMP, TEMPmeta, findEntityCache)
-            })
-			await rebuildProperty(overridenProperty, "propertyValue", TEMP, TBLU, TEMPmeta, TBLUmeta, entity, entry, index, findEntityCache, true)
-			index++
-        }
-    }
-}
+for (var entry of TEMP.propertyOverrides) {
+	entry.propertyOwner.entityID = new LosslessJSON.LosslessNumber(new Decimal("0x" + entry.propertyOwner.entityID).toFixed())
+	
+	entry.propertyOwner.entityIndex = entry.propertyOwner.ref == "SPECIAL: Use EntityID" ? -2 : entry.propertyOwner.ref == "SPECIAL: None" ? -1 : entry.propertyOwner.ref
+	delete entry.propertyOwner.ref
 
-for (let entry in TBLU.overrideDeletes) {
-	TBLU.overrideDeletes[entry] = convertReferenceToRT(TBLU.overrideDeletes[entry], TEMP, TEMPmeta, findEntityCache)
+	await rebuildProperty(entry.propertyValue, "propertyValue", TEMP, TBLU, TEMPmeta, TBLUmeta, entity, entry, index, findEntityCache, true)
+	index++
 }
 
 console.timeEnd('rebuildPO')
-console.time('rebuildPCO')
+console.time('reIndexESIO')
 
-if ((automateGame ? automateGame : storage.getSync("game")) !== "HM2016") {
-	for (var entry of TBLU.pinConnectionOverrides) {
-		entry.fromEntity = convertReferenceToRT(entry.fromEntity, TEMP, TEMPmeta, findEntityCache)
-		entry.toEntity = convertReferenceToRT(entry.toEntity, TEMP, TEMPmeta, findEntityCache)
-	}
+/*
+	REINDEX: externalSceneIndexes IN overrides
+*/
 
-	for (var entry of TBLU.pinConnectionOverrideDeletes) {
-		entry.fromEntity = convertReferenceToRT(entry.fromEntity, TEMP, TEMPmeta, findEntityCache)
-		entry.toEntity = convertReferenceToRT(entry.toEntity, TEMP, TEMPmeta, findEntityCache)
+for (var entry of TEMP.propertyOverrides) {
+	entry.propertyOwner.externalSceneIndex = TEMP.externalSceneTypeIndicesInResourceHeader.findIndex(a => TEMPmeta.hash_reference_data[a].hash == entry.propertyOwner.externalScene)
+	delete entry.propertyOwner.externalScene
+
+	if (entry.propertyValue.value["$type"] == "TArray<SEntityTemplateReference>") {
+		for (var property2 of entry.propertyValue.value["$val"]) {
+			if (typeof property2.externalSceneIndex == "string") {
+				property2.externalSceneIndex = TEMP.externalSceneTypeIndicesInResourceHeader.findIndex(a => TEMPmeta.hash_reference_data[a].hash == property2.externalSceneIndex)
+			}
+		}
+	} else if (entry.propertyValue.value["$type"] == "SEntityTemplateReference") {
+		if (typeof entry.propertyValue.value["$val"].externalSceneIndex == "string") {
+			entry.propertyValue.value["$val"].externalSceneIndex = TEMP.externalSceneTypeIndicesInResourceHeader.findIndex(a => TEMPmeta.hash_reference_data[a].hash == entry.propertyValue.value["$val"].externalSceneIndex)
+		}
 	}
 }
 
-console.timeEnd('rebuildPCO')
+for (var entry of TBLU.overrideDeletes) {
+	entry.entityID = new LosslessJSON.LosslessNumber(new Decimal("0x" + entry.entityID).toFixed())
+	
+	entry.entityIndex = entry.ref == "SPECIAL: Use EntityID" ? -2 : entry.ref == "SPECIAL: None" ? -1 : entry.ref
+	delete entry.ref
+
+	entry.externalSceneIndex = TBLU.externalSceneTypeIndicesInResourceHeader.findIndex(a => TBLUmeta.hash_reference_data[a].hash == entry.externalScene)
+	delete entry.externalScene
+}
+
+console.timeEnd('reIndexESIO')
+console.time('reIndexESIPCO')
+
+if ((automateGame ? automateGame : storage.getSync("game")) !== "HM2016") {
+	for (var entry of TBLU.pinConnectionOverrides) {
+		entry.fromEntity.externalSceneIndex = TBLU.externalSceneTypeIndicesInResourceHeader.findIndex(a => TBLUmeta.hash_reference_data[a].hash == entry.fromEntity.externalScene)
+		delete entry.fromEntity.externalScene
+
+		entry.toEntity.externalSceneIndex = TBLU.externalSceneTypeIndicesInResourceHeader.findIndex(a => TBLUmeta.hash_reference_data[a].hash == entry.toEntity.externalScene)
+		delete entry.toEntity.externalScene
+	}
+
+	for (var entry of TBLU.pinConnectionOverrideDeletes) {
+		entry.fromEntity.externalSceneIndex = TBLU.externalSceneTypeIndicesInResourceHeader.findIndex(a => TBLUmeta.hash_reference_data[a].hash == entry.fromEntity.externalScene)
+		delete entry.fromEntity.externalScene
+
+		entry.toEntity.externalSceneIndex = TBLU.externalSceneTypeIndicesInResourceHeader.findIndex(a => TBLUmeta.hash_reference_data[a].hash == entry.toEntity.externalScene)
+		delete entry.toEntity.externalScene
+	}
+}
+
+console.timeEnd('reIndexESIPCO')
+console.time('reIndexTEMPESILP/ESIPV')
+
+/*
+	REINDEX: externalSceneIndexes IN TEMP logicalParent, propertyValues
+*/
+
+for (var entry of TEMP.subEntities) {
+	entry.logicalParent.externalSceneIndex = TEMP.externalSceneTypeIndicesInResourceHeader.findIndex(a => TEMPmeta.hash_reference_data[a].hash == entry.logicalParent.externalSceneIndex)
+
+	for (let property of entry.propertyValues) {
+		if (property.value["$type"] == "TArray<SEntityTemplateReference>") {
+			for (var property2 of property.value["$val"]) {
+				if (typeof property2.externalSceneIndex == "string") {
+					property2.externalSceneIndex = TEMP.externalSceneTypeIndicesInResourceHeader.findIndex(a => TEMPmeta.hash_reference_data[a].hash == property2.externalSceneIndex)
+				}
+			}
+		} else if (property.value["$type"] == "SEntityTemplateReference") {
+			if (typeof property.value["$val"].externalSceneIndex == "string") {
+				property.value["$val"].externalSceneIndex = TEMP.externalSceneTypeIndicesInResourceHeader.findIndex(a => TEMPmeta.hash_reference_data[a].hash == property.value["$val"].externalSceneIndex)
+			}
+		}
+	}
+
+	for (let property of entry.postInitPropertyValues) {
+		if (property.value["$type"] == "TArray<SEntityTemplateReference>") {
+			for (var property2 of property.value["$val"]) {
+				if (typeof property2.externalSceneIndex == "string") {
+					property2.externalSceneIndex = TEMP.externalSceneTypeIndicesInResourceHeader.findIndex(a => TEMPmeta.hash_reference_data[a].hash == property2.externalSceneIndex)
+				}
+			}
+		} else if (property.value["$type"] == "SEntityTemplateReference") {
+			if (typeof property.value["$val"].externalSceneIndex == "string") {
+				property.value["$val"].externalSceneIndex = TEMP.externalSceneTypeIndicesInResourceHeader.findIndex(a => TEMPmeta.hash_reference_data[a].hash == property.value["$val"].externalSceneIndex)
+			}
+		}
+	}
+}
+
+console.timeEnd('reIndexTEMPESILP/ESIPV')
+console.time('reIndexTBLUESILP')
+
+/*
+	REINDEX: externalSceneIndex IN TBLU logicalParent
+*/
+
+for (var entry of TBLU.subEntities) {
+	entry.logicalParent.externalSceneIndex = TBLU.externalSceneTypeIndicesInResourceHeader.findIndex(a => TBLUmeta.hash_reference_data[a].hash == entry.logicalParent.externalSceneIndex)
+}
+
+console.timeEnd('reIndexTBLUESILP')
 console.time('addPins')
 
 /*
@@ -1317,7 +1423,7 @@ async function createPatchJSON(automateQN1Path = false, automateQN2Path = false,
 		tempHash: entity2.tempHash,
     	tbluHash: entity2.tbluHash,
 		patch: patch,
-		patchVersion: 4
+		patchVersion: 3
 	}
 
 	let outputPath = automateOutputPath ? automateOutputPath : electron.remote.dialog.showSaveDialogSync({

@@ -1,8 +1,13 @@
 const FrameworkVersion = "1.0.0"
 
 THREE = require("./three-onlymath.min")
-const QuickEntity = require("./quickentity")
-const QuickEntityLegacy = require("./quickentityLegacy")
+const QuickEntity = {
+    "0": require("./quickentity1136"),
+    "2": require("./quickentity20"),
+    "2.1": require("./quickentity"),
+    
+    "999": require("./quickentity")
+}
 const RPKG = require("./rpkg")
 
 const fs = require("fs-extra")
@@ -23,7 +28,7 @@ require("clarify")
 
 const Piscina = require('piscina')
 
-const config = json5.parse(fs.readFileSync(path.join(process.cwd(), "config.json")))
+const config = json5.parse(String(fs.readFileSync(path.join(process.cwd(), "config.json"))))
 config.runtimePath = path.resolve(process.cwd(), config.runtimePath)
 
 const rpkgInstance = new RPKG.RPKGInstance()
@@ -64,8 +69,8 @@ async function stageAllMods() {
     for (let chunkPatchFile of fs.readdirSync(config.runtimePath)) {
         try {
             if (chunkPatchFile.includes("patch")) {
-                chunkPatchNumber = [...chunkPatchFile.matchAll(/chunk[0-9]*patch([0-9]*)\.rpkg/g)]
-                chunkPatchNumber = parseInt(chunkPatchNumber[chunkPatchNumber.length - 1][chunkPatchNumber[chunkPatchNumber.length - 1].length - 1])
+                let chunkPatchNumberMatches = [...chunkPatchFile.matchAll(/chunk[0-9]*patch([0-9]*)\.rpkg/g)]
+                let chunkPatchNumber = parseInt(chunkPatchNumberMatches[chunkPatchNumberMatches.length - 1][chunkPatchNumberMatches[chunkPatchNumberMatches.length - 1].length - 1])
 
                 if (chunkPatchNumber >= 200 && chunkPatchNumber < 300) { // The mod framework manages patch files between 200 (inc) and 300 (exc), allowing mods to place runtime files in those ranges
                     fs.rmSync(path.join(config.runtimePath, chunkPatchFile))
@@ -143,7 +148,7 @@ async function stageAllMods() {
                 fs.mkdirSync("temp") // Clear the temp directory
             }
         } else {
-            let manifest = json5.parse(fs.readFileSync(path.join(process.cwd(), "Mods", mod, "manifest.json")))
+            let manifest = json5.parse(String(fs.readFileSync(path.join(process.cwd(), "Mods", mod, "manifest.json"))))
 
             console.log("Staging mod: " + manifest.name)
 
@@ -194,10 +199,10 @@ async function stageAllMods() {
                         }
                         
                         child_process.execSync(`"Third-Party\\OREStool.exe" "${path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES")}"`)
-                        var contractsORESContent = JSON.parse(fs.readFileSync(path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES.JSON")))
+                        var contractsORESContent = JSON.parse(String(fs.readFileSync(path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES.JSON"))))
     
                         await rpkgInstance.callFunction(`-hash_meta_to_json "${path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES.meta")}"`)
-                        var contractsORESMetaContent = JSON.parse(fs.readFileSync(path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES.meta.JSON")))
+                        var contractsORESMetaContent = JSON.parse(String(fs.readFileSync(path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES.meta.JSON"))))
                     } // There are contracts, extract the contracts ORES and copy it to the temp2 directory
     
                     for (let contentFile of readRecursive(path.join(process.cwd(), "Mods", mod, manifest.contentFolder, chunkFolder))) {
@@ -210,7 +215,7 @@ async function stageAllMods() {
 
 		                        console.log("Converting entity " + contentFilePath)
 
-                                await (entityContent.quickEntityVersion < 2 ? QuickEntityLegacy : QuickEntity).generate("HM3", contentFilePath,
+                                await (QuickEntity[Object.keys(QuickEntity)[Object.keys(QuickEntity).findIndex(a=> parseFloat(a) > entityContent.quickEntityVersion) - 1]]).generate("HM3", contentFilePath,
                                                             path.join(process.cwd(), "temp", "temp.TEMP.json"),
                                                             path.join(process.cwd(), "temp", "temp.TEMP.meta.json"),
                                                             path.join(process.cwd(), "temp", "temp.TBLU.json"),
@@ -254,7 +259,7 @@ async function stageAllMods() {
                                 }
     
                                 child_process.execSync(`"Third-Party\\OREStool.exe" "${path.join(process.cwd(), "temp", oresChunk, "ORES", "0057C2C3941115CA.ORES")}"`)
-                                var oresContent = JSON.parse(fs.readFileSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "0057C2C3941115CA.ORES.JSON")))
+                                var oresContent = JSON.parse(String(fs.readFileSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "0057C2C3941115CA.ORES.JSON"))))
     
                                 var oresToPatch = Object.fromEntries(oresContent.map(a=>[a.Id, a]))
                                 deepMerge(oresToPatch, entityContent)
@@ -282,7 +287,7 @@ async function stageAllMods() {
                                     fs.copyFileSync(path.join(process.cwd(), "staging", "chunk0", "00204D1AFD76AB13.REPO.meta"), path.join(process.cwd(), "temp", repoRPKG, "REPO", "00204D1AFD76AB13.REPO.meta"))
                                 }
     
-                                var repoContent = JSON.parse(fs.readFileSync(path.join(process.cwd(), "temp", repoRPKG, "REPO", "00204D1AFD76AB13.REPO")))
+                                var repoContent = JSON.parse(String(fs.readFileSync(path.join(process.cwd(), "temp", repoRPKG, "REPO", "00204D1AFD76AB13.REPO"))))
     
                                 var repoToPatch = Object.fromEntries(repoContent.map(a=>[a["ID_"], a]))
                                 deepMerge(repoToPatch, entityContent)
@@ -291,7 +296,7 @@ async function stageAllMods() {
                                 var editedItems = new Set(Object.values(entityContent).map(a=>a.ID_))
     
                                 await rpkgInstance.callFunction(`-hash_meta_to_json "${path.join(process.cwd(), "temp", repoRPKG, "REPO", "00204D1AFD76AB13.REPO.meta")}"`)
-                                var metaContent = JSON.parse(fs.readFileSync(path.join(process.cwd(), "temp", repoRPKG, "REPO", "00204D1AFD76AB13.REPO.meta.JSON")))
+                                var metaContent = JSON.parse(String(fs.readFileSync(path.join(process.cwd(), "temp", repoRPKG, "REPO", "00204D1AFD76AB13.REPO.meta.JSON"))))
                                 for (var repoItem of repoToWrite) {
                                     if (editedItems.has(repoItem.ID_)) {
                                         if (repoItem.Runtime) {
@@ -422,10 +427,10 @@ async function stageAllMods() {
                 }
 
                 child_process.execSync(`"Third-Party\\OREStool.exe" "${path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES")}"`)
-                var oresContent = JSON.parse(fs.readFileSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES.JSON")))
+                var oresContent = JSON.parse(String(fs.readFileSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES.JSON"))))
 
                 await rpkgInstance.callFunction(`-hash_meta_to_json "${path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES.meta")}"`)
-                var metaContent = JSON.parse(fs.readFileSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES.meta.JSON")))
+                var metaContent = JSON.parse(String(fs.readFileSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES.meta.JSON"))))
                 
                 for (let blob of glob.sync(path.join(process.cwd(), "Mods", mod, manifest.blobsFolder, "**/*.*"))) {
                     var blobPath = path.resolve(blob).split(path.resolve(process.cwd()))[1].split(path.sep).slice(4).join("/")
@@ -594,7 +599,7 @@ async function stageAllMods() {
         
         fs.ensureDirSync(path.join(process.cwd(), "staging", "chunk0"))
 
-        let localisationContent = JSON.parse(fs.readFileSync(path.join(process.cwd(), "temp", "LOCR", localisationFileRPKG + ".rpkg", "00F5817876E691F1.LOCR.JSON")))
+        let localisationContent = JSON.parse(String(fs.readFileSync(path.join(process.cwd(), "temp", "LOCR", localisationFileRPKG + ".rpkg", "00F5817876E691F1.LOCR.JSON"))))
         let locrContent = {}
 
         for (let localisationLanguage of localisationContent) {

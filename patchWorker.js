@@ -1,6 +1,11 @@
 THREE = require("./three-onlymath.min")
-const QuickEntity = require("./quickentity")
-const QuickEntityLegacy = require("./quickentityLegacy")
+const QuickEntity = {
+    "0": require("./quickentity1136"),
+    "3": require("./quickentity20"),
+    "4": require("./quickentity"),
+	
+    "999": require("./quickentity")
+}
 const RPKG = require("./rpkg")
 const fs = require("fs-extra")
 const path = require("path")
@@ -62,14 +67,14 @@ module.exports = async ({
 
 		/* ---------------------------------------- Convert to QN --------------------------------------- */
 		if (entityContent.patchVersion < 3) {
-			await QuickEntityLegacy.convert("HM3", "ids",
+			await (QuickEntity[Object.keys(QuickEntity)[Object.keys(QuickEntity).findIndex(a=> parseFloat(a) > entityContent.patchVersion) - 1]]).convert("HM3", "ids",
 				path.join(process.cwd(), assignedTemporaryDirectory, tempRPKG, "TEMP", entityContent.tempHash + ".TEMP.json"),
 				path.join(process.cwd(), assignedTemporaryDirectory, tempRPKG, "TEMP", entityContent.tempHash + ".TEMP.meta.json"),
 				path.join(process.cwd(), assignedTemporaryDirectory, tbluRPKG, "TBLU", entityContent.tbluHash + ".TBLU.json"),
 				path.join(process.cwd(), assignedTemporaryDirectory, tbluRPKG, "TBLU", entityContent.tbluHash + ".TBLU.meta.json"),
 				path.join(process.cwd(), assignedTemporaryDirectory, "QuickEntityJSON.json")) // Generate the QN json from the RT files
 		} else {
-			await QuickEntity.convert("HM3",
+			await (QuickEntity[Object.keys(QuickEntity)[Object.keys(QuickEntity).findIndex(a=> parseFloat(a) > entityContent.patchVersion) - 1]]).convert("HM3",
 				path.join(process.cwd(), assignedTemporaryDirectory, tempRPKG, "TEMP", entityContent.tempHash + ".TEMP.json"),
 				path.join(process.cwd(), assignedTemporaryDirectory, tempRPKG, "TEMP", entityContent.tempHash + ".TEMP.meta.json"),
 				path.join(process.cwd(), assignedTemporaryDirectory, tbluRPKG, "TBLU", entityContent.tbluHash + ".TBLU.json"),
@@ -78,10 +83,10 @@ module.exports = async ({
 		}
 
 		/* ----------------------------------------- Apply patch ---------------------------------------- */
-		await (entityContent.patchVersion < 3 ? QuickEntityLegacy : QuickEntity).applyPatchJSON(path.join(process.cwd(), assignedTemporaryDirectory, "QuickEntityJSON.json"), contentFilePath, path.join(process.cwd(), assignedTemporaryDirectory, "PatchedQuickEntityJSON.json")) // Patch the QN json
+		await (QuickEntity[Object.keys(QuickEntity)[Object.keys(QuickEntity).findIndex(a=> parseFloat(a) > entityContent.patchVersion) - 1]]).applyPatchJSON(path.join(process.cwd(), assignedTemporaryDirectory, "QuickEntityJSON.json"), contentFilePath, path.join(process.cwd(), assignedTemporaryDirectory, "PatchedQuickEntityJSON.json")) // Patch the QN json
 
 		/* ------------------------------------ Convert to RT Source ------------------------------------ */
-		await (entityContent.patchVersion < 3 ? QuickEntityLegacy : QuickEntity).generate("HM3", path.join(process.cwd(), assignedTemporaryDirectory, "PatchedQuickEntityJSON.json"),
+		await (QuickEntity[Object.keys(QuickEntity)[Object.keys(QuickEntity).findIndex(a=> parseFloat(a) > entityContent.patchVersion) - 1]]).generate("HM3", path.join(process.cwd(), assignedTemporaryDirectory, "PatchedQuickEntityJSON.json"),
 			path.join(process.cwd(), assignedTemporaryDirectory, "temp.TEMP.json"),
 			path.join(process.cwd(), assignedTemporaryDirectory, "temp.TEMP.meta.json"),
 			path.join(process.cwd(), assignedTemporaryDirectory, "temp.TBLU.json"),
