@@ -17,6 +17,6 @@
 	},
 	"packagedefinition": [],
 	"runtimePackages": [],
-	"modVersion": 1,
-	"frameworkVersion": 0.2
+	"version": "1.0.0",
+	"frameworkVersion": "1.0.0"
 }
