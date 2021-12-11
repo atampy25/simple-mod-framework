@@ -118,11 +118,19 @@ const deepMerge = require('lodash.merge')
 
 var THREE = require("./three-onlymath.min.js")
 
-const QuickEntityVersion = 2.0
+const QuickEntityVersion = 2.1
 
 // oi sieni shut up yeah?
 // you've got ur select box
 // - Atampy26
+
+if (!module.parent) {
+	if (!storage.getSync("game")) {
+		setGame("HM3")
+	} else {
+		document.getElementById("gameSelect").value = storage.getSync("game")
+	}
+}
 
 /**
  * @param {{ exposedEntity: string | any[]; externalSceneIndex: LosslessJSON.LosslessNumber; entityIndex: LosslessJSON.LosslessNumber; entityID: { value: LosslessJSON.LosslessNumber; }; }} reference
