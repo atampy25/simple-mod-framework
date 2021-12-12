@@ -215,6 +215,10 @@ async function stageAllMods() {
 
 		                        console.log("Converting entity " + contentFilePath)
 
+                                if (!QuickEntity[Object.keys(QuickEntity)[Object.keys(QuickEntity).findIndex(a=> parseFloat(a) > entityContent.quickEntityVersion) - 1]]) {
+                                    console.log("Error: could not find matching QuickEntity version for " + entityContent.quickEntityVersion)
+                                }
+
                                 await (QuickEntity[Object.keys(QuickEntity)[Object.keys(QuickEntity).findIndex(a=> parseFloat(a) > entityContent.quickEntityVersion) - 1]]).generate("HM3", contentFilePath,
                                                             path.join(process.cwd(), "temp", "temp.TEMP.json"),
                                                             path.join(process.cwd(), "temp", "temp.TEMP.meta.json"),

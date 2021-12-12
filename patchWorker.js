@@ -32,6 +32,10 @@ module.exports = async ({
 
 		await rpkgInstance.waitForInitialised()
 
+		if (!QuickEntity[Object.keys(QuickEntity)[Object.keys(QuickEntity).findIndex(a=> parseFloat(a) > entityContent.patchVersion) - 1]]) {
+			console.log("Error: could not find matching QuickEntity version for patch version " + entityContent.patchVersion)
+		}
+
 		/* ---------------------------------------- Extract TEMP ---------------------------------------- */
 		if (!fs.existsSync(path.join(process.cwd(), "staging", chunkFolder, entityContent.tempHash + ".TEMP"))) {
 			await rpkgInstance.callFunction(`-extract_from_rpkg "${path.join(config.runtimePath, tempRPKG + ".rpkg")}" -filter "${entityContent.tempHash}" -output_path "${assignedTemporaryDirectory}"`)
