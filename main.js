@@ -46,18 +46,18 @@ process.on('SIGTERM', cleanExit)
 process.on('uncaughtException', (err, origin) => {
     fs.writeSync(
         process.stderr.fd,
-        `Caught exception: ${err}\n` +
-        `Exception origin: ${origin}`
+        `Caught exception: ${err}\n`
     );
+    console.error("Origin: ", origin)
     cleanExit()
 })
 
 process.on('unhandledRejection', (err, origin) => {
     fs.writeSync(
         process.stderr.fd,
-        `Unhandled promise rejection: ${err}\n` +
-        `Exception origin: ${origin}`
+        `Unhandled promise rejection: ${err}\n`
     );
+    console.error("Origin: ", origin)
     cleanExit()
 })
 

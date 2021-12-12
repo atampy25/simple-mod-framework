@@ -115,6 +115,8 @@ const { promisify } = require("util")
 const rfc6902 = require('rfc6902')
 const deepEqual = require('lodash.isequal')
 const deepMerge = require('lodash.merge')
+const quickentity20 = require('./quickentity20')
+const quickentity1136 = require('./quickentity1136')
 
 var THREE = require("./three-onlymath.min.js")
 
@@ -1365,6 +1367,44 @@ async function applyPatchJSON(automateQNPath = false, automatePatchPath = false,
 		properties: ["dontAddToRecent"]
 	})
 	fs.writeFileSync(outputPath, LosslessJSON.stringify(entity).replace(/"LN\|((?:[0-9]|\.|-|e)*)"/g, (a,b) => new LosslessJSON.LosslessNumber(b).value))
+}
+
+async function convertFromQuickEntity2(automateQNPath = false) {
+	automateQNPath = automateQNPath || electron.remote.dialog.showOpenDialogSync({
+		title: "Select the QuickEntity JSON to update",
+		buttonLabel: "Select",
+		filters: [{ name: 'JSON files', extensions: ['json'] }],
+		properties: ["openFile", "dontAddToRecent"]
+	})[0]
+
+	let entity = LosslessJSON.parse(String(fs.readFileSync(automateQNPath)))
+
+	await quickentity20.generate(storage.getSync("game"), automateQNPath, path.join(process.cwd(), entity.tempHash + ".TEMP.json"), path.join(process.cwd(), entity.tempHash + ".TEMP.meta.json"), path.join(process.cwd(), entity.tbluHash + ".TBLU.json"), path.join(process.cwd(), entity.tbluHash + ".TBLU.meta.json"))
+	await convert(storage.getSync("game"), path.join(process.cwd(), entity.tempHash + ".TEMP.json"), path.join(process.cwd(), entity.tempHash + ".TEMP.meta.json"), path.join(process.cwd(), entity.tbluHash + ".TBLU.json"), path.join(process.cwd(), entity.tbluHash + ".TBLU.meta.json"), automateQNPath)
+
+	fs.unlinkSync(path.join(process.cwd(), entity.tempHash + ".TEMP.json"))
+	fs.unlinkSync(path.join(process.cwd(), entity.tempHash + ".TEMP.meta.json"))
+	fs.unlinkSync(path.join(process.cwd(), entity.tbluHash + ".TBLU.json"))
+	fs.unlinkSync(path.join(process.cwd(), entity.tbluHash + ".TBLU.meta.json"))
+}
+
+async function convertFromQuickEntity1136(automateQNPath = false) {
+	automateQNPath = automateQNPath || electron.remote.dialog.showOpenDialogSync({
+		title: "Select the QuickEntity JSON to update",
+		buttonLabel: "Select",
+		filters: [{ name: 'JSON files', extensions: ['json'] }],
+		properties: ["openFile", "dontAddToRecent"]
+	})[0]
+
+	let entity = LosslessJSON.parse(String(fs.readFileSync(automateQNPath)))
+
+	await quickentity1136.generate(storage.getSync("game"), automateQNPath, path.join(process.cwd(), entity.tempHash + ".TEMP.json"), path.join(process.cwd(), entity.tempHash + ".TEMP.meta.json"), path.join(process.cwd(), entity.tbluHash + ".TBLU.json"), path.join(process.cwd(), entity.tbluHash + ".TBLU.meta.json"))
+	await convert(storage.getSync("game"), path.join(process.cwd(), entity.tempHash + ".TEMP.json"), path.join(process.cwd(), entity.tempHash + ".TEMP.meta.json"), path.join(process.cwd(), entity.tbluHash + ".TBLU.json"), path.join(process.cwd(), entity.tbluHash + ".TBLU.meta.json"), automateQNPath)
+
+	fs.unlinkSync(path.join(process.cwd(), entity.tempHash + ".TEMP.json"))
+	fs.unlinkSync(path.join(process.cwd(), entity.tempHash + ".TEMP.meta.json"))
+	fs.unlinkSync(path.join(process.cwd(), entity.tbluHash + ".TBLU.json"))
+	fs.unlinkSync(path.join(process.cwd(), entity.tbluHash + ".TBLU.meta.json"))
 }
 
 module.exports = {
