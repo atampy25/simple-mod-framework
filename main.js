@@ -470,49 +470,51 @@ async function stageAllMods() {
             }
 
             /* ---------------------------------------- Dependencies ---------------------------------------- */
-            for (let dependency of manifest.dependencies) {
-                try {
-                    await promisify(emptyFolder)("temp", true)
-                } catch {}
-                fs.mkdirSync("temp") // Clear the temp directory
+            if (manifest.dependencies) {
+                for (let dependency of manifest.dependencies) {
+                    try {
+                        await promisify(emptyFolder)("temp", true)
+                    } catch {}
+                    fs.mkdirSync("temp") // Clear the temp directory
 
-                await rpkgInstance.callFunction(`-extract_non_base_hash_depends_from "${path.join(config.runtimePath)}" -filter "${dependency}" -output_path temp`)
+                    await rpkgInstance.callFunction(`-extract_non_base_hash_depends_from "${path.join(config.runtimePath)}" -filter "${dependency}" -output_path temp`)
 
-                let allFiles = klaw(path.join(process.cwd(), "temp")).filter(a=>a.stats.size > 0).map(a=>a.path).map(a=>{ return {rpkg: (/00[0-9A-F]*\.TEMP\\(chunk[0-9]*(?:patch[0-9]*)?)\\/gi).exec(a)[1], path: a} }).sort((a,b) => b.rpkg.localeCompare(a.rpkg, undefined, {numeric: true, sensitivity: 'base'}))
-                // Sort files by RPKG name in descending order
+                    let allFiles = klaw(path.join(process.cwd(), "temp")).filter(a=>a.stats.size > 0).map(a=>a.path).map(a=>{ return {rpkg: (/00[0-9A-F]*\.TEMP\\(chunk[0-9]*(?:patch[0-9]*)?)\\/gi).exec(a)[1], path: a} }).sort((a,b) => b.rpkg.localeCompare(a.rpkg, undefined, {numeric: true, sensitivity: 'base'}))
+                    // Sort files by RPKG name in descending order
+                    
+                    let allFilesSuperseded = []
+                    allFiles.forEach(a => { if (!allFilesSuperseded.some(b => path.basename(b) == path.basename(a.path))) { allFilesSuperseded.push(a.path) } })
+                    // Add files without duplicates (since the list is in desc order patches are first which means that superseded files are added correctly)
+                    
+                    allFilesSuperseded = allFilesSuperseded.filter(a=>!/chunk[0-9]*(?:patch[0-9]*)?\.meta/gi.exec(path.basename(a)))
+                    // Remove RPKG metas
+
+                    fs.ensureDirSync(path.join(process.cwd(), "staging", "chunk0"))
+                    allFilesSuperseded.forEach(file => {
+                        fs.copySync(file, path.join(process.cwd(), "staging", "chunk0", path.basename(file)), { overwrite: false }) // Stage the files, but don't overwrite if they already exist (such as if another mod has edited them)
+                    })
+
+                    try {
+                        await promisify(emptyFolder)("temp", true)
+                    } catch {}
+                    fs.mkdirSync("temp") // Clear the temp directory
+                }
+        
+                /* ------------------------------------- Package definition ------------------------------------- */
+                if (manifest.packagedefinition) {
+                    packagedefinition.push(...manifest.packagedefinition)
+                }
                 
-                let allFilesSuperseded = []
-                allFiles.forEach(a => { if (!allFilesSuperseded.some(b => path.basename(b) == path.basename(a.path))) { allFilesSuperseded.push(a.path) } })
-                // Add files without duplicates (since the list is in desc order patches are first which means that superseded files are added correctly)
-                
-                allFilesSuperseded = allFilesSuperseded.filter(a=>!/chunk[0-9]*(?:patch[0-9]*)?\.meta/gi.exec(path.basename(a)))
-                // Remove RPKG metas
-
-                fs.ensureDirSync(path.join(process.cwd(), "staging", "chunk0"))
-                allFilesSuperseded.forEach(file => {
-                    fs.copySync(file, path.join(process.cwd(), "staging", "chunk0", path.basename(file)), { overwrite: false }) // Stage the files, but don't overwrite if they already exist (such as if another mod has edited them)
-                })
-
-                try {
-                    await promisify(emptyFolder)("temp", true)
-                } catch {}
-                fs.mkdirSync("temp") // Clear the temp directory
-            }
-    
-            /* ------------------------------------- Package definition ------------------------------------- */
-            if (manifest.packagedefinition) {
-                packagedefinition.push(...manifest.packagedefinition)
-            }
-            
-            /* ---------------------------------------- Localisation ---------------------------------------- */
-            if (manifest.localisation) {
-                for (let language of Object.keys(manifest.localisation)) {
-                    for (let string of Object.entries(manifest.localisation[language])) {
-                        localisation.push({
-                            language: language,
-                            locString: string[0],
-                            text: string[1]
-                        })
+                /* ---------------------------------------- Localisation ---------------------------------------- */
+                if (manifest.localisation) {
+                    for (let language of Object.keys(manifest.localisation)) {
+                        for (let string of Object.entries(manifest.localisation[language])) {
+                            localisation.push({
+                                language: language,
+                                locString: string[0],
+                                text: string[1]
+                            })
+                        }
                     }
                 }
             }
