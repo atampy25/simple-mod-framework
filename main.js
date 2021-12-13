@@ -2,11 +2,11 @@ const FrameworkVersion = "1.0.0"
 
 THREE = require("./three-onlymath.min")
 const QuickEntity = {
-    "0": require("./quickentity1136"),
-    "2": require("./quickentity20"),
+    "0.1": require("./quickentity1136"),
+    "2.0": require("./quickentity20"),
     "2.1": require("./quickentity"),
     
-    "999": require("./quickentity")
+    "999.999": require("./quickentity")
 }
 const RPKG = require("./rpkg")
 
