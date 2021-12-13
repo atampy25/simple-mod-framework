@@ -499,22 +499,22 @@ async function stageAllMods() {
                     } catch {}
                     fs.mkdirSync("temp") // Clear the temp directory
                 }
+            }
         
-                /* ------------------------------------- Package definition ------------------------------------- */
-                if (manifest.packagedefinition) {
-                    packagedefinition.push(...manifest.packagedefinition)
-                }
-                
-                /* ---------------------------------------- Localisation ---------------------------------------- */
-                if (manifest.localisation) {
-                    for (let language of Object.keys(manifest.localisation)) {
-                        for (let string of Object.entries(manifest.localisation[language])) {
-                            localisation.push({
-                                language: language,
-                                locString: string[0],
-                                text: string[1]
-                            })
-                        }
+            /* ------------------------------------- Package definition ------------------------------------- */
+            if (manifest.packagedefinition) {
+                packagedefinition.push(...manifest.packagedefinition)
+            }
+            
+            /* ---------------------------------------- Localisation ---------------------------------------- */
+            if (manifest.localisation) {
+                for (let language of Object.keys(manifest.localisation)) {
+                    for (let string of Object.entries(manifest.localisation[language])) {
+                        localisation.push({
+                            language: language,
+                            locString: string[0],
+                            text: string[1]
+                        })
                     }
                 }
             }
