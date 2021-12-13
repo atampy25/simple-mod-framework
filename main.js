@@ -23,7 +23,8 @@ const { crc32 } = require("./crc32")
 const readRecursive = require('fs-readdir-recursive')
 const os = require("os")
 const json5 = require("json5")
-const semver = require('semver');
+const semver = require('semver')
+const klaw = require('klaw-sync')
 require("clarify")
 
 const Piscina = require('piscina')
@@ -116,29 +117,7 @@ async function stageAllMods() {
                 
                 rpkgTypes[chunkFolder] = "patch"
 
-                var allFiles = []
-
-                for (let file of fs.readdirSync(path.join(process.cwd(), "temp"))) {
-                    if (fs.statSync(path.join(process.cwd(), "temp", file)).isDirectory()) {
-                        for (let file2 of fs.readdirSync(path.join(process.cwd(), "temp", file))) {
-                            if (fs.statSync(path.join(process.cwd(), "temp", file, file2)).isDirectory()) {
-                                for (let file3 of fs.readdirSync(path.join(process.cwd(), "temp", file, file2))) {
-                                    if (fs.statSync(path.join(process.cwd(), "temp", file, file2, file3)).isDirectory()) {
-                                        for (let file4 of fs.readdirSync(path.join(process.cwd(), "temp", file, file2, file3))) {
-                                            allFiles.push(path.join(process.cwd(), "temp", file, file2, file3, file4))
-                                        }
-                                    } else {
-                                        allFiles.push(path.join(process.cwd(), "temp", file, file2, file3))
-                                    }
-                                }
-                            } else {
-                                allFiles.push(path.join(process.cwd(), "temp", file, file2))
-                            }
-                        }
-                    } else {
-                        allFiles.push(path.join(process.cwd(), "temp", file))
-                    }
-                }
+                let allFiles = klaw(path.join(process.cwd(), "temp")).filter(a=>a.stats.size > 0).map(a=>a.path)
 
                 allFiles.forEach(a=>fs.copyFileSync(a, path.join(process.cwd(), "staging", chunkFolder, path.basename(a))))
 
@@ -479,9 +458,7 @@ async function stageAllMods() {
                 fs.mkdirSync("temp") // Clear the temp directory
             }
 
-            /* ---------------------------------------------------------------------------------------------- */
-            /*                                        Runtime packages                                        */
-            /* ---------------------------------------------------------------------------------------------- */
+            /* -------------------------------------- Runtime packages -------------------------------------- */
             if (manifest.runtimePackages) {
                     runtimePackages.push(...manifest.runtimePackages.map(a=>{
                     return {
@@ -492,53 +469,42 @@ async function stageAllMods() {
                 }))
             }
 
-            // for (let deletedHash of manifest.undelete) {
-            //     var hashRPKG = await rpkgInstance.getRPKGOfHash(deletedHash)
+            /* ---------------------------------------- Dependencies ---------------------------------------- */
+            for (let dependency of manifest.dependencies) {
+                try {
+                    await promisify(emptyFolder)("temp", true)
+                } catch {}
+                fs.mkdirSync("temp") // Clear the temp directory
+
+                await rpkgInstance.callFunction(`-extract_non_base_hash_depends_from "${path.join(config.runtimePath)}" -filter "${dependency}" -output_path temp`)
+
+                let allFiles = klaw(path.join(process.cwd(), "temp")).filter(a=>a.stats.size > 0).map(a=>a.path).map(a=>{ return {rpkg: (/00[0-9A-F]*\.TEMP\\(chunk[0-9]*(?:patch[0-9]*)?)\\/gi).exec(a)[1], path: a} }).sort((a,b) => b.rpkg.localeCompare(a.rpkg, undefined, {numeric: true, sensitivity: 'base'}))
+                // Sort files by RPKG name in descending order
                 
-            //     fs.mkdirSync(path.join(process.cwd(), "staging", hashRPKG.replace(/patch[1-9]*/g, "")))
-            //     await rpkgInstance.callFunction(`-extract_from_rpkg "${path.join(config.runtimePath, hashRPKG + ".rpkg")}" -filter "${deletedHash}" -output_path temp`)
-            //     for (let folder of fs.readdirSync(path.join(process.cwd(), "temp", hashRPKG))) {
-            //         if (fs.statSync(path.join(process.cwd(), "temp", hashRPKG, folder)).isDirectory()) {
-            //             for (let file of fs.readdirSync(path.join(process.cwd(), "temp", hashRPKG, folder))) {
-            //                 fs.copyFileSync(path.join(process.cwd(), "temp", hashRPKG, folder, file), path.join(process.cwd(), "staging", hashRPKG.replace(/patch[1-9]*/g, ""), file))
-            //             }
-            //         }
-            //     } // Copy the file itself
+                let allFilesSuperseded = []
+                allFiles.forEach(a => { if (!allFilesSuperseded.some(b => path.basename(b) == path.basename(a.path))) { allFilesSuperseded.push(a.path) } })
+                // Add files without duplicates (since the list is in desc order patches are first which means that superseded files are added correctly)
+                
+                allFilesSuperseded = allFilesSuperseded.filter(a=>!/chunk[0-9]*(?:patch[0-9]*)?\.meta/gi.exec(path.basename(a)))
+                // Remove RPKG metas
 
-            //     try {
-            //         await promisify(emptyFolder)("temp", true)
-            //     } catch {}
-            //     fs.mkdirSync("temp") // Clear the temp directory
+                fs.ensureDirSync(path.join(process.cwd(), "staging", "chunk0"))
+                allFilesSuperseded.forEach(file => {
+                    fs.copySync(file, path.join(process.cwd(), "staging", "chunk0", path.basename(file)), { overwrite: false }) // Stage the files, but don't overwrite if they already exist (such as if another mod has edited them)
+                })
 
-            //     await rpkgInstance.callFunction(`-extract_all_hash_depends_from "${path.join(config.runtimePath)}" -filter "${deletedHash}" -output_path temp`)
-
-            //     for (let folder of fs.readdirSync(path.join(process.cwd(), "temp", "ALLDEPENDS", fs.readdirSync(path.join(process.cwd(), "temp", "ALLDEPENDS"))[0]))) {
-            //         if (folder.startsWith("chunk0") || folder == "chunk1" || folder.startsWith("chunk1patch")) {
-            //             fs.rmSync(path.join(path.join(process.cwd(), "temp", "ALLDEPENDS", fs.readdirSync(path.join(process.cwd(), "temp", "ALLDEPENDS"))[0], folder)), {recursive: true, force: true})
-            //         }
-            //     }
-
-            //     for (let folder of fs.readdirSync(path.join(process.cwd(), "temp", "ALLDEPENDS", fs.readdirSync(path.join(process.cwd(), "temp", "ALLDEPENDS"))[0]))) {
-            //         if (fs.statSync(path.join(process.cwd(), "temp", "ALLDEPENDS", fs.readdirSync(path.join(process.cwd(), "temp", "ALLDEPENDS"))[0], folder)).isDirectory()) {
-            //             fs.mkdirSync(path.join(process.cwd(), "staging", folder.replace(/patch[1-9]*/g, "")))
-            //             for (let file of fs.readdirSync(path.join(process.cwd(), "temp", "ALLDEPENDS", fs.readdirSync(path.join(process.cwd(), "temp", "ALLDEPENDS"))[0], folder))) {
-            //                 fs.copyFileSync(path.join(process.cwd(), "temp", "ALLDEPENDS", fs.readdirSync(path.join(process.cwd(), "temp", "ALLDEPENDS"))[0], folder, file), path.join(process.cwd(), "staging", folder.replace(/patch[1-9]*/g, ""), file))
-            //             }
-            //         }
-            //     } // Copy the file's dependencies
-
-            //     try {
-            //         await promisify(emptyFolder)("temp", true)
-            //     } catch {}
-            //     fs.mkdirSync("temp") // Clear the temp directory
-            // } // Undelete
-
-            // This is slow and not really that necessary - mod authors can just include the files in the mod folder themselves as content instead of relying on the framework to do it
+                try {
+                    await promisify(emptyFolder)("temp", true)
+                } catch {}
+                fs.mkdirSync("temp") // Clear the temp directory
+            }
     
+            /* ------------------------------------- Package definition ------------------------------------- */
             if (manifest.packagedefinition) {
                 packagedefinition.push(...manifest.packagedefinition)
             }
             
+            /* ---------------------------------------- Localisation ---------------------------------------- */
             if (manifest.localisation) {
                 for (let language of Object.keys(manifest.localisation)) {
                     for (let string of Object.entries(manifest.localisation[language])) {
