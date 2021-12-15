@@ -281,7 +281,7 @@ customElements.define('neo-button', class AppDrawer extends HTMLElement {
 
 	attributeChangedCallback(name, oldValue, newValue) {
 		this.shadowDOM.querySelector("span").innerText = this.getAttribute("label")
-		this.shadowDOM.querySelector("button").classList.add("from-" + this.getAttribute("gradientFrom"))
-		this.shadowDOM.querySelector("button").classList.add("to-" + this.getAttribute("gradientTo"))
+		this.shadowDOM.querySelector("button").classList.add(this.getAttribute("gradientFrom"))
+		this.shadowDOM.querySelector("button").classList.add(this.getAttribute("gradientTo"))
 	}
 });

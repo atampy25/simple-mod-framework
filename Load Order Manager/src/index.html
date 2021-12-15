@@ -11,9 +11,8 @@
 	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;600;700&display=swap"
 		rel="stylesheet">
-		<script src="https://kit.fontawesome.com/8b911cebd0.js" crossorigin="anonymous"></script>
-	<script defer src="neo-ui.js"></script>
-	<script defer src="mod.js"></script>
+	<script src="https://kit.fontawesome.com/8b911cebd0.js" crossorigin="anonymous"></script>
+	<script src="https://unpkg.com/alpinejs" defer></script>
 </head>
 
 <body style="font-family: Inter; text-underline-position: under;">
@@ -29,10 +28,10 @@
 			<span id="frameworkChangelog">Added extra stuff and things.</span>
 		</h2>
 		<div class="flex flex-initial flex-wrap flex-row justify-center mt-8 px-2 w-full">
-			<neo-button label="Update" gradientFrom="emerald-400" gradientTo="emerald-500" onclick="this.parentElement.style = 'display: none'; updateFramework()">
+			<neo-button label="Update" gradientFrom="from-emerald-400" gradientTo="to-emerald-500" onclick="this.parentElement.style = 'display: none'; updateFramework()">
 				<i class="fas fa-cog" slot="icon"></i>
 			</neo-button>
-			<neo-button label="Close" gradientFrom="rose-400" gradientTo="red-500" onclick="this.parentElement.parentElement.style = 'display: none'">
+			<neo-button label="Close" gradientFrom="from-rose-400" gradientTo="to-red-500" onclick="this.parentElement.parentElement.style = 'display: none'">
 				<i class="fas fa-times" slot="icon"></i>
 			</neo-button>
 		</div>
@@ -48,7 +47,7 @@
 			</h1><br>
 		</div>
 		<div class="overflow-auto" id="modUpdateCards"></div>
-		<neo-button label="Close" gradientFrom="rose-400" gradientTo="red-500" onclick="this.parentElement.style = 'display: none'">
+		<neo-button label="Close" gradientFrom="from-rose-400" gradientTo="to-red-500" onclick="this.parentElement.style = 'display: none'">
 			<i class="fas fa-times" slot="icon"></i>
 		</neo-button>
 	</section>
@@ -57,18 +56,23 @@
 		<img src="logo.png" style="width: 50rem" alt="">
 	</section>
 
-	<section class="flex flex-initial flex-wrap flex-row justify-center mt-8 px-2 w-full">
-		<neo-button label="Import Framework ZIP" gradientFrom="teal-400" gradientTo="blue-500" onclick="importZIP()">
+	<section class="flex flex-initial flex-wrap flex-row justify-center px-2 w-full">
+		<neo-button label="Import Framework ZIP" gradientFrom="from-teal-400" gradientTo="to-blue-500" onclick="importZIP()">
             <i class="fas fa-file-import" slot="icon"></i>
         </neo-button>
-		<neo-button label="Import RPKG Mod" gradientFrom="teal-400" gradientTo="blue-500" onclick="importRPKG()">
+		<neo-button label="Import RPKG Mod" gradientFrom="from-teal-400" gradientTo="to-blue-500" onclick="importRPKG()">
             <i class="fas fa-file-import" slot="icon"></i>
         </neo-button>
 	</section>
-	<section class="flex flex-initial flex-wrap flex-row justify-center mt-2 mb-8 px-2 w-full">
-		<neo-button label="Deploy Mods" gradientFrom="emerald-400" gradientTo="lime-600" onclick="deployMods()">
+	<section class="flex flex-initial flex-wrap flex-row justify-center mt-2 mb-4 px-2 w-full">
+		<neo-button label="Deploy Mods" gradientFrom="from-emerald-400" gradientTo="to-lime-600" onclick="deployMods()">
             <i class="fas fa-save" slot="icon"></i>
         </neo-button>
+	</section>
+	<section class="flex flex-initial flex-wrap flex-row justify-center mt-2 mb-8 px-2 w-full">
+		<label class="inline-flex items-center mb-3">
+			<input type="checkbox" class="form-checkbox cursor-pointer h-5 w-5 text-gray-700 bg-white" x-init="let config = require('json5').parse(require('fs').readFileSync('../config.json')); $el.checked = config.skipIntro;" @click="let config = require('json5').parse(require('fs').readFileSync('../config.json')); config.skipIntro = $el.checked; require('fs').writeFileSync('../config.json', require('json5').stringify(config))"><span class="ml-2">Skip intro</span>
+		</label>
 	</section>
 
 	<section class="flex flex-initial flex-wrap flex-row justify-center mt-8 px-16 w-full" id="mods" style="display: none">
@@ -95,6 +99,8 @@
 	<section class="flex flex-initial flex-wrap flex-row justify-center mt-8 px-2 w-full">
 		Thanks to IOI for making Hitman 3 and thanks to the modding community.
 	</section>
+	<script defer src="neo-ui.js"></script>
+	<script defer src="mod.js"></script>
 </body>
 
 </html>

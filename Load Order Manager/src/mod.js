@@ -15,7 +15,8 @@ frameworkVersion = "1.0.0"
 
 async function updateFramework() {
 	var frameworkUpdateData = await (await fetch("https://hitman-resources.netlify.app/framework/framework.json")).json()
-	Swal.fire({
+	
+	await Swal.fire({
 		title: 'Updating the framework',
 		html: 'Please wait - the framework is being updated to the latest version (' + frameworkUpdateData.version + '):<br><br><i>' + frameworkUpdateData.changelog + "</i>",
 		didOpen: async () => {
@@ -205,10 +206,10 @@ async function refreshMods() {
 														<div>
 															<p>${sanitise(modManifest.description)}</p><br>
 														</div>
-														<neo-button small label="Disable" gradientFrom="rose-400" gradientTo="red-500" onclick="disableMod('${modFolder}')" style="display: inline">
+														<neo-button small label="Disable" gradientFrom="from-rose-400" gradientTo="to-red-500" onclick="disableMod('${modFolder}')" style="display: inline">
 															<i class="fas fa-times" slot="icon"></i>
 														</neo-button>
-														<neo-button small label="Move" gradientFrom="fuchsia-400" gradientTo="violet-400" onclick="moveMod('${modFolder}')" style="display: inline">
+														<neo-button small label="Move" gradientFrom="from-fuchsia-400" gradientTo="to-violet-400" onclick="moveMod('${modFolder}')" style="display: inline">
 															<i class="fas fa-arrows-alt" slot="icon"></i>
 														</neo-button>
 													</div><br>`
@@ -220,10 +221,10 @@ async function refreshMods() {
 														<div>
 															<p>RPKG-only mod</p><br>
 														</div>
-														<neo-button small label="Disable" gradientFrom="rose-400" gradientTo="red-500" onclick="disableMod('${modFolder}')" style="display: inline">
+														<neo-button small label="Disable" gradientFrom="from-rose-400" gradientTo="to-red-500" onclick="disableMod('${modFolder}')" style="display: inline">
 															<i class="fas fa-times" slot="icon"></i>
 														</neo-button>
-														<neo-button small label="Move" gradientFrom="fuchsia-400" gradientTo="violet-400" onclick="moveMod('${modFolder}')" style="display: inline">
+														<neo-button small label="Move" gradientFrom="from-fuchsia-400" gradientTo="to-violet-400" onclick="moveMod('${modFolder}')" style="display: inline">
 															<i class="fas fa-arrows-alt" slot="icon"></i>
 														</neo-button>
 													</div><br>`
@@ -240,7 +241,7 @@ async function refreshMods() {
 														<div>
 															<p>${sanitise(modManifest.description)}</p><br>
 														</div>
-														<neo-button small label="Enable" gradientFrom="emerald-400" gradientTo="lime-600" onclick="enableMod('${modFolder}')" style="display: inline">
+														<neo-button small label="Enable" gradientFrom="from-emerald-400" gradientTo="to-lime-600" onclick="enableMod('${modFolder}')" style="display: inline">
 															<i class="fas fa-plus" slot="icon"></i>
 														</neo-button>
 													</div><br>`
@@ -252,7 +253,7 @@ async function refreshMods() {
 														<div>
 															<p>RPKG-only mod</p><br>
 														</div>
-														<neo-button small label="Enable" gradientFrom="emerald-400" gradientTo="lime-600" onclick="enableMod('${modFolder}')" style="display: inline">
+														<neo-button small label="Enable" gradientFrom="from-emerald-400" gradientTo="to-lime-600" onclick="enableMod('${modFolder}')" style="display: inline">
 															<i class="fas fa-plus" slot="icon"></i>
 														</neo-button>
 													</div><br>`
