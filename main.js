@@ -479,7 +479,7 @@ async function stageAllMods() {
 
                     await rpkgInstance.callFunction(`-extract_non_base_hash_depends_from "${path.join(config.runtimePath)}" -filter "${dependency}" -output_path temp`)
 
-                    let allFiles = klaw(path.join(process.cwd(), "temp")).filter(a=>a.stats.size > 0).map(a=>a.path).map(a=>{ return {rpkg: (/00[0-9A-F]*\.TEMP\\(chunk[0-9]*(?:patch[0-9]*)?)\\/gi).exec(a)[1], path: a} }).sort((a,b) => b.rpkg.localeCompare(a.rpkg, undefined, {numeric: true, sensitivity: 'base'}))
+                    let allFiles = klaw(path.join(process.cwd(), "temp")).filter(a=>a.stats.size > 0).map(a=>a.path).map(a=>{ return {rpkg: (/00[0-9A-F]*\..*?\\(chunk[0-9]*(?:patch[0-9]*)?)\\/gi).exec(a)[1], path: a} }).sort((a,b) => b.rpkg.localeCompare(a.rpkg, undefined, {numeric: true, sensitivity: 'base'}))
                     // Sort files by RPKG name in descending order
                     
                     let allFilesSuperseded = []
@@ -571,10 +571,10 @@ async function stageAllMods() {
         
         fs.ensureDirSync(path.join(process.cwd(), "staging", "chunk0"))
 
-        let localisationContent = JSON.parse(String(fs.readFileSync(path.join(process.cwd(), "temp", "LOCR", localisationFileRPKG + ".rpkg", "00F5817876E691F1.LOCR.JSON"))))
+        let locrFileContent = JSON.parse(String(fs.readFileSync(path.join(process.cwd(), "temp", "LOCR", localisationFileRPKG + ".rpkg", "00F5817876E691F1.LOCR.JSON"))))
         let locrContent = {}
 
-        for (let localisationLanguage of localisationContent) {
+        for (let localisationLanguage of locrFileContent) {
             locrContent[localisationLanguage[0].Language] = {}
             for (let localisationItem of localisationLanguage.slice(1)) {
                 locrContent[localisationLanguage[0].Language]["abc" + localisationItem.StringHash] = localisationItem.String
