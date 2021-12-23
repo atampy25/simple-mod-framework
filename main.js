@@ -73,6 +73,16 @@ function hexflip(input) {
     return output
 }
 
+async function extractOrCopyToTemp(rpkgOfFile, file, type, stagingChunk = "chunk0") {
+    if (!fs.existsSync(path.join(process.cwd(), "staging", stagingChunk, file + "." + type))) {
+        await rpkgInstance.callFunction(`-extract_from_rpkg "${path.join(config.runtimePath, rpkgOfFile + ".rpkg")}" -filter "${file}" -output_path temp`) // Extract the file
+    } else {
+        fs.ensureDirSync(path.join(process.cwd(), "temp", rpkgOfFile, type))
+        fs.copyFileSync(path.join(process.cwd(), "staging", stagingChunk, file + "." + type), path.join(process.cwd(), "temp", rpkgOfFile, type, file + "." + type)) // Use the staging one (for mod compat - one mod can extract, patch and build, then the next can patch that one instead)
+        fs.copyFileSync(path.join(process.cwd(), "staging", stagingChunk, file + "." + type + ".meta"), path.join(process.cwd(), "temp", rpkgOfFile, type, file + "." + type + ".meta"))
+    }
+}
+
 async function stageAllMods() {
     console.time("StageAllMods")
 
@@ -243,14 +253,8 @@ async function stageAllMods() {
                                 var oresChunk = await rpkgInstance.getRPKGOfHash("0057C2C3941115CA")
 
 		                        console.log("Applying unlockable patch " + contentFilePath)
-    
-                                if (!fs.existsSync(path.join(process.cwd(), "staging", "chunk0", "0057C2C3941115CA.ORES"))) {
-                                    await rpkgInstance.callFunction(`-extract_from_rpkg "${path.join(config.runtimePath, oresChunk + ".rpkg")}" -filter "0057C2C3941115CA" -output_path temp`) // Extract the unlockables ORES
-                                } else {
-                                    fs.ensureDirSync(path.join(process.cwd(), "temp", oresChunk, "ORES"))
-                                    fs.copyFileSync(path.join(process.cwd(), "staging", "chunk0", "0057C2C3941115CA.ORES"), path.join(process.cwd(), "temp", oresChunk, "ORES", "0057C2C3941115CA.ORES")) // Use the staging one (for mod compat - one mod can extract, patch and build, then the next can patch that one instead)
-                                    fs.copyFileSync(path.join(process.cwd(), "staging", "chunk0", "0057C2C3941115CA.ORES.meta"), path.join(process.cwd(), "temp", oresChunk, "ORES", "0057C2C3941115CA.ORES.meta"))
-                                }
+
+                                await extractOrCopyToTemp(oresChunk, "0057C2C3941115CA", "ORES") // Extract the ORES to temp
     
                                 child_process.execSync(`"Third-Party\\OREStool.exe" "${path.join(process.cwd(), "temp", oresChunk, "ORES", "0057C2C3941115CA.ORES")}"`)
                                 var oresContent = JSON.parse(String(fs.readFileSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "0057C2C3941115CA.ORES.JSON"))))
@@ -272,14 +276,8 @@ async function stageAllMods() {
                                 var repoRPKG = await rpkgInstance.getRPKGOfHash("00204D1AFD76AB13")
 
 		                        console.log("Applying repository patch " + contentFilePath)
-    
-                                if (!fs.existsSync(path.join(process.cwd(), "staging", "chunk0", "00204D1AFD76AB13.REPO"))) {
-                                    await rpkgInstance.callFunction(`-extract_from_rpkg "${path.join(config.runtimePath, repoRPKG + ".rpkg")}" -filter "00204D1AFD76AB13" -output_path temp`) // Extract the unlockables ORES
-                                } else {
-                                    fs.ensureDirSync(path.join(process.cwd(), "temp", repoRPKG, "REPO"))
-                                    fs.copyFileSync(path.join(process.cwd(), "staging", "chunk0", "00204D1AFD76AB13.REPO"), path.join(process.cwd(), "temp", repoRPKG, "REPO", "00204D1AFD76AB13.REPO")) // Use the staging one (for mod compat - one mod can extract, patch and build, then the next can patch that one instead)
-                                    fs.copyFileSync(path.join(process.cwd(), "staging", "chunk0", "00204D1AFD76AB13.REPO.meta"), path.join(process.cwd(), "temp", repoRPKG, "REPO", "00204D1AFD76AB13.REPO.meta"))
-                                }
+
+                                await extractOrCopyToTemp(repoRPKG, "00204D1AFD76AB13", "REPO") // Extract the REPO to temp
     
                                 var repoContent = JSON.parse(String(fs.readFileSync(path.join(process.cwd(), "temp", repoRPKG, "REPO", "00204D1AFD76AB13.REPO"))))
     
@@ -342,14 +340,8 @@ async function stageAllMods() {
                                 var rpkgOfFile = await rpkgInstance.getRPKGOfHash(path.basename(contentFile).split(".")[0])
 
                                 console.log("Applying JSON patch " + contentFilePath)
-    
-                                if (!fs.existsSync(path.join(process.cwd(), "staging", "chunk0", path.basename(contentFile).split(".")[0] + ".JSON"))) {
-                                    await rpkgInstance.callFunction(`-extract_from_rpkg "${path.join(config.runtimePath, rpkgOfFile + ".rpkg")}" -filter "${path.basename(contentFile).split(".")[0]}" -output_path temp`) // Extract the JSON file
-                                } else {
-                                    fs.ensureDirSync(path.join(process.cwd(), "temp", rpkgOfFile, "JSON"))
-                                    fs.copyFileSync(path.join(process.cwd(), "staging", "chunk0", path.basename(contentFile).split(".")[0] + ".JSON"), path.join(process.cwd(), "temp", rpkgOfFile, "JSON", path.basename(contentFile).split(".")[0] + ".JSON")) // Use the staging one (for mod compat - one mod can extract, patch and build, then the next can patch that one instead)
-                                    fs.copyFileSync(path.join(process.cwd(), "staging", "chunk0", path.basename(contentFile).split(".")[0] + ".JSON.meta"), path.join(process.cwd(), "temp", rpkgOfFile, "JSON", path.basename(contentFile).split(".")[0] + ".JSON.meta"))
-                                }
+
+                                await extractOrCopyToTemp(rpkgOfFile, path.basename(contentFile).split(".")[0], "JSON") // Extract the JSON to temp
     
                                 var fileContent = JSON.parse(String(fs.readFileSync(path.join(process.cwd(), "temp", rpkgOfFile, "JSON", path.basename(contentFile).split(".")[0] + ".JSON"))))
 
@@ -435,13 +427,7 @@ async function stageAllMods() {
 
                 var oresChunk = await rpkgInstance.getRPKGOfHash("00858D45F5F9E3CA")
 
-                if (!fs.existsSync(path.join(process.cwd(), "staging", "chunk0", "00858D45F5F9E3CA.ORES"))) {
-                    await rpkgInstance.callFunction(`-extract_from_rpkg "${path.join(config.runtimePath, oresChunk + ".rpkg")}" -filter "00858D45F5F9E3CA" -output_path temp`) // Extract the blobs ORES
-                } else {
-                    fs.ensureDirSync(path.join(process.cwd(), "temp", oresChunk, "ORES"))
-                    fs.copyFileSync(path.join(process.cwd(), "staging", "chunk0", "00858D45F5F9E3CA.ORES"), path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES")) // Use the staging one (for mod compat - one mod can extract, patch and build, then the next can patch that one instead)
-                    fs.copyFileSync(path.join(process.cwd(), "staging", "chunk0", "00858D45F5F9E3CA.ORES.meta"), path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES.meta"))
-                }
+                await extractOrCopyToTemp(oresChunk, "00858D45F5F9E3CA", "ORES") // Extract the JSON to temp
 
                 child_process.execSync(`"Third-Party\\OREStool.exe" "${path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES")}"`)
                 var oresContent = JSON.parse(String(fs.readFileSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES.JSON"))))

@@ -41,9 +41,7 @@ module.exports = async ({
 			await rpkgInstance.callFunction(`-extract_from_rpkg "${path.join(config.runtimePath, tempRPKG + ".rpkg")}" -filter "${entityContent.tempHash}" -output_path "${assignedTemporaryDirectory}"`)
 		} else {
 			try {
-				fs.mkdirSync(path.join(process.cwd(), assignedTemporaryDirectory, tempRPKG, "TEMP"), {
-					recursive: true
-				})
+				fs.ensureDirSync(path.join(process.cwd(), assignedTemporaryDirectory, tempRPKG, "TEMP"))
 			} catch {}
 			fs.copyFileSync(path.join(process.cwd(), "staging", chunkFolder, entityContent.tempHash + ".TEMP"), path.join(process.cwd(), assignedTemporaryDirectory, tempRPKG, "TEMP", entityContent.tempHash + ".TEMP")) // Use the staging one (for mod compat - one mod can extract, patch and build, then the next can patch that one instead)
 			fs.copyFileSync(path.join(process.cwd(), "staging", chunkFolder, entityContent.tempHash + ".TEMP.meta"), path.join(process.cwd(), assignedTemporaryDirectory, tempRPKG, "TEMP", entityContent.tempHash + ".TEMP.meta"))
@@ -54,9 +52,7 @@ module.exports = async ({
 			await rpkgInstance.callFunction(`-extract_from_rpkg "${path.join(config.runtimePath, tbluRPKG + ".rpkg")}" -filter "${entityContent.tbluHash}" -output_path "${assignedTemporaryDirectory}"`)
 		} else {
 			try {
-				fs.mkdirSync(path.join(process.cwd(), assignedTemporaryDirectory, tempRPKG, "TBLU"), {
-					recursive: true
-				})
+				fs.ensureDirSync(path.join(process.cwd(), assignedTemporaryDirectory, tempRPKG, "TBLU"))
 			} catch {}
 			fs.copyFileSync(path.join(process.cwd(), "staging", chunkFolder, entityContent.tbluHash + ".TBLU"), path.join(process.cwd(), assignedTemporaryDirectory, tbluRPKG, "TBLU", entityContent.tbluHash + ".TBLU")) // Use the staging one (for mod compat - one mod can extract, patch and build, then the next can patch that one instead)
 			fs.copyFileSync(path.join(process.cwd(), "staging", chunkFolder, entityContent.tbluHash + ".TBLU.meta"), path.join(process.cwd(), assignedTemporaryDirectory, tbluRPKG, "TBLU", entityContent.tbluHash + ".TBLU.meta"))
