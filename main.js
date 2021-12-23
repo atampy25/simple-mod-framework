@@ -56,7 +56,7 @@ class Logger {
     }
 }
 
-var logger = !process.argv[2] ? new Logger() : {debug: console.debug, info: console.info, error: function(a) {console.error(a); console.trace(); cleanExit(); } } // Any arguments will cause coloured logging to be disabled
+const logger = !process.argv[2] ? new Logger() : {debug: console.debug, info: console.info, error: function(a) {console.error(a); console.trace(); cleanExit(); } } // Any arguments will cause coloured logging to be disabled
 
 process.on('SIGINT', cleanExit)
 process.on('SIGTERM', cleanExit)
