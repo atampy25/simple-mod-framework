@@ -1,6 +1,8 @@
 const FrameworkVersion = "1.0.0"
 
+// @ts-ignore
 THREE = require("./three-onlymath.min")
+
 const QuickEntity = {
     "0.1": require("./quickentity1136"),
     "2.0": require("./quickentity20"),
@@ -8,6 +10,7 @@ const QuickEntity = {
     
     "999.999": require("./quickentity")
 }
+
 const RPKG = require("./rpkg")
 
 const fs = require("fs-extra")
@@ -19,16 +22,38 @@ const LosslessJSON = require("lossless-json")
 const md5 = require("md5")
 const glob = require("glob")
 const deepMerge = require("lodash.merge")
+
+// @ts-ignore
 const { crc32 } = require("./crc32")
+
 const readRecursive = require('fs-readdir-recursive')
 const os = require("os")
 const json5 = require("json5")
 const semver = require('semver')
 const klaw = require('klaw-sync')
 const rfc6902 = require('rfc6902')
+
 require("clarify")
 
+// @ts-ignore
 const Piscina = require('piscina')
+
+const logger = !process.argv[1] ? new (require("tslog").Logger)({ displayDateTime: false }) : console // Any arguments will cause tslog to be disabled
+
+process.on('SIGINT', cleanExit)
+process.on('SIGTERM', cleanExit)
+
+process.on('uncaughtException', (err, origin) => {
+    logger.error("Uncaught exception! " + err)
+    logger.error(origin)
+    cleanExit()
+})
+
+process.on('unhandledRejection', (err, origin) => {
+    logger.error("Unhandled promise rejection! " + err)
+    logger.error(origin)
+    cleanExit()
+})
 
 const config = json5.parse(String(fs.readFileSync(path.join(process.cwd(), "config.json"))))
 config.runtimePath = path.resolve(process.cwd(), config.runtimePath)
@@ -41,27 +66,7 @@ function cleanExit() {
         global.currentWorkerPool.destroy()
     } catch {}
     process.exit()
-};
-process.on('SIGINT', cleanExit)
-process.on('SIGTERM', cleanExit)
-
-process.on('uncaughtException', (err, origin) => {
-    fs.writeSync(
-        process.stderr.fd,
-        `Caught exception: ${err}\n`
-    );
-    console.error("Origin: ", origin)
-    cleanExit()
-})
-
-process.on('unhandledRejection', (err, origin) => {
-    fs.writeSync(
-        process.stderr.fd,
-        `Unhandled promise rejection: ${err}\n`
-    );
-    console.error("Origin: ", origin)
-    cleanExit()
-})
+}
 
 function hexflip(input) {
     var output = ""
@@ -116,10 +121,15 @@ async function stageAllMods() {
 
     var packagedefinition = []
     var localisation = []
+    var localisationOverrides = {}
     var runtimePackages = []
 
     var rpkgTypes = {}
 
+
+    /* ---------------------------------------------------------------------------------------------- */
+    /*                                         Stage all mods                                         */
+    /* ---------------------------------------------------------------------------------------------- */
     for (let mod of config.loadOrder) {
         if (!fs.existsSync(path.join(process.cwd(), "Mods", mod, "manifest.json"))) {
             for (let chunkFolder of fs.readdirSync(path.join(process.cwd(), "Mods", mod))) {
@@ -150,24 +160,24 @@ async function stageAllMods() {
         } else {
             let manifest = json5.parse(String(fs.readFileSync(path.join(process.cwd(), "Mods", mod, "manifest.json"))))
 
-            console.log("Staging mod: " + manifest.name)
+            logger.info("Staging mod: " + manifest.name)
 
             for (let key of ["name", "description", "authors", "version", "frameworkVersion"]) {
                 if (typeof manifest[key] == "undefined") {
-                    console.log(`ERROR: Mod ${manifest.name} is missing manifest field "${key}"!`)
+                    logger.error(`Mod ${manifest.name} is missing manifest field "${key}"!`)
                     cleanExit()
                 }
             }
 
             if (semver.lt(manifest.frameworkVersion, FrameworkVersion)) {
                 if (semver.diff(manifest.frameworkVersion, FrameworkVersion) == "major") {
-                    console.log(`ERROR: Mod ${manifest.name} is designed for an older version of the framework and is likely incompatible!`)
+                    logger.error(`Mod ${manifest.name} is designed for an older version of the framework and is likely incompatible!`)
                     cleanExit()
                 }
             }
 
             if (semver.gt(manifest.frameworkVersion, FrameworkVersion)) {
-                console.log(`ERROR: Mod ${manifest.name} is designed for a newer version of the framework and is likely incompatible!`)
+                logger.error(`Mod ${manifest.name} is designed for a newer version of the framework and is likely incompatible!`)
                 cleanExit()
             }
 
@@ -213,10 +223,11 @@ async function stageAllMods() {
                             case "entity.json":
                                 var entityContent = LosslessJSON.parse(String(fs.readFileSync(contentFilePath)))
 
-		                        console.log("Converting entity " + contentFilePath)
+		                        logger.info("Converting entity " + contentFilePath)
 
                                 if (!QuickEntity[Object.keys(QuickEntity)[Object.keys(QuickEntity).findIndex(a=> parseFloat(a) > Number(entityContent.quickEntityVersion.value)) - 1]]) {
-                                    console.log("Error: could not find matching QuickEntity version for " + Number(entityContent.quickEntityVersion.value))
+                                    logger.error("Could not find matching QuickEntity version for " + Number(entityContent.quickEntityVersion.value) + "!")
+                                    cleanExit()
                                 }
 
                                 await (QuickEntity[Object.keys(QuickEntity)[Object.keys(QuickEntity).findIndex(a=> parseFloat(a) > Number(entityContent.quickEntityVersion.value)) - 1]]).generate("HM3", contentFilePath,
@@ -238,7 +249,7 @@ async function stageAllMods() {
                             case "entity.patch.json":
                                 var entityContent = LosslessJSON.parse(String(fs.readFileSync(contentFilePath)))
     
-		                        console.log("Preparing to apply patch " + contentFilePath)
+		                        logger.info("Preparing to apply patch " + contentFilePath)
 
                                 entityPatches.push({
                                     contentFilePath,
@@ -252,7 +263,7 @@ async function stageAllMods() {
                                 var entityContent = JSON.parse(String(fs.readFileSync(contentFilePath)))
                                 var oresChunk = await rpkgInstance.getRPKGOfHash("0057C2C3941115CA")
 
-		                        console.log("Applying unlockable patch " + contentFilePath)
+		                        logger.info("Applying unlockable patch " + contentFilePath)
 
                                 await extractOrCopyToTemp(oresChunk, "0057C2C3941115CA", "ORES") // Extract the ORES to temp
     
@@ -275,7 +286,7 @@ async function stageAllMods() {
     
                                 var repoRPKG = await rpkgInstance.getRPKGOfHash("00204D1AFD76AB13")
 
-		                        console.log("Applying repository patch " + contentFilePath)
+		                        logger.info("Applying repository patch " + contentFilePath)
 
                                 await extractOrCopyToTemp(repoRPKG, "00204D1AFD76AB13", "REPO") // Extract the REPO to temp
     
@@ -323,7 +334,7 @@ async function stageAllMods() {
     
                                 var contractHash = "00" + md5(("smfContract" + entityContent.Metadata.Id).toLowerCase()).slice(2, 16).toUpperCase()
 
-		                        console.log("Adding contract " + contentFilePath)
+		                        logger.info("Adding contract " + contentFilePath)
     
                                 contractsORESContent[contractHash] = entityContent.Metadata.Id // Add the contract to the ORES
     
@@ -339,7 +350,7 @@ async function stageAllMods() {
     
                                 var rpkgOfFile = await rpkgInstance.getRPKGOfHash(path.basename(contentFile).split(".")[0])
 
-                                console.log("Applying JSON patch " + contentFilePath)
+                                logger.info("Applying JSON patch " + contentFilePath)
 
                                 await extractOrCopyToTemp(rpkgOfFile, path.basename(contentFile).split(".")[0], "JSON") // Extract the JSON to temp
     
@@ -427,7 +438,7 @@ async function stageAllMods() {
 
                 var oresChunk = await rpkgInstance.getRPKGOfHash("00858D45F5F9E3CA")
 
-                await extractOrCopyToTemp(oresChunk, "00858D45F5F9E3CA", "ORES") // Extract the JSON to temp
+                await extractOrCopyToTemp(oresChunk, "00858D45F5F9E3CA", "ORES") // Extract the ORES to temp
 
                 child_process.execSync(`"Third-Party\\OREStool.exe" "${path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES")}"`)
                 var oresContent = JSON.parse(String(fs.readFileSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES.JSON"))))
@@ -539,6 +550,20 @@ async function stageAllMods() {
                 }
             }
 
+            if (manifest.localisationOverrides) {
+                for (let locrHash of Object.keys(manifest.localisationOverrides)) {
+                    for (let language of Object.keys(manifest.localisationOverrides[locrHash])) {
+                        for (let string of Object.entries(manifest.localisationOverrides[locrHash][language])) {
+                            localisationOverrides[locrHash].push({
+                                language: language,
+                                locString: string[0],
+                                text: string[1]
+                            })
+                        }
+                    }
+                }
+            }
+
             if (manifest.localisedLines) {
                 for (let lineHash of Object.keys(manifest.localisedLines)) {
                     fs.ensureDirSync(path.join(process.cwd(), "staging", "chunk0"))
@@ -566,16 +591,19 @@ async function stageAllMods() {
                 }
             }
         }
-    } // Stage all mods
+    }
 
     if (config.outputToSeparateDirectory) {
         try {
             await promisify(emptyFolder)("Output", true)
         } catch {}
         fs.mkdirSync("Output")
-    }
+    } // Make output folder
 
-    console.log("Copying runtime packages")
+    /* ---------------------------------------------------------------------------------------------- */
+    /*                                        Runtime packages                                        */
+    /* ---------------------------------------------------------------------------------------------- */
+    logger.info("Copying runtime packages")
 
     let runtimePatchNumber = 205
     for (let runtimeFile of runtimePackages) {
@@ -588,12 +616,15 @@ async function stageAllMods() {
         runtimePatchNumber ++
 
         if (runtimePatchNumber >= 300) {
-            console.log("ERROR: More than 94 total runtime packages!")
+            logger.error("More than 94 total runtime packages!")
             cleanExit()
         } // Framework only manages patch200-300
-    } // Runtime packages
+    }
 
-    console.log("Localising text")
+    /* ---------------------------------------------------------------------------------------------- */
+    /*                                          Localisation                                          */
+    /* ---------------------------------------------------------------------------------------------- */
+    logger.info("Localising text")
 
     if (localisation.length) {
         let languages = {
@@ -639,6 +670,7 @@ async function stageAllMods() {
             }
         }
 
+        /** @type Array<Array<{Language: string}|{StringHash: number, String: string}>> */
         let locrToWrite = []
 
         for (let language of Object.keys(locrContent)) {
@@ -662,32 +694,46 @@ async function stageAllMods() {
             await promisify(emptyFolder)("temp", true)
         } catch {}
         fs.mkdirSync("temp") // Clear the temp directory
-    } // Localisation
-
-    if (!fs.existsSync(path.join(process.cwd(), "cleanPackageDefinition.txt"))) {
-        fs.copyFileSync(path.join(config.runtimePath, "packagedefinition.txt"), path.join(process.cwd(), "cleanPackageDefinition.txt"))
     }
 
-    child_process.execSync(`"Third-Party\\h6xtea.exe" -d --src "${path.join(config.runtimePath, "packagedefinition.txt")}" --dst "${path.join(process.cwd(), "temp", "packagedefinitionVersionCheck.txt")}"`)
-    if (!String(fs.readFileSync(path.join(process.cwd(), "temp", "packagedefinitionVersionCheck.txt"))).includes("patchlevel=10001")) {
-        fs.copyFileSync(path.join(config.runtimePath, "packagedefinition.txt"), path.join(process.cwd(), "cleanPackageDefinition.txt"))
-    } // Check if packagedefinition is now unmodded and if so overwrite current "clean" version
-
-    if (!fs.existsSync(path.join(process.cwd(), "cleanThumbs.dat"))) {
+    /* ---------------------------------------------------------------------------------------------- */
+    /*                                             Thumbs                                             */
+    /* ---------------------------------------------------------------------------------------------- */
+    if (!fs.existsSync(path.join(process.cwd(), "cleanThumbs.dat"))) { // If there is no clean thumbs, copy the one from Retail
         fs.copyFileSync(path.join(config.runtimePath, "..", "Retail", "thumbs.dat"), path.join(process.cwd(), "cleanThumbs.dat"))
     }
 
     child_process.execSync(`"Third-Party\\h6xtea.exe" -d --src "${path.join(config.runtimePath, "..", "Retail", "thumbs.dat")}" --dst "${path.join(process.cwd(), "temp", "thumbsVersionCheck.dat")}"`)
-    if (!String(fs.readFileSync(path.join(process.cwd(), "temp", "thumbsVersionCheck.dat"))).includes("MainMenu.entity")) {
+    if (!String(fs.readFileSync(path.join(process.cwd(), "temp", "thumbsVersionCheck.dat"))).includes("MainMenu.entity")) { // Check if thumbs has no skip intro and if so overwrite current "clean" version
         fs.copyFileSync(path.join(config.runtimePath, "..", "Retail", "thumbs.dat"), path.join(process.cwd(), "cleanThumbs.dat"))
-    } // Check if thumbs.dat is now unmodded and if so overwrite current "clean" version
+    }
 
-    child_process.execSync(`"Third-Party\\h6xtea.exe" -d --src "${path.join(process.cwd(), "cleanPackageDefinition.txt")}" --dst "${path.join(process.cwd(), "temp", "packagedefinition.txt.decrypted")}"`)
-    let packagedefinitionContent = String(fs.readFileSync(path.join(process.cwd(), "temp", "packagedefinition.txt.decrypted"))).replace(/patchlevel=[0-9]*/g, "patchlevel=10001")
+    if (config.skipIntro) { // Skip intro
+        child_process.execSync(`"Third-Party\\h6xtea.exe" -d --src "${path.join(process.cwd(), "cleanThumbs.dat")}" --dst "${path.join(process.cwd(), "temp", "thumbs.dat.decrypted")}"`) // Decrypt thumbs
+        fs.writeFileSync(path.join(process.cwd(), "temp", "thumbs.dat.decrypted"), String(fs.readFileSync(path.join(process.cwd(), "temp", "thumbs.dat.decrypted"))).replace("Boot.entity", "MainMenu.entity")) // Replace Boot with MainMenu
+        child_process.execSync(`"Third-Party\\h6xtea.exe" -e --src "${path.join(process.cwd(), "temp", "thumbs.dat.decrypted")}" --dst "${path.join(process.cwd(), "temp", "thumbs.dat.decrypted.encrypted")}"`) // Encrypt thumbs
+        
+        fs.copyFileSync(path.join(process.cwd(), "temp", "thumbs.dat.decrypted.encrypted"), config.outputToSeparateDirectory ? path.join(process.cwd(), "Output", "thumbs.dat") : path.join(config.runtimePath, "..", "Retail", "thumbs.dat")) // Output thumbs
+    }
 
-    console.log("Patching packagedefinition")
+    /* ---------------------------------------------------------------------------------------------- */
+    /*                                       Package definition                                       */
+    /* ---------------------------------------------------------------------------------------------- */
+    logger.info("Patching packagedefinition")
 
-    for (let brick of packagedefinition) {
+    if (!fs.existsSync(path.join(process.cwd(), "cleanPackageDefinition.txt"))) { // If there is no clean PD, copy the one from Runtime
+        fs.copyFileSync(path.join(config.runtimePath, "packagedefinition.txt"), path.join(process.cwd(), "cleanPackageDefinition.txt"))
+    }
+
+    child_process.execSync(`"Third-Party\\h6xtea.exe" -d --src "${path.join(config.runtimePath, "packagedefinition.txt")}" --dst "${path.join(process.cwd(), "temp", "packagedefinitionVersionCheck.txt")}"`)
+    if (!String(fs.readFileSync(path.join(process.cwd(), "temp", "packagedefinitionVersionCheck.txt"))).includes("patchlevel=10001")) { // Check if Runtime PD is unmodded and if so overwrite current "clean" version
+        fs.copyFileSync(path.join(config.runtimePath, "packagedefinition.txt"), path.join(process.cwd(), "cleanPackageDefinition.txt"))
+    }
+
+    child_process.execSync(`"Third-Party\\h6xtea.exe" -d --src "${path.join(process.cwd(), "cleanPackageDefinition.txt")}" --dst "${path.join(process.cwd(), "temp", "packagedefinition.txt.decrypted")}"`) // Decrypt PD
+    let packagedefinitionContent = String(fs.readFileSync(path.join(process.cwd(), "temp", "packagedefinition.txt.decrypted"))).replace(/patchlevel=[0-9]*/g, "patchlevel=10001") // Patch levels
+
+    for (let brick of packagedefinition) { // Apply all PD changes
         switch (brick.type) {
             case "partition":
                 packagedefinitionContent += "\r\n"
@@ -701,27 +747,20 @@ async function stageAllMods() {
         }
     }
 
-    fs.writeFileSync(path.join(process.cwd(), "temp", "packagedefinition.txt.decrypted"), packagedefinitionContent + "\r\n\r\n\r\n\r\n")
-    child_process.execSync(`"Third-Party\\h6xtea.exe" -e --src "${path.join(process.cwd(), "temp", "packagedefinition.txt.decrypted")}" --dst "${path.join(process.cwd(), "temp", "packagedefinition.txt.decrypted.encrypted")}"`)
+    fs.writeFileSync(path.join(process.cwd(), "temp", "packagedefinition.txt.decrypted"), packagedefinitionContent + "\r\n\r\n\r\n\r\n") // Add blank lines to ensure correct encryption (XTEA uses blocks of 8 bytes)
+    child_process.execSync(`"Third-Party\\h6xtea.exe" -e --src "${path.join(process.cwd(), "temp", "packagedefinition.txt.decrypted")}" --dst "${path.join(process.cwd(), "temp", "packagedefinition.txt.decrypted.encrypted")}"`) // Encrypt PD
 
-    if (config.skipIntro) {
-        child_process.execSync(`"Third-Party\\h6xtea.exe" -d --src "${path.join(process.cwd(), "cleanThumbs.dat")}" --dst "${path.join(process.cwd(), "temp", "thumbs.dat.decrypted")}"`)
-        fs.writeFileSync(path.join(process.cwd(), "temp", "thumbs.dat.decrypted"), String(fs.readFileSync(path.join(process.cwd(), "temp", "thumbs.dat.decrypted"))).replace("Boot.entity", "MainMenu.entity"))
-        child_process.execSync(`"Third-Party\\h6xtea.exe" -e --src "${path.join(process.cwd(), "temp", "thumbs.dat.decrypted")}" --dst "${path.join(process.cwd(), "temp", "thumbs.dat.decrypted.encrypted")}"`)
-    }
-
-    fs.copyFileSync(path.join(process.cwd(), "temp", "packagedefinition.txt.decrypted.encrypted"), config.outputToSeparateDirectory ? path.join(process.cwd(), "Output", "packagedefinition.txt") : path.join(config.runtimePath, "packagedefinition.txt"))
-
-    if (config.skipIntro) {
-        fs.copyFileSync(path.join(process.cwd(), "temp", "thumbs.dat.decrypted.encrypted"), config.outputToSeparateDirectory ? path.join(process.cwd(), "Output", "thumbs.dat") : path.join(config.runtimePath, "..", "Retail", "thumbs.dat"))
-    }
+    fs.copyFileSync(path.join(process.cwd(), "temp", "packagedefinition.txt.decrypted.encrypted"), config.outputToSeparateDirectory ? path.join(process.cwd(), "Output", "packagedefinition.txt") : path.join(config.runtimePath, "packagedefinition.txt")) // Output PD
 
     try {
         await promisify(emptyFolder)("temp", true)
     } catch {}
     fs.mkdirSync("temp")
 
-    console.log("Generating RPKGs")
+    /* ---------------------------------------------------------------------------------------------- */
+    /*                                         Generate RPKGs                                         */
+    /* ---------------------------------------------------------------------------------------------- */
+    logger.info("Generating RPKGs")
 
     for (let stagingChunkFolder of fs.readdirSync(path.join(process.cwd(), "staging"))) {
         await rpkgInstance.callFunction(`-generate_rpkg_from "${path.join(process.cwd(), "staging", stagingChunkFolder)}" -output_path "${path.join(process.cwd(), "staging")}"`)
@@ -737,7 +776,7 @@ async function stageAllMods() {
 
     console.timeEnd("StageAllMods")
 
-    console.log("Deployed all mods successfully.")
+    logger.info("Deployed all mods successfully.")
 
     cleanExit()
 }

@@ -1,4 +1,6 @@
+// @ts-ignore
 THREE = require("./three-onlymath.min")
+
 const QuickEntity = {
     "0": require("./quickentity1136"),
     "3": require("./quickentity20"),
@@ -6,11 +8,14 @@ const QuickEntity = {
 	
     "999": require("./quickentity")
 }
+
 const RPKG = require("./rpkg")
+
 const fs = require("fs-extra")
 const path = require("path")
 const child_process = require("child_process")
 const json5 = require("json5")
+
 require("clarify")
 
 const config = json5.parse(String(fs.readFileSync(path.join(process.cwd(), "config.json"))))
