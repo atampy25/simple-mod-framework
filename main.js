@@ -41,32 +41,34 @@ const Piscina = require('piscina')
 
 class Logger {
     debug(text) {
-        process.stdout.write(chalk`{magenta DEBUG}\t{grey ${text}}\n`)
+        process.stdout.write(chalk`{grey DEBUG}\t{grey ${text}}\n`)
     }
 
     info(text) {
         process.stdout.write(chalk`{blue INFO}\t${text}\n`)
     }
 
-    error(text) {
+    error(text, exitAfter = true) {
         process.stderr.write(chalk`{red ERROR}\t${text}\n`)
         console.trace()
+
+        if (exitAfter) cleanExit()
     }
 }
 
-const logger = !process.argv[2] ? new Logger() : console // Any arguments will cause tslog to be disabled
+const logger = !process.argv[2] ? new Logger() : {debug: console.debug, info: console.info, error: function(a) {console.error(a); console.trace(); cleanExit(); } } // Any arguments will cause coloured logging to be disabled
 
 process.on('SIGINT', cleanExit)
 process.on('SIGTERM', cleanExit)
 
 process.on('uncaughtException', (err, origin) => {
-    logger.error("Uncaught exception! " + err)
+    logger.error("Uncaught exception! " + err, false)
     console.error(origin)
     cleanExit()
 })
 
 process.on('unhandledRejection', (err, origin) => {
-    logger.error("Unhandled promise rejection! " + err)
+    logger.error("Unhandled promise rejection! " + err, false)
     console.error(origin)
     cleanExit()
 })
@@ -181,20 +183,17 @@ async function stageAllMods() {
             for (let key of ["name", "description", "authors", "version", "frameworkVersion"]) {
                 if (typeof manifest[key] == "undefined") {
                     logger.error(`Mod ${manifest.name} is missing manifest field "${key}"!`)
-                    cleanExit()
                 }
             }
 
             if (semver.lt(manifest.frameworkVersion, FrameworkVersion)) {
                 if (semver.diff(manifest.frameworkVersion, FrameworkVersion) == "major") {
                     logger.error(`Mod ${manifest.name} is designed for an older version of the framework and is likely incompatible!`)
-                    cleanExit()
                 }
             }
 
             if (semver.gt(manifest.frameworkVersion, FrameworkVersion)) {
                 logger.error(`Mod ${manifest.name} is designed for a newer version of the framework and is likely incompatible!`)
-                cleanExit()
             }
 
             /* ---------------------------------------------------------------------------------------------- */
@@ -243,7 +242,6 @@ async function stageAllMods() {
 
                                 if (!QuickEntity[Object.keys(QuickEntity)[Object.keys(QuickEntity).findIndex(a=> parseFloat(a) > Number(entityContent.quickEntityVersion.value)) - 1]]) {
                                     logger.error("Could not find matching QuickEntity version for " + Number(entityContent.quickEntityVersion.value) + "!")
-                                    cleanExit()
                                 }
 
                                 await (QuickEntity[Object.keys(QuickEntity)[Object.keys(QuickEntity).findIndex(a=> parseFloat(a) > Number(entityContent.quickEntityVersion.value)) - 1]]).generate("HM3", contentFilePath,
@@ -435,7 +433,8 @@ async function stageAllMods() {
                     entityContent,
                     tempRPKG,
                     tbluRPKG,
-                    assignedTemporaryDirectory: "patchWorker" + index
+                    assignedTemporaryDirectory: "patchWorker" + index,
+                    logger
                 })
             })); // Run each patch in the worker queue and wait for all of them to finish
 
@@ -633,7 +632,6 @@ async function stageAllMods() {
 
         if (runtimePatchNumber >= 300) {
             logger.error("More than 94 total runtime packages!")
-            cleanExit()
         } // Framework only manages patch200-300
     }
 

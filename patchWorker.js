@@ -26,19 +26,23 @@ module.exports = async ({
 	assignedTemporaryDirectory,
 	entityContent,
 	tempRPKG,
-	tbluRPKG
+	tbluRPKG,
+	logger
 }) => {
+	let rpkgInstance = new RPKG.RPKGInstance()
+
 	try {
-		console.log("Applying patch " + contentFilePath)
+		logger.info("Applying patch " + contentFilePath)
 
 		fs.ensureDirSync(path.join(process.cwd(), assignedTemporaryDirectory))
-
-		let rpkgInstance = new RPKG.RPKGInstance()
 
 		await rpkgInstance.waitForInitialised()
 
 		if (!QuickEntity[Object.keys(QuickEntity)[Object.keys(QuickEntity).findIndex(a=> parseFloat(a) > Number(entityContent.patchVersion.value)) - 1]]) {
-			console.log("Error: could not find matching QuickEntity version for patch version " + Number(entityContent.patchVersion.value))
+			rpkgInstance.exit()
+			fs.removeSync(path.join(process.cwd(), assignedTemporaryDirectory))
+			
+			logger.error("Could not find matching QuickEntity version for patch version " + Number(entityContent.patchVersion.value) + "!")
 		}
 
 		/* ---------------------------------------- Extract TEMP ---------------------------------------- */
@@ -113,7 +117,12 @@ module.exports = async ({
 
 		rpkgInstance.exit()
 	} catch (e) {
-		if (!String(e).includes("SIGTERM")) console.log("Error in patch worker: " + e)
+		if (!String(e).includes("SIGTERM")) {
+			rpkgInstance.exit()
+			fs.removeSync(path.join(process.cwd(), assignedTemporaryDirectory))
+
+			logger.error("Error in patch worker: " + e)
+		}
 	}
 
 	return

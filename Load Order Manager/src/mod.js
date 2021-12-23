@@ -334,7 +334,7 @@ async function deployMods() {
 			Swal.showLoading()
 
 			setTimeout(() => {
-				let deployProcess = child_process.spawn(path.join(process.cwd(), "..", "Deploy.exe"), ["consoleLog"], { // any arguments will disable tslog
+				let deployProcess = child_process.spawn(path.join(process.cwd(), "..", "Deploy.exe"), ["consoleLog"], { // any arguments will disable nicer logging
 					cwd: '..'
 				})
 
