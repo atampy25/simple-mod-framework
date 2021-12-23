@@ -41,7 +41,7 @@ const Piscina = require('piscina')
 
 class Logger {
     debug(text) {
-        process.stdout.write(chalk`{grey DEBUG}\t{grey ${text}}\n`)
+        process.stdout.write(chalk`{grey DEBUG\t${text}}\n`)
     }
 
     info(text) {
@@ -702,7 +702,7 @@ async function stageAllMods() {
 
         fs.writeFileSync(path.join(process.cwd(), "temp", "LOCR", localisationFileRPKG + ".rpkg", "00F5817876E691F1.LOCR.JSON"), JSON.stringify(locrToWrite))
         await rpkgInstance.callFunction(`-rebuild_locr_from_json_from "${path.join(process.cwd(), "temp", "LOCR", localisationFileRPKG + ".rpkg")}"`) // Rebuild the LOCR
-        fs.copyFileSync(path.join(process.cwd(), "temp", "LOCR", localisationFileRPKG + ".rpkg", "LOCR.rebuilt", "00F5817876E691F1.LOCR"), path.join(process.cwd(), "staging", localisationFileRPKG, "00F5817876E691F1.LOCR"))
+        fs.copyFileSync(path.join(process.cwd(), "temp", "LOCR", localisationFileRPKG + ".rpkg", "LOCR.rebuilt", "00F5817876E691F1.LOCR"), path.join(process.cwd(), "staging", localisationFileRPKG.replace(/patch[0-9]*/gi, ""), "00F5817876E691F1.LOCR"))
 
         try {
             await promisify(emptyFolder)("temp", true)
@@ -768,7 +768,7 @@ async function stageAllMods() {
     
             fs.writeFileSync(path.join(process.cwd(), "temp", "LOCR", localisationFileRPKG + ".rpkg", locrHash + ".LOCR.JSON"), JSON.stringify(locrToWrite))
             await rpkgInstance.callFunction(`-rebuild_locr_from_json_from "${path.join(process.cwd(), "temp", "LOCR", localisationFileRPKG + ".rpkg")}"`) // Rebuild the LOCR
-            fs.copyFileSync(path.join(process.cwd(), "temp", "LOCR", localisationFileRPKG + ".rpkg", "LOCR.rebuilt", locrHash + ".LOCR"), path.join(process.cwd(), "staging", localisationFileRPKG, locrHash + ".LOCR"))
+            fs.copyFileSync(path.join(process.cwd(), "temp", "LOCR", localisationFileRPKG + ".rpkg", "LOCR.rebuilt", locrHash + ".LOCR"), path.join(process.cwd(), "staging", localisationFileRPKG.replace(/patch[0-9]*/gi, ""), locrHash + ".LOCR"))
     
             try {
                 await promisify(emptyFolder)("temp", true)
