@@ -15,6 +15,7 @@ const fs = require("fs-extra")
 const path = require("path")
 const child_process = require("child_process")
 const json5 = require("json5")
+const chalk = require("chalk")
 
 require("clarify")
 
@@ -26,10 +27,24 @@ module.exports = async ({
 	assignedTemporaryDirectory,
 	entityContent,
 	tempRPKG,
-	tbluRPKG,
-	logger
+	tbluRPKG
 }) => {
 	let rpkgInstance = new RPKG.RPKGInstance()
+
+	let logger = {
+		debug: function (text) {
+			process.stdout.write(chalk`{grey DEBUG\t${text}}\n`)
+		},
+	
+		info: function (text) {
+			process.stdout.write(chalk`{blue INFO}\t${text}\n`)
+		},
+	
+		error: function (text) {
+			process.stderr.write(chalk`{red ERROR}\t${text}\n`)
+			console.trace()
+		}
+	}
 
 	try {
 		logger.info("Applying patch " + contentFilePath)
