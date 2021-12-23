@@ -19,7 +19,15 @@ MyAmazingMod/
 
 The manifest.json controls what the content and blobs folders must be named.
 
-The content folder contains chunk folders, which contain files. These files can be raw files or special files. The current special file types are `entity.json`, which is a QuickEntity JSON file that will replace the entity it targets, `entity.patch.json`, which is a QuickEntity patch JSON that will patch the entity it targets, `unlockables.json`, which contains unlockables to be put in the unlockables ORES, `repository.json`, which contains repository items to be placed in the repository and `contract.json`, which contains a contract that will be added to the contracts ORES.
+The content folder contains chunk folders, which contain files (and folders, the chunk folder is recursively checked for all files). These files can be raw files or special files. The current special file types are:
+
+| **File type**       | **Contents**                                                    |
+|---------------------|-----------------------------------------------------------------|
+| `entity.json`       | A QuickEntity JSON file that will replace the entity it targets |
+| `entity.patch.json` | A QuickEntity patch JSON that will patch the entity it targets  |
+| `unlockables.json`  | Unlockables to be put in the unlockables ORES                   |
+| `repository.json`   | Repository items to be placed in the repository                 |
+| `contract.json`     | A contract that will be added to the contracts ORES             |
 
 The names of special files do not matter. Raw files, which any non-special file is, are placed directly into the built RPKG and so must be named like usual.
 

@@ -13,4 +13,4 @@ MyAmazingMod/
 
 `MyAmazingMod` can be placed in the load order.
 
-The GUI supports importing RPKGs, and will automatically create this structure.
+The GUI supports importing single RPKGs, and will automatically create this structure.

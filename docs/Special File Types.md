@@ -77,4 +77,6 @@ A JSON with the following format:
 The repository items mentioned in the file are automatically added/edited in the repository file. Partial edits of existing items are supported (properties will be traversed and assigned).
 
 ## contract.json
-A contract JSON. The contract inside is automatically given a custom hash (determined by "smfcontract" + the contract's UUID), added to the contracts ORES and placed in the staging directory. If you want to edit an existing contract, instead use a raw file.
+A contract JSON. The contract inside is automatically given a custom hash (determined by "smfContract" + the contract's UUID), added to the contracts ORES and placed in the staging directory. If you want to edit an existing contract, instead use a raw file.
+
+**Note:** if you want the contract to appear in Destinations, you must use the `mission` type.

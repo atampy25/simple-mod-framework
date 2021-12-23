@@ -22,6 +22,26 @@ Each mod contains a manifest. Manifests have the following format:
 		"chineseTraditional": {},
 		"japanese": {}
 	},
+	"localisationOverrides": { // Allows you to override specific localisation in specific files - Can be omitted -------------------- NOT IMPLEMENTED YET
+		"00123456789ABCDE": {
+			"english": {
+				"UI_THEBESTMOD": "The Best Mod" // You can use UI_THEBESTMOD elsewhere
+			},
+			"french": {
+				"UI_THEBESTMOD": "Le Meilleur Mod idk french lmao" // UI_THEBESTMOD will automatically translate depending on language
+			},
+			"italian": {},
+			"german": {},
+			"spanish": {},
+			"russian": {},
+			"chineseSimplified": {},
+			"chineseTraditional": {},
+			"japanese": {}
+		}
+	},
+	"localisedLines": { // Allows you to link specific lines to a file for use in certain filetypes - Can be omitted -------------------- NOT IMPLEMENTED YET
+		"00123456789ABCDE": "UI_THEBESTMOD"
+	},
 	"packagedefinition": [ // Can be omitted
         { // For new chunks
             "type": "partition",
@@ -35,11 +55,14 @@ Each mod contains a manifest. Manifests have the following format:
             "path": "[assembly:/_pro/myBricks/myNewChunk28Map.entity].entitytemplate"
         }
     ],
-	"runtimePackages": [ // RPKG files to place (and automatically name) in RPKG - Can be omitted
+	"runtimePackages": [ // RPKG files to place (and automatically name) in Runtime - Can be omitted
 		{
 			"chunk": 0, // This for example would become chunk0patch205 if no other mods added RPKGs (numbers are incremented automatically)
 			"path": "portedhashes.rpkg"
 		}
+	],
+	"dependencies": [ // Runtime IDs of files to extract the dependencies of and place in chunk0 (automatic porting of dependencies) - Can be omitted
+		"00123456789ABCDE"
 	],
 	"version": "1.0.0", // The mod's version, used to compare against the linked JSON - make sure to use semantic versioning (Major.Minor.Patch) - Cannot be omitted
 	"updateCheck": "https://hitman-resources.netlify.app/framework/updates/exampleMod.json", // A JSON that will be checked for updates (MUST BE HTTPS) - contact Atampy26 for hosting on hitman-resources.netlify.app - Can be omitted
