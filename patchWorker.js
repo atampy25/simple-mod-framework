@@ -29,8 +29,6 @@ module.exports = async ({
 	tbluRPKG,
 	logger
 }) => {
-	console.log(logger)
-
 	let rpkgInstance = new RPKG.RPKGInstance()
 
 	try {

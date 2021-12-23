@@ -39,14 +39,14 @@ require("clarify")
 // @ts-ignore
 const Piscina = require('piscina')
 
-class Logger {
+const logger = !process.argv[2] ? {
     debug(text) {
         process.stdout.write(chalk`{grey DEBUG\t${text}}\n`)
-    }
+    },
 
     info(text) {
         process.stdout.write(chalk`{blue INFO}\t${text}\n`)
-    }
+    },
 
     error(text, exitAfter = true) {
         process.stderr.write(chalk`{red ERROR}\t${text}\n`)
@@ -54,9 +54,15 @@ class Logger {
 
         if (exitAfter) cleanExit()
     }
-}
-
-const logger = !process.argv[2] ? new Logger() : {debug: console.debug, info: console.info, error: function(a) {console.error(a); console.trace(); cleanExit(); } } // Any arguments will cause coloured logging to be disabled
+} : {
+    debug: console.debug,
+    info: console.info,
+    error: function(a) {
+        console.error(a)
+        console.trace()
+        cleanExit()
+    }
+} // Any arguments will cause coloured logging to be disabled
 
 process.on('SIGINT', cleanExit)
 process.on('SIGTERM', cleanExit)
