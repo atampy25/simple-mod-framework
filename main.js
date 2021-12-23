@@ -688,12 +688,79 @@ async function stageAllMods() {
 
         fs.writeFileSync(path.join(process.cwd(), "temp", "LOCR", localisationFileRPKG + ".rpkg", "00F5817876E691F1.LOCR.JSON"), JSON.stringify(locrToWrite))
         await rpkgInstance.callFunction(`-rebuild_locr_from_json_from "${path.join(process.cwd(), "temp", "LOCR", localisationFileRPKG + ".rpkg")}"`) // Rebuild the LOCR
-        fs.copyFileSync(path.join(process.cwd(), "temp", "LOCR", localisationFileRPKG + ".rpkg", "LOCR.rebuilt", "00F5817876E691F1.LOCR"), path.join(process.cwd(), "staging", "chunk0", "00F5817876E691F1.LOCR"))
+        fs.copyFileSync(path.join(process.cwd(), "temp", "LOCR", localisationFileRPKG + ".rpkg", "LOCR.rebuilt", "00F5817876E691F1.LOCR"), path.join(process.cwd(), "staging", localisationFileRPKG, "00F5817876E691F1.LOCR"))
 
         try {
             await promisify(emptyFolder)("temp", true)
         } catch {}
         fs.mkdirSync("temp") // Clear the temp directory
+    }
+
+    if (Object.keys(localisationOverrides).length) {
+        let languages = {
+            "english": "en",
+            "french": "fr",
+            "italian": "it",
+            "german": "de",
+            "spanish": "es",
+            "russian": "ru",
+            "chineseSimplified": "cn",
+            "chineseTraditional": "tc",
+            "japanese": "jp"
+        }
+
+        for (let locrHash of Object.keys(localisationOverrides)) {
+            let localisationFileRPKG = await rpkgInstance.getRPKGOfHash(locrHash)
+            await rpkgInstance.callFunction(`-extract_locr_to_json_from "${path.join(config.runtimePath, localisationFileRPKG + ".rpkg")}" -filter "${locrHash}" -output_path temp`)
+            
+            fs.ensureDirSync(path.join(process.cwd(), "staging", "chunk0"))
+    
+            let locrFileContent = JSON.parse(String(fs.readFileSync(path.join(process.cwd(), "temp", "LOCR", localisationFileRPKG + ".rpkg", locrHash + ".LOCR.JSON"))))
+            let locrContent = {}
+    
+            for (let localisationLanguage of locrFileContent) {
+                locrContent[localisationLanguage[0].Language] = {}
+                for (let localisationItem of localisationLanguage.slice(1)) {
+                    locrContent[localisationLanguage[0].Language]["abc" + localisationItem.StringHash] = localisationItem.String
+                }
+            }
+    
+            for (let item of localisationOverrides[locrHash]) {
+                let toMerge = {}
+                toMerge["abc" + crc32(item.locString.toUpperCase())] = item.text
+    
+                deepMerge(locrContent[languages[item.language]], toMerge)
+    
+                if (item.language == "english") {
+                    deepMerge(locrContent["xx"], toMerge)
+                }
+            }
+    
+            /** @type Array<Array<{Language: string}|{StringHash: number, String: string}>> */
+            let locrToWrite = []
+    
+            for (let language of Object.keys(locrContent)) {
+                locrToWrite.push([{
+                    "Language": language
+                }])
+    
+                for (let string of Object.keys(locrContent[language])) {
+                    locrToWrite[locrToWrite.length - 1].push({
+                        "StringHash": parseInt(string.slice(3)),
+                        "String": locrContent[language][string]
+                    })
+                }
+            }
+    
+            fs.writeFileSync(path.join(process.cwd(), "temp", "LOCR", localisationFileRPKG + ".rpkg", locrHash + ".LOCR.JSON"), JSON.stringify(locrToWrite))
+            await rpkgInstance.callFunction(`-rebuild_locr_from_json_from "${path.join(process.cwd(), "temp", "LOCR", localisationFileRPKG + ".rpkg")}"`) // Rebuild the LOCR
+            fs.copyFileSync(path.join(process.cwd(), "temp", "LOCR", localisationFileRPKG + ".rpkg", "LOCR.rebuilt", locrHash + ".LOCR"), path.join(process.cwd(), "staging", localisationFileRPKG, locrHash + ".LOCR"))
+    
+            try {
+                await promisify(emptyFolder)("temp", true)
+            } catch {}
+            fs.mkdirSync("temp") // Clear the temp directory
+        }
     }
 
     /* ---------------------------------------------------------------------------------------------- */
