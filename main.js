@@ -32,13 +32,14 @@ const json5 = require("json5")
 const semver = require('semver')
 const klaw = require('klaw-sync')
 const rfc6902 = require('rfc6902')
+import { Logger } from "tslog"
 
 require("clarify")
 
 // @ts-ignore
 const Piscina = require('piscina')
 
-const logger = !process.argv[2] ? new (require("tslog").Logger)({ displayDateTime: false }) : console // Any arguments will cause tslog to be disabled
+const logger = !process.argv[2] ? (new Logger({ displayDateTime: false })) : console // Any arguments will cause tslog to be disabled
 
 process.on('SIGINT', cleanExit)
 process.on('SIGTERM', cleanExit)
