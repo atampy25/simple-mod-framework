@@ -40,15 +40,15 @@ require("clarify")
 const Piscina = require('piscina')
 
 const logger = !process.argv[2] ? {
-    debug(text) {
+    debug: function (text) {
         process.stdout.write(chalk`{grey DEBUG\t${text}}\n`)
     },
 
-    info(text) {
+    info: function (text) {
         process.stdout.write(chalk`{blue INFO}\t${text}\n`)
     },
 
-    error(text, exitAfter = true) {
+    error: function (text, exitAfter = true) {
         process.stderr.write(chalk`{red ERROR}\t${text}\n`)
         console.trace()
 
