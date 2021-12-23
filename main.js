@@ -439,7 +439,8 @@ async function stageAllMods() {
                     entityContent,
                     tempRPKG,
                     tbluRPKG,
-                    assignedTemporaryDirectory: "patchWorker" + index
+                    assignedTemporaryDirectory: "patchWorker" + index,
+                    useNiceLogs: !process.argv[2]
                 })
             })); // Run each patch in the worker queue and wait for all of them to finish
 

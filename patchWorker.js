@@ -27,11 +27,12 @@ module.exports = async ({
 	assignedTemporaryDirectory,
 	entityContent,
 	tempRPKG,
-	tbluRPKG
+	tbluRPKG,
+	useNiceLogs
 }) => {
 	let rpkgInstance = new RPKG.RPKGInstance()
 
-	let logger = {
+	let logger = useNiceLogs ? {
 		debug: function (text) {
 			process.stdout.write(chalk`{grey DEBUG\t${text}}\n`)
 		},
@@ -44,10 +45,18 @@ module.exports = async ({
 			process.stderr.write(chalk`{red ERROR}\t${text}\n`)
 			console.trace()
 		}
+	} : {
+		debug: console.debug,
+		info: console.info,
+		error: function(a) {
+			console.error(a)
+			console.trace()
+			cleanExit()
+		}
 	}
 
 	try {
-		logger.info("Applying patch " + contentFilePath)
+		logger.debug("Applying patch " + contentFilePath)
 
 		fs.ensureDirSync(path.join(process.cwd(), assignedTemporaryDirectory))
 
