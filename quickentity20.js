@@ -816,7 +816,6 @@ if (entity.quickEntityVersion < QuickEntityVersion && !automateGame) {
 	}
 }
 
-console.time('buildEntityCache')
 
 const findEntityCache = {}
 let index = 0
@@ -825,8 +824,6 @@ for (let entry of Object.keys(entity.entities)) {
 	index ++
 }
 
-console.timeEnd('buildEntityCache')
-console.time('init')
 
 /** @type {TEMP} */
 var TEMP = {
@@ -885,8 +882,6 @@ TEMPmeta.hash_reference_data.push({
 	"flag": "1F"
 })
 
-console.timeEnd('init')
-console.time('externalScenes')
 
 for (var externalScene of entity.externalScenes) {
 	TEMPmeta.hash_reference_data.push({
@@ -904,8 +899,6 @@ for (var externalScene of entity.externalScenes) {
 	TBLU.externalSceneTypeIndicesInResourceHeader.push(TBLUmeta.hash_reference_data.length - 1)
 }
 
-console.timeEnd('externalScenes')
-console.time('skeletonData')
 
 /*
 	GENERATE: SKELETON DATA
@@ -973,8 +966,6 @@ for (let entry of Object.entries(entity.entities)) {
 	})
 }
 
-console.timeEnd('skeletonData')
-console.time('reIndexES/LP')
 
 /*
 	REINDEX: entitySubsets, logicalParent
@@ -1005,8 +996,6 @@ for (let entry of Object.values(entity.entities)) {
 	index ++
 }
 
-console.timeEnd('reIndexES/LP')
-console.time('generatePV/PIPV')
 
 /*
 	GENERATE: propertyValues, postInitPropertyValues
@@ -1024,8 +1013,6 @@ for (let entry of Object.values(entity.entities)) {
 	index ++
 }
 
-console.timeEnd('generatePV/PIPV')
-console.time('rebuildPO')
 
 /*
 	REBUILD: propertyOverrides
@@ -1042,8 +1029,6 @@ for (var entry of TEMP.propertyOverrides) {
 	index++
 }
 
-console.timeEnd('rebuildPO')
-console.time('reIndexESIO')
 
 /*
 	REINDEX: externalSceneIndexes IN overrides
@@ -1076,8 +1061,6 @@ for (var entry of TBLU.overrideDeletes) {
 	delete entry.externalScene
 }
 
-console.timeEnd('reIndexESIO')
-console.time('reIndexESIPCO')
 
 if ((automateGame ? automateGame : storage.getSync("game")) !== "HM2016") {
 	for (var entry of TBLU.pinConnectionOverrides) {
@@ -1097,8 +1080,6 @@ if ((automateGame ? automateGame : storage.getSync("game")) !== "HM2016") {
 	}
 }
 
-console.timeEnd('reIndexESIPCO')
-console.time('reIndexTEMPESILP/ESIPV')
 
 /*
 	REINDEX: externalSceneIndexes IN TEMP logicalParent, propertyValues
@@ -1136,8 +1117,6 @@ for (var entry of TEMP.subEntities) {
 	}
 }
 
-console.timeEnd('reIndexTEMPESILP/ESIPV')
-console.time('reIndexTBLUESILP')
 
 /*
 	REINDEX: externalSceneIndex IN TBLU logicalParent
@@ -1147,8 +1126,6 @@ for (var entry of TBLU.subEntities) {
 	entry.logicalParent.externalSceneIndex = TBLU.externalSceneTypeIndicesInResourceHeader.findIndex(a => TBLUmeta.hash_reference_data[a].hash == entry.logicalParent.externalSceneIndex)
 }
 
-console.timeEnd('reIndexTBLUESILP')
-console.time('addPins')
 
 /*
 	ADD: pins
@@ -1206,7 +1183,6 @@ for (let entry of Object.values(entity.entities)) {
 	index ++
 }
 
-console.timeEnd('addPins')
 
 if ((automateGame ? automateGame : storage.getSync("game")) == "HM2016") {
 	TEMP.entityTemplates = TEMP.subEntities
@@ -1414,11 +1390,9 @@ async function createPatchJSON(automateQN1Path = false, automateQN2Path = false,
 	delete entity1.quickEntityVersion
 	delete entity2.quickEntityVersion
 
-	console.time("genPatch")
-	// @ts-ignore
+		// @ts-ignore
 	let patch = rfc6902.createPatch(entity1, entity2, patchCheckLosslessNumber)
-	console.timeEnd("genPatch")
-
+	
 	let outputPatchJSON = {
 		tempHash: entity2.tempHash,
     	tbluHash: entity2.tbluHash,
@@ -1451,10 +1425,8 @@ async function applyPatchJSON(automateQNPath = false, automatePatchPath = false,
 		properties: ["openFile", "dontAddToRecent"]
 	})[0])))
 
-	console.time("applyPatch")
-	rfc6902.applyPatch(entity, patch.patch)
-	console.timeEnd("applyPatch")
-
+		rfc6902.applyPatch(entity, patch.patch)
+	
 	let outputPath = automateOutputPath ? automateOutputPath : electron.remote.dialog.showSaveDialogSync({
 		title: "Save the resulting JSON",
 		buttonLabel: "Save",

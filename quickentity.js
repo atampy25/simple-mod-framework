@@ -815,12 +815,9 @@ if (entity.quickEntityVersion < QuickEntityVersion && !automateGame) {
 	}
 }
 
-console.time('removeComments')
 
 entity.entities = Object.fromEntries(Object.entries(entity.entities).filter(a=>a[1].type != "comment"))
 
-console.timeEnd('removeComments')
-console.time('buildEntityCache')
 
 const findEntityCache = {}
 let index = 0
@@ -829,8 +826,6 @@ for (let entry of Object.keys(entity.entities)) {
 	index ++
 }
 
-console.timeEnd('buildEntityCache')
-console.time('init')
 
 /** @type {TEMP} */
 var TEMP = {
@@ -889,8 +884,6 @@ TEMPmeta.hash_reference_data.push({
 	"flag": "1F"
 })
 
-console.timeEnd('init')
-console.time('externalScenes')
 
 for (var externalScene of entity.externalScenes) {
 	TEMPmeta.hash_reference_data.push({
@@ -908,8 +901,6 @@ for (var externalScene of entity.externalScenes) {
 	TBLU.externalSceneTypeIndicesInResourceHeader.push(TBLUmeta.hash_reference_data.length - 1)
 }
 
-console.timeEnd('externalScenes')
-console.time('skeletonData')
 
 /*
 	GENERATE: SKELETON DATA
@@ -971,8 +962,6 @@ for (let entry of Object.entries(entity.entities)) {
 	})
 }
 
-console.timeEnd('skeletonData')
-console.time('reIndexES')
 
 /*
 	REINDEX: entitySubsets
@@ -991,8 +980,6 @@ for (let entry of Object.values(entity.entities)) {
 	index ++
 }
 
-console.timeEnd('reIndexES')
-console.time('generatePV/PIPV')
 
 /*
 	GENERATE: propertyValues, postInitPropertyValues
@@ -1010,8 +997,6 @@ for (let entry of Object.values(entity.entities)) {
 	index ++
 }
 
-console.timeEnd('generatePV/PIPV')
-console.time('rebuildPO')
 
 /*
 	REBUILD: overrides
@@ -1036,8 +1021,6 @@ for (let entry in TBLU.overrideDeletes) {
 	TBLU.overrideDeletes[entry] = convertReferenceToRT(TBLU.overrideDeletes[entry], TEMP, TEMPmeta, findEntityCache)
 }
 
-console.timeEnd('rebuildPO')
-console.time('rebuildPCO')
 
 if ((automateGame ? automateGame : storage.getSync("game")) !== "HM2016") {
 	for (var entry of TBLU.pinConnectionOverrides) {
@@ -1051,8 +1034,6 @@ if ((automateGame ? automateGame : storage.getSync("game")) !== "HM2016") {
 	}
 }
 
-console.timeEnd('rebuildPCO')
-console.time('addPins')
 
 /*
 	ADD: pins
@@ -1110,7 +1091,6 @@ for (let entry of Object.values(entity.entities)) {
 	index ++
 }
 
-console.timeEnd('addPins')
 
 if ((automateGame ? automateGame : storage.getSync("game")) == "HM2016") {
 	TEMP.entityTemplates = TEMP.subEntities
@@ -1318,11 +1298,9 @@ async function createPatchJSON(automateQN1Path = false, automateQN2Path = false,
 	delete entity1.quickEntityVersion
 	delete entity2.quickEntityVersion
 
-	console.time("genPatch")
-	// @ts-ignore
+		// @ts-ignore
 	let patch = rfc6902.createPatch(entity1, entity2, patchCheckLosslessNumber)
-	console.timeEnd("genPatch")
-
+	
 	let outputPatchJSON = {
 		tempHash: entity2.tempHash,
     	tbluHash: entity2.tbluHash,
@@ -1355,10 +1333,8 @@ async function applyPatchJSON(automateQNPath = false, automatePatchPath = false,
 		properties: ["openFile", "dontAddToRecent"]
 	})[0])))
 
-	console.time("applyPatch")
-	rfc6902.applyPatch(entity, patch.patch)
-	console.timeEnd("applyPatch")
-
+		rfc6902.applyPatch(entity, patch.patch)
+	
 	let outputPath = automateOutputPath ? automateOutputPath : electron.remote.dialog.showSaveDialogSync({
 		title: "Save the resulting JSON",
 		buttonLabel: "Save",
