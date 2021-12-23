@@ -22,7 +22,7 @@ Each mod contains a manifest. Manifests have the following format:
 		"chineseTraditional": {},
 		"japanese": {}
 	},
-	"localisationOverrides": { // Allows you to override specific localisation in specific files - Can be omitted -------------------- NOT IMPLEMENTED YET
+	"localisationOverrides": { // Allows you to override specific localisation in specific files - Can be omitted
 		"00123456789ABCDE": {
 			"english": {
 				"UI_THEBESTMOD": "The Best Mod" // You can use UI_THEBESTMOD elsewhere

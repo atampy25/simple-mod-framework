@@ -38,7 +38,7 @@ require("clarify")
 // @ts-ignore
 const Piscina = require('piscina')
 
-const logger = !process.argv[1] ? new (require("tslog").Logger)({ displayDateTime: false }) : console // Any arguments will cause tslog to be disabled
+const logger = !process.argv[2] ? new (require("tslog").Logger)({ displayDateTime: false }) : console // Any arguments will cause tslog to be disabled
 
 process.on('SIGINT', cleanExit)
 process.on('SIGTERM', cleanExit)
