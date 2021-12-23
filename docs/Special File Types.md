@@ -77,6 +77,11 @@ A JSON with the following format:
 The repository items mentioned in the file are automatically added/edited in the repository file. Partial edits of existing items are supported (properties will be traversed and assigned).
 
 ## contract.json
-A contract JSON. The contract inside is automatically given a custom hash (determined by "smfContract" + the contract's UUID), added to the contracts ORES and placed in the staging directory. If you want to edit an existing contract, instead use a raw file.
+A contract JSON. The contract inside is automatically given a custom hash (determined by `smfContract` + the contract's UUID), added to the contracts ORES and placed in the staging directory. If you want to edit an existing contract, instead use a raw file.
 
 **Note:** if you want the contract to appear in Destinations, you must use the `mission` type.
+
+## JSON.patch.json
+**Note:** The filename matters for this special type.
+
+Mutates the given JSON file with a patch. For example, a patch could be applied to storyconfig by naming the file `0093B70B9E704CE0.JSON.patch.json`. The content of the `JSON.patch.json` file is an RFC6902 format JSON patch.

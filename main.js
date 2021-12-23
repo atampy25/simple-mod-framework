@@ -25,6 +25,7 @@ const os = require("os")
 const json5 = require("json5")
 const semver = require('semver')
 const klaw = require('klaw-sync')
+const rfc6902 = require('rfc6902')
 require("clarify")
 
 const Piscina = require('piscina')
@@ -276,7 +277,7 @@ async function stageAllMods() {
                                 deepMerge(repoToPatch, entityContent)
                                 var repoToWrite = Object.values(repoToPatch)
     
-                                var editedItems = new Set(Object.values(entityContent).map(a=>a.ID_))
+                                var editedItems = new Set(Object.keys(entityContent))
     
                                 await rpkgInstance.callFunction(`-hash_meta_to_json "${path.join(process.cwd(), "temp", repoRPKG, "REPO", "00204D1AFD76AB13.REPO.meta")}"`)
                                 var metaContent = JSON.parse(String(fs.readFileSync(path.join(process.cwd(), "temp", repoRPKG, "REPO", "00204D1AFD76AB13.REPO.meta.JSON"))))
@@ -324,6 +325,29 @@ async function stageAllMods() {
                                 })
     
                                 fs.writeFileSync(path.join(process.cwd(), "staging", "chunk0", contractHash + ".JSON"), LosslessJSON.stringify(entityContent)) // Write the actual contract to the staging directory
+                                break;
+                            case "JSON.patch.json":
+                                var entityContent = JSON.parse(String(fs.readFileSync(contentFilePath)))
+    
+                                var rpkgOfFile = await rpkgInstance.getRPKGOfHash(path.basename(contentFile).split(".")[0])
+
+                                console.log("Applying JSON patch " + contentFilePath)
+    
+                                if (!fs.existsSync(path.join(process.cwd(), "staging", "chunk0", path.basename(contentFile).split(".")[0] + ".JSON"))) {
+                                    await rpkgInstance.callFunction(`-extract_from_rpkg "${path.join(config.runtimePath, rpkgOfFile + ".rpkg")}" -filter "${path.basename(contentFile).split(".")[0]}" -output_path temp`) // Extract the JSON file
+                                } else {
+                                    fs.ensureDirSync(path.join(process.cwd(), "temp", rpkgOfFile, "JSON"))
+                                    fs.copyFileSync(path.join(process.cwd(), "staging", "chunk0", path.basename(contentFile).split(".")[0] + ".JSON"), path.join(process.cwd(), "temp", rpkgOfFile, "JSON", path.basename(contentFile).split(".")[0] + ".JSON")) // Use the staging one (for mod compat - one mod can extract, patch and build, then the next can patch that one instead)
+                                    fs.copyFileSync(path.join(process.cwd(), "staging", "chunk0", path.basename(contentFile).split(".")[0] + ".JSON.meta"), path.join(process.cwd(), "temp", rpkgOfFile, "JSON", path.basename(contentFile).split(".")[0] + ".JSON.meta"))
+                                }
+    
+                                var fileContent = JSON.parse(String(fs.readFileSync(path.join(process.cwd(), "temp", rpkgOfFile, "JSON", path.basename(contentFile).split(".")[0] + ".JSON"))))
+
+                                rfc6902.applyPatch(fileContent, entityContent) // Apply the JSON patch
+
+                                fs.writeFileSync(path.join(process.cwd(), "temp", rpkgOfFile, "JSON", path.basename(contentFile).split(".")[0] + ".JSON"), JSON.stringify(fileContent))
+                                fs.copyFileSync(path.join(process.cwd(), "temp", rpkgOfFile, "JSON", path.basename(contentFile).split(".")[0] + ".JSON"), path.join(process.cwd(), "staging", "chunk0", path.basename(contentFile).split(".")[0] + ".JSON"))
+                                fs.copyFileSync(path.join(process.cwd(), "temp", rpkgOfFile, "JSON", path.basename(contentFile).split(".")[0] + ".JSON.meta"), path.join(process.cwd(), "staging", "chunk0", path.basename(contentFile).split(".")[0] + ".JSON.meta"))
                                 break;
                             default:
                                 fs.copyFileSync(contentFilePath, path.join(process.cwd(), "staging", chunkFolder, path.basename(contentFile))) // Copy the file to the staging directory
