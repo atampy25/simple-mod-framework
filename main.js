@@ -32,27 +32,42 @@ const json5 = require("json5")
 const semver = require('semver')
 const klaw = require('klaw-sync')
 const rfc6902 = require('rfc6902')
-import { Logger } from "tslog"
+const chalk = require('chalk')
 
 require("clarify")
 
 // @ts-ignore
 const Piscina = require('piscina')
 
-const logger = !process.argv[2] ? (new Logger({ displayDateTime: false })) : console // Any arguments will cause tslog to be disabled
+class Logger {
+    debug(text) {
+        process.stdout.write(chalk`{magenta DEBUG}\t{grey ${text}}\n`)
+    }
+
+    info(text) {
+        process.stdout.write(chalk`{blue INFO}\t${text}\n`)
+    }
+
+    error(text) {
+        process.stderr.write(chalk`{red ERROR}\t${text}\n`)
+        console.trace()
+    }
+}
+
+const logger = !process.argv[2] ? new Logger() : console // Any arguments will cause tslog to be disabled
 
 process.on('SIGINT', cleanExit)
 process.on('SIGTERM', cleanExit)
 
 process.on('uncaughtException', (err, origin) => {
     logger.error("Uncaught exception! " + err)
-    logger.error(origin)
+    console.error(origin)
     cleanExit()
 })
 
 process.on('unhandledRejection', (err, origin) => {
     logger.error("Unhandled promise rejection! " + err)
-    logger.error(origin)
+    console.error(origin)
     cleanExit()
 })
 
@@ -224,7 +239,7 @@ async function stageAllMods() {
                             case "entity.json":
                                 var entityContent = LosslessJSON.parse(String(fs.readFileSync(contentFilePath)))
 
-		                        logger.info("Converting entity " + contentFilePath)
+		                        logger.debug("Converting entity " + contentFilePath)
 
                                 if (!QuickEntity[Object.keys(QuickEntity)[Object.keys(QuickEntity).findIndex(a=> parseFloat(a) > Number(entityContent.quickEntityVersion.value)) - 1]]) {
                                     logger.error("Could not find matching QuickEntity version for " + Number(entityContent.quickEntityVersion.value) + "!")
@@ -250,7 +265,7 @@ async function stageAllMods() {
                             case "entity.patch.json":
                                 var entityContent = LosslessJSON.parse(String(fs.readFileSync(contentFilePath)))
     
-		                        logger.info("Preparing to apply patch " + contentFilePath)
+		                        logger.debug("Preparing to apply patch " + contentFilePath)
 
                                 entityPatches.push({
                                     contentFilePath,
@@ -264,7 +279,7 @@ async function stageAllMods() {
                                 var entityContent = JSON.parse(String(fs.readFileSync(contentFilePath)))
                                 var oresChunk = await rpkgInstance.getRPKGOfHash("0057C2C3941115CA")
 
-		                        logger.info("Applying unlockable patch " + contentFilePath)
+		                        logger.debug("Applying unlockable patch " + contentFilePath)
 
                                 await extractOrCopyToTemp(oresChunk, "0057C2C3941115CA", "ORES") // Extract the ORES to temp
     
@@ -287,7 +302,7 @@ async function stageAllMods() {
     
                                 var repoRPKG = await rpkgInstance.getRPKGOfHash("00204D1AFD76AB13")
 
-		                        logger.info("Applying repository patch " + contentFilePath)
+		                        logger.debug("Applying repository patch " + contentFilePath)
 
                                 await extractOrCopyToTemp(repoRPKG, "00204D1AFD76AB13", "REPO") // Extract the REPO to temp
     
@@ -335,7 +350,7 @@ async function stageAllMods() {
     
                                 var contractHash = "00" + md5(("smfContract" + entityContent.Metadata.Id).toLowerCase()).slice(2, 16).toUpperCase()
 
-		                        logger.info("Adding contract " + contentFilePath)
+		                        logger.debug("Adding contract " + contentFilePath)
     
                                 contractsORESContent[contractHash] = entityContent.Metadata.Id // Add the contract to the ORES
     
@@ -351,7 +366,7 @@ async function stageAllMods() {
     
                                 var rpkgOfFile = await rpkgInstance.getRPKGOfHash(path.basename(contentFile).split(".")[0])
 
-                                logger.info("Applying JSON patch " + contentFilePath)
+                                logger.debug("Applying JSON patch " + contentFilePath)
 
                                 await extractOrCopyToTemp(rpkgOfFile, path.basename(contentFile).split(".")[0], "JSON") // Extract the JSON to temp
     
