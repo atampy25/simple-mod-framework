@@ -63,6 +63,16 @@ process.on('unhandledRejection', (err, origin) => {
     cleanExit()
 })
 
+function hexflip(input) {
+    var output = ""
+
+    for (var i = input.length; i > 0 / 2; i = i -2) {
+        output += input.substr(i-2, 2)
+    }
+
+    return output
+}
+
 async function stageAllMods() {
     console.time("StageAllMods")
 
@@ -540,6 +550,33 @@ async function stageAllMods() {
                             text: string[1]
                         })
                     }
+                }
+            }
+
+            if (manifest.localisedLines) {
+                for (let lineHash of Object.keys(manifest.localisedLines)) {
+                    fs.ensureDirSync(path.join(process.cwd(), "staging", "chunk0"))
+                    
+                    fs.writeFileSync(path.join(process.cwd(), "staging", "chunk0", lineHash + ".LINE"), Buffer.from(hexflip(crc32(manifest.localisedLines[lineHash].toUpperCase()).toString(16)) + "00", "hex")) // Create the LINE file
+                    
+                    fs.writeFileSync(path.join(process.cwd(), "staging", "chunk0", lineHash + ".LINE.meta.JSON"), JSON.stringify({ // Create its meta
+                        "hash_value": lineHash,
+                        "hash_offset": 163430439,
+                        "hash_size": 2147483648,
+                        "hash_resource_type": "LINE",
+                        "hash_reference_table_size": 13,
+                        "hash_reference_table_dummy": 0,
+                        "hash_size_final": 5,
+                        "hash_size_in_memory": 4294967295,
+                        "hash_size_in_video_memory": 4294967295,
+                        "hash_reference_data": [
+                            {
+                                "hash": "00F5817876E691F1", // localisedLines only supports localisation key
+                                "flag": "1F"
+                            }
+                        ]
+                    }))
+                    await rpkgInstance.callFunction(`-json_to_hash_meta "${path.join(process.cwd(), "staging", "chunk0", lineHash + ".LINE.meta.JSON")}"`) // Rebuild the meta
                 }
             }
         }

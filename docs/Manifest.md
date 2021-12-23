@@ -39,7 +39,7 @@ Each mod contains a manifest. Manifests have the following format:
 			"japanese": {}
 		}
 	},
-	"localisedLines": { // Allows you to link specific lines to a file for use in certain filetypes - Can be omitted -------------------- NOT IMPLEMENTED YET
+	"localisedLines": { // Allows you to link specific lines to a file for use in certain filetypes (like entities) - Can be omitted
 		"00123456789ABCDE": "UI_THEBESTMOD"
 	},
 	"packagedefinition": [ // Can be omitted
