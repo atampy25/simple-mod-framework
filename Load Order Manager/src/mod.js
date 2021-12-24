@@ -212,7 +212,7 @@ async function refreshMods() {
 																<i class="fas fa-arrows-alt" slot="icon"></i>
 															</neo-button>
 														</div>
-														<div class="float-left">
+														<div class="float-left" style="max-width: 70%">
 															<div class="mb-2">
 																<h3 class="font-semibold text-xl inline"><img src="frameworkMod.png" class="w-8 inline align-middle">  <span class="align-middle">${sanitise(modManifest.name)} <span class="font-light">by ${modManifest.authors.map(a=>sanitise(a)).join(", ")}</span></span></h3><br>
 															</div>
@@ -229,7 +229,7 @@ async function refreshMods() {
 																<i class="fas fa-arrows-alt" slot="icon"></i>
 															</neo-button>
 														</div>
-														<div class="float-left">
+														<div class="float-left" style="max-width: 70%">
 															<div class="mb-2">
 																<h3 class="font-semibold text-xl inline"><img src="rpkgMod.png" class="w-8 inline align-middle">  <span class="align-middle">${modFolder}</span></h3><br>
 															</div>
@@ -248,7 +248,7 @@ async function refreshMods() {
 																<i class="fas fa-plus" slot="icon"></i>
 															</neo-button>
 														</div>
-														<div class="float-left">
+														<div class="float-left" style="max-width: 80%">
 															<div class="mb-2">
 																<h3 class="font-semibold text-xl inline"><img src="frameworkMod.png" class="w-8 inline align-middle">  <span class="align-middle">${sanitise(modManifest.name)} <span class="font-light">by ${modManifest.authors.map(a=>sanitise(a)).join(", ")}</span></span></h3><br>
 															</div>
@@ -262,7 +262,7 @@ async function refreshMods() {
 																<i class="fas fa-plus" slot="icon"></i>
 															</neo-button>
 														</div>
-														<div class="float-left">
+														<div class="float-left" style="max-width: 80%">
 															<div class="mb-2">
 																<h3 class="font-semibold text-xl inline"><img src="rpkgMod.png" class="w-8 inline align-middle">  <span class="align-middle">${modFolder}</span></h3><br>
 															</div>
