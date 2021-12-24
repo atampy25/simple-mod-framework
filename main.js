@@ -33,6 +33,7 @@ const semver = require('semver')
 const klaw = require('klaw-sync')
 const rfc6902 = require('rfc6902')
 const chalk = require('chalk')
+const luxon = require('luxon')
 
 require("clarify")
 
@@ -113,7 +114,7 @@ async function extractOrCopyToTemp(rpkgOfFile, file, type, stagingChunk = "chunk
 }
 
 async function stageAllMods() {
-    console.time("StageAllMods")
+    let startedDate = luxon.DateTime.now()
 
     await rpkgInstance.waitForInitialised()
 
@@ -387,6 +388,25 @@ async function stageAllMods() {
                                 fs.writeFileSync(path.join(process.cwd(), "temp", rpkgOfFile, "JSON", path.basename(contentFile).split(".")[0] + ".JSON"), JSON.stringify(fileContent))
                                 fs.copyFileSync(path.join(process.cwd(), "temp", rpkgOfFile, "JSON", path.basename(contentFile).split(".")[0] + ".JSON"), path.join(process.cwd(), "staging", "chunk0", path.basename(contentFile).split(".")[0] + ".JSON"))
                                 fs.copyFileSync(path.join(process.cwd(), "temp", rpkgOfFile, "JSON", path.basename(contentFile).split(".")[0] + ".JSON.meta"), path.join(process.cwd(), "staging", "chunk0", path.basename(contentFile).split(".")[0] + ".JSON.meta"))
+                                break;
+                            case "texture.tga":
+                                logger.debug("Converting texture " + contentFilePath)
+                                if (path.basename(contentFile).split(".")[0].split("~").length > 1) { // TEXT/TEXD
+                                    fs.copyFileSync(contentFilePath, path.join(process.cwd(), "temp", "texture.tga"))
+                                    fs.copyFileSync(contentFilePath + ".meta", path.join(process.cwd(), "temp", "texture.tga.tonymeta"))
+                                    
+                                    child_process.execSync(`"Third-Party\\HMTextureTools" rebuild H3 "${path.join(process.cwd(), "temp", "texture.tga")}" texture-rebuilt --rebuildboth`) // Rebuild texture to TEXT/TEXD
+                                    
+                                    fs.copyFileSync(path.join(process.cwd(), "temp", "texture-rebuilt.TEXT"), path.join(process.cwd(), "staging", chunkFolder, path.basename(contentFile).split(".")[0].split("~")[0] + ".TEXT"))
+                                    fs.copyFileSync(path.join(process.cwd(), "temp", "texture-rebuilt.TEXD"), path.join(process.cwd(), "staging", chunkFolder, path.basename(contentFile).split(".")[0].split("~")[1] + ".TEXD"))
+                                } else { // TEXT only
+                                    fs.copyFileSync(contentFilePath, path.join(process.cwd(), "temp", "texture.tga"))
+                                    fs.copyFileSync(contentFilePath + ".meta", path.join(process.cwd(), "temp", "texture.tga.tonymeta"))
+                                    
+                                    child_process.execSync(`"Third-Party\\HMTextureTools" rebuild H3 "${path.join(process.cwd(), "temp", "texture.tga")}" texture-rebuilt.TEXT`) // Rebuild texture to TEXT only
+                                    
+                                    fs.copyFileSync(path.join(process.cwd(), "temp", "texture-rebuilt.TEXT"), path.join(process.cwd(), "staging", chunkFolder, path.basename(contentFile).split(".")[0] + ".TEXT"))
+                                }
                                 break;
                             default:
                                 fs.copyFileSync(contentFilePath, path.join(process.cwd(), "staging", chunkFolder, path.basename(contentFile))) // Copy the file to the staging directory
@@ -734,7 +754,7 @@ async function stageAllMods() {
             "chineseTraditional": "tc",
             "japanese": "jp"
         }
-        
+
         try {
             await promisify(emptyFolder)("temp", true)
         } catch {}
@@ -872,9 +892,11 @@ async function stageAllMods() {
         await promisify(emptyFolder)("temp", true)
     } catch {}
 
-    console.timeEnd("StageAllMods")
-
-    logger.info("Deployed all mods successfully.")
+    if (process.argv[2]) {
+        logger.info("Deployed all mods successfully.")
+    } else {
+        logger.info("Done " + luxon.DateTime.now().plus({seconds: (luxon.DateTime.now() - startedDate)}).toRelative() + ".")
+    }
 
     cleanExit()
 }
