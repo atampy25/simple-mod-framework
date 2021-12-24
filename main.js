@@ -403,7 +403,7 @@ async function stageAllMods() {
                                     fs.copyFileSync(contentFilePath, path.join(process.cwd(), "temp", "texture.tga"))
                                     fs.copyFileSync(contentFilePath + ".meta", path.join(process.cwd(), "temp", "texture.tga.tonymeta"))
                                     
-                                    child_process.execSync(`"Third-Party\\HMTextureTools" rebuild H3 "${path.join(process.cwd(), "temp", "texture.tga")}" texture-rebuilt --rebuildboth`) // Rebuild texture to TEXT/TEXD
+                                    child_process.execSync(`"Third-Party\\HMTextureTools" rebuild H3 "${path.join(process.cwd(), "temp", "texture.tga")}" temp\\texture-rebuilt --rebuildboth`) // Rebuild texture to TEXT/TEXD
                                     
                                     fs.copyFileSync(path.join(process.cwd(), "temp", "texture-rebuilt.TEXT"), path.join(process.cwd(), "staging", chunkFolder, path.basename(contentFile).split(".")[0].split("~")[0] + ".TEXT"))
                                     fs.copyFileSync(path.join(process.cwd(), "temp", "texture-rebuilt.TEXD"), path.join(process.cwd(), "staging", chunkFolder, path.basename(contentFile).split(".")[0].split("~")[1] + ".TEXD"))
@@ -411,7 +411,7 @@ async function stageAllMods() {
                                     fs.copyFileSync(contentFilePath, path.join(process.cwd(), "temp", "texture.tga"))
                                     fs.copyFileSync(contentFilePath + ".meta", path.join(process.cwd(), "temp", "texture.tga.tonymeta"))
                                     
-                                    child_process.execSync(`"Third-Party\\HMTextureTools" rebuild H3 "${path.join(process.cwd(), "temp", "texture.tga")}" texture-rebuilt.TEXT`) // Rebuild texture to TEXT only
+                                    child_process.execSync(`"Third-Party\\HMTextureTools" rebuild H3 "${path.join(process.cwd(), "temp", "texture.tga")}" temp\\texture-rebuilt.TEXT`) // Rebuild texture to TEXT only
                                     
                                     fs.copyFileSync(path.join(process.cwd(), "temp", "texture-rebuilt.TEXT"), path.join(process.cwd(), "staging", chunkFolder, path.basename(contentFile).split(".")[0] + ".TEXT"))
                                 }
