@@ -1,22 +1,10 @@
 {
+	"version": "1.0.0",
+	"id": "Atampy26.Focus",
 	"name": "Focus",
-	"description": "It is a mod",
+	"description": "Enables the Marksman perk on all weapons, allowing you to hold Shift to slow down time.",
 	"authors": ["Atampy26"],
 	"contentFolder": "content",
-	"blobsFolder": "blobs",
-	"localisation": {
-		"english": {},
-		"french": {},
-		"italian": {},
-		"german": {},
-		"spanish": {},
-		"russian": {},
-		"chineseSimplified": {},
-		"chineseTraditional": {},
-		"japanese": {}
-	},
-	"packagedefinition": [],
-	"runtimePackages": [],
-	"modVersion": 1,
-	"frameworkVersion": 0.2
+	"frameworkVersion": "1.0.0",
+	"loadAfter": ["Atampy26.EnhancedAutosave"]
 }

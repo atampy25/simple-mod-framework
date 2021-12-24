@@ -348,6 +348,70 @@ async function deployMods() {
 			Swal.showLoading()
 
 			setTimeout(() => {
+				var config = json5.parse(fs.readFileSync("../config.json"))
+
+				console.log(`Sorting mods`)
+
+				let doAnotherCycle = true
+				let cycle = 0
+				while (doAnotherCycle && cycle < 100) {
+					cycle ++
+					doAnotherCycle = false
+
+					console.log(`Cycle ${cycle}:`)
+
+					let modsToSort = JSON.parse(JSON.stringify(config.loadOrder))
+
+					modSorting:
+					while (modsToSort.length) {
+						for (let mod of modsToSort) {
+							let modFolder = !(fs.existsSync(path.join("..", "Mods", mod)) && !fs.existsSync(path.join("..", "Mods", mod, "manifest.json")) && klaw(path.join("..", "Mods", mod)).filter(a=>a.stats.size > 0).map(a=>a.path).some(a=>a.endsWith(".rpkg"))) // Mod is not an RPKG mod
+											? fs.readdirSync(path.join("..", "Mods")).find(a=>fs.existsSync(path.join("..", "Mods", a, "manifest.json")) && json5.parse(String(fs.readFileSync(path.join("..", "Mods", a, "manifest.json")))).id == mod) // Find mod by ID
+											: mod // Mod is an RPKG mod, use folder name
+							
+							if (fs.existsSync(path.join("..", "Mods", modFolder, "manifest.json"))) {
+								let modManifest = json5.parse(fs.readFileSync(path.join("..", "Mods", modFolder, "manifest.json")))
+
+								if (modManifest.loadBefore)
+								for (let modToLoadBefore of modManifest.loadBefore) { // Move the mod to just before where the other mod is
+									if (config.loadOrder.includes(modToLoadBefore) && config.loadOrder.indexOf(modToLoadBefore) < config.loadOrder.indexOf(mod)) {
+										if (config.loadOrder.indexOf(modToLoadBefore) - 1 == 0) {
+											config.loadOrder = config.loadOrder.filter(a=>a!=mod)
+											config.loadOrder.unshift(mod)
+										} else {
+											config.loadOrder.splice(config.loadOrder.indexOf(modToLoadBefore) - 1, 0, config.loadOrder.splice(config.loadOrder.indexOf(mod), 1)[0]);
+										}
+										console.log(`Moved ${mod} to before ${modToLoadBefore}`, config.loadOrder)
+										modsToSort = modsToSort.filter(a=>a!=mod)
+										doAnotherCycle = true
+										continue modSorting
+									}
+								}
+
+								if (modManifest.loadAfter)
+								for (let modToLoadAfter of modManifest.loadAfter) { // Move the mod to just after where the other mod is
+									if (config.loadOrder.includes(modToLoadAfter) && config.loadOrder.indexOf(modToLoadAfter) > config.loadOrder.indexOf(mod)) {
+										config.loadOrder.splice(config.loadOrder.indexOf(modToLoadAfter) + 1, 0, config.loadOrder.splice(config.loadOrder.indexOf(mod), 1)[0]);
+										console.log(`Moved ${mod} to after ${modToLoadAfter}`, config.loadOrder)
+										modsToSort = modsToSort.filter(a=>a!=mod)
+										doAnotherCycle = true
+										continue modSorting
+									}
+								}
+							}
+
+							modsToSort = modsToSort.filter(a=>a!=mod)
+							continue modSorting
+						}
+					}
+				}
+
+				if (cycle < 100) {
+					fs.writeFileSync("../config.json", json5.stringify(config))
+				} else {
+					showMessage("Dependency cycle", "The framework couldn't sort your mods! Ask the developer of whichever mod you most recently installed to investigate this. Also, report this to Atampy26 on Hitman Forum or Discord.", "error")
+				}
+
 				let deployProcess = child_process.spawn(path.join(process.cwd(), "..", "Deploy.exe"), ["consoleLog"], { // any arguments will disable nicer logging
 					cwd: '..'
 				})

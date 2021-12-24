@@ -1,22 +1,10 @@
 {
+	"version": "1.0.0",
+	"id": "Atampy26.RealisticAI",
 	"name": "Realistic AI",
-	"description": "It is a mod",
+	"description": "Makes the AI smarter, more realistic and more attentive in Master mode.",
 	"authors": ["Atampy26"],
 	"contentFolder": "content",
-	"blobsFolder": "blobs",
-	"localisation": {
-		"english": {},
-		"french": {},
-		"italian": {},
-		"german": {},
-		"spanish": {},
-		"russian": {},
-		"chineseSimplified": {},
-		"chineseTraditional": {},
-		"japanese": {}
-	},
-	"packagedefinition": [],
-	"runtimePackages": [],
-	"modVersion": 1,
-	"frameworkVersion": 0.2
+	"frameworkVersion": "1.0.0",
+	"loadAfter": ["Atampy26.Focus"]
 }

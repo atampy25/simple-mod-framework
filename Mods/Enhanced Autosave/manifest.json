@@ -1,0 +1,10 @@
+{
+	"version": "1.0.0",
+	"id": "Atampy26.EnhancedAutosave",
+	"name": "Enhanced Autosave",
+	"description": "Autosaves to the first manual slot every 30 seconds and loads whenever 47 dies. Does not replace the game's usual autosave system.",
+	"authors": ["Atampy26"],
+	"contentFolder": "content",
+	"frameworkVersion": "1.0.0",
+	"loadAfter": ["Atampy26.RealisticAI"]
+}

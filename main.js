@@ -209,6 +209,14 @@ async function stageAllMods() {
                 logger.error(`Mod ${manifest.name} is designed for a newer version of the framework and is likely incompatible!`)
             }
 
+            if (manifest.requirements) {
+                for (let req of manifest.requirements) {
+                    if (!config.loadOrder.includes(req)) {
+                        logger.error(`Mod ${manifest.name} is missing requirement ${req}!`)
+                    }
+                }
+            }
+
             /* ---------------------------------------------------------------------------------------------- */
             /*                                             Content                                            */
             /* ---------------------------------------------------------------------------------------------- */
