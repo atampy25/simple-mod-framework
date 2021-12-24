@@ -199,67 +199,75 @@ async function refreshMods() {
 	if (fs.readdirSync("../Mods").length > 0) {
 		for (let mod of config.loadOrder) {
 			let modFolder = !(fs.existsSync(path.join("..", "Mods", mod)) && !fs.existsSync(path.join("..", "Mods", mod, "manifest.json")) && klaw(path.join("..", "Mods", mod)).filter(a=>a.stats.size > 0).map(a=>a.path).some(a=>a.endsWith(".rpkg"))) // Mod is not an RPKG mod
-							? fs.readdirSync(path.join(process.cwd(), "Mods")).find(a=>fs.existsSync(path.join(process.cwd(), "Mods", a, "manifest.json")) && json5.parse(String(fs.readFileSync(path.join(process.cwd(), "Mods", a, "manifest.json")))).id == mod) // Find mod by ID
+							? fs.readdirSync(path.join("..", "Mods")).find(a=>fs.existsSync(path.join("..", "Mods", a, "manifest.json")) && json5.parse(String(fs.readFileSync(path.join("..", "Mods", a, "manifest.json")))).id == mod) // Find mod by ID
 							: mod // Mod is an RPKG mod, use folder name
 			if (fs.existsSync(path.join("..", "Mods", modFolder, "manifest.json"))) {
 				var modManifest = json5.parse(fs.readFileSync(path.join("..", "Mods", modFolder, "manifest.json")))
-				$("#enabledMods")[0].innerHTML += `<div class="p-8 bg-gray-900 w-full shadow-xl rounded-md text-white">
-														<div class="mb-2">
-															<h3 class="font-semibold text-xl inline"><img src="frameworkMod.png" class="w-8 inline align-middle">  <span class="align-middle">${sanitise(modManifest.name)} <span class="font-light">by ${modManifest.authors.map(a=>sanitise(a)).join(", ")}</span></span></h3><br>
+				$("#enabledMods")[0].innerHTML += `<div class="p-8 bg-gray-900 w-full flow-root shadow-xl rounded-md text-white">
+														<div class="float-left">
+															<div class="mb-2">
+																<h3 class="font-semibold text-xl inline"><img src="frameworkMod.png" class="w-8 inline align-middle">  <span class="align-middle">${sanitise(modManifest.name)} <span class="font-light">by ${modManifest.authors.map(a=>sanitise(a)).join(", ")}</span></span></h3><br>
+															</div>
+															<p>${sanitise(modManifest.description)}</p>
 														</div>
-														<div>
-															<p>${sanitise(modManifest.description)}</p><br>
+														<div class="float-right">
+															<neo-button small label="Disable" gradientFrom="from-rose-400" gradientTo="to-red-500" onclick="disableMod('${modFolder}')" style="display: inline">
+																<i class="fas fa-times" slot="icon"></i>
+															</neo-button>
+															<neo-button small label="Move" gradientFrom="from-fuchsia-400" gradientTo="to-violet-400" onclick="moveMod('${modFolder}')" style="display: inline">
+																<i class="fas fa-arrows-alt" slot="icon"></i>
+															</neo-button>
 														</div>
-														<neo-button small label="Disable" gradientFrom="from-rose-400" gradientTo="to-red-500" onclick="disableMod('${modFolder}')" style="display: inline">
-															<i class="fas fa-times" slot="icon"></i>
-														</neo-button>
-														<neo-button small label="Move" gradientFrom="from-fuchsia-400" gradientTo="to-violet-400" onclick="moveMod('${modFolder}')" style="display: inline">
-															<i class="fas fa-arrows-alt" slot="icon"></i>
-														</neo-button>
 													</div><br>`
 			} else {
-				$("#enabledMods")[0].innerHTML += `<div class="p-8 bg-gray-900 w-full shadow-xl rounded-md text-white">
-														<div class="mb-2">
-															<h3 class="font-semibold text-xl inline"><img src="rpkgMod.png" class="w-8 inline align-middle">  <span class="align-middle">${modFolder}</span></h3><br>
+				$("#enabledMods")[0].innerHTML += `<div class="p-8 bg-gray-900 w-full flow-root shadow-xl rounded-md text-white">
+														<div class="float-left">
+															<div class="mb-2">
+																<h3 class="font-semibold text-xl inline"><img src="rpkgMod.png" class="w-8 inline align-middle">  <span class="align-middle">${modFolder}</span></h3><br>
+															</div>
+															<p>RPKG-only mod</p>
 														</div>
-														<div>
-															<p>RPKG-only mod</p><br>
+														<div class="float-right">
+															<neo-button small label="Disable" gradientFrom="from-rose-400" gradientTo="to-red-500" onclick="disableMod('${modFolder}')" style="display: inline">
+																<i class="fas fa-times" slot="icon"></i>
+															</neo-button>
+															<neo-button small label="Move" gradientFrom="from-fuchsia-400" gradientTo="to-violet-400" onclick="moveMod('${modFolder}')" style="display: inline">
+																<i class="fas fa-arrows-alt" slot="icon"></i>
+															</neo-button>
 														</div>
-														<neo-button small label="Disable" gradientFrom="from-rose-400" gradientTo="to-red-500" onclick="disableMod('${modFolder}')" style="display: inline">
-															<i class="fas fa-times" slot="icon"></i>
-														</neo-button>
-														<neo-button small label="Move" gradientFrom="from-fuchsia-400" gradientTo="to-violet-400" onclick="moveMod('${modFolder}')" style="display: inline">
-															<i class="fas fa-arrows-alt" slot="icon"></i>
-														</neo-button>
 													</div><br>`
 			}
 		}
 		
-		for (modFolder of fs.readdirSync("../Mods").filter(folder => !config.loadOrder.includes(folder) && (!fs.existsSync(path.join("..", "Mods", folder, "manifest.json")) || !config.loadOrder.includes(json5.parse(String(fs.readFileSync(path.join(process.cwd(), "Mods", folder, "manifest.json")))).id)))) {
+		for (modFolder of fs.readdirSync("../Mods").filter(folder => !config.loadOrder.includes(folder) && (!fs.existsSync(path.join("..", "Mods", folder, "manifest.json")) || !config.loadOrder.includes(json5.parse(String(fs.readFileSync(path.join("..", "Mods", folder, "manifest.json")))).id)))) {
 			if (fs.existsSync(path.join("..", "Mods", modFolder, "manifest.json"))) {
 				var modManifest = json5.parse(fs.readFileSync(path.join("..", "Mods", modFolder, "manifest.json")))
-				$("#availableMods")[0].innerHTML += `<div class="p-8 bg-gray-900 w-full shadow-xl rounded-md text-white">
-														<div class="mb-2">
-															<h3 class="font-semibold text-xl inline"><img src="frameworkMod.png" class="w-8 inline align-middle">  <span class="align-middle">${sanitise(modManifest.name)} <span class="font-light">by ${modManifest.authors.map(a=>sanitise(a)).join(", ")}</span></span></h3><br>
+				$("#availableMods")[0].innerHTML += `<div class="p-8 bg-gray-900 w-full flow-root shadow-xl rounded-md text-white">
+														<div class="float-left">
+															<div class="mb-2">
+																<h3 class="font-semibold text-xl inline"><img src="frameworkMod.png" class="w-8 inline align-middle">  <span class="align-middle">${sanitise(modManifest.name)} <span class="font-light">by ${modManifest.authors.map(a=>sanitise(a)).join(", ")}</span></span></h3><br>
+															</div>
+															<p>${sanitise(modManifest.description)}</p>
 														</div>
-														<div>
-															<p>${sanitise(modManifest.description)}</p><br>
+														<div class="float-right">
+															<neo-button small label="Enable" gradientFrom="from-emerald-400" gradientTo="to-lime-600" onclick="enableMod('${modFolder}')" style="display: inline">
+																<i class="fas fa-plus" slot="icon"></i>
+															</neo-button>
 														</div>
-														<neo-button small label="Enable" gradientFrom="from-emerald-400" gradientTo="to-lime-600" onclick="enableMod('${modFolder}')" style="display: inline">
-															<i class="fas fa-plus" slot="icon"></i>
-														</neo-button>
 													</div><br>`
 			} else {
-				$("#availableMods")[0].innerHTML += `<div class="p-8 bg-gray-900 w-full shadow-xl rounded-md text-white">
-														<div class="mb-2">
-															<h3 class="font-semibold text-xl inline"><img src="rpkgMod.png" class="w-8 inline align-middle">  <span class="align-middle">${modFolder}</span></h3><br>
+				$("#availableMods")[0].innerHTML += `<div class="p-8 bg-gray-900 w-full flow-root shadow-xl rounded-md text-white">
+														<div class="float-left">
+															<div class="mb-2">
+																<h3 class="font-semibold text-xl inline"><img src="rpkgMod.png" class="w-8 inline align-middle">  <span class="align-middle">${modFolder}</span></h3><br>
+															</div>
+															<p>RPKG-only mod</p>
 														</div>
-														<div>
-															<p>RPKG-only mod</p><br>
+														<div class="float-right">
+															<neo-button small label="Enable" gradientFrom="from-emerald-400" gradientTo="to-lime-600" onclick="enableMod('${modFolder}')" style="display: inline">
+																<i class="fas fa-plus" slot="icon"></i>
+															</neo-button>
 														</div>
-														<neo-button small label="Enable" gradientFrom="from-emerald-400" gradientTo="to-lime-600" onclick="enableMod('${modFolder}')" style="display: inline">
-															<i class="fas fa-plus" slot="icon"></i>
-														</neo-button>
 													</div><br>`
 			}
 		}
@@ -282,7 +290,7 @@ function showMessage(title, message, icon) {
 async function enableMod(mod) {
 	var config = json5.parse(fs.readFileSync("../config.json"))
 
-	config.loadOrder.push(fs.existsSync(path.join(process.cwd(), "Mods", mod, "manifest.json")) ? json5.parse(String(fs.readFileSync(path.join(process.cwd(), "Mods", mod, "manifest.json")))).id : mod)
+	config.loadOrder.push(fs.existsSync(path.join("..", "Mods", mod, "manifest.json")) ? json5.parse(String(fs.readFileSync(path.join("..", "Mods", mod, "manifest.json")))).id : mod)
 
 	fs.writeFileSync("../config.json", json5.stringify(config))
 
@@ -292,7 +300,7 @@ async function enableMod(mod) {
 async function disableMod(mod) {
 	var config = json5.parse(fs.readFileSync("../config.json"))
 
-	config.loadOrder = config.loadOrder.filter(a => a != (fs.existsSync(path.join(process.cwd(), "Mods", mod, "manifest.json")) ? json5.parse(String(fs.readFileSync(path.join(process.cwd(), "Mods", mod, "manifest.json")))).id : mod))
+	config.loadOrder = config.loadOrder.filter(a => a != (fs.existsSync(path.join("..", "Mods", mod, "manifest.json")) ? json5.parse(String(fs.readFileSync(path.join("..", "Mods", mod, "manifest.json")))).id : mod))
 
 	fs.writeFileSync("../config.json", json5.stringify(config))
 
@@ -318,7 +326,7 @@ async function moveMod(modID) {
 		var modIndex = 0
 		for (let mod of config.loadOrder) {
 			if ((!(fs.existsSync(path.join("..", "Mods", mod)) && !fs.existsSync(path.join("..", "Mods", mod, "manifest.json")) && klaw(path.join("..", "Mods", mod)).filter(a=>a.stats.size > 0).map(a=>a.path).some(a=>a.endsWith(".rpkg"))) // Mod is not an RPKG mod
-				? fs.readdirSync(path.join(process.cwd(), "Mods")).find(a=>fs.existsSync(path.join(process.cwd(), "Mods", a, "manifest.json")) && json5.parse(String(fs.readFileSync(path.join(process.cwd(), "Mods", a, "manifest.json")))).id == mod) // Find mod by ID
+				? fs.readdirSync(path.join("..", "Mods")).find(a=>fs.existsSync(path.join("..", "Mods", a, "manifest.json")) && json5.parse(String(fs.readFileSync(path.join("..", "Mods", a, "manifest.json")))).id == mod) // Find mod by ID
 				: mod) == modID) { break }
 			modIndex += 1
 		}
