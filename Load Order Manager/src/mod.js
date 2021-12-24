@@ -8,6 +8,7 @@ var remote = require('@electron/remote')
 var semver = require('semver');
 var downloadFile = require("async-get-file");
 var json5 = require("json5");
+var klaw = require("klaw-sync");
 
 window.$ = window.jQuery = require('jquery');
 
@@ -196,7 +197,10 @@ async function refreshMods() {
 	var config = json5.parse(fs.readFileSync("../config.json"))
 	
 	if (fs.readdirSync("../Mods").length > 0) {
-		for (modFolder of config.loadOrder) {
+		for (let mod of config.loadOrder) {
+			let modFolder = !(fs.existsSync(path.join("..", "Mods", mod)) && !fs.existsSync(path.join("..", "Mods", mod, "manifest.json")) && klaw(path.join("..", "Mods", mod)).filter(a=>a.stats.size > 0).map(a=>a.path).some(a=>a.endsWith(".rpkg"))) // Mod is not an RPKG mod
+							? fs.readdirSync(path.join(process.cwd(), "Mods")).find(a=>fs.existsSync(path.join(process.cwd(), "Mods", a, "manifest.json")) && json5.parse(String(fs.readFileSync(path.join(process.cwd(), "Mods", a, "manifest.json")))).id == mod) // Find mod by ID
+							: mod // Mod is an RPKG mod, use folder name
 			if (fs.existsSync(path.join("..", "Mods", modFolder, "manifest.json"))) {
 				var modManifest = json5.parse(fs.readFileSync(path.join("..", "Mods", modFolder, "manifest.json")))
 				$("#enabledMods")[0].innerHTML += `<div class="p-8 bg-gray-900 w-full shadow-xl rounded-md text-white">
@@ -231,7 +235,7 @@ async function refreshMods() {
 			}
 		}
 		
-		for (modFolder of fs.readdirSync("../Mods").filter(folder => !config.loadOrder.includes(folder))) {
+		for (modFolder of fs.readdirSync("../Mods").filter(folder => !config.loadOrder.includes(folder) && (!fs.existsSync(path.join("..", "Mods", folder, "manifest.json")) || !config.loadOrder.includes(json5.parse(String(fs.readFileSync(path.join(process.cwd(), "Mods", folder, "manifest.json")))).id)))) {
 			if (fs.existsSync(path.join("..", "Mods", modFolder, "manifest.json"))) {
 				var modManifest = json5.parse(fs.readFileSync(path.join("..", "Mods", modFolder, "manifest.json")))
 				$("#availableMods")[0].innerHTML += `<div class="p-8 bg-gray-900 w-full shadow-xl rounded-md text-white">
@@ -278,7 +282,7 @@ function showMessage(title, message, icon) {
 async function enableMod(mod) {
 	var config = json5.parse(fs.readFileSync("../config.json"))
 
-	config.loadOrder.push(mod)
+	config.loadOrder.push(fs.existsSync(path.join(process.cwd(), "Mods", mod, "manifest.json")) ? json5.parse(String(fs.readFileSync(path.join(process.cwd(), "Mods", mod, "manifest.json")))).id : mod)
 
 	fs.writeFileSync("../config.json", json5.stringify(config))
 
@@ -288,7 +292,7 @@ async function enableMod(mod) {
 async function disableMod(mod) {
 	var config = json5.parse(fs.readFileSync("../config.json"))
 
-	config.loadOrder = config.loadOrder.filter(a => a != mod)
+	config.loadOrder = config.loadOrder.filter(a => a != (fs.existsSync(path.join(process.cwd(), "Mods", mod, "manifest.json")) ? json5.parse(String(fs.readFileSync(path.join(process.cwd(), "Mods", mod, "manifest.json")))).id : mod))
 
 	fs.writeFileSync("../config.json", json5.stringify(config))
 
@@ -312,8 +316,10 @@ async function moveMod(modID) {
 
 	if (index !== null && index != "" && String(parseInt(index) - 1) != "NaN" && parseInt(index) - 1 >= 0) {
 		var modIndex = 0
-		for (mod of config.loadOrder) {
-			if (mod == modID) { break }
+		for (let mod of config.loadOrder) {
+			if ((!(fs.existsSync(path.join("..", "Mods", mod)) && !fs.existsSync(path.join("..", "Mods", mod, "manifest.json")) && klaw(path.join("..", "Mods", mod)).filter(a=>a.stats.size > 0).map(a=>a.path).some(a=>a.endsWith(".rpkg"))) // Mod is not an RPKG mod
+				? fs.readdirSync(path.join(process.cwd(), "Mods")).find(a=>fs.existsSync(path.join(process.cwd(), "Mods", a, "manifest.json")) && json5.parse(String(fs.readFileSync(path.join(process.cwd(), "Mods", a, "manifest.json")))).id == mod) // Find mod by ID
+				: mod) == modID) { break }
 			modIndex += 1
 		}
 

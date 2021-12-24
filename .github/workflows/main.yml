@@ -27,7 +27,7 @@ jobs:
         uses: actions/cache@v2.1.6
         with:
           path: Load Order Manager/node_modules
-          key: buildCache2v7
+          key: buildCache2v8
          
       - name: Install dependencies
         if: steps.cache.outputs.cache-hit != 'true'

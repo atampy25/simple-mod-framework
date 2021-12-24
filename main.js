@@ -155,6 +155,12 @@ async function stageAllMods() {
     /*                                         Stage all mods                                         */
     /* ---------------------------------------------------------------------------------------------- */
     for (let mod of config.loadOrder) {
+        // NOT Mod folder exists, mod has no manifest, mod has RPKGs (mod is an RPKG-only mod)
+        if (!(fs.existsSync(path.join(process.cwd(), "Mods", mod)) && !fs.existsSync(path.join(process.cwd(), "Mods", mod, "manifest.json")) && klaw(path.join(process.cwd(), "Mods", mod)).filter(a=>a.stats.size > 0).map(a=>a.path).some(a=>a.endsWith(".rpkg")))) {
+            // Find mod with ID in Mods folder, set the current mod to that folder
+            mod = fs.readdirSync(path.join(process.cwd(), "Mods")).find(a=>fs.existsSync(path.join(process.cwd(), "Mods", a, "manifest.json")) && json5.parse(String(fs.readFileSync(path.join(process.cwd(), "Mods", a, "manifest.json")))).id == mod)
+        } // Essentially, if the mod isn't an RPKG mod, it is referenced by its ID, so this finds the mod folder with the right ID
+
         if (!fs.existsSync(path.join(process.cwd(), "Mods", mod, "manifest.json"))) {
             for (let chunkFolder of fs.readdirSync(path.join(process.cwd(), "Mods", mod))) {
                 try {
@@ -186,7 +192,7 @@ async function stageAllMods() {
 
             logger.info("Staging mod: " + manifest.name)
 
-            for (let key of ["name", "description", "authors", "version", "frameworkVersion"]) {
+            for (let key of ["id", "name", "description", "authors", "version", "frameworkVersion"]) {
                 if (typeof manifest[key] == "undefined") {
                     logger.error(`Mod ${manifest.name} is missing manifest field "${key}"!`)
                 }
@@ -728,6 +734,11 @@ async function stageAllMods() {
             "chineseTraditional": "tc",
             "japanese": "jp"
         }
+        
+        try {
+            await promisify(emptyFolder)("temp", true)
+        } catch {}
+        fs.mkdirSync("temp") // Clear the temp directory
 
         for (let locrHash of Object.keys(localisationOverrides)) {
             let localisationFileRPKG = await rpkgInstance.getRPKGOfHash(locrHash)
