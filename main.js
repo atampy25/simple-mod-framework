@@ -892,7 +892,7 @@ async function stageAllMods() {
         await rpkgInstance.callFunction(`-generate_rpkg_from "${path.join(process.cwd(), "staging", stagingChunkFolder)}" -output_path "${path.join(process.cwd(), "staging")}"`)
         fs.copyFileSync(path.join(process.cwd(), "staging", stagingChunkFolder + ".rpkg"), config.outputToSeparateDirectory ? path.join(process.cwd(), "Output", (rpkgTypes[stagingChunkFolder] == "base" ? stagingChunkFolder + ".rpkg" : stagingChunkFolder + "patch200.rpkg")) : path.join(config.runtimePath, (rpkgTypes[stagingChunkFolder] == "base" ? stagingChunkFolder + ".rpkg" : stagingChunkFolder + "patch200.rpkg")))
     }
-    
+
     try {
         await promisify(emptyFolder)("staging", true)
     } catch {}
@@ -903,7 +903,7 @@ async function stageAllMods() {
     if (process.argv[2]) {
         logger.info("Deployed all mods successfully.")
     } else {
-        logger.info("Done " + luxon.DateTime.now().plus({seconds: (luxon.DateTime.now() - startedDate)}).toRelative() + ".")
+        logger.info("Done " + luxon.DateTime.now().plus({milliseconds: (luxon.DateTime.now() - startedDate)}).toRelative() + ".")
     }
 
     cleanExit()

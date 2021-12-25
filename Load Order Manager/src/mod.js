@@ -416,16 +416,12 @@ async function deployMods() {
 					cwd: '..'
 				})
 
-				let output = ""
 				let fullOutput = ""
 			
 				deployProcess.stdout.on("data", (data) => {
-					output += String(data)
 					fullOutput += String(data)
 
-					output = output.split("\n").slice(output.endsWith("\n") ? -2 : -1)[0]
-
-					Swal.getHtmlContainer().querySelector('i').textContent = output.split("\n").slice(output.endsWith("\n") ? -2 : -1)[0]
+					Swal.getHtmlContainer().querySelector('i').textContent = fullOutput.split("\n").slice(fullOutput.endsWith("\n") ? -2 : -1)[0]
 				})
 				
 				deployProcess.on("close", (data) => {
