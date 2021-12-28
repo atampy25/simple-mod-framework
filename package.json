@@ -25,7 +25,9 @@
     "rfc6902": "^4.0.2",
     "semver": "^7.3.5"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "eslint": "^8.5.0"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },

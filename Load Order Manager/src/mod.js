@@ -1,4 +1,4 @@
-var Swal = require("sweetalert2")
+var Swal = require("sweetalert2/dist/sweetalert2")
 var fs = require('fs-extra')
 var path = require('path');
 var child_process = require("child_process");
@@ -205,6 +205,9 @@ async function refreshMods() {
 				var modManifest = json5.parse(fs.readFileSync(path.join("..", "Mods", modFolder, "manifest.json")))
 				$("#enabledMods")[0].innerHTML += `<div class="p-8 bg-gray-900 w-full flow-root shadow-xl rounded-md text-white">
 														<div class="float-right">
+															${modManifest.options ? `<neo-button small label="" gradientFrom="thisisjustsoitworkslmao" gradientTo="bg-gray-800" onclick="modSettings('${modFolder}')" style="display: inline">
+																<i class="fas fa-cog" slot="icon"></i>
+															</neo-button>` : ``}
 															<neo-button small label="Disable" gradientFrom="from-rose-400" gradientTo="to-red-500" onclick="disableMod('${modFolder}')" style="display: inline">
 																<i class="fas fa-times" slot="icon"></i>
 															</neo-button>
@@ -338,6 +341,64 @@ async function moveMod(modID) {
 	fs.writeFileSync("../config.json", json5.stringify(config))
 
 	await refreshMods()
+}
+
+async function modSettings(modFolder) {
+	let manifest = json5.parse(String(fs.readFileSync(path.join("..", "Mods", modFolder, "manifest.json"))))
+
+	let settingsHTML = ``
+
+	let groups = {}
+	for (let option of manifest.options) {
+		if (option.type == "checkbox") {
+			settingsHTML += `<label class="inline-flex items-center mb-2">
+									<input type="checkbox"${json5.parse(fs.readFileSync("../config.json")).modOptions[manifest.id].includes(sanitiseStrongly(option.name.replace(`"`, "").replace(`\\`, ""))) ? ' checked' : ''} class="form-checkbox cursor-pointer h-5 w-5 text-gray-700 bg-white" data-optionName="${sanitiseStrongly(option.name.replace(`"`, "").replace(`\\`, ""))}"><span class="ml-2">${sanitiseStrongly(option.name.replace(`"`, "").replace(`\\`, ""))}</span>
+							</label>`
+		} else if (option.type == "select") {
+			if (!groups[option.group]) { groups[option.group] = [] }
+
+			groups[option.group].push(option.name)
+		}
+	}
+
+	for (let group of Object.keys(groups)) {
+		settingsHTML += `<div class="mb-2">
+							<span class="font-semibold">${sanitiseStrongly(group.replace(`"`, "").replace(`\\`, ""))}</span>`
+		for (let name of groups[group]) {
+			settingsHTML += `<br><label class="inline-flex items-center">
+								<input type="radio"${json5.parse(fs.readFileSync("../config.json")).modOptions[manifest.id].includes(sanitiseStrongly(name.replace(`"`, "").replace(`\\`, ""))) ? ' checked' : ''} class="form-radio" name="${sanitiseStrongly(group.replace(`"`, "").replace(`\\`, ""))}" data-optionName="${sanitiseStrongly(name.replace(`"`, "").replace(`\\`, ""))}">
+								<span class="ml-2">${sanitiseStrongly(name.replace(`"`, "").replace(`\\`, ""))}</span>
+							</label>`
+		}
+		
+		settingsHTML += `</div>`
+	}
+
+	await Swal.fire({
+		title: manifest.name,
+		html: `${manifest.description}<br><div class="text-left mt-4 text-2xl font-semibold">Settings</div><div class="text-left overflow-auto h-64">${settingsHTML}</div>`,
+		customClass: {
+			htmlContainer: 'text-center'
+		},
+		width: '36rem',
+		showCancelButton: false,
+		focusConfirm: false,
+		confirmButtonText: 'Save',
+		willClose: async function(popup) {
+			let enabledOptions = []
+			for (let input of popup.querySelectorAll("input")) {
+				if (input.checked) {
+					enabledOptions.push(input.getAttribute("data-optionName"))
+				}
+			}
+
+			let config = json5.parse(fs.readFileSync("../config.json"))
+
+			config.modOptions[manifest.id] = enabledOptions
+		
+			fs.writeFileSync("../config.json", json5.stringify(config))
+		}
+	})
 }
 
 async function deployMods() {
@@ -550,5 +611,11 @@ execute()
 function sanitise(html) {
 	return sanitizeHtml(html, {
 		allowedTags: [ 'b', 'i', 'em', 'strong', 'br']
+	});
+}
+
+function sanitiseStrongly(html) {
+	return sanitizeHtml(html, {
+		allowedTags: []
 	});
 }

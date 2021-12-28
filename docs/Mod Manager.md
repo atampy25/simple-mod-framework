@@ -36,3 +36,5 @@ MyModularMod.framework.zip
 │  ├─ manifest.json
 │  ├─ ...
 ```
+
+If you have lots of settings or want a better experience you should use mod options (see Manifest).
