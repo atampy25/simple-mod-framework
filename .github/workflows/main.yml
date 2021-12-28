@@ -92,15 +92,15 @@ jobs:
 
       - name: 'Get latest tag'
         id: latestTag      
-        uses: "WyriHaximus/github-action-get-latest-tag@v1"
+        uses: "WyriHaximus/github-action-get-previous-tag@v1"
         with:
           fallback: unknown
           
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
-          name: Latest ${{ steps.latestTag.outputs.tag }}
-          body: Generated automatically on commit from `${{ github.event.head_commit.message }}`.
-          tag_name: ${{ github.sha }}
+          name: ${{ steps.latestTag.outputs.tag }}
+          body: "Generated automatically on commit:  `${{ github.event.head_commit.message }}`."
+          tag_name: ${{ steps.latestTag.outputs.tag }}
           repository: hitman-resources/simple-mod-framework
           files: dist/Release.zip
