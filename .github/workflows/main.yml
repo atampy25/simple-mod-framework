@@ -4,8 +4,6 @@ on:
   push:
     branches: [ main ]
 
-  pull_request:
-
   workflow_dispatch:
 
 jobs:
@@ -91,12 +89,18 @@ jobs:
         with:
           filename: Release.zip
           directory: dist
+
+      - name: 'Get latest tag'
+        id: latestTag      
+        uses: "WyriHaximus/github-action-get-previous-tag@v1"
+        with:
+          fallback: unknown
           
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
-          name: Bleeding edge release
-          body: Generated automatically on commit.
-          tag_name: aaaaaaaaaa
+          name: ${{ steps.latestTag.outputs.tag }}
+          body: "Generated automatically on commit:  `${{ github.event.head_commit.message }}`."
+          tag_name: ${{ steps.latestTag.outputs.tag }}
           repository: hitman-resources/simple-mod-framework
           files: dist/Release.zip
