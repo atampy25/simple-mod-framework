@@ -4,7 +4,7 @@
   "description": "",
   "main": "main.js",
   "dependencies": {
-    "chalk": "^4.1.2",
+    "chalk": "^5.0.0",
     "clarify": "^2.1.0",
     "decimal.js": "^10.3.1",
     "empty-folder": "^2.0.4",
