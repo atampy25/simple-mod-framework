@@ -87,6 +87,7 @@ Each mod contains a manifest. Manifests have the following format:
 	"options": [ // Settings for the mod that can be enabled/disabled in the GUI - Can be omitted if the mod doesn't need to provide settings
 		{
 			"name": "Use additional content",
+			"tooltip": "Some additional content to use", // Not required, wil display a tooltip to the right of the input when the user hovers over it in the GUI
 			"type": "checkbox", // Checkbox type means a checkbox to use the variation or not
 			"contentFolder": "additional content", // Options can include all fields in the above section, and do not override them (so both content folders are used)
 			"requirements": [
@@ -95,6 +96,7 @@ Each mod contains a manifest. Manifests have the following format:
 		},
 		{
 			"name": "Lowercase text",
+			"tooltip": "quiet text",
 			"type": "select", // Select type means a select box (labelled with whatever group is set as); only one option of the group can be selected and used
 			"group": "Use lowercase or uppercase text",
 			"localisation": {
@@ -111,10 +113,14 @@ Each mod contains a manifest. Manifests have the following format:
 				"chineseSimplified": {},
 				"chineseTraditional": {},
 				"japanese": {}
-			}
+			},
+			"requirements": [
+				"Atampy26.ReadableUI" // As an example, lowercase text will only work with Readable UI installed because by default the UI is capitalised
+			]
 		},
 		{
 			"name": "Uppercase text",
+			"tooltip": "L O U D text",
 			"type": "select",
 			"group": "Use lowercase or uppercase text",
 			"localisation": {

@@ -346,28 +346,34 @@ async function moveMod(modID) {
 async function modSettings(modFolder) {
 	let manifest = json5.parse(String(fs.readFileSync(path.join("..", "Mods", modFolder, "manifest.json"))))
 
+	let config = json5.parse(fs.readFileSync("../config.json"))
+
+	if (!config.modOptions[manifest.id]) { config.modOptions[manifest.id] = [] }
+
+	fs.writeFileSync("../config.json", json5.stringify(config))
+
 	let settingsHTML = ``
 
 	let groups = {}
 	for (let option of manifest.options) {
 		if (option.type == "checkbox") {
 			settingsHTML += `<label class="inline-flex items-center mb-2">
-									<input type="checkbox"${json5.parse(fs.readFileSync("../config.json")).modOptions[manifest.id].includes(sanitiseStrongly(option.name.replace(`"`, "").replace(`\\`, ""))) ? ' checked' : ''} class="form-checkbox cursor-pointer h-5 w-5 text-gray-700 bg-white" data-optionName="${sanitiseStrongly(option.name.replace(`"`, "").replace(`\\`, ""))}"><span class="ml-2">${sanitiseStrongly(option.name.replace(`"`, "").replace(`\\`, ""))}</span>
+									<input type="checkbox"${json5.parse(fs.readFileSync("../config.json")).modOptions[manifest.id].includes(sanitiseStrongly(option.name.replace(`"`, "").replace(`\\`, ""))) ? ' checked' : ''} class="form-checkbox cursor-pointer h-5 w-5 text-gray-700 bg-white" data-optionName="${sanitiseStrongly(option.name.replace(`"`, "").replace(`\\`, ""))}"><span class="ml-2" data-optionName="${sanitiseStrongly(option.name.replace(`"`, "").replace(`\\`, ""))}">${sanitiseStrongly(option.name.replace(`"`, "").replace(`\\`, ""))}</span>
 							</label>`
 		} else if (option.type == "select") {
 			if (!groups[option.group]) { groups[option.group] = [] }
 
-			groups[option.group].push(option.name)
+			groups[option.group].push([option.name, option.tooltip])
 		}
 	}
 
 	for (let group of Object.keys(groups)) {
 		settingsHTML += `<div class="mb-2">
 							<span class="font-semibold">${sanitiseStrongly(group.replace(`"`, "").replace(`\\`, ""))}</span>`
-		for (let name of groups[group]) {
+		for (let option of groups[group]) {
 			settingsHTML += `<br><label class="inline-flex items-center">
-								<input type="radio"${json5.parse(fs.readFileSync("../config.json")).modOptions[manifest.id].includes(sanitiseStrongly(name.replace(`"`, "").replace(`\\`, ""))) ? ' checked' : ''} class="form-radio" name="${sanitiseStrongly(group.replace(`"`, "").replace(`\\`, ""))}" data-optionName="${sanitiseStrongly(name.replace(`"`, "").replace(`\\`, ""))}">
-								<span class="ml-2">${sanitiseStrongly(name.replace(`"`, "").replace(`\\`, ""))}</span>
+								<input type="radio"${json5.parse(fs.readFileSync("../config.json")).modOptions[manifest.id].includes(sanitiseStrongly(option[0].replace(`"`, "").replace(`\\`, ""))) ? ' checked' : ''} class="form-radio" name="${sanitiseStrongly(group.replace(`"`, "").replace(`\\`, ""))}" data-optionName="${sanitiseStrongly(option[0].replace(`"`, "").replace(`\\`, ""))}">
+								<span class="ml-2" data-optionName="${sanitiseStrongly(option[0].replace(`"`, "").replace(`\\`, ""))}">${sanitiseStrongly(option[0].replace(`"`, "").replace(`\\`, ""))}</span>
 							</label>`
 		}
 		
@@ -384,6 +390,25 @@ async function modSettings(modFolder) {
 		showCancelButton: false,
 		focusConfirm: false,
 		confirmButtonText: 'Save',
+		didOpen: function() {
+			for (let option of manifest.options) {
+				if (option.tooltip)
+				tippy(`span[data-optionName="${sanitiseStrongly(option.name.replace(`"`, "").replace(`\\`, ""))}"]`, {
+					content: option.tooltip,
+					placement: "right"
+				});
+			}
+			
+			for (let group of Object.keys(groups)) {
+				for (let option of groups[group]) {
+					if (option[1])
+					tippy(`span[data-optionName="${sanitiseStrongly(option[0].replace(`"`, "").replace(`\\`, ""))}"]`, {
+						content: option[1],
+						placement: "right"
+					});
+				}
+			}
+		},
 		willClose: async function(popup) {
 			let enabledOptions = []
 			for (let input of popup.querySelectorAll("input")) {
