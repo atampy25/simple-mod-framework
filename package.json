@@ -22,7 +22,7 @@
     "luxon": "^2.2.0",
     "md5": "^2.3.0",
     "promisify-child-process": "^4.1.1",
-    "rfc6902": "^4.0.2",
+    "rfc6902": "^5.0.0",
     "semver": "^7.3.5"
   },
   "devDependencies": {
