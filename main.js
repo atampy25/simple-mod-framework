@@ -95,9 +95,9 @@ function cleanExit() {
 }
 
 function hexflip(input) {
-	var output = ""
+	let output = ""
 
-	for (var i = input.length; i > 0 / 2; i = i -2) {
+	for (let i = input.length; i > 0 / 2; i = i -2) {
 		output += input.substr(i-2, 2)
 	}
 
@@ -145,12 +145,12 @@ async function stageAllMods() {
 	fs.mkdirSync("staging")
 	fs.mkdirSync("temp")
 
-	var packagedefinition = []
-	var localisation = []
-	var localisationOverrides = {}
-	var runtimePackages = []
+	let packagedefinition = []
+	let localisation = []
+	let localisationOverrides = {}
+	let runtimePackages = []
 
-	var rpkgTypes = {}
+	let rpkgTypes = {}
 
 
 	/* ---------------------------------------------------------------------------------------------- */
@@ -260,13 +260,14 @@ async function stageAllMods() {
 						fs.mkdirSync(path.join(process.cwd(), "staging", chunkFolder))
 					} catch {}
 	
+					let contractsORESChunk, contractsORESContent, contractsORESMetaContent
 					if (readRecursive(path.join(process.cwd(), "Mods", mod, contentFolder, chunkFolder)).some(a=>a.endsWith("contract.json"))) {
 						try {
 							await promisify(emptyFolder)("temp2", true)
 						} catch {}
 						fs.mkdirSync("temp2") // Make/clear the temp2 directory
 	
-						var contractsORESChunk = await rpkgInstance.getRPKGOfHash("002B07020D21D727")
+						contractsORESChunk = await rpkgInstance.getRPKGOfHash("002B07020D21D727")
 	
 						if (!fs.existsSync(path.join(process.cwd(), "staging", "chunk0", "002B07020D21D727.ORES"))) {
 							await rpkgInstance.callFunction(`-extract_from_rpkg "${path.join(config.runtimePath, contractsORESChunk + ".rpkg")}" -filter "002B07020D21D727" -output_path temp2`) // Extract the contracts ORES
@@ -277,15 +278,15 @@ async function stageAllMods() {
 						}
 						
 						child_process.execSync(`"Third-Party\\OREStool.exe" "${path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES")}"`)
-						var contractsORESContent = JSON.parse(String(fs.readFileSync(path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES.JSON"))))
+						contractsORESContent = JSON.parse(String(fs.readFileSync(path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES.JSON"))))
 	
 						await rpkgInstance.callFunction(`-hash_meta_to_json "${path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES.meta")}"`)
-						var contractsORESMetaContent = JSON.parse(String(fs.readFileSync(path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES.meta.JSON"))))
+						contractsORESMetaContent = JSON.parse(String(fs.readFileSync(path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES.meta.JSON"))))
 					} // There are contracts, extract the contracts ORES and copy it to the temp2 directory
 	
 					for (let contentFile of readRecursive(path.join(process.cwd(), "Mods", mod, contentFolder, chunkFolder))) {
-						var contentType = path.basename(contentFile).split(".").slice(1).join(".")
-						var contentFilePath = path.join(process.cwd(), "Mods", mod, contentFolder, chunkFolder, contentFile)
+						let contentType = path.basename(contentFile).split(".").slice(1).join(".")
+						let contentFilePath = path.join(process.cwd(), "Mods", mod, contentFolder, chunkFolder, contentFile)
 		
 						let entityContent
 						switch (contentType) {
@@ -329,18 +330,18 @@ async function stageAllMods() {
 								break;
 							case "unlockables.json":
 								entityContent = JSON.parse(String(fs.readFileSync(contentFilePath)))
-								var oresChunk = await rpkgInstance.getRPKGOfHash("0057C2C3941115CA")
+								let oresChunk = await rpkgInstance.getRPKGOfHash("0057C2C3941115CA")
 
 								logger.debug("Applying unlockable patch " + contentFilePath)
 
 								await extractOrCopyToTemp(oresChunk, "0057C2C3941115CA", "ORES") // Extract the ORES to temp
 	
 								child_process.execSync(`"Third-Party\\OREStool.exe" "${path.join(process.cwd(), "temp", oresChunk, "ORES", "0057C2C3941115CA.ORES")}"`)
-								var oresContent = JSON.parse(String(fs.readFileSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "0057C2C3941115CA.ORES.JSON"))))
+								let oresContent = JSON.parse(String(fs.readFileSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "0057C2C3941115CA.ORES.JSON"))))
 	
-								var oresToPatch = Object.fromEntries(oresContent.map(a=>[a.Id, a]))
+								let oresToPatch = Object.fromEntries(oresContent.map(a=>[a.Id, a]))
 								deepMerge(oresToPatch, entityContent)
-								var oresToWrite = Object.values(oresToWrite)
+								let oresToWrite = Object.values(oresToPatch)
 	
 								fs.writeFileSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "0057C2C3941115CA.ORES.JSON"), JSON.stringify(oresToWrite))
 								fs.rmSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "0057C2C3941115CA.ORES"))
@@ -352,23 +353,23 @@ async function stageAllMods() {
 							case "repository.json":
 								entityContent = JSON.parse(String(fs.readFileSync(contentFilePath)))
 	
-								var repoRPKG = await rpkgInstance.getRPKGOfHash("00204D1AFD76AB13")
+								let repoRPKG = await rpkgInstance.getRPKGOfHash("00204D1AFD76AB13")
 
 								logger.debug("Applying repository patch " + contentFilePath)
 
 								await extractOrCopyToTemp(repoRPKG, "00204D1AFD76AB13", "REPO") // Extract the REPO to temp
 	
-								var repoContent = JSON.parse(String(fs.readFileSync(path.join(process.cwd(), "temp", repoRPKG, "REPO", "00204D1AFD76AB13.REPO"))))
+								let repoContent = JSON.parse(String(fs.readFileSync(path.join(process.cwd(), "temp", repoRPKG, "REPO", "00204D1AFD76AB13.REPO"))))
 	
-								var repoToPatch = Object.fromEntries(repoContent.map(a=>[a["ID_"], a]))
+								let repoToPatch = Object.fromEntries(repoContent.map(a=>[a["ID_"], a]))
 								deepMerge(repoToPatch, entityContent)
-								var repoToWrite = Object.values(repoToPatch)
+								let repoToWrite = Object.values(repoToPatch)
 	
-								var editedItems = new Set(Object.keys(entityContent))
+								let editedItems = new Set(Object.keys(entityContent))
 	
 								await rpkgInstance.callFunction(`-hash_meta_to_json "${path.join(process.cwd(), "temp", repoRPKG, "REPO", "00204D1AFD76AB13.REPO.meta")}"`)
-								var metaContent = JSON.parse(String(fs.readFileSync(path.join(process.cwd(), "temp", repoRPKG, "REPO", "00204D1AFD76AB13.REPO.meta.JSON"))))
-								for (var repoItem of repoToWrite) {
+								let metaContent = JSON.parse(String(fs.readFileSync(path.join(process.cwd(), "temp", repoRPKG, "REPO", "00204D1AFD76AB13.REPO.meta.JSON"))))
+								for (let repoItem of repoToWrite) {
 									if (editedItems.has(repoItem.ID_)) {
 										if (repoItem.Runtime) {
 											if (!metaContent["hash_reference_data"].find(a=>a.hash == parseInt(repoItem.Runtime).toString(16).toUpperCase())) {
@@ -400,7 +401,7 @@ async function stageAllMods() {
 							case "contract.json":
 								entityContent = LosslessJSON.parse(String(fs.readFileSync(contentFilePath)))
 	
-								var contractHash = "00" + md5(("smfContract" + entityContent.Metadata.Id).toLowerCase()).slice(2, 16).toUpperCase()
+								let contractHash = "00" + md5(("smfContract" + entityContent.Metadata.Id).toLowerCase()).slice(2, 16).toUpperCase()
 
 								logger.debug("Adding contract " + contentFilePath)
 	
@@ -416,13 +417,13 @@ async function stageAllMods() {
 							case "JSON.patch.json":
 								entityContent = JSON.parse(String(fs.readFileSync(contentFilePath)))
 	
-								var rpkgOfFile = await rpkgInstance.getRPKGOfHash(path.basename(contentFile).split(".")[0])
+								let rpkgOfFile = await rpkgInstance.getRPKGOfHash(path.basename(contentFile).split(".")[0])
 
 								logger.debug("Applying JSON patch " + contentFilePath)
 
 								await extractOrCopyToTemp(rpkgOfFile, path.basename(contentFile).split(".")[0], "JSON") // Extract the JSON to temp
 	
-								var fileContent = JSON.parse(String(fs.readFileSync(path.join(process.cwd(), "temp", rpkgOfFile, "JSON", path.basename(contentFile).split(".")[0] + ".JSON"))))
+								let fileContent = JSON.parse(String(fs.readFileSync(path.join(process.cwd(), "temp", rpkgOfFile, "JSON", path.basename(contentFile).split(".")[0] + ".JSON"))))
 
 								rfc6902.applyPatch(fileContent, entityContent) // Apply the JSON patch
 
