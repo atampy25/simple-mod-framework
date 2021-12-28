@@ -298,6 +298,10 @@ async function enableMod(mod) {
 	fs.writeFileSync("../config.json", json5.stringify(config))
 
 	await refreshMods()
+
+	if (fs.existsSync(path.join("..", "Mods", mod, "manifest.json")) && json5.parse(String(fs.readFileSync(path.join("..", "Mods", mod, "manifest.json")))).options) {
+		modSettings(mod)
+	}
 }
 
 async function disableMod(mod) {
@@ -394,7 +398,7 @@ async function modSettings(modFolder) {
 			for (let option of manifest.options) {
 				if (option.tooltip)
 				tippy(`span[data-optionName="${sanitiseStrongly(option.name.replace(`"`, "").replace(`\\`, ""))}"]`, {
-					content: option.tooltip,
+					content: sanitise(option.tooltip),
 					placement: "right"
 				});
 			}
@@ -403,7 +407,7 @@ async function modSettings(modFolder) {
 				for (let option of groups[group]) {
 					if (option[1])
 					tippy(`span[data-optionName="${sanitiseStrongly(option[0].replace(`"`, "").replace(`\\`, ""))}"]`, {
-						content: option[1],
+						content: sanitise(option[1]),
 						placement: "right"
 					});
 				}
