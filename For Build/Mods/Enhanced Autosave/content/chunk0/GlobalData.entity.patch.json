@@ -92,5 +92,6 @@
             "shouldTrigger": "LoadQuick",
             "onEntity": "abcdc54403d929df"
         }
-    }]
+    }],
+    "patchVersion": 1
 }

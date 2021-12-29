@@ -1,22 +1,9 @@
 {
-	"name": "Enhanced Autosaves",
-	"description": "It is a mod",
+	"version": "1.0.0",
+	"id": "Atampy26.EnhancedAutosave",
+	"name": "Enhanced Autosave",
+	"description": "Autosaves to the first manual slot every 30 seconds and loads whenever 47 dies. Does not replace the game's usual autosave system.",
 	"authors": ["Atampy26"],
 	"contentFolder": "content",
-	"blobsFolder": "blobs",
-	"localisation": {
-		"english": {},
-		"french": {},
-		"italian": {},
-		"german": {},
-		"spanish": {},
-		"russian": {},
-		"chineseSimplified": {},
-		"chineseTraditional": {},
-		"japanese": {}
-	},
-	"packagedefinition": [],
-	"runtimePackages": [],
-	"modVersion": 1,
-	"frameworkVersion": 0.2
+	"frameworkVersion": "1.0.0"
 }
