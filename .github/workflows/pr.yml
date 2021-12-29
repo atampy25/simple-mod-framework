@@ -1,14 +1,14 @@
-name: Build
+name: PR Build
 
 on:
-  push:
-    branches: [ main ]
+  pull_request:
 
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: windows-latest
+    if: ${{ github.actor != 'dependabot[bot]' }}
 
     steps:
       - uses: actions/checkout@v2
@@ -85,24 +85,8 @@ jobs:
           robocopy ".\Load Order Manager\out\Load Order Manager-win32-x64" "./dist/Load Order Manager" /COPYALL /E; if ($lastexitcode -lt 8) { $global:LASTEXITCODE = $null }
           copy Deploy.exe dist
           New-Item -Path dist -Name "Mod Manager.cmd" -ItemType "file" -Value "@echo off`ncd `"Load Order Manager`"`nstart `"`" `"Load Order Manager.exe`""
-          
-      - name: Zip
-        uses: TheDoctor0/zip-release@4fb9e4ff72847dd3d1c111cf63834e353ed7cb3d
-        with:
-          filename: Release.zip
-          directory: dist
 
-      - name: 'Get latest tag'
-        id: latestTag
-        uses: "WyriHaximus/github-action-get-previous-tag@v1.1.0"
+      - uses: actions/upload-artifact@v2
         with:
-          fallback: unknown
-          
-      - name: Release
-        uses: softprops/action-gh-release@v1
-        with:
-          name: ${{ steps.latestTag.outputs.tag }}
-          body: "Generated automatically on commit:  `${{ github.event.head_commit.message }}`."
-          tag_name: ${{ steps.latestTag.outputs.tag }}
-          repository: hitman-resources/simple-mod-framework
-          files: dist/Release.zip
+          name: Output
+          path: dist
