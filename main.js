@@ -417,19 +417,19 @@ async function stageAllMods() {
 							case "JSON.patch.json":
 								entityContent = JSON.parse(String(fs.readFileSync(contentFilePath)))
 	
-								let rpkgOfFile = await rpkgInstance.getRPKGOfHash(path.basename(contentFile).split(".")[0])
+								let rpkgOfFile = await rpkgInstance.getRPKGOfHash(entityContent.file)
 
 								logger.debug("Applying JSON patch " + contentFilePath)
 
-								await extractOrCopyToTemp(rpkgOfFile, path.basename(contentFile).split(".")[0], "JSON") // Extract the JSON to temp
+								await extractOrCopyToTemp(rpkgOfFile, entityContent.file, "JSON") // Extract the JSON to temp
 	
-								let fileContent = JSON.parse(String(fs.readFileSync(path.join(process.cwd(), "temp", rpkgOfFile, "JSON", path.basename(contentFile).split(".")[0] + ".JSON"))))
+								let fileContent = JSON.parse(String(fs.readFileSync(path.join(process.cwd(), "temp", rpkgOfFile, "JSON", entityContent.file + ".JSON"))))
 
-								rfc6902.applyPatch(fileContent, entityContent) // Apply the JSON patch
+								rfc6902.applyPatch(fileContent, entityContent.patch) // Apply the JSON patch
 
-								fs.writeFileSync(path.join(process.cwd(), "temp", rpkgOfFile, "JSON", path.basename(contentFile).split(".")[0] + ".JSON"), JSON.stringify(fileContent))
-								fs.copyFileSync(path.join(process.cwd(), "temp", rpkgOfFile, "JSON", path.basename(contentFile).split(".")[0] + ".JSON"), path.join(process.cwd(), "staging", "chunk0", path.basename(contentFile).split(".")[0] + ".JSON"))
-								fs.copyFileSync(path.join(process.cwd(), "temp", rpkgOfFile, "JSON", path.basename(contentFile).split(".")[0] + ".JSON.meta"), path.join(process.cwd(), "staging", "chunk0", path.basename(contentFile).split(".")[0] + ".JSON.meta"))
+								fs.writeFileSync(path.join(process.cwd(), "temp", rpkgOfFile, "JSON", entityContent.file + ".JSON"), JSON.stringify(fileContent))
+								fs.copyFileSync(path.join(process.cwd(), "temp", rpkgOfFile, "JSON", entityContent.file + ".JSON"), path.join(process.cwd(), "staging", "chunk0", entityContent.file + ".JSON"))
+								fs.copyFileSync(path.join(process.cwd(), "temp", rpkgOfFile, "JSON", entityContent.file + ".JSON.meta"), path.join(process.cwd(), "staging", "chunk0", entityContent.file + ".JSON.meta"))
 								break;
 							case "texture.tga":
 								logger.debug("Converting texture " + contentFilePath)
