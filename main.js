@@ -451,7 +451,7 @@ async function stageAllMods() {
 								}
 								break;
 							case "sfx.wem":
-								WWEVpatches[path.basename(contentFile).split(".")[0].split("~")[0]] ??= []
+								if (!WWEVpatches[path.basename(contentFile).split(".")[0].split("~")[0]]) { WWEVpatches[path.basename(contentFile).split(".")[0].split("~")[0]] = [] }
 								WWEVpatches[path.basename(contentFile).split(".")[0].split("~")[0]].push({
 									index: path.basename(contentFile).split(".")[0].split("~")[1],
 									filepath: contentFilePath
