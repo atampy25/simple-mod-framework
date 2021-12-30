@@ -459,7 +459,7 @@ async function stageAllMods() {
 
 								await rpkgInstance.callFunction(`-extract_wwev_to_ogg_from "${path.join(config.runtimePath)}" -filter "${WWEVhash}" -output_path temp`) // Extract the WWEV
 
-								let workingPath = path.join(process.cwd(), "temp", rpkgOfWWEV + ".rpkg", fs.readdirSync(path.join(process.cwd(), "temp", rpkgOfWWEV + ".rpkg"))[0])
+								let workingPath = path.join(process.cwd(), "temp", "WWEV", rpkgOfWWEV + ".rpkg", fs.readdirSync(path.join(process.cwd(), "temp", "WWEV", rpkgOfWWEV + ".rpkg"))[0])
 
 								fs.copyFileSync(contentFilePath, path.join(workingPath, "wem", wemIndex + ".wem")) // Copy the wem
 
