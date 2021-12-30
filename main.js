@@ -457,13 +457,13 @@ async function stageAllMods() {
 
 								let rpkgOfWWEV = await rpkgInstance.getRPKGOfHash(WWEVhash)
 
-								rpkgInstance.callFunction(`-extract_wwev_to_ogg_from "${path.join(config.runtimePath)}" -filter "${WWEVhash}" -output_path temp`) // Extract the WWEV
+								await rpkgInstance.callFunction(`-extract_wwev_to_ogg_from "${path.join(config.runtimePath)}" -filter "${WWEVhash}" -output_path temp`) // Extract the WWEV
 
 								let workingPath = path.join(process.cwd(), "temp", rpkgOfWWEV + ".rpkg", fs.readdirSync(path.join(process.cwd(), "temp", rpkgOfWWEV + ".rpkg"))[0])
 
 								fs.copyFileSync(contentFilePath, path.join(workingPath, "wem", wemIndex + ".wem")) // Copy the wem
 
-								rpkgInstance.callFunction(`-rebuild_wwev_in "${path.resolve(path.join(workingPath, ".."))}"`) // Rebuild the WWEV
+								await rpkgInstance.callFunction(`-rebuild_wwev_in "${path.resolve(path.join(workingPath, ".."))}"`) // Rebuild the WWEV
 
 								fs.copyFileSync(path.join(workingPath, WWEVhash + ".WWEV"), path.join(process.cwd(), "staging", chunkFolder, WWEVhash + ".WWEV"))
 								fs.copyFileSync(path.join(workingPath, WWEVhash + ".WWEV.meta"), path.join(process.cwd(), "staging", chunkFolder, WWEVhash + ".WWEV.meta")) // Copy the WWEV and its meta

@@ -361,9 +361,9 @@ async function modSettings(modFolder) {
 	let groups = {}
 	for (let option of manifest.options) {
 		if (option.type == "checkbox") {
-			settingsHTML += `<label class="inline-flex items-center mb-2">
+			settingsHTML += `<div class="mb-2"><label class="inline-flex items-center">
 									<input type="checkbox"${json5.parse(fs.readFileSync("../config.json")).modOptions[manifest.id].includes(sanitiseStrongly(option.name.replace(`"`, "").replace(`\\`, ""))) ? ' checked' : ''} class="form-checkbox cursor-pointer h-5 w-5 text-gray-700 bg-white" data-optionName="${sanitiseStrongly(option.name.replace(`"`, "").replace(`\\`, ""))}"><span class="ml-2" data-optionName="${sanitiseStrongly(option.name.replace(`"`, "").replace(`\\`, ""))}">${sanitiseStrongly(option.name.replace(`"`, "").replace(`\\`, ""))}</span>
-							</label>`
+							</label></div>`
 		} else if (option.type == "select") {
 			if (!groups[option.group]) { groups[option.group] = [] }
 
