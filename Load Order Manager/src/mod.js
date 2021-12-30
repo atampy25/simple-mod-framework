@@ -203,6 +203,7 @@ async function refreshMods() {
 							: mod // Mod is an RPKG mod, use folder name
 			if (fs.existsSync(path.join("..", "Mods", modFolder, "manifest.json"))) {
 				var modManifest = json5.parse(fs.readFileSync(path.join("..", "Mods", modFolder, "manifest.json")))
+				if (!modManifest.id) { continue }
 				$("#enabledMods")[0].innerHTML += `<div class="p-8 bg-gray-900 w-full flow-root shadow-xl rounded-md text-white">
 														<div class="float-right">
 															${modManifest.options ? `<neo-button small label="" gradientFrom="thisisjustsoitworkslmao" gradientTo="bg-gray-800" onclick="modSettings('${modFolder}')" style="display: inline">
@@ -245,6 +246,7 @@ async function refreshMods() {
 		for (modFolder of fs.readdirSync("../Mods").filter(folder => !config.loadOrder.includes(folder) && (!fs.existsSync(path.join("..", "Mods", folder, "manifest.json")) || !config.loadOrder.includes(json5.parse(String(fs.readFileSync(path.join("..", "Mods", folder, "manifest.json")))).id)))) {
 			if (fs.existsSync(path.join("..", "Mods", modFolder, "manifest.json"))) {
 				var modManifest = json5.parse(fs.readFileSync(path.join("..", "Mods", modFolder, "manifest.json")))
+				if (!modManifest.id) { continue }
 				$("#availableMods")[0].innerHTML += `<div class="p-8 bg-gray-900 w-full flow-root shadow-xl rounded-md text-white">
 														<div class="float-right">
 															<neo-button small label="Enable" gradientFrom="from-emerald-400" gradientTo="to-lime-600" onclick="enableMod('${modFolder}')" style="display: inline">
@@ -552,6 +554,11 @@ async function importZIP() {
 				fs.emptyDirSync("./staging")
 
 				new AdmZip(modPath).extractAllTo("./staging")
+
+				if (klaw("./staging").filter(a=>a.stats.size)) {
+					showMessage("Invalid framework ZIP", "The framework ZIP file contains files in the root directory. Contact the mod author.", "error")
+					return
+				}
 
 				fs.copySync("./staging", "../Mods")
 
