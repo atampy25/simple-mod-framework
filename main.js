@@ -148,6 +148,7 @@ async function stageAllMods() {
 	let localisation = []
 	let localisationOverrides = {}
 	let runtimePackages = []
+	let WWEVpatches = {}
 
 	let rpkgTypes = {}
 
@@ -450,23 +451,11 @@ async function stageAllMods() {
 								}
 								break;
 							case "sfx.wem":
-								logger.debug("Patching sound effect " + contentFilePath)
-
-								let WWEVhash = path.basename(contentFile).split(".")[0].split("~")[0]
-								let wemIndex = path.basename(contentFile).split(".")[0].split("~")[1]
-
-								let rpkgOfWWEV = await rpkgInstance.getRPKGOfHash(WWEVhash)
-
-								await rpkgInstance.callFunction(`-extract_wwev_to_ogg_from "${path.join(config.runtimePath)}" -filter "${WWEVhash}" -output_path temp`) // Extract the WWEV
-
-								let workingPath = path.join(process.cwd(), "temp", "WWEV", rpkgOfWWEV + ".rpkg", fs.readdirSync(path.join(process.cwd(), "temp", "WWEV", rpkgOfWWEV + ".rpkg"))[0])
-
-								fs.copyFileSync(contentFilePath, path.join(workingPath, "wem", wemIndex + ".wem")) // Copy the wem
-
-								await rpkgInstance.callFunction(`-rebuild_wwev_in "${path.resolve(path.join(workingPath, ".."))}"`) // Rebuild the WWEV
-
-								fs.copyFileSync(path.join(workingPath, WWEVhash + ".WWEV"), path.join(process.cwd(), "staging", chunkFolder, WWEVhash + ".WWEV"))
-								fs.copyFileSync(path.join(workingPath, WWEVhash + ".WWEV.meta"), path.join(process.cwd(), "staging", chunkFolder, WWEVhash + ".WWEV.meta")) // Copy the WWEV and its meta
+								WWEVpatches[path.basename(contentFile).split(".")[0].split("~")[0]] ??= []
+								WWEVpatches[path.basename(contentFile).split(".")[0].split("~")[0]].push({
+									index: path.basename(contentFile).split(".")[0].split("~")[1],
+									filepath: contentFilePath
+								})
 								break;
 							default:
 								fs.copyFileSync(contentFilePath, path.join(process.cwd(), "staging", chunkFolder, path.basename(contentFile))) // Copy the file to the staging directory
@@ -706,6 +695,29 @@ async function stageAllMods() {
 		} catch {}
 		fs.mkdirSync("Output")
 	} // Make output folder
+
+	/* ---------------------------------------------------------------------------------------------- */
+	/*                                          WWEV patches                                          */
+	/* ---------------------------------------------------------------------------------------------- */
+	for (let entry of Object.entries(WWEVpatches)) {
+		logger.debug("Patching WWEV " + entry[0])
+
+		let WWEVhash = entry[0]
+		let rpkgOfWWEV = await rpkgInstance.getRPKGOfHash(WWEVhash)
+	
+		await rpkgInstance.callFunction(`-extract_wwev_to_ogg_from "${path.join(config.runtimePath)}" -filter "${WWEVhash}" -output_path temp`) // Extract the WWEV
+
+		let workingPath = path.join(process.cwd(), "temp", "WWEV", rpkgOfWWEV + ".rpkg", fs.readdirSync(path.join(process.cwd(), "temp", "WWEV", rpkgOfWWEV + ".rpkg"))[0])
+
+		for (let patch of entry[1]) {
+			fs.copyFileSync(patch.filepath, path.join(workingPath, "wem", patch.index + ".wem")) // Copy the wem
+		}
+	
+		await rpkgInstance.callFunction(`-rebuild_wwev_in "${path.resolve(path.join(workingPath, ".."))}"`) // Rebuild the WWEV
+
+		fs.copyFileSync(path.join(workingPath, WWEVhash + ".WWEV"), path.join(process.cwd(), "staging", rpkgOfWWEV.replace(/patch[0-9]*/gi, ""), WWEVhash + ".WWEV"))
+		fs.copyFileSync(path.join(workingPath, WWEVhash + ".WWEV.meta"), path.join(process.cwd(), "staging", rpkgOfWWEV.replace(/patch[0-9]*/gi, ""), WWEVhash + ".WWEV.meta")) // Copy the WWEV and its meta
+	}
 
 	/* ---------------------------------------------------------------------------------------------- */
 	/*                                        Runtime packages                                        */
