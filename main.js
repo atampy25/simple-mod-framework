@@ -60,8 +60,7 @@ const logger = !process.argv[2] ? {
 	debug: console.debug,
 	info: console.info,
 	error: function(a) {
-		console.error(a)
-		console.trace()
+		console.log(a)
 		cleanExit()
 	}
 } // Any arguments will cause coloured logging to be disabled
@@ -428,8 +427,8 @@ async function stageAllMods() {
 								rfc6902.applyPatch(fileContent, entityContent.patch) // Apply the JSON patch
 
 								fs.writeFileSync(path.join(process.cwd(), "temp", rpkgOfFile, "JSON", entityContent.file + ".JSON"), JSON.stringify(fileContent))
-								fs.copyFileSync(path.join(process.cwd(), "temp", rpkgOfFile, "JSON", entityContent.file + ".JSON"), path.join(process.cwd(), "staging", "chunk0", entityContent.file + ".JSON"))
-								fs.copyFileSync(path.join(process.cwd(), "temp", rpkgOfFile, "JSON", entityContent.file + ".JSON.meta"), path.join(process.cwd(), "staging", "chunk0", entityContent.file + ".JSON.meta"))
+								fs.copyFileSync(path.join(process.cwd(), "temp", rpkgOfFile, "JSON", entityContent.file + ".JSON"), path.join(process.cwd(), "staging", chunkFolder, entityContent.file + ".JSON"))
+								fs.copyFileSync(path.join(process.cwd(), "temp", rpkgOfFile, "JSON", entityContent.file + ".JSON.meta"), path.join(process.cwd(), "staging", chunkFolder, entityContent.file + ".JSON.meta"))
 								break;
 							case "texture.tga":
 								logger.debug("Converting texture " + contentFilePath)
@@ -449,6 +448,25 @@ async function stageAllMods() {
 									
 									fs.copyFileSync(path.join(process.cwd(), "temp", "texture-rebuilt.TEXT"), path.join(process.cwd(), "staging", chunkFolder, path.basename(contentFile).split(".")[0] + ".TEXT"))
 								}
+								break;
+							case "sfx.wem":
+								logger.debug("Patching sound effect " + contentFilePath)
+
+								let WWEVhash = path.basename(contentFile).split(".")[0].split("~")[0]
+								let wemIndex = path.basename(contentFile).split(".")[0].split("~")[1]
+
+								let rpkgOfWWEV = await rpkgInstance.getRPKGOfHash(WWEVhash)
+
+								rpkgInstance.callFunction(`-extract_wwev_to_ogg_from "${path.join(config.runtimePath)}" -filter "${WWEVhash}" -output_path temp`) // Extract the WWEV
+
+								let workingPath = path.join(process.cwd(), "temp", rpkgOfWWEV + ".rpkg", fs.readdirSync(path.join(process.cwd(), "temp", rpkgOfWWEV + ".rpkg"))[0])
+
+								fs.copyFileSync(contentFilePath, path.join(workingPath, "wem", wemIndex + ".wem")) // Copy the wem
+
+								rpkgInstance.callFunction(`-rebuild_wwev_in "${path.resolve(path.join(workingPath, ".."))}"`) // Rebuild the WWEV
+
+								fs.copyFileSync(path.join(workingPath, WWEVhash + ".WWEV"), path.join(process.cwd(), "staging", chunkFolder, WWEVhash + ".WWEV"))
+								fs.copyFileSync(path.join(workingPath, WWEVhash + ".WWEV.meta"), path.join(process.cwd(), "staging", chunkFolder, WWEVhash + ".WWEV.meta")) // Copy the WWEV and its meta
 								break;
 							default:
 								fs.copyFileSync(contentFilePath, path.join(process.cwd(), "staging", chunkFolder, path.basename(contentFile))) // Copy the file to the staging directory

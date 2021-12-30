@@ -1,12 +1,12 @@
 # Special File Types
 
 ## entity.json
-A QuickEntity JSON. Will be automatically built and converted to TEMP/TBLU/TEMP.meta/TBLU.meta, then placed in the staging directory (which is eventually built into a patch).
+A QuickEntity JSON. Will be automatically built and converted to TEMP/TBLU/TEMP.meta/TBLU.meta, then placed in the staging folder (which is eventually built into a patch).
 
 ## entity.patch.json
 A QuickEntity patch JSON. If no mods have altered the same TEMP/TBLU, the latest version of it will be pulled from the game's files. Otherwise, the TEMP/TBLU are pulled from the previous mod's version.
 
-The TEMP/TBLU are then converted to QN JSON, where the patch JSON is applied, and then converted back to TEMP/TBLU and placed in the staging directory.
+The TEMP/TBLU are then converted to QN JSON, where the patch JSON is applied, and then converted back to TEMP/TBLU and placed in the staging folder.
 
 ## unlockables.json
 A JSON with the following format:
@@ -77,9 +77,7 @@ A JSON with the following format:
 The repository items mentioned in the file are automatically added/edited in the repository file. Partial edits of existing items are supported (properties will be traversed and assigned).
 
 ## contract.json
-A contract JSON. The contract inside is automatically given a custom hash (determined by `smfContract` + the contract's UUID), added to the contracts ORES and placed in the staging directory. If you want to edit an existing contract, instead use a raw file.
-
-**Note:** if you want the contract to appear in Destinations, you must use the `mission` type.
+A contract JSON. The contract inside is automatically given a custom hash (determined by `smfContract` + the contract's UUID), added to the contracts ORES and placed in the staging folder. If you want to edit an existing contract, instead use a raw file.
 
 ## JSON.patch.json
 Mutates the given JSON file with a patch. The content of the `JSON.patch.json` file follows the following format:
@@ -110,3 +108,10 @@ Mutates the given JSON file with a patch. The content of the `JSON.patch.json` f
 Must also have a .texture.tga.meta file next to it (obtained from Anthony Fuller's HMTextureTools). If the file should only be converted to a TEXT file, the files should be named `TEXThash.texture.tga` and `TEXThash.texture.tga.meta`. If the file should be converted to both a TEXT file and a TEXD file, the files should be named `TEXThash~TEXDhash.texture.tga` and `TEXThash.texture.tga.meta`. For example, the TEXT-only Instinct LUT texture would be `008C1F5C7305A978.texture.tga` and `008C1F5C7305A978.texture.tga.meta`.
 
 The framework will automatically convert the TGA to the specified texture files and place them in the staging folder based on the specified hash in the file name.
+
+## sfx.wem
+**Note:** The filename matters for this special type.
+
+Patches a WWEV file with the given Wwise file. Named in the format `WWEVhash~wemIndex.sfx.wem`. For example, to patch `1.wem` in `play_sfx_bbq_hamburger_flip_01` (`00539F7F65CB89E8.WWEV`), the file should be called `00539F7F65CB89E8~1.sfx.wem`.
+
+The framework will automatically extract the WWEV and copy the wem to it, then rebuild the WWEV and place it in the staging folder.
