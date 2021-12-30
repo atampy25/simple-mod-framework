@@ -221,7 +221,7 @@ async function stageAllMods() {
 				blobsFolders.push(manifest.blobsFolder)
 			}
 
-			if (config.modOptions[manifest.id] && config.modOptions[manifest.id].length && manifest.options && manifest.options.length) {
+			if (manifest.options && manifest.options.length && config.modOptions[manifest.id] && config.modOptions[manifest.id].length) {
 				for (let option of manifest.options.filter(a=>config.modOptions[manifest.id].includes(a.name))) {
 					if (option.contentFolder && option.contentFolder.length && fs.existsSync(path.join(process.cwd(), "Mods", mod, option.contentFolder)) && fs.readdirSync(path.join(process.cwd(), "Mods", mod, option.contentFolder)).length) {
 						contentFolders.push(option.contentFolder)
