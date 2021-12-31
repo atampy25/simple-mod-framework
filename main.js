@@ -433,21 +433,10 @@ async function stageAllMods() {
 								break;
 							case "texture.tga":
 								logger.debug("Converting texture " + contentFilePath)
-								if (path.basename(contentFile).split(".")[0].split("~").length > 1) { // TEXT/TEXD
-									fs.copyFileSync(contentFilePath, path.join(process.cwd(), "temp", "texture.tga"))
-									fs.copyFileSync(contentFilePath + ".meta", path.join(process.cwd(), "temp", "texture.tga.tonymeta"))
-									
-									child_process.execSync(`"Third-Party\\HMTextureTools" rebuild H3 "${path.join(process.cwd(), "temp", "texture.tga")}" temp\\texture-rebuilt --rebuildboth`) // Rebuild texture to TEXT/TEXD
-									
-									fs.copyFileSync(path.join(process.cwd(), "temp", "texture-rebuilt.TEXT"), path.join(process.cwd(), "staging", chunkFolder, path.basename(contentFile).split(".")[0].split("~")[0] + ".TEXT"))
-									fs.copyFileSync(path.join(process.cwd(), "temp", "texture-rebuilt.TEXD"), path.join(process.cwd(), "staging", chunkFolder, path.basename(contentFile).split(".")[0].split("~")[1] + ".TEXD"))
+								if (path.basename(contentFile).split(".")[0].split("~").length > 1) {
+									child_process.execSync(`"Third-Party\\HMTextureTools" rebuild H3 "${contentFilePath}" --metapath "${contentFilePath + ".meta"}" "${path.join(process.cwd(), "staging", chunkFolder, path.basename(contentFile).split(".")[0].split("~")[0] + ".TEXT")}" --rebuildboth --texdoutput "${path.join(process.cwd(), "staging", chunkFolder, path.basename(contentFile).split(".")[0].split("~")[1] + ".TEXD")}"`) // Rebuild texture to TEXT/TEXD
 								} else { // TEXT only
-									fs.copyFileSync(contentFilePath, path.join(process.cwd(), "temp", "texture.tga"))
-									fs.copyFileSync(contentFilePath + ".meta", path.join(process.cwd(), "temp", "texture.tga.tonymeta"))
-									
-									child_process.execSync(`"Third-Party\\HMTextureTools" rebuild H3 "${path.join(process.cwd(), "temp", "texture.tga")}" temp\\texture-rebuilt.TEXT`) // Rebuild texture to TEXT only
-									
-									fs.copyFileSync(path.join(process.cwd(), "temp", "texture-rebuilt.TEXT"), path.join(process.cwd(), "staging", chunkFolder, path.basename(contentFile).split(".")[0] + ".TEXT"))
+									child_process.execSync(`"Third-Party\\HMTextureTools" rebuild H3 "${contentFilePath}" --metapath "${contentFilePath + ".meta"}" "${path.join(process.cwd(), "staging", chunkFolder, path.basename(contentFile).split(".")[0] + ".TEXT")}"`) // Rebuild texture to TEXT only
 								}
 								break;
 							case "sfx.wem":
