@@ -702,6 +702,11 @@ async function stageAllMods() {
 	for (let entry of Object.entries(WWEVpatches)) {
 		logger.debug("Patching WWEV " + entry[0])
 
+		try {
+			await promisify(emptyFolder)("temp", true)
+		} catch {}
+		fs.mkdirSync("temp") // Clear the temp directory
+
 		let WWEVhash = entry[0]
 		let rpkgOfWWEV = await rpkgInstance.getRPKGOfHash(WWEVhash)
 	
