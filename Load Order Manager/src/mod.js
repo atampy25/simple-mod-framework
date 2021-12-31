@@ -208,7 +208,7 @@ async function refreshMods() {
 				
 				$("#enabledMods")[0].innerHTML += `<div class="p-8 bg-gray-900 w-full flow-root shadow-xl rounded-md text-white">
 														<div class="float-right">
-															${modManifest.options.filter(a=>a.type == "checkbox" || a.type == "select") ? `<neo-button small label="" gradientFrom="thisisjustsoitworkslmao" gradientTo="bg-gray-800" onclick="modSettings('${modFolder}')" style="display: inline">
+															${modManifest.options && modManifest.options.filter(a=>a.type == "checkbox" || a.type == "select") ? `<neo-button small label="" gradientFrom="thisisjustsoitworkslmao" gradientTo="bg-gray-800" onclick="modSettings('${modFolder}')" style="display: inline">
 																<i class="fas fa-cog" slot="icon"></i>
 															</neo-button>` : ``}
 															<neo-button small label="Disable" gradientFrom="from-rose-400" gradientTo="to-red-500" onclick="disableMod('${modFolder}')" style="display: inline">
