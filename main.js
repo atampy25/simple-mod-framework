@@ -443,7 +443,8 @@ async function stageAllMods() {
 								if (!WWEVpatches[path.basename(contentFile).split(".")[0].split("~")[0]]) { WWEVpatches[path.basename(contentFile).split(".")[0].split("~")[0]] = [] }
 								WWEVpatches[path.basename(contentFile).split(".")[0].split("~")[0]].push({
 									index: path.basename(contentFile).split(".")[0].split("~")[1],
-									filepath: contentFilePath
+									filepath: contentFilePath,
+									chunk: chunkFolder
 								})
 								break;
 							default:
@@ -709,10 +710,10 @@ async function stageAllMods() {
 	
 		await rpkgInstance.callFunction(`-rebuild_wwev_in "${path.resolve(path.join(workingPath, ".."))}"`) // Rebuild the WWEV
 
-		fs.ensureDirSync(path.join(process.cwd(), "staging", rpkgOfWWEV.replace(/patch[0-9]*/gi, "")))
+		fs.ensureDirSync(path.join(process.cwd(), "staging", patch.chunk))
 
-		fs.copyFileSync(path.join(workingPath, WWEVhash + ".WWEV"), path.join(process.cwd(), "staging", rpkgOfWWEV.replace(/patch[0-9]*/gi, ""), WWEVhash + ".WWEV"))
-		fs.copyFileSync(path.join(workingPath, WWEVhash + ".WWEV.meta"), path.join(process.cwd(), "staging", rpkgOfWWEV.replace(/patch[0-9]*/gi, ""), WWEVhash + ".WWEV.meta")) // Copy the WWEV and its meta
+		fs.copyFileSync(path.join(workingPath, WWEVhash + ".WWEV"), path.join(process.cwd(), "staging", patch.chunk, WWEVhash + ".WWEV"))
+		fs.copyFileSync(path.join(workingPath, WWEVhash + ".WWEV.meta"), path.join(process.cwd(), "staging", patch.chunk, WWEVhash + ".WWEV.meta")) // Copy the WWEV and its meta
 	}
 
 	/* ---------------------------------------------------------------------------------------------- */
