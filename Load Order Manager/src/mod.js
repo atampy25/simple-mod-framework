@@ -526,6 +526,8 @@ async function deployMods() {
 					
 						showMessage("Error in deployment", "<i>" + sanitise(fullOutput.split("\n").slice(fullOutput.endsWith("\n") ? -2 : -1)[0]) + "</i>", "error")
 					}
+
+					refreshMods()
 				})
 			}, 500)
 		},
