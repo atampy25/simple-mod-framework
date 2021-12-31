@@ -354,7 +354,17 @@ async function modSettings(modFolder) {
 
 	let config = json5.parse(fs.readFileSync("../config.json"))
 
-	if (!config.modOptions[manifest.id]) { config.modOptions[manifest.id] = [] }
+	if (!config.modOptions[manifest.id]) {
+		config.modOptions[manifest.id] = [...manifest.options.filter(a=>a.enabledByDefault).map(a=>a.name)]
+	}
+
+	for (var i = config.modOptions[manifest.id].length - 1; i >= 0; i--) {
+		if (manifest.options.find(a=>a.name == config.modOptions[manifest.id][i]).requirements) {
+			if (!manifest.options.find(a=>a.name == config.modOptions[manifest.id][i]).requirements.every(a=>config.loadOrder.includes(a))) {
+				config.modOptions[manifest.id].splice(i, 1)
+			}
+		}
+	}
 
 	fs.writeFileSync("../config.json", json5.stringify(config))
 
@@ -364,12 +374,12 @@ async function modSettings(modFolder) {
 	for (let option of manifest.options) {
 		if (option.type == "checkbox") {
 			settingsHTML += `<div class="mb-2"><label class="inline-flex items-center">
-									<input type="checkbox"${json5.parse(fs.readFileSync("../config.json")).modOptions[manifest.id].includes(sanitiseStrongly(option.name.replace(`"`, "").replace(`\\`, ""))) ? ' checked' : ''} class="form-checkbox cursor-pointer h-5 w-5 text-gray-700 bg-white" data-optionName="${sanitiseStrongly(option.name.replace(`"`, "").replace(`\\`, ""))}"><span class="ml-2" data-optionName="${sanitiseStrongly(option.name.replace(`"`, "").replace(`\\`, ""))}">${sanitiseStrongly(option.name.replace(`"`, "").replace(`\\`, ""))}</span>
+									<input${(option.requirements && !option.requirements.every(a=>config.loadOrder.includes(a))) ? ' disabled' : ''} type="checkbox"${json5.parse(fs.readFileSync("../config.json")).modOptions[manifest.id].includes(sanitiseStrongly(option.name.replace(`"`, "").replace(`\\`, ""))) ? ' checked' : ''} class="form-checkbox cursor-pointer h-5 w-5 text-gray-700 bg-white" data-optionName="${sanitiseStrongly(option.name.replace(`"`, "").replace(`\\`, ""))}"><span class="ml-2" data-optionName="${sanitiseStrongly(option.name.replace(`"`, "").replace(`\\`, ""))}">${sanitiseStrongly(option.name.replace(`"`, "").replace(`\\`, ""))}</span>
 							</label></div>`
 		} else if (option.type == "select") {
 			if (!groups[option.group]) { groups[option.group] = [] }
 
-			groups[option.group].push([option.name, option.tooltip])
+			groups[option.group].push([option.name, option.tooltip, option.requirements])
 		}
 	}
 
@@ -378,7 +388,7 @@ async function modSettings(modFolder) {
 							<span class="font-semibold">${sanitiseStrongly(group.replace(`"`, "").replace(`\\`, ""))}</span>`
 		for (let option of groups[group]) {
 			settingsHTML += `<br><label class="inline-flex items-center">
-								<input type="radio"${json5.parse(fs.readFileSync("../config.json")).modOptions[manifest.id].includes(sanitiseStrongly(option[0].replace(`"`, "").replace(`\\`, ""))) ? ' checked' : ''} class="form-radio" name="${sanitiseStrongly(group.replace(`"`, "").replace(`\\`, ""))}" data-optionName="${sanitiseStrongly(option[0].replace(`"`, "").replace(`\\`, ""))}">
+								<input${(option[2] && !option[2].every(a=>config.loadOrder.includes(a))) ? ' disabled' : ''} type="radio"${json5.parse(fs.readFileSync("../config.json")).modOptions[manifest.id].includes(sanitiseStrongly(option[0].replace(`"`, "").replace(`\\`, ""))) ? ' checked' : ''} class="form-radio" name="${sanitiseStrongly(group.replace(`"`, "").replace(`\\`, ""))}" data-optionName="${sanitiseStrongly(option[0].replace(`"`, "").replace(`\\`, ""))}">
 								<span class="ml-2" data-optionName="${sanitiseStrongly(option[0].replace(`"`, "").replace(`\\`, ""))}">${sanitiseStrongly(option[0].replace(`"`, "").replace(`\\`, ""))}</span>
 							</label>`
 		}

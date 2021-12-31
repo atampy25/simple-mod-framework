@@ -89,6 +89,7 @@ Each mod contains a manifest. Manifests have the following format:
 			"name": "Use additional content",
 			"tooltip": "Some additional content to use", // Not required, wil display a tooltip to the right of the input when the user hovers over it in the GUI
 			"type": "checkbox", // Checkbox type means a checkbox to use the variation or not
+			"enabledByDefault": false, // Default value of the mod option when the user first enables the mod - if it is enabled by default but requires a non-present mod it will be forcibly disabled
 			"contentFolder": "additional content", // Options can include all fields in the above section, and do not override them (so both content folders are used)
 			"requirements": [
 				"Atampy26.AnotherRequiredModButOnlyIfVariationEnabled"
@@ -99,6 +100,7 @@ Each mod contains a manifest. Manifests have the following format:
 			"tooltip": "quiet text",
 			"type": "select", // Select type means a select box (labelled with whatever group is set as); only one option of the group can be selected and used
 			"group": "Use lowercase or uppercase text",
+			// enabledByDefault can be omitted - its default value is false
 			"localisation": {
 				"english": {
 					"UI_SOMELOCALISATIONTHATUSESOPTIONS": "Some localisation that uses options"
@@ -115,7 +117,7 @@ Each mod contains a manifest. Manifests have the following format:
 				"japanese": {}
 			},
 			"requirements": [
-				"Atampy26.ReadableUI" // As an example, lowercase text will only work with Readable UI installed because by default the UI is capitalised
+				"Atampy26.ReadableUI" // As an example, lowercase text will only work with Readable UI installed because by default the game UI is capitalised
 			]
 		},
 		{
@@ -123,6 +125,7 @@ Each mod contains a manifest. Manifests have the following format:
 			"tooltip": "L O U D text",
 			"type": "select",
 			"group": "Use lowercase or uppercase text",
+			"enabledByDefault": true,
 			"localisation": {
 				"english": {
 					"UI_SOMELOCALISATIONTHATUSESOPTIONS": "SOME LOCALISATION THAT USES OPTIONS"
@@ -138,6 +141,12 @@ Each mod contains a manifest. Manifests have the following format:
 				"chineseTraditional": {},
 				"japanese": {}
 			}
+		},
+		{
+			"name": "Use epic content",
+			"type": "requirement", // This variation will be active if every mod in mods is enabled and inactive otherwise - it will not be shown in the GUI
+			"mods": ["Atampy26.SomeOtherMod"],
+			"contentFolder": "epicContent"
 		}
 	]
 }
