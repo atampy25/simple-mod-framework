@@ -425,7 +425,7 @@ async function modSettings(modFolder) {
 				}
 			}
 		},
-		willClose: async function(popup) {
+		willClose: async (popup) => {
 			let enabledOptions = []
 			for (let input of popup.querySelectorAll("input")) {
 				if (input.checked) {
@@ -435,7 +435,9 @@ async function modSettings(modFolder) {
 
 			let config = json5.parse(fs.readFileSync("../config.json"))
 
-			config.modOptions[manifest.id] = enabledOptions
+			config.modOptions[manifest.id] = enabledOptions.sort(function(a, b){
+				return manifest.options.map(a=>a.name).indexOf(a.id) - manifest.options.map(a=>a.name).indexOf(b.id)
+			});
 		
 			fs.writeFileSync("../config.json", json5.stringify(config))
 		}
