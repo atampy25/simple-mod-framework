@@ -469,7 +469,7 @@ async function stageAllMods() {
 					}
 	
 					/* --------- There are contracts, repackage the contracts ORES from the temp2 directory --------- */
-					if (fs.readdirSync(path.join(process.cwd(), "Mods", mod, contentFolder, chunkFolder)).some(a=>a.endsWith("contract.json"))) {
+					if (readRecursive(path.join(process.cwd(), "Mods", mod, contentFolder, chunkFolder)).some(a=>a.endsWith("contract.json"))) {
 						fs.writeFileSync(path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES.meta.JSON"), JSON.stringify(contractsORESMetaContent))
 						fs.rmSync(path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES.meta"))
 						await rpkgInstance.callFunction(`-json_to_hash_meta "${path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES.meta.JSON")}"`) // Rebuild the ORES meta
