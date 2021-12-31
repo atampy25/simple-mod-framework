@@ -584,7 +584,7 @@ async function importZIP() {
 
 				new AdmZip(modPath).extractAllTo("./staging")
 
-				if (klaw("./staging").filter(a=>a.stats.size)) {
+				if (klaw("./staging").some(a=>a.stats.size)) {
 					showMessage("Invalid framework ZIP", "The framework ZIP file contains files in the root directory. Contact the mod author.", "error")
 					return
 				}
