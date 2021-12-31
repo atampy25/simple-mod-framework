@@ -709,6 +709,8 @@ async function stageAllMods() {
 	
 		await rpkgInstance.callFunction(`-rebuild_wwev_in "${path.resolve(path.join(workingPath, ".."))}"`) // Rebuild the WWEV
 
+		fs.ensureDirSync(path.join(process.cwd(), "staging", rpkgOfWWEV.replace(/patch[0-9]*/gi, "")))
+
 		fs.copyFileSync(path.join(workingPath, WWEVhash + ".WWEV"), path.join(process.cwd(), "staging", rpkgOfWWEV.replace(/patch[0-9]*/gi, ""), WWEVhash + ".WWEV"))
 		fs.copyFileSync(path.join(workingPath, WWEVhash + ".WWEV.meta"), path.join(process.cwd(), "staging", rpkgOfWWEV.replace(/patch[0-9]*/gi, ""), WWEVhash + ".WWEV.meta")) // Copy the WWEV and its meta
 	}
