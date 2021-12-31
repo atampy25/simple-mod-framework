@@ -203,7 +203,9 @@ async function refreshMods() {
 							: mod // Mod is an RPKG mod, use folder name
 			if (fs.existsSync(path.join("..", "Mods", modFolder, "manifest.json"))) {
 				var modManifest = json5.parse(fs.readFileSync(path.join("..", "Mods", modFolder, "manifest.json")))
-				if (!modManifest.id) { continue }
+				
+				modManifest.options && checkModOptions(modFolder) // Ensure mod options are valid for all enabled mods with options
+				
 				$("#enabledMods")[0].innerHTML += `<div class="p-8 bg-gray-900 w-full flow-root shadow-xl rounded-md text-white">
 														<div class="float-right">
 															${modManifest.options ? `<neo-button small label="" gradientFrom="thisisjustsoitworkslmao" gradientTo="bg-gray-800" onclick="modSettings('${modFolder}')" style="display: inline">
@@ -246,7 +248,6 @@ async function refreshMods() {
 		for (modFolder of fs.readdirSync("../Mods").filter(folder => !config.loadOrder.includes(folder) && (!fs.existsSync(path.join("..", "Mods", folder, "manifest.json")) || !config.loadOrder.includes(json5.parse(String(fs.readFileSync(path.join("..", "Mods", folder, "manifest.json")))).id)))) {
 			if (fs.existsSync(path.join("..", "Mods", modFolder, "manifest.json"))) {
 				var modManifest = json5.parse(fs.readFileSync(path.join("..", "Mods", modFolder, "manifest.json")))
-				if (!modManifest.id) { continue }
 				$("#availableMods")[0].innerHTML += `<div class="p-8 bg-gray-900 w-full flow-root shadow-xl rounded-md text-white">
 														<div class="float-right">
 															<neo-button small label="Enable" gradientFrom="from-emerald-400" gradientTo="to-lime-600" onclick="enableMod('${modFolder}')" style="display: inline">
@@ -349,14 +350,20 @@ async function moveMod(modID) {
 	await refreshMods()
 }
 
-async function modSettings(modFolder) {
+function checkModOptions(modFolder) {
 	let manifest = json5.parse(String(fs.readFileSync(path.join("..", "Mods", modFolder, "manifest.json"))))
 
 	let config = json5.parse(fs.readFileSync("../config.json"))
 
 	if (!config.modOptions[manifest.id]) {
 		config.modOptions[manifest.id] = [...manifest.options.filter(a=>a.enabledByDefault).map(a=>a.name)]
-	}
+	} // Default mod options
+
+	for (var i = config.modOptions[manifest.id].length - 1; i >= 0; i--) {
+		if (!manifest.options.find(a=>a.name == config.modOptions[manifest.id][i])) {
+			config.modOptions[manifest.id].splice(i, 1)
+		}
+	} // Remove mod options that don't exist
 
 	for (var i = config.modOptions[manifest.id].length - 1; i >= 0; i--) {
 		if (manifest.options.find(a=>a.name == config.modOptions[manifest.id][i]).requirements) {
@@ -364,9 +371,17 @@ async function modSettings(modFolder) {
 				config.modOptions[manifest.id].splice(i, 1)
 			}
 		}
-	}
+	} // Remove mod options that require non-present mods
 
 	fs.writeFileSync("../config.json", json5.stringify(config))
+}
+
+async function modSettings(modFolder) {
+	let manifest = json5.parse(String(fs.readFileSync(path.join("..", "Mods", modFolder, "manifest.json"))))
+
+	checkModOptions(modFolder) // Make sure mod options are valid
+
+	let config = json5.parse(fs.readFileSync("../config.json"))
 
 	let settingsHTML = ``
 
@@ -374,7 +389,7 @@ async function modSettings(modFolder) {
 	for (let option of manifest.options) {
 		if (option.type == "checkbox") {
 			settingsHTML += `<div class="mb-2"><label class="inline-flex items-center">
-									<input${(option.requirements && !option.requirements.every(a=>config.loadOrder.includes(a))) ? ' disabled' : ''} type="checkbox"${json5.parse(fs.readFileSync("../config.json")).modOptions[manifest.id].includes(sanitiseStrongly(option.name.replace(`"`, "").replace(`\\`, ""))) ? ' checked' : ''} class="form-checkbox cursor-pointer h-5 w-5 text-gray-700 bg-white" data-optionName="${sanitiseStrongly(option.name.replace(`"`, "").replace(`\\`, ""))}"><span class="ml-2" data-optionName="${sanitiseStrongly(option.name.replace(`"`, "").replace(`\\`, ""))}">${sanitiseStrongly(option.name.replace(`"`, "").replace(`\\`, ""))}</span>
+									<input${(option.requirements && !option.requirements.every(a=>config.loadOrder.includes(a))) ? ' disabled' : ''} type="checkbox"${json5.parse(fs.readFileSync("../config.json")).modOptions[manifest.id].includes(sanitiseStrongly(option.name.replace(`"`, "").replace(`\\`, ""))) ? ' checked' : ''} class="form-checkbox cursor-pointer h-5 w-5 text-gray-700 bg-white" data-optionName="${sanitiseStrongly(option.name.replace(`"`, "").replace(`\\`, ""))}"><span class="ml-2${(option.requirements && !option.requirements.every(a=>config.loadOrder.includes(a))) ? ' text-gray-400' : ''}" data-optionName="${sanitiseStrongly(option.name.replace(`"`, "").replace(`\\`, ""))}">${sanitiseStrongly(option.name.replace(`"`, "").replace(`\\`, ""))}</span>
 							</label></div>`
 		} else if (option.type == "select") {
 			if (!groups[option.group]) { groups[option.group] = [] }
@@ -389,7 +404,7 @@ async function modSettings(modFolder) {
 		for (let option of groups[group]) {
 			settingsHTML += `<br><label class="inline-flex items-center">
 								<input${(option[2] && !option[2].every(a=>config.loadOrder.includes(a))) ? ' disabled' : ''} type="radio"${json5.parse(fs.readFileSync("../config.json")).modOptions[manifest.id].includes(sanitiseStrongly(option[0].replace(`"`, "").replace(`\\`, ""))) ? ' checked' : ''} class="form-radio" name="${sanitiseStrongly(group.replace(`"`, "").replace(`\\`, ""))}" data-optionName="${sanitiseStrongly(option[0].replace(`"`, "").replace(`\\`, ""))}">
-								<span class="ml-2" data-optionName="${sanitiseStrongly(option[0].replace(`"`, "").replace(`\\`, ""))}">${sanitiseStrongly(option[0].replace(`"`, "").replace(`\\`, ""))}</span>
+								<span class="ml-2${(option[2] && !option[2].every(a=>config.loadOrder.includes(a))) ? ' text-gray-400' : ''}" data-optionName="${sanitiseStrongly(option[0].replace(`"`, "").replace(`\\`, ""))}">${sanitiseStrongly(option[0].replace(`"`, "").replace(`\\`, ""))}</span>
 							</label>`
 		}
 		
@@ -406,20 +421,20 @@ async function modSettings(modFolder) {
 		showCancelButton: false,
 		focusConfirm: false,
 		confirmButtonText: 'Save',
-		didOpen: function() {
+		didOpen: () => {
 			for (let option of manifest.options) {
-				if (option.tooltip)
+				if (option.tooltip || (option.requirements && !option.requirements.every(a=>config.loadOrder.includes(a))))
 				tippy(`span[data-optionName="${sanitiseStrongly(option.name.replace(`"`, "").replace(`\\`, ""))}"]`, {
-					content: sanitise(option.tooltip),
+					content: sanitise(option.tooltip) + ((option.requirements && !option.requirements.every(a=>config.loadOrder.includes(a))) ? `<br>Requires: ${option.requirements.map(a=>sanitiseStrongly(a)).join(", ")}` : ``),
 					placement: "right"
 				});
 			}
 			
 			for (let group of Object.keys(groups)) {
 				for (let option of groups[group]) {
-					if (option[1])
+					if (option[1] || (option[2] && !option[2].every(a=>config.loadOrder.includes(a))))
 					tippy(`span[data-optionName="${sanitiseStrongly(option[0].replace(`"`, "").replace(`\\`, ""))}"]`, {
-						content: sanitise(option[1]),
+						content: sanitise(option[1]) + ((option[2] && !option[2].every(a=>config.loadOrder.includes(a))) ? `<br>Requires: ${option[2].map(a=>sanitiseStrongly(a)).join(", ")}` : ``),
 						placement: "right"
 					});
 				}

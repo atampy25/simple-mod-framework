@@ -421,7 +421,7 @@ async function stageAllMods() {
 
 								logger.debug("Applying JSON patch " + contentFilePath)
 
-								await extractOrCopyToTemp(rpkgOfFile, entityContent.file, "JSON") // Extract the JSON to temp
+								await extractOrCopyToTemp(rpkgOfFile, entityContent.file, "JSON", chunkFolder) // Extract the JSON to temp
 	
 								let fileContent = JSON.parse(String(fs.readFileSync(path.join(process.cwd(), "temp", rpkgOfFile, "JSON", entityContent.file + ".JSON"))))
 
