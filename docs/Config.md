@@ -2,12 +2,10 @@
 The config.json file looks like this:
 ```json
 {
-    "runtimePath": "C:\\Users\\User\\Documents\\Apps\\Games\\Epic Games\\HITMAN3\\Runtime",
+    "runtimePath": "..\\Runtime",
     "skipIntro": true,
-    "loadOrder": [
-        "Enhanced Autosave",
-        "Focus"
-    ]
+    "loadOrder": [],
+    "modOptions": {}
 }
 ```
 
