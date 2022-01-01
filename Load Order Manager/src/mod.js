@@ -208,7 +208,7 @@ async function refreshMods() {
 				
 				$("#enabledMods")[0].innerHTML += `<div class="p-8 bg-gray-900 w-full flow-root shadow-xl rounded-md text-white">
 														<div class="float-right">
-															${modManifest.options && modManifest.options.filter(a=>a.type == "checkbox" || a.type == "select") ? `<neo-button small label="" gradientFrom="thisisjustsoitworkslmao" gradientTo="bg-gray-800" onclick="modSettings('${modFolder}')" style="display: inline">
+															${modManifest.options && modManifest.options.filter(a=>a.type == "checkbox" || a.type == "select").length ? `<neo-button small label="" gradientFrom="thisisjustsoitworkslmao" gradientTo="bg-gray-800" onclick="modSettings('${modFolder}')" style="display: inline">
 																<i class="fas fa-cog" slot="icon"></i>
 															</neo-button>` : ``}
 															<neo-button small label="Disable" gradientFrom="from-rose-400" gradientTo="to-red-500" onclick="disableMod('${modFolder}')" style="display: inline">
@@ -569,7 +569,7 @@ async function importZIP() {
 	var modPath = remote.dialog.showOpenDialogSync({
 		title: "Import a Framework ZIP file",
 		buttonLabel: "Import",
-		filters: [{ name: 'Framework ZIP Files', extensions: ['framework.zip'] }],
+		filters: [{ name: 'Framework ZIP Files', extensions: ['zip'] }],
 		properties: ["openFile", "dontAddToRecent"]
 	})[0]
 
@@ -584,7 +584,7 @@ async function importZIP() {
 
 				new AdmZip(modPath).extractAllTo("./staging")
 
-				if (klaw("./staging").some(a=>a.stats.size)) {
+				if (klaw("./staging", { depthLimit: 0 }).some(a=>a.stats.size)) {
 					showMessage("Invalid framework ZIP", "The framework ZIP file contains files in the root directory. Contact the mod author.", "error")
 					return
 				}
