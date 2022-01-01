@@ -51,7 +51,6 @@ module.exports = async ({
 		error: function(a) {
 			console.error(a)
 			console.trace()
-			cleanExit()
 		}
 	}
 
