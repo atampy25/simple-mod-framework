@@ -3,8 +3,8 @@ name: Build
 on:
   push:
     branches: [ main ]
-
-  workflow_dispatch:
+    tags:
+      - "*.*.*"
 
 jobs:
   build:
@@ -106,16 +106,3 @@ jobs:
           tag_name: ${{ steps.latestTag.outputs.tag }}
           repository: hitman-resources/simple-mod-framework
           files: dist/Release.zip
-
-      - name: Remove artifacts
-        uses: c-hive/gha-remove-artifacts@v1.2.0
-        if: "startsWith(github.ref, 'refs/tags/')"
-        with:
-          age: '30 minutes'
-          skip-tags: true
-
-      - uses: actions/upload-artifact@v2
-        if: "startsWith(github.ref, 'refs/tags/')"
-        with:
-          name: Output
-          path: dist/Release.zip

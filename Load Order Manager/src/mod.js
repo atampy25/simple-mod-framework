@@ -30,7 +30,9 @@ async function updateFramework() {
 					timeout: 999999999
 				});
 				
-				fs.emptyDirSync("./staging")
+				fs.removeSync("./staging")
+				fs.ensureDirSync("./staging")
+
 				new AdmZip("./latest-release.zip").extractAllTo("./staging")
 
 				fs.removeSync("./staging/Mods")
@@ -50,6 +52,9 @@ async function updateFramework() {
 				fs.removeSync("./staging/Load Order Manager/v8_context_snapshot.bin")
 
 				fs.copySync("./staging", "..")
+
+				fs.removeSync("./staging")
+				fs.removeSync("./latest-release.zip")
 			
 				Swal.close()
 				window.location.reload()
@@ -121,12 +126,14 @@ async function updateMod(modFolder) {
 							}
 							fs.removeSync(path.join("..", "Mods", managedFile))
 						}
-			
-						fs.emptyDirSync("./staging")
+
+						fs.removeSync("./staging")
+						fs.ensureDirSync("./staging")
 			
 						new AdmZip("./mod.zip").extractAllTo("./staging")
 			
 						fs.copySync("./staging", "../Mods")
+						fs.removeSync("./staging")
 					
 						Swal.close()
 						window.location.reload()
@@ -580,7 +587,8 @@ async function importZIP() {
 			Swal.showLoading()
 
 			setTimeout(() => {
-				fs.emptyDirSync("./staging")
+				fs.removeSync("./staging")
+				fs.ensureDirSync("./staging")
 
 				new AdmZip(modPath).extractAllTo("./staging")
 
@@ -590,6 +598,8 @@ async function importZIP() {
 				}
 
 				fs.copySync("./staging", "../Mods")
+
+				fs.removeSync("./staging")
 
 				Swal.close()
 
