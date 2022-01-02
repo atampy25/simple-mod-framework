@@ -918,7 +918,7 @@ async function stageAllMods() {
 	}
 
 	child_process.execSync(`"Third-Party\\h6xtea.exe" -d --src "${path.join(process.cwd(), "cleanPackageDefinition.txt")}" --dst "${path.join(process.cwd(), "temp", "packagedefinition.txt.decrypted")}"`) // Decrypt PD
-	let packagedefinitionContent = String(fs.readFileSync(path.join(process.cwd(), "temp", "packagedefinition.txt.decrypted"))).replace(/patchlevel=[0-9]*/g, "patchlevel=10001") // Patch levels
+	let packagedefinitionContent = String(fs.readFileSync(path.join(process.cwd(), "temp", "packagedefinition.txt.decrypted"))).split(/\r?\n/).join("\r\n").replace(/patchlevel=[0-9]*/g, "patchlevel=10001") // Patch levels
 
 	for (let brick of packagedefinition) { // Apply all PD changes
 		switch (brick.type) {
