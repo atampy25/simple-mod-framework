@@ -88,7 +88,6 @@ jobs:
           
       - name: Zip
         uses: TheDoctor0/zip-release@4fb9e4ff72847dd3d1c111cf63834e353ed7cb3d
-        if: startsWith(github.ref, 'refs/tags/')
         with:
           filename: Release.zip
           directory: dist
@@ -121,4 +120,4 @@ jobs:
         if: "!startsWith(github.ref, 'refs/tags/')"
         with:
           name: Output
-          path: dist
+          path: dist/Release.zip
