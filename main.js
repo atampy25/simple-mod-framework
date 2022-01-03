@@ -418,18 +418,30 @@ async function stageAllMods() {
 								entityContent = JSON.parse(String(fs.readFileSync(contentFilePath)))
 	
 								let rpkgOfFile = await rpkgInstance.getRPKGOfHash(entityContent.file)
+								let fileType = entityContent.type || "JSON"
 
 								logger.debug("Applying JSON patch " + contentFilePath)
 
-								await extractOrCopyToTemp(rpkgOfFile, entityContent.file, "JSON", chunkFolder) // Extract the JSON to temp
+								await extractOrCopyToTemp(rpkgOfFile, entityContent.file, fileType, chunkFolder) // Extract the JSON to temp
+
+								if (entityContent.type == "ORES") {
+									child_process.execSync(`"Third-Party\\OREStool.exe" "${path.join(process.cwd(), "temp", rpkgOfFile, fileType, entityContent.file + "." + fileType)}"`)
+								}
 	
-								let fileContent = JSON.parse(String(fs.readFileSync(path.join(process.cwd(), "temp", rpkgOfFile, "JSON", entityContent.file + ".JSON"))))
+								let fileContent = JSON.parse(String(fs.readFileSync(path.join(process.cwd(), "temp", rpkgOfFile, fileType, entityContent.file + "." + fileType))))
 
 								rfc6902.applyPatch(fileContent, entityContent.patch) // Apply the JSON patch
 
-								fs.writeFileSync(path.join(process.cwd(), "temp", rpkgOfFile, "JSON", entityContent.file + ".JSON"), JSON.stringify(fileContent))
-								fs.copyFileSync(path.join(process.cwd(), "temp", rpkgOfFile, "JSON", entityContent.file + ".JSON"), path.join(process.cwd(), "staging", chunkFolder, entityContent.file + ".JSON"))
-								fs.copyFileSync(path.join(process.cwd(), "temp", rpkgOfFile, "JSON", entityContent.file + ".JSON.meta"), path.join(process.cwd(), "staging", chunkFolder, entityContent.file + ".JSON.meta"))
+								if (entityContent.type == "ORES") {
+									fs.writeFileSync(path.join(process.cwd(), "temp", rpkgOfFile, fileType, entityContent.file + "." + fileType + ".json"), JSON.stringify(fileContent))
+									fs.rmSync(path.join(process.cwd(), "temp", rpkgOfFile, fileType, entityContent.file + "." + fileType))
+									child_process.execSync(`"Third-Party\\OREStool.exe" "${path.join(process.cwd(), "temp", rpkgOfFile, fileType, entityContent.file + "." + fileType + ".json")}"`)
+								} else {
+									fs.writeFileSync(path.join(process.cwd(), "temp", rpkgOfFile, fileType, entityContent.file + "." + fileType), JSON.stringify(fileContent))
+								}
+
+								fs.copyFileSync(path.join(process.cwd(), "temp", rpkgOfFile, fileType, entityContent.file + "." + fileType), path.join(process.cwd(), "staging", chunkFolder, entityContent.file + "." + fileType))
+								fs.copyFileSync(path.join(process.cwd(), "temp", rpkgOfFile, fileType, entityContent.file + "." + fileType + ".meta"), path.join(process.cwd(), "staging", chunkFolder, entityContent.file + "." + fileType + ".meta"))
 								break;
 							case "texture.tga":
 								logger.debug("Converting texture " + contentFilePath)

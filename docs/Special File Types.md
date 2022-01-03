@@ -84,6 +84,7 @@ Mutates the given JSON file with a patch. The content of the `JSON.patch.json` f
 ```json
 {
     "file": "004F4B738474CEAD", // The file to patch
+    "type": "JSON", // The filetype of the file to patch (can be omitted, will assume JSON; if ORES, OREStool will be run and the result will be patched and rebuilt)
     "patch": [{ // An RFC6902 format patch
         "op": "add",
         "path": "/Root/Children/-",

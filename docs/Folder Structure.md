@@ -28,10 +28,10 @@ The content folder contains chunk folders, which contain files (and folders, the
 | `unlockables.json`    | Unlockables to be put in the unlockables ORES                                |
 | `repository.json`     | Repository items to be placed in the repository                              |
 | `contract.json`       | A contract that will be added to the contracts ORES                          |
-| `JSON.patch.json`     | An RFC6902 JSON patch that will be applied to the hash the file is named for |
+| `JSON.patch.json`     | An RFC6902 JSON patch that will be applied to the hash the file specifies    |
 | `texture.tga`         | A TGA to rebuild into a game texture (TEXT only or TEXT and TEXD)            |
 | `sfx.wem`             | A Wwise sound effect to patch a WWEV file with                               |
 
-The names of special files do not matter, **except for texture.tga and sfx.wem files**. Raw files, which any non-special file is, are placed directly into the built RPKG and so must be named like usual.
+The names of special files do not matter - it is their extensions that do, **except for texture.tga and sfx.wem files**. Raw files, which any non-special file is, are placed directly into the built RPKG and so must be named like usual.
 
 The blobs folder contains blobs, which follow the same filepath as the folder structure and which will be placed into the blobs ORES. In the example, `theBestUnlockable.jpg` would be assigned the path `images/unlockables/theBestUnlockable.jpg`.
