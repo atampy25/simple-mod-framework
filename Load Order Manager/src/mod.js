@@ -87,7 +87,7 @@ async function fetchModUpdates() {
 				var modUpdateData = await (await fetch(modManifest.updateCheck)).json()
 				if (semver.lt(modManifest.version, modUpdateData.version)) {
 					$("#modUpdateAvailable")[0].style.display = "block"
-					$("#modUpdateCards")[0].innerHTML += `<div class="text-lg text-center p-4 m-4 shadow-2xl bg-gradient-to-br from-gray-800 to-gray-900 cursor-pointer" onclick="updateMod('${modFolder}')">
+					$("#modUpdateCards")[0].innerHTML += `<div class="text-lg text-center p-4 m-4 shadow-2xl bg-gradient-to-br from-gray-800 to-gray-900 cursor-pointer" onclick="updateMod('${sanitiseStrongly(modFolder.replace(`"`, "").replace(`\\`, ""))}')">
 															<div class="flex flex-initial flex-wrap flex-row justify-center w-full">
 																<div>
 																	<span class="font-bold">${sanitise(modManifest.name)}</span> v<span>${sanitise(modManifest.version)}</span> -> v<span>${sanitise(modUpdateData.version)}</span><br>
@@ -221,13 +221,13 @@ async function refreshMods() {
 				
 				$("#enabledMods")[0].innerHTML += `<div class="p-8 bg-gray-900 w-full flow-root shadow-xl rounded-md text-white">
 														<div class="float-right">
-															${modManifest.options && modManifest.options.some(a=>a.type == "checkbox" || a.type == "select") ? `<neo-button small label="" gradientFrom="thisisjustsoitworkslmao" gradientTo="bg-gray-800" onclick="modSettings('${modFolder}')" style="display: inline">
+															${modManifest.options && modManifest.options.some(a=>a.type == "checkbox" || a.type == "select") ? `<neo-button small label="" gradientFrom="thisisjustsoitworkslmao" gradientTo="bg-gray-800" onclick="modSettings('${sanitiseStrongly(modFolder.replace(`"`, "").replace(`\\`, ""))}')" style="display: inline">
 																<i class="fas fa-cog" slot="icon"></i>
 															</neo-button>` : ``}
-															<neo-button small label="Disable" gradientFrom="from-rose-400" gradientTo="to-red-500" onclick="disableMod('${modFolder}')" style="display: inline">
+															<neo-button small label="Disable" gradientFrom="from-rose-400" gradientTo="to-red-500" onclick="disableMod('${sanitiseStrongly(modFolder.replace(`"`, "").replace(`\\`, ""))}')" style="display: inline">
 																<i class="fas fa-times" slot="icon"></i>
 															</neo-button>
-															<neo-button small label="Move" gradientFrom="from-fuchsia-400" gradientTo="to-violet-400" onclick="moveMod('${modFolder}')" style="display: inline">
+															<neo-button small label="Move" gradientFrom="from-fuchsia-400" gradientTo="to-violet-400" onclick="moveMod('${sanitiseStrongly(modFolder.replace(`"`, "").replace(`\\`, ""))}')" style="display: inline">
 																<i class="fas fa-arrows-alt" slot="icon"></i>
 															</neo-button>
 														</div>
@@ -241,16 +241,16 @@ async function refreshMods() {
 			} else {
 				$("#enabledMods")[0].innerHTML += `<div class="p-8 bg-gray-900 w-full flow-root shadow-xl rounded-md text-white">
 														<div class="float-right">
-															<neo-button small label="Disable" gradientFrom="from-rose-400" gradientTo="to-red-500" onclick="disableMod('${modFolder}')" style="display: inline">
+															<neo-button small label="Disable" gradientFrom="from-rose-400" gradientTo="to-red-500" onclick="disableMod('${sanitiseStrongly(modFolder.replace(`"`, "").replace(`\\`, ""))}')" style="display: inline">
 																<i class="fas fa-times" slot="icon"></i>
 															</neo-button>
-															<neo-button small label="Move" gradientFrom="from-fuchsia-400" gradientTo="to-violet-400" onclick="moveMod('${modFolder}')" style="display: inline">
+															<neo-button small label="Move" gradientFrom="from-fuchsia-400" gradientTo="to-violet-400" onclick="moveMod('${sanitiseStrongly(modFolder.replace(`"`, "").replace(`\\`, ""))}')" style="display: inline">
 																<i class="fas fa-arrows-alt" slot="icon"></i>
 															</neo-button>
 														</div>
 														<div class="float-left" style="max-width: 70%">
 															<div class="mb-2">
-																<h3 class="font-semibold text-xl inline"><img src="rpkgMod.png" class="w-8 inline align-middle">  <span class="align-middle">${modFolder}</span></h3><br>
+																<h3 class="font-semibold text-xl inline"><img src="rpkgMod.png" class="w-8 inline align-middle">  <span class="align-middle">${sanitiseStrongly(modFolder.replace(`"`, "").replace(`\\`, ""))}</span></h3><br>
 															</div>
 															<p>RPKG-only mod</p>
 														</div>
@@ -270,7 +270,7 @@ async function refreshMods() {
 				
 				$("#availableMods")[0].innerHTML += `<div class="p-8 bg-gray-900 w-full flow-root shadow-xl rounded-md text-white">
 														<div class="float-right">
-															<neo-button small label="Enable" gradientFrom="from-emerald-400" gradientTo="to-lime-600" onclick="enableMod('${modFolder}')" style="display: inline">
+															<neo-button small label="Enable" gradientFrom="from-emerald-400" gradientTo="to-lime-600" onclick="enableMod('${sanitiseStrongly(modFolder.replace(`"`, "").replace(`\\`, ""))}')" style="display: inline">
 																<i class="fas fa-plus" slot="icon"></i>
 															</neo-button>
 														</div>
@@ -284,13 +284,13 @@ async function refreshMods() {
 			} else {
 				$("#availableMods")[0].innerHTML += `<div class="p-8 bg-gray-900 w-full flow-root shadow-xl rounded-md text-white">
 														<div class="float-right">
-															<neo-button small label="Enable" gradientFrom="from-emerald-400" gradientTo="to-lime-600" onclick="enableMod('${modFolder}')" style="display: inline">
+															<neo-button small label="Enable" gradientFrom="from-emerald-400" gradientTo="to-lime-600" onclick="enableMod('${sanitiseStrongly(modFolder.replace(`"`, "").replace(`\\`, ""))}')" style="display: inline">
 																<i class="fas fa-plus" slot="icon"></i>
 															</neo-button>
 														</div>
 														<div class="float-left" style="max-width: 80%">
 															<div class="mb-2">
-																<h3 class="font-semibold text-xl inline"><img src="rpkgMod.png" class="w-8 inline align-middle">  <span class="align-middle">${modFolder}</span></h3><br>
+																<h3 class="font-semibold text-xl inline"><img src="rpkgMod.png" class="w-8 inline align-middle">  <span class="align-middle">${sanitiseStrongly(modFolder.replace(`"`, "").replace(`\\`, ""))}</span></h3><br>
 															</div>
 															<p>RPKG-only mod</p>
 														</div>
@@ -433,7 +433,7 @@ async function modSettings(modFolder) {
 
 	await Swal.fire({
 		title: manifest.name,
-		html: `${manifest.description}<br><div class="text-left mt-4 text-2xl font-semibold">Settings</div><div class="text-left overflow-auto h-64">${settingsHTML}</div>`,
+		html: `${sanitise(manifest.description)}<br><div class="text-left mt-4 text-2xl font-semibold">Settings</div><div class="text-left overflow-auto h-64">${settingsHTML}</div>`,
 		customClass: {
 			htmlContainer: 'text-center'
 		},
