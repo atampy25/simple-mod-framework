@@ -71,6 +71,7 @@ Each mod contains a manifest. Manifests have the following format:
 			"path": "[assembly:/_pro/myBricks/myNewChunk28Map.entity].entitytemplate"
 		}
 	],
+	"thumbs": ["ConsoleCmd AAAAAAAAAA"], // Thumbs.dat commands to place after [Hitman5]
 	"runtimePackages": [ // RPKG files to place (and automatically name) in Runtime
 		{
 			"chunk": 0, // This for example would become chunk0patch205 if no other mods added RPKGs (numbers are incremented automatically)

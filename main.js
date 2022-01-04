@@ -144,6 +144,7 @@ async function stageAllMods() {
 	fs.mkdirSync("staging")
 	fs.mkdirSync("temp")
 
+	let thumbs = []
 	let packagedefinition = []
 	let localisation = []
 	let localisationOverrides = {}
@@ -238,6 +239,9 @@ async function stageAllMods() {
 					option.runtimePackages && manifest.runtimePackages.push(...option.runtimePackages)
 					option.dependencies && manifest.dependencies.push(...option.dependencies)
 					option.requirements && manifest.requirements.push(...option.requirements)
+
+					option.packagedefinition && manifest.packagedefinition.push(...option.packagedefinition)
+					option.thumbs && manifest.thumbs.push(...option.thumbs)
 				}
 			}
 
@@ -636,6 +640,11 @@ async function stageAllMods() {
 			if (manifest.packagedefinition) {
 				packagedefinition.push(...manifest.packagedefinition)
 			}
+		
+			/* ------------------------------------------- Thumbs ------------------------------------------- */
+			if (manifest.thumbs) {
+				thumbs.push(...manifest.thumbs)
+			}
 			
 			/* ---------------------------------------- Localisation ---------------------------------------- */
 			if (manifest.localisation) {
@@ -900,6 +909,13 @@ async function stageAllMods() {
 	/* ---------------------------------------------------------------------------------------------- */
 	/*                                             Thumbs                                             */
 	/* ---------------------------------------------------------------------------------------------- */
+	logger.info("Patching thumbs")
+
+	try {
+		await promisify(emptyFolder)("temp", true)
+	} catch {}
+	fs.mkdirSync("temp") // Clear the temp directory
+
 	if (!fs.existsSync(path.join(process.cwd(), "cleanThumbs.dat"))) { // If there is no clean thumbs, copy the one from Retail
 		fs.copyFileSync(path.join(config.runtimePath, "..", "Retail", "thumbs.dat"), path.join(process.cwd(), "cleanThumbs.dat"))
 	}
@@ -909,18 +925,30 @@ async function stageAllMods() {
 		fs.copyFileSync(path.join(config.runtimePath, "..", "Retail", "thumbs.dat"), path.join(process.cwd(), "cleanThumbs.dat"))
 	}
 
+	child_process.execSync(`"Third-Party\\h6xtea.exe" -d --src "${path.join(process.cwd(), "cleanThumbs.dat")}" --dst "${path.join(process.cwd(), "temp", "thumbs.dat.decrypted")}"`) // Decrypt thumbs
+
+	let thumbsContent = String(fs.readFileSync(path.join(process.cwd(), "temp", "thumbs.dat.decrypted"))).replace("Boot.entity", "MainMenu.entity")
 	if (config.skipIntro) { // Skip intro
-		child_process.execSync(`"Third-Party\\h6xtea.exe" -d --src "${path.join(process.cwd(), "cleanThumbs.dat")}" --dst "${path.join(process.cwd(), "temp", "thumbs.dat.decrypted")}"`) // Decrypt thumbs
-		fs.writeFileSync(path.join(process.cwd(), "temp", "thumbs.dat.decrypted"), String(fs.readFileSync(path.join(process.cwd(), "temp", "thumbs.dat.decrypted"))).replace("Boot.entity", "MainMenu.entity")) // Replace Boot with MainMenu
-		child_process.execSync(`"Third-Party\\h6xtea.exe" -e --src "${path.join(process.cwd(), "temp", "thumbs.dat.decrypted")}" --dst "${path.join(process.cwd(), "temp", "thumbs.dat.decrypted.encrypted")}"`) // Encrypt thumbs
-		
-		fs.copyFileSync(path.join(process.cwd(), "temp", "thumbs.dat.decrypted.encrypted"), config.outputToSeparateDirectory ? path.join(process.cwd(), "Output", "thumbs.dat") : path.join(config.runtimePath, "..", "Retail", "thumbs.dat")) // Output thumbs
+		thumbsContent = thumbsContent.replace("Boot.entity", "MainMenu.entity")
 	}
+
+	for (let patch of thumbs) {
+		thumbsContent.replace(/\[Hitman5\]\n/gi, "[Hitman5]\n" + patch + "\n")
+	}
+
+	fs.writeFileSync(path.join(process.cwd(), "temp", "thumbs.dat.decrypted"), thumbsContent) // Replace Boot with MainMenu
+	child_process.execSync(`"Third-Party\\h6xtea.exe" -e --src "${path.join(process.cwd(), "temp", "thumbs.dat.decrypted")}" --dst "${path.join(process.cwd(), "temp", "thumbs.dat.decrypted.encrypted")}"`) // Encrypt thumbs
+	fs.copyFileSync(path.join(process.cwd(), "temp", "thumbs.dat.decrypted.encrypted"), config.outputToSeparateDirectory ? path.join(process.cwd(), "Output", "thumbs.dat") : path.join(config.runtimePath, "..", "Retail", "thumbs.dat")) // Output thumbs
 
 	/* ---------------------------------------------------------------------------------------------- */
 	/*                                       Package definition                                       */
 	/* ---------------------------------------------------------------------------------------------- */
 	logger.info("Patching packagedefinition")
+
+	try {
+		await promisify(emptyFolder)("temp", true)
+	} catch {}
+	fs.mkdirSync("temp") // Clear the temp directory
 
 	if (!fs.existsSync(path.join(process.cwd(), "cleanPackageDefinition.txt"))) { // If there is no clean PD, copy the one from Runtime
 		fs.copyFileSync(path.join(config.runtimePath, "packagedefinition.txt"), path.join(process.cwd(), "cleanPackageDefinition.txt"))
@@ -952,11 +980,6 @@ async function stageAllMods() {
 	child_process.execSync(`"Third-Party\\h6xtea.exe" -e --src "${path.join(process.cwd(), "temp", "packagedefinition.txt.decrypted")}" --dst "${path.join(process.cwd(), "temp", "packagedefinition.txt.decrypted.encrypted")}"`) // Encrypt PD
 
 	fs.copyFileSync(path.join(process.cwd(), "temp", "packagedefinition.txt.decrypted.encrypted"), config.outputToSeparateDirectory ? path.join(process.cwd(), "Output", "packagedefinition.txt") : path.join(config.runtimePath, "packagedefinition.txt")) // Output PD
-
-	try {
-		await promisify(emptyFolder)("temp", true)
-	} catch {}
-	fs.mkdirSync("temp")
 
 	/* ---------------------------------------------------------------------------------------------- */
 	/*                                         Generate RPKGs                                         */
