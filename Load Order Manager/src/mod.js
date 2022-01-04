@@ -210,6 +210,12 @@ async function refreshMods() {
 							: mod // Mod is an RPKG mod, use folder name
 			if (fs.existsSync(path.join("..", "Mods", modFolder, "manifest.json"))) {
 				var modManifest = json5.parse(fs.readFileSync(path.join("..", "Mods", modFolder, "manifest.json")))
+
+				for (let key of ["id", "name", "description", "authors", "version", "frameworkVersion"]) {
+					if (typeof modManifest[key] == "undefined") {
+						continue
+					}
+				}
 				
 				modManifest.options && checkModOptions(modFolder) // Ensure mod options are valid for all enabled mods with options
 				
@@ -255,6 +261,13 @@ async function refreshMods() {
 		for (modFolder of fs.readdirSync("../Mods").filter(folder => !config.loadOrder.includes(folder) && (!fs.existsSync(path.join("..", "Mods", folder, "manifest.json")) || !config.loadOrder.includes(json5.parse(String(fs.readFileSync(path.join("..", "Mods", folder, "manifest.json")))).id)))) {
 			if (fs.existsSync(path.join("..", "Mods", modFolder, "manifest.json"))) {
 				var modManifest = json5.parse(fs.readFileSync(path.join("..", "Mods", modFolder, "manifest.json")))
+
+				for (let key of ["id", "name", "description", "authors", "version", "frameworkVersion"]) {
+					if (typeof modManifest[key] == "undefined") {
+						continue
+					}
+				}
+				
 				$("#availableMods")[0].innerHTML += `<div class="p-8 bg-gray-900 w-full flow-root shadow-xl rounded-md text-white">
 														<div class="float-right">
 															<neo-button small label="Enable" gradientFrom="from-emerald-400" gradientTo="to-lime-600" onclick="enableMod('${modFolder}')" style="display: inline">
