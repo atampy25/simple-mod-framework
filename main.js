@@ -232,15 +232,28 @@ async function stageAllMods() {
 						blobsFolders.push(option.blobsFolder)
 					}
 
+					manifest.localisation || (manifest.localisation = {})
 					option.localisation && deepMerge(manifest.localisation, option.localisation)
+
+					manifest.localisationOverrides || (manifest.localisationOverrides = {})
 					option.localisationOverrides && deepMerge(manifest.localisationOverrides, option.localisationOverrides)
+					
+					manifest.localisedLines || (manifest.localisedLines = {})
 					option.localisedLines && deepMerge(manifest.localisedLines, option.localisedLines)
 					
+					manifest.runtimePackages || (manifest.runtimePackages = [])
 					option.runtimePackages && manifest.runtimePackages.push(...option.runtimePackages)
+
+					manifest.dependencies || (manifest.dependencies = [])
 					option.dependencies && manifest.dependencies.push(...option.dependencies)
+
+					manifest.requirements || (manifest.requirements = [])
 					option.requirements && manifest.requirements.push(...option.requirements)
 
+					manifest.packagedefinition || (manifest.packagedefinition = [])
 					option.packagedefinition && manifest.packagedefinition.push(...option.packagedefinition)
+
+					manifest.thumbs || (manifest.thumbs = [])
 					option.thumbs && manifest.thumbs.push(...option.thumbs)
 				}
 			}
