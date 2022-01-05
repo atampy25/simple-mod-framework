@@ -7,6 +7,7 @@ Each mod contains a manifest. Manifests have the following format:
 	"name": "Example Mod",
 	"description": "It is a mod",
 	"authors": ["Atampy26", "No one else"],
+	"version": "1.0.0", // The mod's version, used to compare against the linked JSON - make sure to use semantic versioning (Major.Minor.Patch)
 	"frameworkVersion": "1.0.0", // The framework version the mod is designed for
 
 	/* -------------------------------------- Optional data -------------------------------------- */
@@ -17,8 +18,7 @@ Each mod contains a manifest. Manifests have the following format:
 	"loadAfter": [ // Mods that this mod should load *after* if they are enabled, i.e. mods that this one should override (the GUI will automatically sort based on this before deploying)
 		"Atampy26.OtherModThatThisModUses"
 	],
-	"version": "1.0.0", // The mod's version, used to compare against the linked JSON - make sure to use semantic versioning (Major.Minor.Patch) - Cannot be omitted
-	"updateCheck": "https://hitman-resources.netlify.app/framework/updates/exampleMod.json", // A JSON (see Mod Updates) that will be checked for updates (MUST BE HTTPS) - contact Atampy26 for hosting on hitman-resources.netlify.app - Can be omitted
+	"updateCheck": "https://hitman-resources.netlify.app/framework/updates/exampleMod.json", // A JSON (see Mod Updates) that will be checked for updates (MUST BE HTTPS) - contact Atampy26 for hosting on hitman-resources.netlify.app
 	
 	/* ------- This data can be used in mod options as well as on the top level (optional) ------- */
 	"contentFolder": "content", // Folder next to the manifest to use for the mod content
@@ -155,4 +155,4 @@ Each mod contains a manifest. Manifests have the following format:
 
 Manifests are parsed with JSON5. That means you can use comments in them.
 
-Make sure that if you're using the sorting features you don't accidentally cause a dependency cycle! If Mod A loads before Mod B and Mod B loads before Mod C, a dependency cycle happens if Mod C tries to load before Mod A for example. Users will get a warning message if this happens and will be asked to contact you.
+Make sure that if you're using the sorting features you don't accidentally cause a dependency cycle! If Mod A loads before Mod B and Mod B loads before Mod C, a dependency cycle happens if Mod C tries to load before Mod A for example (A --> B --> C --> A isn't possible). Users will get a warning message if this happens and will be asked to contact you.
