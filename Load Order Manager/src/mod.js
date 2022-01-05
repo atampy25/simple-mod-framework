@@ -121,7 +121,7 @@ async function updateMod(modFolder) {
 						});
 			
 						for (var managedFile of updateData.managedFilesAndFolders) {
-							if (managedFile.includes("..")) {
+							if (managedFile.includes("..") || managedFile.includes(":")) {
 								break
 							}
 							fs.removeSync(path.join("..", "Mods", managedFile))
@@ -418,7 +418,7 @@ async function modSettings(modFolder) {
 		} else if (option.type == "select") {
 			if (!groups[option.group]) { groups[option.group] = [] }
 
-			groups[option.group].push([option.name, option.tooltip, option.requirements])
+			groups[option.group].push([option.name, option.tooltip, option.requirements, option.image])
 		}
 	}
 
@@ -447,20 +447,74 @@ async function modSettings(modFolder) {
 		confirmButtonText: 'Save',
 		didOpen: () => {
 			for (let option of manifest.options) {
-				if (option.tooltip || (option.requirements && !option.requirements.every(a=>config.loadOrder.includes(a))))
-				tippy(`span[data-optionName="${sanitiseStrongly(option.name.replace(`"`, "").replace(`\\`, ""))}"]`, {
-					content: sanitise(option.tooltip) + ((option.requirements && !option.requirements.every(a=>config.loadOrder.includes(a))) ? `<br>Requires: ${option.requirements.map(a=>sanitiseStrongly(a)).join(", ")}` : ``),
-					placement: "right"
-				});
+				if (option.image || option.tooltip || (option.requirements && !option.requirements.every(a=>config.loadOrder.includes(a)))) {
+					if (option.image && !option.image.includes("\"") && !option.image.includes("..") && !option.image.includes(":")) {
+						document.querySelector(".swal2-container").children[1]?.remove()
+						document.querySelector(".swal2-container").insertAdjacentHTML("beforeend", `
+							<div tabindex="-1" role="dialog" aria-live="assertive" aria-modal="true" style="width: 36rem; display: grid; margin: auto; position: relative; box-sizing: border-box; flex-direction: column; justify-content: center; max-width: 100%; padding: 1.25em; border: none; border-radius: 5px; background: #19191a; font-family: inherit; font-size: 1rem; -webkit-tap-highlight-color: transparent; -webkit-animation: swal2-show 0.3s; animation: swal2-show 0.3s;">
+								<button type="button" class="swal2-close" aria-label="Close this dialog" style="display: none;">×</button>
+								<img class="swal2-image" style="display: block;" src="${path.resolve(path.join("..", "Mods", modFolder, option.image))}">
+								<h2 class="swal2-title" style="display: block;">${sanitiseStrongly(option.name.replace(`"`, "").replace(`\\`, ""))}</h2>
+								<div class="swal2-html-container text-center" style="display: block;">${sanitise(option.tooltip) + ((option.requirements && !option.requirements.every(a=>config.loadOrder.includes(a))) ? `<br>Requires: ${option.requirements.map(a=>sanitiseStrongly(a)).join(", ")}` : ``)}<br>
+								</div>
+							</div>
+						`)
+
+						document.querySelector(`span[data-optionName="${sanitiseStrongly(option.name.replace(`"`, "").replace(`\\`, ""))}"]`).addEventListener("mouseover", () => {
+							document.querySelector(".swal2-container").children[1]?.remove()
+							document.querySelector(".swal2-container").insertAdjacentHTML("beforeend", `
+								<div tabindex="-1" role="dialog" aria-live="assertive" aria-modal="true" style="width: 36rem; display: grid; margin: auto; position: relative; box-sizing: border-box; flex-direction: column; justify-content: center; max-width: 100%; padding: 1.25em; border: none; border-radius: 5px; background: #19191a; font-family: inherit; font-size: 1rem; -webkit-tap-highlight-color: transparent; -webkit-animation: swal2-show 0.3s; animation: swal2-show 0.3s;">
+									<button type="button" class="swal2-close" aria-label="Close this dialog" style="display: none;">×</button>
+									<img class="swal2-image" style="display: block;" src="${path.resolve(path.join("..", "Mods", modFolder, option.image))}">
+									<h2 class="swal2-title" style="display: block;">${sanitiseStrongly(option.name.replace(`"`, "").replace(`\\`, ""))}</h2>
+									<div class="swal2-html-container text-center" style="display: block;">${sanitise(option.tooltip) + ((option.requirements && !option.requirements.every(a=>config.loadOrder.includes(a))) ? `<br>Requires: ${option.requirements.map(a=>sanitiseStrongly(a)).join(", ")}` : ``)}<br>
+									</div>
+								</div>
+							`)
+						})
+					} else {
+						tippy(`span[data-optionName="${sanitiseStrongly(option.name.replace(`"`, "").replace(`\\`, ""))}"]`, {
+							content: sanitise(option.tooltip) + ((option.requirements && !option.requirements.every(a=>config.loadOrder.includes(a))) ? `<br>Requires: ${option.requirements.map(a=>sanitiseStrongly(a)).join(", ")}` : ``),
+							placement: "right"
+						});
+					}
+				}
 			}
 			
 			for (let group of Object.keys(groups)) {
 				for (let option of groups[group]) {
-					if (option[1] || (option[2] && !option[2].every(a=>config.loadOrder.includes(a))))
-					tippy(`span[data-optionName="${sanitiseStrongly(option[0].replace(`"`, "").replace(`\\`, ""))}"]`, {
-						content: sanitise(option[1]) + ((option[2] && !option[2].every(a=>config.loadOrder.includes(a))) ? `<br>Requires: ${option[2].map(a=>sanitiseStrongly(a)).join(", ")}` : ``),
-						placement: "right"
-					});
+					if (option[3] || option[1] || (option[2] && !option[2].every(a=>config.loadOrder.includes(a)))) {
+						if (option[3] && && !option[3].includes("\"") && !option[3].includes("..") && !option[3].includes(":")) {
+							document.querySelector(".swal2-container").children[1]?.remove()
+							document.querySelector(".swal2-container").insertAdjacentHTML("beforeend", `
+								<div tabindex="-1" role="dialog" aria-live="assertive" aria-modal="true" style="width: 36rem; display: grid; margin: auto; position: relative; box-sizing: border-box; flex-direction: column; justify-content: center; max-width: 100%; padding: 1.25em; border: none; border-radius: 5px; background: #19191a; font-family: inherit; font-size: 1rem; -webkit-tap-highlight-color: transparent; -webkit-animation: swal2-show 0.3s; animation: swal2-show 0.3s;">
+									<button type="button" class="swal2-close" aria-label="Close this dialog" style="display: none;">×</button>
+									<img class="swal2-image" style="display: block;" src="${path.resolve(path.join("..", "Mods", modFolder, option[3]))}">
+									<h2 class="swal2-title" style="display: block;">${sanitiseStrongly(option[0].replace(`"`, "").replace(`\\`, ""))}</h2>
+									<div class="swal2-html-container text-center" style="display: block;">${sanitise(option[1]) + ((option[2] && !option[2].every(a=>config.loadOrder.includes(a))) ? `<br>Requires: ${option[2].map(a=>sanitiseStrongly(a)).join(", ")}` : ``)}<br>
+									</div>
+								</div>
+							`)
+
+							document.querySelector(`span[data-optionName="${sanitiseStrongly(option[0].replace(`"`, "").replace(`\\`, ""))}"]`).addEventListener("mouseover", () => {
+								document.querySelector(".swal2-container").children[1]?.remove()
+								document.querySelector(".swal2-container").insertAdjacentHTML("beforeend", `
+									<div tabindex="-1" role="dialog" aria-live="assertive" aria-modal="true" style="width: 36rem; display: grid; margin: auto; position: relative; box-sizing: border-box; flex-direction: column; justify-content: center; max-width: 100%; padding: 1.25em; border: none; border-radius: 5px; background: #19191a; font-family: inherit; font-size: 1rem; -webkit-tap-highlight-color: transparent; -webkit-animation: swal2-show 0.3s; animation: swal2-show 0.3s;">
+										<button type="button" class="swal2-close" aria-label="Close this dialog" style="display: none;">×</button>
+										<img class="swal2-image" style="display: block;" src="${path.resolve(path.join("..", "Mods", modFolder, option[3]))}">
+										<h2 class="swal2-title" style="display: block;">${sanitiseStrongly(option[0].replace(`"`, "").replace(`\\`, ""))}</h2>
+										<div class="swal2-html-container text-center" style="display: block;">${sanitise(option[1]) + ((option[2] && !option[2].every(a=>config.loadOrder.includes(a))) ? `<br>Requires: ${option[2].map(a=>sanitiseStrongly(a)).join(", ")}` : ``)}<br>
+										</div>
+									</div>
+								`)
+							})
+						} else {
+							tippy(`span[data-optionName="${sanitiseStrongly(option[0].replace(`"`, "").replace(`\\`, ""))}"]`, {
+								content: sanitise(option[1]) + ((option[2] && !option[2].every(a=>config.loadOrder.includes(a))) ? `<br>Requires: ${option[2].map(a=>sanitiseStrongly(a)).join(", ")}` : ``),
+								placement: "right"
+							});
+						}
+					}
 				}
 			}
 		},
