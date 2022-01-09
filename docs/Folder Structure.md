@@ -34,4 +34,6 @@ The content folder contains chunk folders, which contain files (and folders, the
 
 The names of special files do not matter - it is their extensions that do, **except for texture.tga and sfx.wem files**. Raw files, which any non-special file is, are placed directly into the built RPKG and so must be named like usual.
 
+If a chunk meta file named chunkX.meta is placed at the top level of the chunk folder, the framework will overwrite the chunk with the content in the content folder. This allows for the creation of new chunks. Make sure you don't do this if you're trying to patch an existing chunk, or you may overwrite your game files!
+
 The blobs folder contains blobs, which follow the same filepath as the folder structure and which will be placed into the blobs ORES. In the example, `theBestUnlockable.jpg` would be assigned the path `images/unlockables/theBestUnlockable.jpg`.
