@@ -380,7 +380,7 @@ function checkModOptions(modFolder) {
 	let config = json5.parse(fs.readFileSync("../config.json"))
 
 	if (!config.modOptions[manifest.id]) {
-		config.modOptions[manifest.id] = [...manifest.options.filter(a=>a.enabledByDefault).map(a=>a.name)]
+		config.modOptions[manifest.id] = [...manifest.options.filter(a=>a.enabledByDefault).map(a=>a.type == "select" ? a.group + ":" + a.name : a.name)]
 	} // Default mod options
 
 	for (var i = config.modOptions[manifest.id].length - 1; i >= 0; i--) {

@@ -761,11 +761,6 @@ async function stageAllMods() {
 
 	let runtimePatchNumber = 205
 	for (let runtimeFile of runtimePackages) {
-		// {
-		//     "chunk": 0,
-		//     "path": "portedhashes.rpkg"
-		// }
-
 		fs.copyFileSync(path.join(process.cwd(), "Mods", runtimeFile.mod, runtimeFile.path), config.outputToSeparateDirectory ? path.join(process.cwd(), "Output", "chunk" + runtimeFile.chunk + "patch" + runtimePatchNumber + ".rpkg") : path.join(config.runtimePath, "chunk" + runtimeFile.chunk + "patch" + runtimePatchNumber + ".rpkg"))
 		runtimePatchNumber ++
 
