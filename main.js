@@ -54,6 +54,8 @@ const logger = !process.argv[2] ? {
 		process.stderr.write(chalk`{red ERROR}\t${text}\n`)
 		console.trace()
 
+		child_process.execSync("pause")
+
 		if (exitAfter) cleanExit()
 	}
 } : {
