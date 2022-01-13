@@ -8,7 +8,7 @@ Each mod contains a manifest. Manifests have the following format:
 	"description": "It is a mod",
 	"authors": ["Atampy26", "No one else"],
 	"version": "1.0.0", // The mod's version, used to compare against the linked JSON - make sure to use semantic versioning (Major.Minor.Patch)
-	"frameworkVersion": "1.0.0", // The framework version the mod is designed for
+	"frameworkVersion": "1.1.0", // The framework version the mod is designed for
 
 	/* -------------------------------------- Optional data -------------------------------------- */
 	"loadBefore": [ // Mods that this mod should load *before* if they are enabled, i.e. mods that should override this one (the GUI will automatically sort based on this before deploying)

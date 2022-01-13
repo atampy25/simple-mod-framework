@@ -1,4 +1,4 @@
-const FrameworkVersion = "1.0.1"
+const FrameworkVersion = "1.1.0"
 
 // @ts-ignore
 // eslint-disable-next-line no-undef
@@ -1010,6 +1010,11 @@ async function stageAllMods() {
 	try {
 		await promisify(emptyFolder)("temp", true)
 	} catch {}
+
+	if (config.outputConfigToAppDataOnDeploy) {
+		fs.ensureDirSync(path.join(process.env.LOCALAPPDATA, "Simple Mod Framework"))
+		fs.writeFileSync(path.join(process.env.LOCALAPPDATA, "Simple Mod Framework", "lastDeploy.json"), config)
+	}
 
 	if (process.argv[2]) {
 		logger.info("Deployed all mods successfully.")

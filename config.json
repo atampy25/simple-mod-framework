@@ -3,5 +3,6 @@
     skipIntro: true,
     outputToSeparateDirectory: true,
     loadOrder: [],
-    modOptions: {}
+    modOptions: {},
+    outputConfigToAppDataOnDeploy: true
 }
