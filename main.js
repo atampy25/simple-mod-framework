@@ -223,7 +223,7 @@ async function stageAllMods() {
 			}
 
 			if (config.modOptions[manifest.id] && manifest.options && manifest.options.length) {
-				for (let option of manifest.options.filter(a => (config.modOptions[manifest.id].includes(a.name)) || (a.type == "requirement" && a.mods.every(b=>config.loadOrder.includes(b))))) {
+				for (let option of manifest.options.filter(a => (config.modOptions[manifest.id].includes(a.name) || config.modOptions[manifest.id].includes(a.group + ":" + a.name)) || (a.type == "requirement" && a.mods.every(b=>config.loadOrder.includes(b))))) {
 					if (option.contentFolder && option.contentFolder.length && fs.existsSync(path.join(process.cwd(), "Mods", mod, option.contentFolder)) && fs.readdirSync(path.join(process.cwd(), "Mods", mod, option.contentFolder)).length) {
 						contentFolders.push(option.contentFolder)
 					}

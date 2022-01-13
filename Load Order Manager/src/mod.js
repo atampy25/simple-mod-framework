@@ -384,10 +384,16 @@ function checkModOptions(modFolder) {
 	} // Default mod options
 
 	for (var i = config.modOptions[manifest.id].length - 1; i >= 0; i--) {
-		if (!manifest.options.find(a=>a.name == config.modOptions[manifest.id][i])) {
-			config.modOptions[manifest.id].splice(i, 1)
+		if (!manifest.options.some(a=>a.type == "checkbox" && a.name == config.modOptions[manifest.id][i]) && !manifest.options.some(a=>a.type == "select" && ((a.group + ":" + a.name) == (config.modOptions[manifest.id][i])))) {
+			if (manifest.options.some(a=>a.type == "select" && a.name == config.modOptions[manifest.id][i])) {
+				// There's a select and it's using the old name format (just the name), change it to the new format (group:name)
+				config.modOptions[manifest.id][i] = manifest.options.find(a=>a.type == "select" && a.name == config.modOptions[manifest.id][i]).group + ":" + manifest.options.find(a=>a.type == "select" && a.name == config.modOptions[manifest.id][i]).name
+			} else {
+				// Remove it, it doesn't exist
+				config.modOptions[manifest.id].splice(i, 1)
+			}
 		}
-	} // Remove mod options that don't exist
+	} // Remove non-existent mod options and upgrade old select references
 
 	for (var i = config.modOptions[manifest.id].length - 1; i >= 0; i--) {
 		if (manifest.options.find(a=>a.name == config.modOptions[manifest.id][i]).requirements) {
@@ -427,8 +433,8 @@ async function modSettings(modFolder) {
 							<span class="font-semibold">${sanitiseStrongly(group.replace(`"`, "").replace(`\\`, ""))}</span>`
 		for (let option of groups[group]) {
 			settingsHTML += `<br><label class="inline-flex items-center">
-								<input${(option[2] && !option[2].every(a=>config.loadOrder.includes(a))) ? ' disabled' : ''} type="radio"${json5.parse(fs.readFileSync("../config.json")).modOptions[manifest.id].includes(sanitiseStrongly(option[0].replace(`"`, "").replace(`\\`, ""))) ? ' checked' : ''} class="form-radio" name="${sanitiseStrongly(group.replace(`"`, "").replace(`\\`, ""))}" data-optionName="${sanitiseStrongly(option[0].replace(`"`, "").replace(`\\`, ""))}">
-								<span class="ml-2${(option[2] && !option[2].every(a=>config.loadOrder.includes(a))) ? ' text-gray-400' : ''}" data-optionName="${sanitiseStrongly(option[0].replace(`"`, "").replace(`\\`, ""))}">${sanitiseStrongly(option[0].replace(`"`, "").replace(`\\`, ""))}</span>
+								<input${(option[2] && !option[2].every(a=>config.loadOrder.includes(a))) ? ' disabled' : ''} type="radio"${json5.parse(fs.readFileSync("../config.json")).modOptions[manifest.id].includes(sanitiseStrongly(option[0].replace(`"`, "").replace(`\\`, ""))) ? ' checked' : ''} class="form-radio" name="${sanitiseStrongly(group.replace(`"`, "").replace(`\\`, ""))}" data-optionName="${sanitiseStrongly(group.replace(`"`, "").replace(`\\`, "")) + ":" + sanitiseStrongly(option[0].replace(`"`, "").replace(`\\`, ""))}">
+								<span class="ml-2${(option[2] && !option[2].every(a=>config.loadOrder.includes(a))) ? ' text-gray-400' : ''}" data-optionName="${sanitiseStrongly(group.replace(`"`, "").replace(`\\`, "")) + ":" + sanitiseStrongly(option[0].replace(`"`, "").replace(`\\`, ""))}">${sanitiseStrongly(option[0].replace(`"`, "").replace(`\\`, ""))}</span>
 							</label>`
 		}
 		
@@ -484,7 +490,7 @@ async function modSettings(modFolder) {
 			for (let group of Object.keys(groups)) {
 				for (let option of groups[group]) {
 					if (option[3] || option[1] || (option[2] && !option[2].every(a=>config.loadOrder.includes(a)))) {
-						if (option[3] && && !option[3].includes("\"") && !option[3].includes("..") && !option[3].includes(":")) {
+						if (option[3] && !option[3].includes("\"") && !option[3].includes("..") && !option[3].includes(":")) {
 							document.querySelector(".swal2-container").children[1]?.remove()
 							document.querySelector(".swal2-container").insertAdjacentHTML("beforeend", `
 								<div tabindex="-1" role="dialog" aria-live="assertive" aria-modal="true" style="width: 36rem; display: grid; margin: auto; position: relative; box-sizing: border-box; flex-direction: column; justify-content: center; max-width: 100%; padding: 1.25em; border: none; border-radius: 5px; background: #19191a; font-family: inherit; font-size: 1rem; -webkit-tap-highlight-color: transparent; -webkit-animation: swal2-show 0.3s; animation: swal2-show 0.3s;">
@@ -496,7 +502,7 @@ async function modSettings(modFolder) {
 								</div>
 							`)
 
-							document.querySelector(`span[data-optionName="${sanitiseStrongly(option[0].replace(`"`, "").replace(`\\`, ""))}"]`).addEventListener("mouseover", () => {
+							document.querySelector(`span[data-optionName="${sanitiseStrongly(group.replace(`"`, "").replace(`\\`, "")) + ":" + sanitiseStrongly(option[0].replace(`"`, "").replace(`\\`, ""))}"]`).addEventListener("mouseover", () => {
 								document.querySelector(".swal2-container").children[1]?.remove()
 								document.querySelector(".swal2-container").insertAdjacentHTML("beforeend", `
 									<div tabindex="-1" role="dialog" aria-live="assertive" aria-modal="true" style="width: 36rem; display: grid; margin: auto; position: relative; box-sizing: border-box; flex-direction: column; justify-content: center; max-width: 100%; padding: 1.25em; border: none; border-radius: 5px; background: #19191a; font-family: inherit; font-size: 1rem; -webkit-tap-highlight-color: transparent; -webkit-animation: swal2-show 0.3s; animation: swal2-show 0.3s;">
@@ -509,7 +515,7 @@ async function modSettings(modFolder) {
 								`)
 							})
 						} else {
-							tippy(`span[data-optionName="${sanitiseStrongly(option[0].replace(`"`, "").replace(`\\`, ""))}"]`, {
+							tippy(`span[data-optionName="${sanitiseStrongly(group.replace(`"`, "").replace(`\\`, "")) + ":" + sanitiseStrongly(option[0].replace(`"`, "").replace(`\\`, ""))}"]`, {
 								content: sanitise(option[1]) + ((option[2] && !option[2].every(a=>config.loadOrder.includes(a))) ? `<br>Requires: ${option[2].map(a=>sanitiseStrongly(a)).join(", ")}` : ``),
 								placement: "right"
 							});

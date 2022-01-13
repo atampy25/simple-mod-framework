@@ -87,7 +87,7 @@ Each mod contains a manifest. Manifests have the following format:
 
 	"options": [ // Settings for the mod that can be enabled/disabled in the GUI - Can be omitted if the mod doesn't need to provide settings
 		{
-			"name": "Use additional content",
+			"name": "Use additional content", // Must be unique for checkbox type options
 			"tooltip": "Some additional content to use", // Not required, will display a tooltip to the right of the input when the user hovers over it in the GUI
 			"image": "additionalcontent.png", // Not required, will display an image to the right of the settings window with the image, option name and tooltip when hovered in the GUI
 			"type": "checkbox", // Checkbox type means a checkbox to use the variation or not
