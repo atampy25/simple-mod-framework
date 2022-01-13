@@ -83,6 +83,8 @@ process.on('unhandledRejection', (err, origin) => {
 })
 
 const config = json5.parse(String(fs.readFileSync(path.join(process.cwd(), "config.json"))))
+if (typeof config.outputConfigToAppDataOnDeploy == "undefined") { config.outputConfigToAppDataOnDeploy = true; fs.writeFileSync(path.join(process.cwd(), "config.json"), json5.stringify(config)) }
+
 config.runtimePath = path.resolve(process.cwd(), config.runtimePath)
 
 const rpkgInstance = new RPKG.RPKGInstance()
