@@ -338,16 +338,22 @@ async function stageAllMods() {
 								break;
 							case "entity.patch.json":
 								entityContent = LosslessJSON.parse(String(fs.readFileSync(contentFilePath)))
+								entityContent.path = contentFilePath
 	
 								logger.debug("Preparing to apply patch " + contentFilePath)
 
-								entityPatches.push({
-									contentFilePath,
-									chunkFolder,
-									entityContent,
-									tempRPKG: await rpkgInstance.getRPKGOfHash(entityContent.tempHash),
-									tbluRPKG: await rpkgInstance.getRPKGOfHash(entityContent.tbluHash)
-								})
+								if (entityPatches.some(a=>a.tempHash == entityContent.tempHash)) {
+									entityPatches.find(a=>a.tempHash == entityContent.tempHash).patches.push(entityContent)
+								} else {
+									entityPatches.push({
+										tempHash: entityContent.tempHash,
+										tempRPKG: await rpkgInstance.getRPKGOfHash(entityContent.tempHash),
+										tbluHash: entityContent.tbluHash,
+										tbluRPKG: await rpkgInstance.getRPKGOfHash(entityContent.tbluHash),
+										chunkFolder,
+										patches: [entityContent]
+									})
+								}
 								break;
 							case "unlockables.json":
 								entityContent = JSON.parse(String(fs.readFileSync(contentFilePath)))
@@ -531,14 +537,10 @@ async function stageAllMods() {
 
 			global.currentWorkerPool = workerPool
 
-			await Promise.all(entityPatches.map(({contentFilePath, chunkFolder, entityContent, tempRPKG, tbluRPKG}) => {
+			await Promise.all(entityPatches.map(({ tempHash, tempRPKG, tbluHash, tbluRPKG, chunkFolder, patches }) => {
 				index ++
 				return workerPool.run({
-					contentFilePath,
-					chunkFolder,
-					entityContent,
-					tempRPKG,
-					tbluRPKG,
+					tempHash, tempRPKG, tbluHash, tbluRPKG, chunkFolder, patches,
 					assignedTemporaryDirectory: "patchWorker" + index,
 					useNiceLogs: !process.argv[2]
 				})

@@ -266,7 +266,7 @@ async function refreshMods() {
 					if (path.extname(modFolder) == ".zip") {
 						$("#availableMods")[0].innerHTML += `<div class="p-8 bg-gray-900 w-full flow-root shadow-xl rounded-md text-white">
 																<div class="float-right">
-																	<neo-button small label="Install" gradientFrom="from-teal-400" gradientTo="to-blue-500" onclick="importZIP('${sanitiseStrongly(modFolder.replace(`"`, "").replace(`\\`, ""))}', true)" style="display: inline">
+																	<neo-button small label="Install" gradientFrom="from-teal-400" gradientTo="to-blue-500" onclick="importZIP('${path.join("..", "Mods", sanitiseStrongly(modFolder.replace(`"`, "").replace(`\\`, "")))}', true)" style="display: inline">
 																		<i class="fas fa-file-import" slot="icon"></i>
 																	</neo-button>
 																</div>
