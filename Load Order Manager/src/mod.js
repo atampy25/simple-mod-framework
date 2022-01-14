@@ -12,7 +12,7 @@ var klaw = require("klaw-sync");
 
 window.$ = window.jQuery = require('jquery');
 
-frameworkVersion = "1.1.0"
+frameworkVersion = "1.1.1"
 
 async function updateFramework() {
 	var frameworkUpdateData = await (await fetch("https://hitman-resources.netlify.app/framework/framework.json")).json()
@@ -593,6 +593,7 @@ async function deployMods() {
 	Swal.fire({
 		title: 'Deploying your mods',
 		html: 'Grab a coffee or something - your enabled mods are being applied to the game.<br><br><i></i>',
+		width: '40rem',
 		didOpen: async () => {
 			Swal.showLoading()
 
