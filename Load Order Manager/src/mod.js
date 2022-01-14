@@ -262,7 +262,37 @@ async function refreshMods() {
 		
 		for (modFolder of fs.readdirSync("../Mods").filter(folder => !config.loadOrder.includes(folder) && (!fs.existsSync(path.join("..", "Mods", folder, "manifest.json")) || !config.loadOrder.includes(json5.parse(String(fs.readFileSync(path.join("..", "Mods", folder, "manifest.json")))).id)))) {
 			try {
-				if (fs.existsSync(path.join("..", "Mods", modFolder, "manifest.json"))) {
+				if (!fs.lstatSync(path.join("..", "Mods", modFolder)).isDirectory()) {
+					if (path.extname(modFolder) == ".zip") {
+						$("#availableMods")[0].innerHTML += `<div class="p-8 bg-gray-900 w-full flow-root shadow-xl rounded-md text-white">
+																<div class="float-right">
+																	<neo-button small label="Install" gradientFrom="from-teal-400" gradientTo="to-blue-500" onclick="importZIP('${sanitiseStrongly(modFolder.replace(`"`, "").replace(`\\`, ""))}', true)" style="display: inline">
+																		<i class="fas fa-file-import" slot="icon"></i>
+																	</neo-button>
+																</div>
+																<div class="float-left" style="max-width: 80%">
+																	<div class="mb-2">
+																		<h3 class="font-semibold text-xl inline"><img src="zipMod.png" class="w-8 inline align-middle">  <span class="align-middle">${sanitiseStrongly(modFolder.replace(`"`, "").replace(`\\`, ""))}</span></h3><br>
+																	</div>
+																	<p>Zipped mod</p>
+																</div>
+															</div><br>`
+					} else {
+						$("#availableMods")[0].innerHTML += `<div class="p-8 bg-gray-900 w-full flow-root shadow-xl rounded-md text-white">
+																<div class="float-right">
+																	<neo-button small label="Invalid" gradientFrom="from-rose-400" gradientTo="to-red-500" style="display: inline">
+																		<i class="fas fa-times" slot="icon"></i>
+																	</neo-button>
+																</div>
+																<div class="float-left" style="max-width: 80%">
+																	<div class="mb-2">
+																		<h3 class="font-semibold text-xl inline"><img src="invalidMod.png" class="w-8 inline align-middle">  <span class="align-middle">${sanitiseStrongly(modFolder.replace(`"`, "").replace(`\\`, ""))}</span></h3><br>
+																	</div>
+																	<p>Unsupported file type</p>
+																</div>
+															</div><br>`
+					}
+				} else if (fs.existsSync(path.join("..", "Mods", modFolder, "manifest.json"))) {
 					var modManifest = json5.parse(fs.readFileSync(path.join("..", "Mods", modFolder, "manifest.json")))
 
 					for (let key of ["id", "name", "description", "authors", "version", "frameworkVersion"]) {
@@ -649,8 +679,8 @@ async function deployMods() {
 	})
 }
 
-async function importZIP() {
-	var modPath = remote.dialog.showOpenDialogSync({
+async function importZIP(automatePath, automateMoveZip) {
+	var modPath = automatePath || remote.dialog.showOpenDialogSync({
 		title: "Import a Framework ZIP file",
 		buttonLabel: "Import",
 		filters: [{ name: 'Framework ZIP Files', extensions: ['zip'] }],
@@ -664,6 +694,11 @@ async function importZIP() {
 			Swal.showLoading()
 
 			setTimeout(() => {
+				if (automateMoveZip) {
+					fs.moveSync(modPath, "./mod.zip")
+					modPath = "./mod.zip"
+				}
+
 				fs.removeSync("./staging")
 				fs.ensureDirSync("./staging")
 
