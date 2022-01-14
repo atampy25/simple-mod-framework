@@ -443,12 +443,15 @@ async function modSettings(modFolder) {
 
 	let config = json5.parse(fs.readFileSync("../config.json"))
 
-	let settingsHTML = ``
+	let settingsHTMLs = [``, ``]
+
+	let useColumns = manifest.options.length > 15
+	let column = 0
 
 	let groups = {}
 	for (let option of manifest.options) {
 		if (option.type == "checkbox") {
-			settingsHTML += `<div class="mb-2"><label class="inline-flex items-center">
+			settingsHTMLs[column] += `<div class="mb-2"><label class="inline-flex items-center">
 									<input${(option.requirements && !option.requirements.every(a=>config.loadOrder.includes(a))) ? ' disabled' : ''} type="checkbox"${json5.parse(fs.readFileSync("../config.json")).modOptions[manifest.id].includes(sanitiseStrongly(option.name.replace(`"`, "").replace(`\\`, ""))) ? ' checked' : ''} class="form-checkbox cursor-pointer h-5 w-5 text-gray-700 bg-white" data-optionName="${sanitiseStrongly(option.name.replace(`"`, "").replace(`\\`, ""))}"><span class="ml-2${(option.requirements && !option.requirements.every(a=>config.loadOrder.includes(a))) ? ' text-gray-400' : ''}" data-optionName="${sanitiseStrongly(option.name.replace(`"`, "").replace(`\\`, ""))}">${sanitiseStrongly(option.name.replace(`"`, "").replace(`\\`, ""))}</span>
 							</label></div>`
 		} else if (option.type == "select") {
@@ -456,24 +459,37 @@ async function modSettings(modFolder) {
 
 			groups[option.group].push([option.name, option.tooltip, option.requirements, option.image])
 		}
+
+		column = useColumns ? (column ? 0 : 1) : 0
 	}
 
+	column = 0
 	for (let group of Object.keys(groups)) {
-		settingsHTML += `<div class="mb-2">
+		settingsHTMLs[column] += `<div class="mb-2">
 							<span class="font-semibold">${sanitiseStrongly(group.replace(`"`, "").replace(`\\`, ""))}</span>`
 		for (let option of groups[group]) {
-			settingsHTML += `<br><label class="inline-flex items-center">
+			settingsHTMLs[column] += `<br><label class="inline-flex items-center">
 								<input${(option[2] && !option[2].every(a=>config.loadOrder.includes(a))) ? ' disabled' : ''} type="radio"${json5.parse(fs.readFileSync("../config.json")).modOptions[manifest.id].includes(sanitiseStrongly(group.replace(`"`, "").replace(`\\`, "")) + ":" + sanitiseStrongly(option[0].replace(`"`, "").replace(`\\`, ""))) ? ' checked' : ''} class="form-radio" name="${sanitiseStrongly(group.replace(`"`, "").replace(`\\`, ""))}" data-optionName="${sanitiseStrongly(group.replace(`"`, "").replace(`\\`, "")) + ":" + sanitiseStrongly(option[0].replace(`"`, "").replace(`\\`, ""))}">
 								<span class="ml-2${(option[2] && !option[2].every(a=>config.loadOrder.includes(a))) ? ' text-gray-400' : ''}" data-optionName="${sanitiseStrongly(group.replace(`"`, "").replace(`\\`, "")) + ":" + sanitiseStrongly(option[0].replace(`"`, "").replace(`\\`, ""))}">${sanitiseStrongly(option[0].replace(`"`, "").replace(`\\`, ""))}</span>
 							</label>`
 		}
 		
-		settingsHTML += `</div>`
+		settingsHTMLs[column] += `</div>`
+
+		column = useColumns ? (column ? 0 : 1) : 0
 	}
 
 	await Swal.fire({
 		title: manifest.name,
-		html: `${sanitise(manifest.description)}<br><div class="text-left mt-4 text-2xl font-semibold">Settings</div><div class="text-left overflow-auto h-96">${settingsHTML}</div>`,
+		html: `${sanitise(manifest.description)}<br><br><div class="text-left mt-4 text-2xl font-semibold">Settings</div><div class="text-left overflow-auto h-96">${useColumns ? `
+		<div class="grid grid-cols-2 gap-4 w-full">
+			<div>
+				${settingsHTMLs[0]}
+			</div>
+			<div>
+				${settingsHTMLs[1]}
+			</div>
+		</div>` : settingsHTMLs[0]}</div><br>`,
 		customClass: {
 			htmlContainer: 'text-center'
 		},
@@ -604,8 +620,13 @@ async function deployMods() {
 							
 							if (fs.existsSync(path.join("..", "Mods", modFolder, "manifest.json"))) {
 								let modManifest = json5.parse(fs.readFileSync(path.join("..", "Mods", modFolder, "manifest.json")))
+								
+								modManifest.loadBefore || (modManifest.loadBefore = [])
+								modManifest.loadBefore.push(modManifest.options.filter(a => (config.modOptions[modManifest.id].includes(a.name) || config.modOptions[modManifest.id].includes(a.group + ":" + a.name)) || (a.type == "requirement" && a.mods.every(b=>config.loadOrder.includes(b)))).map(a=>a.loadBefore).filter(a=>a).flat(1))
+								
+								modManifest.loadAfter || (modManifest.loadAfter = [])
+								modManifest.loadAfter.push(modManifest.options.filter(a => (config.modOptions[modManifest.id].includes(a.name) || config.modOptions[modManifest.id].includes(a.group + ":" + a.name)) || (a.type == "requirement" && a.mods.every(b=>config.loadOrder.includes(b)))).map(a=>a.loadAfter).filter(a=>a).flat(1))
 
-								if (modManifest.loadBefore)
 								for (let modToLoadBefore of modManifest.loadBefore) { // Move the mod to just before where the other mod is
 									if (config.loadOrder.includes(modToLoadBefore) && config.loadOrder.indexOf(modToLoadBefore) < config.loadOrder.indexOf(mod)) {
 										if (config.loadOrder.indexOf(modToLoadBefore) - 1 == 0) {
@@ -621,7 +642,6 @@ async function deployMods() {
 									}
 								}
 
-								if (modManifest.loadAfter)
 								for (let modToLoadAfter of modManifest.loadAfter) { // Move the mod to just after where the other mod is
 									if (config.loadOrder.includes(modToLoadAfter) && config.loadOrder.indexOf(modToLoadAfter) > config.loadOrder.indexOf(mod)) {
 										config.loadOrder.splice(config.loadOrder.indexOf(modToLoadAfter) + 1, 0, config.loadOrder.splice(config.loadOrder.indexOf(mod), 1)[0]);
