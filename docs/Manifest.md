@@ -11,13 +11,6 @@ Each mod contains a manifest. Manifests have the following format:
 	"frameworkVersion": "1.1.0", // The framework version the mod is designed for
 
 	/* -------------------------------------- Optional data -------------------------------------- */
-	"loadBefore": [ // Mods that this mod should load *before* if they are enabled, i.e. mods that should override this one (the GUI will automatically sort based on this before deploying)
-		"Atampy26.RequiredMod", // You'll generally want to load after a required mod
-		"Atampy26.OtherModThatUsesThisMod"
-	],
-	"loadAfter": [ // Mods that this mod should load *after* if they are enabled, i.e. mods that this one should override (the GUI will automatically sort based on this before deploying)
-		"Atampy26.OtherModThatThisModUses"
-	],
 	"updateCheck": "https://hitman-resources.netlify.app/framework/updates/exampleMod.json", // A JSON (see Mod Updates) that will be checked for updates (MUST BE HTTPS) - contact Atampy26 for hosting on hitman-resources.netlify.app
 	
 	/* ------- This data can be used in mod options as well as on the top level (optional) ------- */
@@ -83,6 +76,13 @@ Each mod contains a manifest. Manifests have the following format:
 	],
 	"requirements": [ // Required mods (if a requirement is missing the framework will not deploy and will warn the user)
 		"Atampy26.RequiredMod"
+	],
+	"loadBefore": [ // Mods that this mod should load *before* if they are enabled, i.e. mods that should override this one (the GUI will automatically sort based on this before deploying)
+		"Atampy26.OtherModThatUsesThisMod"
+	],
+	"loadAfter": [ // Mods that this mod should load *after* if they are enabled, i.e. mods that this one should override (the GUI will automatically sort based on this before deploying)
+		"Atampy26.RequiredMod", // You'll generally want to load after a required mod
+		"Atampy26.OtherModThatThisModUses"
 	],
 
 	"options": [ // Settings for the mod that can be enabled/disabled in the GUI - Can be omitted if the mod doesn't need to provide settings

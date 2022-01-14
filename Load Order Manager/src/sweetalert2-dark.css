@@ -229,6 +229,8 @@ div#swal2-html-container {
   width: 32em;
   max-width: 100%;
   padding: 1.25em;
+  padding-top: 2rem;
+  padding-bottom: 2rem;
   border: none;
   border-radius: 5px;
   background: #19191a;

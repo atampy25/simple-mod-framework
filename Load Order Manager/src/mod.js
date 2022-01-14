@@ -232,7 +232,7 @@ async function refreshMods() {
 																	<i class="fas fa-arrows-alt" slot="icon"></i>
 																</neo-button>
 															</div>
-															<div class="float-left" style="max-width: 70%">
+															<div class="float-left" style="max-width: ${window.visualViewport.height > 1080 ? "70%" : "60%"}">
 																<div class="mb-2">
 																	<h3 class="font-semibold text-xl inline"><img src="frameworkMod.png" class="w-8 inline align-middle">  <span class="align-middle">${sanitise(modManifest.name)} <span class="font-light">by ${modManifest.authors.map(a=>sanitise(a)).join(", ")}</span></span></h3><br>
 																</div>
@@ -249,7 +249,7 @@ async function refreshMods() {
 																	<i class="fas fa-arrows-alt" slot="icon"></i>
 																</neo-button>
 															</div>
-															<div class="float-left" style="max-width: 70%">
+															<div class="float-left" style="max-width: ${window.visualViewport.height > 1080 ? "70%" : "60%"}">
 																<div class="mb-2">
 																	<h3 class="font-semibold text-xl inline"><img src="rpkgMod.png" class="w-8 inline align-middle">  <span class="align-middle">${sanitiseStrongly(modFolder.replace(`"`, "").replace(`\\`, ""))}</span></h3><br>
 																</div>
@@ -463,7 +463,7 @@ async function modSettings(modFolder) {
 							<span class="font-semibold">${sanitiseStrongly(group.replace(`"`, "").replace(`\\`, ""))}</span>`
 		for (let option of groups[group]) {
 			settingsHTML += `<br><label class="inline-flex items-center">
-								<input${(option[2] && !option[2].every(a=>config.loadOrder.includes(a))) ? ' disabled' : ''} type="radio"${json5.parse(fs.readFileSync("../config.json")).modOptions[manifest.id].includes(sanitiseStrongly(option[0].replace(`"`, "").replace(`\\`, ""))) ? ' checked' : ''} class="form-radio" name="${sanitiseStrongly(group.replace(`"`, "").replace(`\\`, ""))}" data-optionName="${sanitiseStrongly(group.replace(`"`, "").replace(`\\`, "")) + ":" + sanitiseStrongly(option[0].replace(`"`, "").replace(`\\`, ""))}">
+								<input${(option[2] && !option[2].every(a=>config.loadOrder.includes(a))) ? ' disabled' : ''} type="radio"${json5.parse(fs.readFileSync("../config.json")).modOptions[manifest.id].includes(sanitiseStrongly(group.replace(`"`, "").replace(`\\`, "")) + ":" + sanitiseStrongly(option[0].replace(`"`, "").replace(`\\`, ""))) ? ' checked' : ''} class="form-radio" name="${sanitiseStrongly(group.replace(`"`, "").replace(`\\`, ""))}" data-optionName="${sanitiseStrongly(group.replace(`"`, "").replace(`\\`, "")) + ":" + sanitiseStrongly(option[0].replace(`"`, "").replace(`\\`, ""))}">
 								<span class="ml-2${(option[2] && !option[2].every(a=>config.loadOrder.includes(a))) ? ' text-gray-400' : ''}" data-optionName="${sanitiseStrongly(group.replace(`"`, "").replace(`\\`, "")) + ":" + sanitiseStrongly(option[0].replace(`"`, "").replace(`\\`, ""))}">${sanitiseStrongly(option[0].replace(`"`, "").replace(`\\`, ""))}</span>
 							</label>`
 		}
@@ -473,21 +473,21 @@ async function modSettings(modFolder) {
 
 	await Swal.fire({
 		title: manifest.name,
-		html: `${sanitise(manifest.description)}<br><div class="text-left mt-4 text-2xl font-semibold">Settings</div><div class="text-left overflow-auto h-64">${settingsHTML}</div>`,
+		html: `${sanitise(manifest.description)}<br><div class="text-left mt-4 text-2xl font-semibold">Settings</div><div class="text-left overflow-auto h-96">${settingsHTML}</div>`,
 		customClass: {
 			htmlContainer: 'text-center'
 		},
-		width: '36rem',
+		width: '50rem',
 		showCancelButton: false,
 		focusConfirm: false,
 		confirmButtonText: 'Save',
 		didOpen: () => {
-			for (let option of manifest.options) {
+			for (let option of manifest.options.filter(a=>a.type == "checkbox")) {
 				if (option.image || option.tooltip || (option.requirements && !option.requirements.every(a=>config.loadOrder.includes(a)))) {
 					if (option.image && !option.image.includes("\"") && !option.image.includes("..") && !option.image.includes(":")) {
 						document.querySelector(".swal2-container").children[1]?.remove()
 						document.querySelector(".swal2-container").insertAdjacentHTML("beforeend", `
-							<div tabindex="-1" role="dialog" aria-live="assertive" aria-modal="true" style="width: 36rem; display: grid; margin: auto; position: relative; box-sizing: border-box; flex-direction: column; justify-content: center; max-width: 100%; padding: 1.25em; border: none; border-radius: 5px; background: #19191a; font-family: inherit; font-size: 1rem; -webkit-tap-highlight-color: transparent; -webkit-animation: swal2-show 0.3s; animation: swal2-show 0.3s;">
+							<div tabindex="-1" role="dialog" aria-live="assertive" aria-modal="true" style="width: 50rem; display: grid; margin: auto; position: relative; box-sizing: border-box; flex-direction: column; justify-content: center; max-width: 100%; padding: 1.25em; border: none; border-radius: 5px; background: #19191a; font-family: inherit; font-size: 1rem; -webkit-tap-highlight-color: transparent; -webkit-animation: swal2-show 0.3s; animation: swal2-show 0.3s;">
 								<button type="button" class="swal2-close" aria-label="Close this dialog" style="display: none;">×</button>
 								<img class="swal2-image" style="display: block;" src="${path.resolve(path.join("..", "Mods", modFolder, option.image))}">
 								<h2 class="swal2-title" style="display: block;">${sanitiseStrongly(option.name.replace(`"`, "").replace(`\\`, ""))}</h2>
@@ -499,7 +499,7 @@ async function modSettings(modFolder) {
 						document.querySelector(`span[data-optionName="${sanitiseStrongly(option.name.replace(`"`, "").replace(`\\`, ""))}"]`).addEventListener("mouseover", () => {
 							document.querySelector(".swal2-container").children[1]?.remove()
 							document.querySelector(".swal2-container").insertAdjacentHTML("beforeend", `
-								<div tabindex="-1" role="dialog" aria-live="assertive" aria-modal="true" style="width: 36rem; display: grid; margin: auto; position: relative; box-sizing: border-box; flex-direction: column; justify-content: center; max-width: 100%; padding: 1.25em; border: none; border-radius: 5px; background: #19191a; font-family: inherit; font-size: 1rem; -webkit-tap-highlight-color: transparent; -webkit-animation: swal2-show 0.3s; animation: swal2-show 0.3s;">
+								<div tabindex="-1" role="dialog" aria-live="assertive" aria-modal="true" style="width: 50rem; display: grid; margin: auto; position: relative; box-sizing: border-box; flex-direction: column; justify-content: center; max-width: 100%; padding: 1.25em; border: none; border-radius: 5px; background: #19191a; font-family: inherit; font-size: 1rem; -webkit-tap-highlight-color: transparent; -webkit-animation: swal2-show 0.3s; animation: swal2-show 0.3s;">
 									<button type="button" class="swal2-close" aria-label="Close this dialog" style="display: none;">×</button>
 									<img class="swal2-image" style="display: block;" src="${path.resolve(path.join("..", "Mods", modFolder, option.image))}">
 									<h2 class="swal2-title" style="display: block;">${sanitiseStrongly(option.name.replace(`"`, "").replace(`\\`, ""))}</h2>
@@ -523,7 +523,7 @@ async function modSettings(modFolder) {
 						if (option[3] && !option[3].includes("\"") && !option[3].includes("..") && !option[3].includes(":")) {
 							document.querySelector(".swal2-container").children[1]?.remove()
 							document.querySelector(".swal2-container").insertAdjacentHTML("beforeend", `
-								<div tabindex="-1" role="dialog" aria-live="assertive" aria-modal="true" style="width: 36rem; display: grid; margin: auto; position: relative; box-sizing: border-box; flex-direction: column; justify-content: center; max-width: 100%; padding: 1.25em; border: none; border-radius: 5px; background: #19191a; font-family: inherit; font-size: 1rem; -webkit-tap-highlight-color: transparent; -webkit-animation: swal2-show 0.3s; animation: swal2-show 0.3s;">
+								<div tabindex="-1" role="dialog" aria-live="assertive" aria-modal="true" style="width: 50rem; display: grid; margin: auto; position: relative; box-sizing: border-box; flex-direction: column; justify-content: center; max-width: 100%; padding: 1.25em; border: none; border-radius: 5px; background: #19191a; font-family: inherit; font-size: 1rem; -webkit-tap-highlight-color: transparent; -webkit-animation: swal2-show 0.3s; animation: swal2-show 0.3s;">
 									<button type="button" class="swal2-close" aria-label="Close this dialog" style="display: none;">×</button>
 									<img class="swal2-image" style="display: block;" src="${path.resolve(path.join("..", "Mods", modFolder, option[3]))}">
 									<h2 class="swal2-title" style="display: block;">${sanitiseStrongly(option[0].replace(`"`, "").replace(`\\`, ""))}</h2>
@@ -535,7 +535,7 @@ async function modSettings(modFolder) {
 							document.querySelector(`span[data-optionName="${sanitiseStrongly(group.replace(`"`, "").replace(`\\`, "")) + ":" + sanitiseStrongly(option[0].replace(`"`, "").replace(`\\`, ""))}"]`).addEventListener("mouseover", () => {
 								document.querySelector(".swal2-container").children[1]?.remove()
 								document.querySelector(".swal2-container").insertAdjacentHTML("beforeend", `
-									<div tabindex="-1" role="dialog" aria-live="assertive" aria-modal="true" style="width: 36rem; display: grid; margin: auto; position: relative; box-sizing: border-box; flex-direction: column; justify-content: center; max-width: 100%; padding: 1.25em; border: none; border-radius: 5px; background: #19191a; font-family: inherit; font-size: 1rem; -webkit-tap-highlight-color: transparent; -webkit-animation: swal2-show 0.3s; animation: swal2-show 0.3s;">
+									<div tabindex="-1" role="dialog" aria-live="assertive" aria-modal="true" style="width: 50rem; display: grid; margin: auto; position: relative; box-sizing: border-box; flex-direction: column; justify-content: center; max-width: 100%; padding: 1.25em; border: none; border-radius: 5px; background: #19191a; font-family: inherit; font-size: 1rem; -webkit-tap-highlight-color: transparent; -webkit-animation: swal2-show 0.3s; animation: swal2-show 0.3s;">
 										<button type="button" class="swal2-close" aria-label="Close this dialog" style="display: none;">×</button>
 										<img class="swal2-image" style="display: block;" src="${path.resolve(path.join("..", "Mods", modFolder, option[3]))}">
 										<h2 class="swal2-title" style="display: block;">${sanitiseStrongly(option[0].replace(`"`, "").replace(`\\`, ""))}</h2>
