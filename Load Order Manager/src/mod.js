@@ -426,7 +426,7 @@ function checkModOptions(modFolder) {
 	} // Remove non-existent mod options and upgrade old select references
 
 	for (var i = config.modOptions[manifest.id].length - 1; i >= 0; i--) {
-		if (manifest.options.find(a=>(a.type == "checkbox" && a.name == config.modOptions[manifest.id][i]) || (a.type == "select" && ((a.group + ":" + a.name) == (config.modOptions[manifest.id][i])))).requirements) {
+		if (manifest.options.find(a=>(a.type == "checkbox" && a.name == config.modOptions[manifest.id][i]) || (a.type == "select" && ((a.group + ":" + a.name) == (config.modOptions[manifest.id][i]))))?.requirements) {
 			if (!manifest.options.find(a=>(a.type == "checkbox" && a.name == config.modOptions[manifest.id][i]) || (a.type == "select" && ((a.group + ":" + a.name) == (config.modOptions[manifest.id][i])))).requirements.every(a=>config.loadOrder.includes(a))) {
 				config.modOptions[manifest.id].splice(i, 1)
 			}

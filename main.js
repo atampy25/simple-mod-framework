@@ -128,7 +128,7 @@ async function stageAllMods() {
 				let chunkPatchNumberMatches = [...chunkPatchFile.matchAll(/chunk[0-9]*patch([0-9]*)\.rpkg/g)]
 				let chunkPatchNumber = parseInt(chunkPatchNumberMatches[chunkPatchNumberMatches.length - 1][chunkPatchNumberMatches[chunkPatchNumberMatches.length - 1].length - 1])
 
-				if (chunkPatchNumber >= 200 && chunkPatchNumber < 300) { // The mod framework manages patch files between 200 (inc) and 300 (exc), allowing mods to place runtime files in those ranges
+				if (chunkPatchNumber >= 200 && chunkPatchNumber <= 300) { // The mod framework manages patch files between 200 (inc) and 300 (inc), allowing mods to place runtime files in those ranges
 					fs.rmSync(path.join(config.runtimePath, chunkPatchFile))
 				}
 			} else if (parseInt(chunkPatchFile.split(".")[0].slice(5)) > 27) {
@@ -614,7 +614,7 @@ async function stageAllMods() {
 
 			/* -------------------------------------- Runtime packages -------------------------------------- */
 			if (manifest.runtimePackages) {
-					runtimePackages.push(...manifest.runtimePackages.map(a=>{
+				runtimePackages.push(...manifest.runtimePackages.map(a=>{
 					return {
 						chunk: a.chunk,
 						path: a.path,
@@ -763,13 +763,13 @@ async function stageAllMods() {
 	/* ---------------------------------------------------------------------------------------------- */
 	logger.info("Copying runtime packages")
 
-	let runtimePatchNumber = 205
+	let runtimePatchNumber = 201
 	for (let runtimeFile of runtimePackages) {
 		fs.copyFileSync(path.join(process.cwd(), "Mods", runtimeFile.mod, runtimeFile.path), config.outputToSeparateDirectory ? path.join(process.cwd(), "Output", "chunk" + runtimeFile.chunk + "patch" + runtimePatchNumber + ".rpkg") : path.join(config.runtimePath, "chunk" + runtimeFile.chunk + "patch" + runtimePatchNumber + ".rpkg"))
 		runtimePatchNumber ++
 
 		if (runtimePatchNumber >= 300) {
-			logger.error("More than 94 total runtime packages!")
+			logger.error("More than 95 total runtime packages!")
 		} // Framework only manages patch200-300
 	}
 
@@ -1002,7 +1002,7 @@ async function stageAllMods() {
 
 	for (let stagingChunkFolder of fs.readdirSync(path.join(process.cwd(), "staging"))) {
 		await rpkgInstance.callFunction(`-generate_rpkg_from "${path.join(process.cwd(), "staging", stagingChunkFolder)}" -output_path "${path.join(process.cwd(), "staging")}"`)
-		fs.copyFileSync(path.join(process.cwd(), "staging", stagingChunkFolder + ".rpkg"), config.outputToSeparateDirectory ? path.join(process.cwd(), "Output", (rpkgTypes[stagingChunkFolder] == "base" ? stagingChunkFolder + ".rpkg" : stagingChunkFolder + "patch200.rpkg")) : path.join(config.runtimePath, (rpkgTypes[stagingChunkFolder] == "base" ? stagingChunkFolder + ".rpkg" : stagingChunkFolder + "patch200.rpkg")))
+		fs.copyFileSync(path.join(process.cwd(), "staging", stagingChunkFolder + ".rpkg"), config.outputToSeparateDirectory ? path.join(process.cwd(), "Output", (rpkgTypes[stagingChunkFolder] == "base" ? stagingChunkFolder + ".rpkg" : stagingChunkFolder + "patch300.rpkg")) : path.join(config.runtimePath, (rpkgTypes[stagingChunkFolder] == "base" ? stagingChunkFolder + ".rpkg" : stagingChunkFolder + "patch300.rpkg")))
 	}
 
 	try {
@@ -1014,7 +1014,7 @@ async function stageAllMods() {
 
 	if (config.outputConfigToAppDataOnDeploy) {
 		fs.ensureDirSync(path.join(process.env.LOCALAPPDATA, "Simple Mod Framework"))
-		fs.writeFileSync(path.join(process.env.LOCALAPPDATA, "Simple Mod Framework", "lastDeploy.json"), config)
+		fs.writeFileSync(path.join(process.env.LOCALAPPDATA, "Simple Mod Framework", "lastDeploy.json"), json5.stringify(config))
 	}
 
 	if (process.argv[2]) {
