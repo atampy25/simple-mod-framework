@@ -569,15 +569,15 @@ async function stageAllMods() {
 
 				for (let blobsFolder of blobsFolders) {
 					for (let blob of glob.sync(path.join(process.cwd(), "Mods", mod, blobsFolder, "**/*.*"))) {
-						let blobPath = path.resolve(blob).split(path.resolve(process.cwd()))[1].split(path.sep).slice(4).join("/")
+						let blobPath = path.resolve(blob).split(path.resolve(process.cwd()))[1].split(path.sep).slice(4).join("/").toLowerCase()
 	
 						let blobHash
 						if (path.extname(blob).startsWith(".jp") || path.extname(blob) == ".png") {
-							blobHash = "00" + md5((`[assembly:/_pro/online/default/cloudstorage/resources/${blobPath.toLowerCase()}].pc_gfx`).toLowerCase()).slice(2, 16).toUpperCase()
+							blobHash = "00" + md5((`[assembly:/_pro/online/default/cloudstorage/resources/${blobPath}].pc_gfx`).toLowerCase()).slice(2, 16).toUpperCase()
 						} else if (path.extname(blob) == ".json") {
-							blobHash = "00" + md5((`[assembly:/_pro/online/default/cloudstorage/resources/${blobPath.toLowerCase()}].pc_json`).toLowerCase()).slice(2, 16).toUpperCase()
+							blobHash = "00" + md5((`[assembly:/_pro/online/default/cloudstorage/resources/${blobPath}].pc_json`).toLowerCase()).slice(2, 16).toUpperCase()
 						} else {
-							blobHash = "00" + md5((`[assembly:/_pro/online/default/cloudstorage/resources/${blobPath.toLowerCase()}].pc_${path.extname(blob).slice(1)}`).toLowerCase()).slice(2, 16).toUpperCase()
+							blobHash = "00" + md5((`[assembly:/_pro/online/default/cloudstorage/resources/${blobPath}].pc_${path.extname(blob).slice(1)}`).toLowerCase()).slice(2, 16).toUpperCase()
 						}
 	
 						oresContent[blobHash] = blobPath // Add the blob to the ORES
