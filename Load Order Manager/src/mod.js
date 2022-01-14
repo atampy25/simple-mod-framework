@@ -621,6 +621,8 @@ async function deployMods() {
 							if (fs.existsSync(path.join("..", "Mods", modFolder, "manifest.json"))) {
 								let modManifest = json5.parse(fs.readFileSync(path.join("..", "Mods", modFolder, "manifest.json")))
 								
+								modManifest.options || (modManifest.options = [])
+
 								modManifest.loadBefore || (modManifest.loadBefore = [])
 								modManifest.loadBefore.push(modManifest.options.filter(a => (config.modOptions[modManifest.id].includes(a.name) || config.modOptions[modManifest.id].includes(a.group + ":" + a.name)) || (a.type == "requirement" && a.mods.every(b=>config.loadOrder.includes(b)))).map(a=>a.loadBefore).filter(a=>a).flat(1))
 								
