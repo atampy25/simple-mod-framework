@@ -884,7 +884,7 @@ async function stageAllMods() {
 	
 			for (let item of localisationOverrides[locrHash]) {
 				let toMerge = {}
-				toMerge["abc" + crc32(item.locString.toUpperCase())] = item.text
+				toMerge["abc" + item.locString] = item.text
 	
 				deepMerge(locrContent[languages[item.language]], toMerge)
 	

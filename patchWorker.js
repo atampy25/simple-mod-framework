@@ -46,6 +46,8 @@ module.exports = async ({
 		error: function (text) {
 			process.stderr.write(chalk`{red ERROR}\t${text}\n`)
 			console.trace()
+
+			child_process.execSync("pause")
 		}
 	} : {
 		debug: console.debug,
