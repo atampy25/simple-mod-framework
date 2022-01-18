@@ -12,7 +12,7 @@ var klaw = require("klaw-sync");
 
 window.$ = window.jQuery = require('jquery');
 
-frameworkVersion = "1.1.1"
+frameworkVersion = "1.1.2"
 
 async function updateFramework() {
 	var frameworkUpdateData = await (await fetch("https://hitman-resources.netlify.app/framework/framework.json")).json()
