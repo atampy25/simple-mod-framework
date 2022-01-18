@@ -34,10 +34,10 @@ Each mod contains a manifest. Manifests have the following format:
 	"localisationOverrides": { // Allows you to override specific localisation in specific files
 		"00123456789ABCDE": {
 			"english": {
-				"UI_ANOVERRIDDENLINE": "The framework is overriding this text"
+				123456789: "The framework is overriding this text"
 			},
 			"french": {
-				"UI_ANOVERRIDDENLINE": "Le framework est en train de overriding this text"
+				123456789: "Le framework est en train de overriding this text"
 			},
 			"italian": {},
 			"german": {},
