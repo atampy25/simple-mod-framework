@@ -151,46 +151,23 @@ async function updateMod(modFolder) {
 async function execute() {
 	setTimeout(fetchUpdates, 1000)
 	setTimeout(fetchModUpdates, 1000)
-
-	// if (!config.hasUsedGUI) {
-	// 	await swal.fire({
-	// 		title: "Select your game folder",
-	// 		html: "Click Continue to select your HITMAN 3 folder (the folder with Retail, Runtime and Launcher.exe inside it).",
-	// 		showConfirmButton: true,
-	// 		confirmButtonText: `Continue`
-	// 	})
-
-	// 	var gameDirectory = electron.remote.dialog.showOpenDialogSync({
-	// 		title: "Select your HITMAN 3 folder",
-	// 		buttonLabel: "Select",
-	// 		properties: ["openDirectory", "dontAddToRecent"]
-	// 	})[0]
-
-	// 	while (!fs.existsSync(path.join(gameDirectory, 'Runtime')) || !fs.existsSync(path.join(gameDirectory, 'Retail')) || !fs.existsSync(path.join(gameDirectory, 'ent')) || !fs.existsSync(path.join(gameDirectory, 'Launcher.exe'))) {
-	// 		await swal.fire({
-	// 			title: "Invalid folder",
-	// 			html: "Please select the HITMAN 3 folder - the folder containing ent, Retail, Runtime and Launcher.exe.",
-	// 			showConfirmButton: true,
-	// 			icon: "error",
-	// 			confirmButtonText: `Continue`
-	// 		})
 	
-	// 		var gameDirectory = electron.remote.dialog.showOpenDialogSync({
-	// 			title: "Select your HITMAN 3 folder, containing ent, Retail, Runtime and Launcher.exe.",
-	// 			buttonLabel: "Select",
-	// 			properties: ["openDirectory", "dontAddToRecent"]
-	// 		})[0]
-	// 	}
-
-	// 	var config = json5.parse(fs.readFileSync("../config.json"))
-
-	// 	config.hasUsedGUI = true
-	// 	config.runtimePath = path.join(gameDirectory, 'Runtime')
-
-	// 	fs.writeFileSync("../config.json", json5.stringify(config))
-
-	// 	showMessage("All set!", "You can begin using the Simple Mod Framework.", "success")
-	// }
+	try {
+		json5.parse(fs.readFileSync("../config.json"))
+	} catch {
+		showMessage("Improper installation", "Please re-read the installation instructions to ensure everything was installed correctly.", "error")
+		return
+	}
+	
+	try {
+		if (!fs.existsSync(path.join("..", json5.parse(fs.readFileSync("../config.json")).runtimePath))) {
+			showMessage("Invalid Runtime path", "The framework can't find a folder it's looking for. Please re-read the installation instructions to ensure everything was installed correctly.", "error")
+			return
+		}
+	} catch {
+		showMessage("Invalid Runtime path", "The framework can't find a folder it's looking for. Please re-read the installation instructions to ensure everything was installed correctly.", "error")
+		return
+	}
 
 	await refreshMods()
 }
