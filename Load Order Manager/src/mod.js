@@ -88,7 +88,7 @@ async function fetchModUpdates() {
 				var modUpdateData = await (await fetch(modManifest.updateCheck)).json()
 				if (semver.lt(modManifest.version, modUpdateData.version)) {
 					$("#modUpdateAvailable")[0].style.display = "block"
-					$("#modUpdateCards")[0].innerHTML += `<div class="text-lg text-center p-4 m-4 shadow-2xl bg-gradient-to-br from-gray-800 to-gray-900 cursor-pointer" onclick="updateMod('${sanitiseStrongly(modFolder.replace(`"`, "").replace(`\\`, ""))}')">
+					$("#modUpdateCards")[0].innerHTML += `<div class="text-lg text-center p-4 m-4 shadow-2xl bg-gradient-to-br from-gray-800 to-gray-900 cursor-pointer" onclick="updateMod('${sanitiseStrongly(modFolder.replaceAll(`"`, "").replaceAll(`\\`, ""))}')">
 															<div class="flex flex-initial flex-wrap flex-row justify-center w-full">
 																<div>
 																	<span class="font-bold">${sanitise(modManifest.name)}</span> v<span>${sanitise(modManifest.version)}</span> -> v<span>${sanitise(modUpdateData.version)}</span><br>
@@ -201,13 +201,13 @@ async function refreshMods() {
 					
 					$("#enabledMods")[0].innerHTML += `<div class="p-8 bg-gray-900 w-full flow-root shadow-xl rounded-md text-white">
 															<div class="float-right">
-																${modManifest.options && modManifest.options.some(a=>a.type == "checkbox" || a.type == "select") ? `<neo-button small label="" gradientFrom="thisisjustsoitworkslmao" gradientTo="bg-gray-800" onclick="modSettings('${sanitiseStrongly(modFolder.replace(`"`, "").replace(`\\`, ""))}')" style="display: inline">
+																${modManifest.options && modManifest.options.some(a=>a.type == "checkbox" || a.type == "select") ? `<neo-button small label="" gradientFrom="thisisjustsoitworkslmao" gradientTo="bg-gray-800" onclick="modSettings('${sanitiseStrongly(modFolder.replaceAll(`"`, "").replaceAll(`\\`, ""))}')" style="display: inline">
 																	<i class="fas fa-cog" slot="icon"></i>
 																</neo-button>` : ``}
-																<neo-button small label="Disable" gradientFrom="from-rose-400" gradientTo="to-red-500" onclick="disableMod('${sanitiseStrongly(modFolder.replace(`"`, "").replace(`\\`, ""))}')" style="display: inline">
+																<neo-button small label="Disable" gradientFrom="from-rose-400" gradientTo="to-red-500" onclick="disableMod('${sanitiseStrongly(modFolder.replaceAll(`"`, "").replaceAll(`\\`, ""))}')" style="display: inline">
 																	<i class="fas fa-times" slot="icon"></i>
 																</neo-button>
-																<neo-button small label="Move" gradientFrom="from-fuchsia-400" gradientTo="to-violet-400" onclick="moveMod('${sanitiseStrongly(modFolder.replace(`"`, "").replace(`\\`, ""))}')" style="display: inline">
+																<neo-button small label="Move" gradientFrom="from-fuchsia-400" gradientTo="to-violet-400" onclick="moveMod('${sanitiseStrongly(modFolder.replaceAll(`"`, "").replaceAll(`\\`, ""))}')" style="display: inline">
 																	<i class="fas fa-arrows-alt" slot="icon"></i>
 																</neo-button>
 															</div>
@@ -221,16 +221,16 @@ async function refreshMods() {
 				} else {
 					$("#enabledMods")[0].innerHTML += `<div class="p-8 bg-gray-900 w-full flow-root shadow-xl rounded-md text-white">
 															<div class="float-right">
-																<neo-button small label="Disable" gradientFrom="from-rose-400" gradientTo="to-red-500" onclick="disableMod('${sanitiseStrongly(modFolder.replace(`"`, "").replace(`\\`, ""))}')" style="display: inline">
+																<neo-button small label="Disable" gradientFrom="from-rose-400" gradientTo="to-red-500" onclick="disableMod('${sanitiseStrongly(modFolder.replaceAll(`"`, "").replaceAll(`\\`, ""))}')" style="display: inline">
 																	<i class="fas fa-times" slot="icon"></i>
 																</neo-button>
-																<neo-button small label="Move" gradientFrom="from-fuchsia-400" gradientTo="to-violet-400" onclick="moveMod('${sanitiseStrongly(modFolder.replace(`"`, "").replace(`\\`, ""))}')" style="display: inline">
+																<neo-button small label="Move" gradientFrom="from-fuchsia-400" gradientTo="to-violet-400" onclick="moveMod('${sanitiseStrongly(modFolder.replaceAll(`"`, "").replaceAll(`\\`, ""))}')" style="display: inline">
 																	<i class="fas fa-arrows-alt" slot="icon"></i>
 																</neo-button>
 															</div>
 															<div class="float-left" style="max-width: ${window.visualViewport.height > 1080 ? "70%" : "60%"}">
 																<div class="mb-2">
-																	<h3 class="font-semibold text-xl inline"><img src="rpkgMod.png" class="w-8 inline align-middle">  <span class="align-middle">${sanitiseStrongly(modFolder.replace(`"`, "").replace(`\\`, ""))}</span></h3><br>
+																	<h3 class="font-semibold text-xl inline"><img src="rpkgMod.png" class="w-8 inline align-middle">  <span class="align-middle">${sanitiseStrongly(modFolder.replaceAll(`"`, "").replaceAll(`\\`, ""))}</span></h3><br>
 																</div>
 																<p>RPKG-only mod</p>
 															</div>
@@ -245,13 +245,13 @@ async function refreshMods() {
 					if (path.extname(modFolder) == ".zip") {
 						$("#availableMods")[0].innerHTML += `<div class="p-8 bg-gray-900 w-full flow-root shadow-xl rounded-md text-white">
 																<div class="float-right">
-																	<neo-button small label="Install" gradientFrom="from-teal-400" gradientTo="to-blue-500" onclick="importZIP('${path.join("..", "Mods", sanitiseStrongly(modFolder.replace(`"`, "").replace(`\\`, "")))}', true)" style="display: inline">
+																	<neo-button small label="Install" gradientFrom="from-teal-400" gradientTo="to-blue-500" onclick="importZIP('${path.join("..", "Mods", sanitiseStrongly(modFolder.replaceAll(`"`, "").replaceAll(`\\`, ""))).replaceAll(`\\`, `\\\\`)}', true)" style="display: inline">
 																		<i class="fas fa-file-import" slot="icon"></i>
 																	</neo-button>
 																</div>
 																<div class="float-left" style="max-width: 80%">
 																	<div class="mb-2">
-																		<h3 class="font-semibold text-xl inline"><img src="zipMod.png" class="w-8 inline align-middle">  <span class="align-middle">${sanitiseStrongly(modFolder.replace(`"`, "").replace(`\\`, ""))}</span></h3><br>
+																		<h3 class="font-semibold text-xl inline"><img src="zipMod.png" class="w-8 inline align-middle">  <span class="align-middle">${sanitiseStrongly(modFolder.replaceAll(`"`, "").replaceAll(`\\`, ""))}</span></h3><br>
 																	</div>
 																	<p>Zipped mod</p>
 																</div>
@@ -265,7 +265,7 @@ async function refreshMods() {
 																</div>
 																<div class="float-left" style="max-width: 80%">
 																	<div class="mb-2">
-																		<h3 class="font-semibold text-xl inline"><img src="invalidMod.png" class="w-8 inline align-middle">  <span class="align-middle">${sanitiseStrongly(modFolder.replace(`"`, "").replace(`\\`, ""))}</span></h3><br>
+																		<h3 class="font-semibold text-xl inline"><img src="invalidMod.png" class="w-8 inline align-middle">  <span class="align-middle">${sanitiseStrongly(modFolder.replaceAll(`"`, "").replaceAll(`\\`, ""))}</span></h3><br>
 																	</div>
 																	<p>Unsupported file type</p>
 																</div>
@@ -282,7 +282,7 @@ async function refreshMods() {
 					
 					$("#availableMods")[0].innerHTML += `<div class="p-8 bg-gray-900 w-full flow-root shadow-xl rounded-md text-white">
 															<div class="float-right">
-																<neo-button small label="Enable" gradientFrom="from-emerald-400" gradientTo="to-lime-600" onclick="enableMod('${sanitiseStrongly(modFolder.replace(`"`, "").replace(`\\`, ""))}')" style="display: inline">
+																<neo-button small label="Enable" gradientFrom="from-emerald-400" gradientTo="to-lime-600" onclick="enableMod('${sanitiseStrongly(modFolder.replaceAll(`"`, "").replaceAll(`\\`, ""))}')" style="display: inline">
 																	<i class="fas fa-plus" slot="icon"></i>
 																</neo-button>
 															</div>
@@ -296,13 +296,13 @@ async function refreshMods() {
 				} else {
 					$("#availableMods")[0].innerHTML += `<div class="p-8 bg-gray-900 w-full flow-root shadow-xl rounded-md text-white">
 															<div class="float-right">
-																<neo-button small label="Enable" gradientFrom="from-emerald-400" gradientTo="to-lime-600" onclick="enableMod('${sanitiseStrongly(modFolder.replace(`"`, "").replace(`\\`, ""))}')" style="display: inline">
+																<neo-button small label="Enable" gradientFrom="from-emerald-400" gradientTo="to-lime-600" onclick="enableMod('${sanitiseStrongly(modFolder.replaceAll(`"`, "").replaceAll(`\\`, ""))}')" style="display: inline">
 																	<i class="fas fa-plus" slot="icon"></i>
 																</neo-button>
 															</div>
 															<div class="float-left" style="max-width: 80%">
 																<div class="mb-2">
-																	<h3 class="font-semibold text-xl inline"><img src="rpkgMod.png" class="w-8 inline align-middle">  <span class="align-middle">${sanitiseStrongly(modFolder.replace(`"`, "").replace(`\\`, ""))}</span></h3><br>
+																	<h3 class="font-semibold text-xl inline"><img src="rpkgMod.png" class="w-8 inline align-middle">  <span class="align-middle">${sanitiseStrongly(modFolder.replaceAll(`"`, "").replaceAll(`\\`, ""))}</span></h3><br>
 																</div>
 																<p>RPKG-only mod</p>
 															</div>
@@ -356,6 +356,7 @@ async function moveMod(modID) {
 	var index = (await Swal.fire({
 		title: "Move Objective",
 		text: "Position in the list to move to (first item is 1, second is 2, etc.):",
+		width: '40rem',
 		input: "text",
 		inputAttributes: {
 		  autocapitalize: 'off'
@@ -431,7 +432,7 @@ async function modSettings(modFolder) {
 	for (let option of manifest.options) {
 		if (option.type == "checkbox") {
 			settingsHTMLs[column] += `<div class="mb-2"><label class="inline-flex items-center">
-									<input${(option.requirements && !option.requirements.every(a=>config.loadOrder.includes(a))) ? ' disabled' : ''} type="checkbox"${json5.parse(fs.readFileSync("../config.json")).modOptions[manifest.id].includes(sanitiseStrongly(option.name.replace(`"`, "").replace(`\\`, ""))) ? ' checked' : ''} class="form-checkbox cursor-pointer h-5 w-5 text-gray-700 bg-white" data-optionName="${sanitiseStrongly(option.name.replace(`"`, "").replace(`\\`, ""))}"><span class="ml-2${(option.requirements && !option.requirements.every(a=>config.loadOrder.includes(a))) ? ' text-gray-400' : ''}" data-optionName="${sanitiseStrongly(option.name.replace(`"`, "").replace(`\\`, ""))}">${sanitiseStrongly(option.name.replace(`"`, "").replace(`\\`, ""))}</span>
+									<input${(option.requirements && !option.requirements.every(a=>config.loadOrder.includes(a))) ? ' disabled' : ''} type="checkbox"${json5.parse(fs.readFileSync("../config.json")).modOptions[manifest.id].includes(sanitiseStrongly(option.name.replaceAll(`"`, "").replaceAll(`\\`, ""))) ? ' checked' : ''} class="form-checkbox cursor-pointer h-5 w-5 text-gray-700 bg-white" data-optionName="${sanitiseStrongly(option.name.replaceAll(`"`, "").replaceAll(`\\`, ""))}"><span class="ml-2${(option.requirements && !option.requirements.every(a=>config.loadOrder.includes(a))) ? ' text-gray-400' : ''}" data-optionName="${sanitiseStrongly(option.name.replaceAll(`"`, "").replaceAll(`\\`, ""))}">${sanitiseStrongly(option.name.replaceAll(`"`, "").replaceAll(`\\`, ""))}</span>
 							</label></div>`
 		} else if (option.type == "select") {
 			if (!groups[option.group]) { groups[option.group] = [] }
@@ -445,11 +446,11 @@ async function modSettings(modFolder) {
 	column = 0
 	for (let group of Object.keys(groups)) {
 		settingsHTMLs[column] += `<div class="mb-2">
-							<span class="font-semibold">${sanitiseStrongly(group.replace(`"`, "").replace(`\\`, ""))}</span>`
+							<span class="font-semibold">${sanitiseStrongly(group.replaceAll(`"`, "").replaceAll(`\\`, ""))}</span>`
 		for (let option of groups[group]) {
 			settingsHTMLs[column] += `<br><label class="inline-flex items-center">
-								<input${(option[2] && !option[2].every(a=>config.loadOrder.includes(a))) ? ' disabled' : ''} type="radio"${json5.parse(fs.readFileSync("../config.json")).modOptions[manifest.id].includes(sanitiseStrongly(group.replace(`"`, "").replace(`\\`, "")) + ":" + sanitiseStrongly(option[0].replace(`"`, "").replace(`\\`, ""))) ? ' checked' : ''} class="form-radio" name="${sanitiseStrongly(group.replace(`"`, "").replace(`\\`, ""))}" data-optionName="${sanitiseStrongly(group.replace(`"`, "").replace(`\\`, "")) + ":" + sanitiseStrongly(option[0].replace(`"`, "").replace(`\\`, ""))}">
-								<span class="ml-2${(option[2] && !option[2].every(a=>config.loadOrder.includes(a))) ? ' text-gray-400' : ''}" data-optionName="${sanitiseStrongly(group.replace(`"`, "").replace(`\\`, "")) + ":" + sanitiseStrongly(option[0].replace(`"`, "").replace(`\\`, ""))}">${sanitiseStrongly(option[0].replace(`"`, "").replace(`\\`, ""))}</span>
+								<input${(option[2] && !option[2].every(a=>config.loadOrder.includes(a))) ? ' disabled' : ''} type="radio"${json5.parse(fs.readFileSync("../config.json")).modOptions[manifest.id].includes(sanitiseStrongly(group.replaceAll(`"`, "").replaceAll(`\\`, "")) + ":" + sanitiseStrongly(option[0].replaceAll(`"`, "").replaceAll(`\\`, ""))) ? ' checked' : ''} class="form-radio" name="${sanitiseStrongly(group.replaceAll(`"`, "").replaceAll(`\\`, ""))}" data-optionName="${sanitiseStrongly(group.replaceAll(`"`, "").replaceAll(`\\`, "")) + ":" + sanitiseStrongly(option[0].replaceAll(`"`, "").replaceAll(`\\`, ""))}">
+								<span class="ml-2${(option[2] && !option[2].every(a=>config.loadOrder.includes(a))) ? ' text-gray-400' : ''}" data-optionName="${sanitiseStrongly(group.replaceAll(`"`, "").replaceAll(`\\`, "")) + ":" + sanitiseStrongly(option[0].replaceAll(`"`, "").replaceAll(`\\`, ""))}">${sanitiseStrongly(option[0].replaceAll(`"`, "").replaceAll(`\\`, ""))}</span>
 							</label>`
 		}
 		
@@ -485,26 +486,26 @@ async function modSettings(modFolder) {
 							<div tabindex="-1" role="dialog" aria-live="assertive" aria-modal="true" style="width: 50rem; display: grid; margin: auto; position: relative; box-sizing: border-box; flex-direction: column; justify-content: center; max-width: 100%; padding: 1.25em; border: none; border-radius: 5px; background: #19191a; font-family: inherit; font-size: 1rem; -webkit-tap-highlight-color: transparent; -webkit-animation: swal2-show 0.3s; animation: swal2-show 0.3s;">
 								<button type="button" class="swal2-close" aria-label="Close this dialog" style="display: none;">×</button>
 								<img class="swal2-image" style="display: block;" src="${path.resolve(path.join("..", "Mods", modFolder, option.image))}">
-								<h2 class="swal2-title" style="display: block;">${sanitiseStrongly(option.name.replace(`"`, "").replace(`\\`, ""))}</h2>
+								<h2 class="swal2-title" style="display: block;">${sanitiseStrongly(option.name.replaceAll(`"`, "").replaceAll(`\\`, ""))}</h2>
 								<div class="swal2-html-container text-center" style="display: block;">${sanitise(option.tooltip) + ((option.requirements && !option.requirements.every(a=>config.loadOrder.includes(a))) ? `<br>Requires: ${option.requirements.map(a=>sanitiseStrongly(a)).join(", ")}` : ``)}<br>
 								</div>
 							</div>
 						`)
 
-						document.querySelector(`span[data-optionName="${sanitiseStrongly(option.name.replace(`"`, "").replace(`\\`, ""))}"]`).addEventListener("mouseover", () => {
+						document.querySelector(`span[data-optionName="${sanitiseStrongly(option.name.replaceAll(`"`, "").replaceAll(`\\`, ""))}"]`).addEventListener("mouseover", () => {
 							document.querySelector(".swal2-container").children[1]?.remove()
 							document.querySelector(".swal2-container").insertAdjacentHTML("beforeend", `
 								<div tabindex="-1" role="dialog" aria-live="assertive" aria-modal="true" style="width: 50rem; display: grid; margin: auto; position: relative; box-sizing: border-box; flex-direction: column; justify-content: center; max-width: 100%; padding: 1.25em; border: none; border-radius: 5px; background: #19191a; font-family: inherit; font-size: 1rem; -webkit-tap-highlight-color: transparent; -webkit-animation: swal2-show 0.3s; animation: swal2-show 0.3s;">
 									<button type="button" class="swal2-close" aria-label="Close this dialog" style="display: none;">×</button>
 									<img class="swal2-image" style="display: block;" src="${path.resolve(path.join("..", "Mods", modFolder, option.image))}">
-									<h2 class="swal2-title" style="display: block;">${sanitiseStrongly(option.name.replace(`"`, "").replace(`\\`, ""))}</h2>
+									<h2 class="swal2-title" style="display: block;">${sanitiseStrongly(option.name.replaceAll(`"`, "").replaceAll(`\\`, ""))}</h2>
 									<div class="swal2-html-container text-center" style="display: block;">${sanitise(option.tooltip) + ((option.requirements && !option.requirements.every(a=>config.loadOrder.includes(a))) ? `<br>Requires: ${option.requirements.map(a=>sanitiseStrongly(a)).join(", ")}` : ``)}<br>
 									</div>
 								</div>
 							`)
 						})
 					} else {
-						tippy(`span[data-optionName="${sanitiseStrongly(option.name.replace(`"`, "").replace(`\\`, ""))}"]`, {
+						tippy(`span[data-optionName="${sanitiseStrongly(option.name.replaceAll(`"`, "").replaceAll(`\\`, ""))}"]`, {
 							content: sanitise(option.tooltip) + ((option.requirements && !option.requirements.every(a=>config.loadOrder.includes(a))) ? `<br>Requires: ${option.requirements.map(a=>sanitiseStrongly(a)).join(", ")}` : ``),
 							placement: "right"
 						});
@@ -521,26 +522,26 @@ async function modSettings(modFolder) {
 								<div tabindex="-1" role="dialog" aria-live="assertive" aria-modal="true" style="width: 50rem; display: grid; margin: auto; position: relative; box-sizing: border-box; flex-direction: column; justify-content: center; max-width: 100%; padding: 1.25em; border: none; border-radius: 5px; background: #19191a; font-family: inherit; font-size: 1rem; -webkit-tap-highlight-color: transparent; -webkit-animation: swal2-show 0.3s; animation: swal2-show 0.3s;">
 									<button type="button" class="swal2-close" aria-label="Close this dialog" style="display: none;">×</button>
 									<img class="swal2-image" style="display: block;" src="${path.resolve(path.join("..", "Mods", modFolder, option[3]))}">
-									<h2 class="swal2-title" style="display: block;">${sanitiseStrongly(option[0].replace(`"`, "").replace(`\\`, ""))}</h2>
+									<h2 class="swal2-title" style="display: block;">${sanitiseStrongly(option[0].replaceAll(`"`, "").replaceAll(`\\`, ""))}</h2>
 									<div class="swal2-html-container text-center" style="display: block;">${sanitise(option[1]) + ((option[2] && !option[2].every(a=>config.loadOrder.includes(a))) ? `<br>Requires: ${option[2].map(a=>sanitiseStrongly(a)).join(", ")}` : ``)}<br>
 									</div>
 								</div>
 							`)
 
-							document.querySelector(`span[data-optionName="${sanitiseStrongly(group.replace(`"`, "").replace(`\\`, "")) + ":" + sanitiseStrongly(option[0].replace(`"`, "").replace(`\\`, ""))}"]`).addEventListener("mouseover", () => {
+							document.querySelector(`span[data-optionName="${sanitiseStrongly(group.replaceAll(`"`, "").replaceAll(`\\`, "")) + ":" + sanitiseStrongly(option[0].replaceAll(`"`, "").replaceAll(`\\`, ""))}"]`).addEventListener("mouseover", () => {
 								document.querySelector(".swal2-container").children[1]?.remove()
 								document.querySelector(".swal2-container").insertAdjacentHTML("beforeend", `
 									<div tabindex="-1" role="dialog" aria-live="assertive" aria-modal="true" style="width: 50rem; display: grid; margin: auto; position: relative; box-sizing: border-box; flex-direction: column; justify-content: center; max-width: 100%; padding: 1.25em; border: none; border-radius: 5px; background: #19191a; font-family: inherit; font-size: 1rem; -webkit-tap-highlight-color: transparent; -webkit-animation: swal2-show 0.3s; animation: swal2-show 0.3s;">
 										<button type="button" class="swal2-close" aria-label="Close this dialog" style="display: none;">×</button>
 										<img class="swal2-image" style="display: block;" src="${path.resolve(path.join("..", "Mods", modFolder, option[3]))}">
-										<h2 class="swal2-title" style="display: block;">${sanitiseStrongly(option[0].replace(`"`, "").replace(`\\`, ""))}</h2>
+										<h2 class="swal2-title" style="display: block;">${sanitiseStrongly(option[0].replaceAll(`"`, "").replaceAll(`\\`, ""))}</h2>
 										<div class="swal2-html-container text-center" style="display: block;">${sanitise(option[1]) + ((option[2] && !option[2].every(a=>config.loadOrder.includes(a))) ? `<br>Requires: ${option[2].map(a=>sanitiseStrongly(a)).join(", ")}` : ``)}<br>
 										</div>
 									</div>
 								`)
 							})
 						} else {
-							tippy(`span[data-optionName="${sanitiseStrongly(group.replace(`"`, "").replace(`\\`, "")) + ":" + sanitiseStrongly(option[0].replace(`"`, "").replace(`\\`, ""))}"]`, {
+							tippy(`span[data-optionName="${sanitiseStrongly(group.replaceAll(`"`, "").replaceAll(`\\`, "")) + ":" + sanitiseStrongly(option[0].replaceAll(`"`, "").replaceAll(`\\`, ""))}"]`, {
 								content: sanitise(option[1]) + ((option[2] && !option[2].every(a=>config.loadOrder.includes(a))) ? `<br>Requires: ${option[2].map(a=>sanitiseStrongly(a)).join(", ")}` : ``),
 								placement: "right"
 							});
@@ -589,7 +590,8 @@ async function deployMods() {
 
 					console.log(`Cycle ${cycle}:`)
 
-					let modsToSort = JSON.parse(JSON.stringify(config.loadOrder))
+					config.loadOrder = ["dummy-1", ...config.loadOrder.filter(a => a != "dummy-1" && a != "dummy-2"), "dummy-2"]
+					let modsToSort = JSON.parse(JSON.stringify(config.loadOrder)).filter(a => a != "dummy-1" && a != "dummy-2")
 
 					modSorting:
 					while (modsToSort.length) {
@@ -640,6 +642,8 @@ async function deployMods() {
 						}
 					}
 				}
+
+				config.loadOrder = config.loadOrder.filter(a => a != "dummy-1" && a != "dummy-2")
 
 				if (cycle < 100) {
 					fs.writeFileSync("../config.json", json5.stringify(config))
@@ -692,11 +696,13 @@ async function importZIP(automatePath, automateMoveZip) {
 	Swal.fire({
 		title: 'Installing the mod',
 		html: 'Please wait - the ZIP file is being extracted and installed as a framework mod.',
+		width: '40rem',
 		didOpen: async () => {
 			Swal.showLoading()
 
 			setTimeout(() => {
 				if (automateMoveZip) {
+					fs.removeSync("./mod.zip")
 					fs.moveSync(modPath, "./mod.zip")
 					modPath = "./mod.zip"
 				}
@@ -738,6 +744,7 @@ async function importRPKG() {
 	var name = (await Swal.fire({
 		title: "Mod Name",
 		text: "Enter a short name for the mod (no special characters other than spaces):",
+		width: '40rem',
 		input: "text",
 		inputAttributes: {
 		  autocapitalize: 'off'
@@ -761,6 +768,7 @@ async function importRPKG() {
 		var chunk = (await Swal.fire({
 			title: "Mod Chunk",
 			text: "Enter the mod's chunk (if it advises you to name it chunk0patch2, for example, then it's chunk0):",
+			width: '40rem',
 			input: "text",
 			inputAttributes: {
 			  autocapitalize: 'off'
@@ -776,6 +784,7 @@ async function importRPKG() {
 	Swal.fire({
 		title: 'Installing the mod',
 		html: 'Please wait - the RPKG file is being installed as a framework mod.',
+		width: '40rem',
 		didOpen: async () => {
 			Swal.showLoading()
 
