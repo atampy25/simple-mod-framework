@@ -20,6 +20,7 @@ async function updateFramework() {
 	await Swal.fire({
 		title: 'Updating the framework',
 		html: 'Please wait - the framework is being updated to the latest version (' + frameworkUpdateData.version + '):<br><br><i>' + frameworkUpdateData.changelog + "</i>",
+		width: '40rem',
 		didOpen: async () => {
 			Swal.showLoading()
 
@@ -110,6 +111,7 @@ async function updateMod(modFolder) {
 			Swal.fire({
 				title: 'Updating ' + sanitise(modManifest.name),
 				html: 'Please wait - the mod is being updated to the latest version (' + sanitise(updateData.version) + '):<br><br><i>' + sanitise(updateData.changelog) + "</i>",
+				width: '40rem',
 				didOpen: async () => {
 					Swal.showLoading()
 		
