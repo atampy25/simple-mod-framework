@@ -13,7 +13,7 @@ Then, put a file called `manifest.json` in it. Paste the following into it:
     "description": "Extremely good description",
     "authors": ["YourNameOrUserName"],
     "contentFolder": "content",
-    "frameworkVersion": "1.1.4"
+    "frameworkVersion": "1.1.5"
 }
 ```
 Most of those fields are self-explanatory. There are other optional fields documented in, as well as more explanation of these ones in, [Manifest](Manifest.md).
