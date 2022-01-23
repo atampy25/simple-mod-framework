@@ -680,6 +680,8 @@ async function stageAllMods() {
 
 			if (manifest.localisationOverrides) {
 				for (let locrHash of Object.keys(manifest.localisationOverrides)) {
+					if (!localisationOverrides[locrHash]) { localisationOverrides[locrHash] = [] }
+					
 					for (let language of Object.keys(manifest.localisationOverrides[locrHash])) {
 						for (let string of Object.entries(manifest.localisationOverrides[locrHash][language])) {
 							localisationOverrides[locrHash].push({
