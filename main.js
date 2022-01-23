@@ -1,4 +1,4 @@
-const FrameworkVersion = "1.1.5"
+const FrameworkVersion = "1.1.7"
 
 // @ts-ignore
 // eslint-disable-next-line no-undef
