@@ -267,7 +267,7 @@ async function refreshMods() {
 																	<div class="mb-2">
 																		<h3 class="font-semibold text-xl inline"><img src="invalidMod.png" class="w-8 inline align-middle">  <span class="align-middle">${sanitiseStrongly(modFolder.replaceAll(`"`, "").replaceAll(`\\`, ""))}</span></h3><br>
 																	</div>
-																	<p>Unsupported file type</p>
+																	<p>Not a mod</p>
 																</div>
 															</div><br>`
 					}
@@ -293,7 +293,7 @@ async function refreshMods() {
 																<p>${sanitise(modManifest.description)}</p>
 															</div>
 														</div><br>`
-				} else {
+				} else if (klaw(path.join("..", "Mods", modFolder)).some(a=>a.stats.size > 0 && a.path.endsWith(".rpkg"))) {
 					$("#availableMods")[0].innerHTML += `<div class="p-8 bg-gray-900 w-full flow-root shadow-xl rounded-md text-white">
 															<div class="float-right">
 																<neo-button small label="Enable" gradientFrom="from-emerald-400" gradientTo="to-lime-600" onclick="enableMod('${sanitiseStrongly(modFolder.replaceAll(`"`, "").replaceAll(`\\`, ""))}')" style="display: inline">
