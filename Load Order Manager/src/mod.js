@@ -162,7 +162,7 @@ async function execute() {
 	}
 	
 	try {
-		if (!fs.existsSync(path.join("..", json5.parse(fs.readFileSync("../config.json")).runtimePath))) {
+		if (!fs.existsSync(path.resolve("..", json5.parse(fs.readFileSync("../config.json")).runtimePath))) {
 			showMessage("Invalid Runtime path", "The framework can't find a folder it's looking for. Please re-read the installation instructions to ensure everything was installed correctly.", "error")
 			return
 		}
