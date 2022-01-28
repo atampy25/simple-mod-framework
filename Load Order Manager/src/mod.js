@@ -34,7 +34,16 @@ async function updateFramework() {
 				fs.removeSync("./staging")
 				fs.ensureDirSync("./staging")
 
-				new AdmZip("./latest-release.zip").extractAllTo("./staging")
+				let success = false
+				while (!success) {
+					try {
+						new AdmZip("./latest-release.zip").extractAllTo("./staging")
+						success = true
+					} catch {
+						success = false
+						await new Promise(r => setTimeout(r, 2000))
+					}
+				}
 
 				fs.removeSync("./staging/Mods")
 				fs.removeSync("./staging/cleanPackageDefinition.txt")
@@ -121,18 +130,27 @@ async function updateMod(modFolder) {
 							filename: "mod.zip",
 							timeout: 999999999
 						});
+
+						fs.removeSync("./staging")
+						fs.ensureDirSync("./staging")
 			
+						let success = false
+						while (!success) {
+							try {
+								new AdmZip("./mod.zip").extractAllTo("./staging")
+								success = true
+							} catch {
+								success = false
+								await new Promise(r => setTimeout(r, 2000))
+							}
+						}
+
 						for (var managedFile of updateData.managedFilesAndFolders) {
 							if (managedFile.includes("..") || managedFile.includes(":")) {
 								break
 							}
 							fs.removeSync(path.join("..", "Mods", managedFile))
 						}
-
-						fs.removeSync("./staging")
-						fs.ensureDirSync("./staging")
-			
-						new AdmZip("./mod.zip").extractAllTo("./staging")
 			
 						fs.copySync("./staging", "../Mods")
 						fs.removeSync("./staging")
