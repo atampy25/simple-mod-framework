@@ -198,8 +198,21 @@ async function refreshMods() {
 	$("#enabledMods")[0].innerHTML = ""
 	$("#availableMods")[0].innerHTML = ""
 
-	var config = json5.parse(fs.readFileSync("../config.json"))
+	var config = json5.parse(String(fs.readFileSync("../config.json")))
 	
+	for (var i = config.loadOrder.length - 1; i >= 0; i--) {
+		try {
+			let modFolder = !(fs.existsSync(path.join("..", "Mods", config.loadOrder[i])) && !fs.existsSync(path.join("..", "Mods", config.loadOrder[i], "manifest.json")) && klaw(path.join("..", "Mods", config.loadOrder[i])).filter(a=>a.stats.size > 0).map(a=>a.path).some(a=>a.endsWith(".rpkg"))) // Mod is not an RPKG mod
+								? fs.readdirSync(path.join("..", "Mods")).find(a=>fs.existsSync(path.join("..", "Mods", a, "manifest.json")) && json5.parse(String(fs.readFileSync(path.join("..", "Mods", a, "manifest.json")))).id == config.loadOrder[i]) // Find mod by ID
+								: config.loadOrder[i] // Mod is an RPKG mod, use folder name
+			if (!modFolder) { config.loadOrder.splice(i, 1) }
+		} catch {
+			config.loadOrder.splice(i, 1)
+		}
+	} // Remove mods that don't exist from the load order
+
+	fs.writeFileSync("../config.json", json5.stringify(config))
+
 	if (fs.readdirSync("../Mods").length > 0) {
 		for (let mod of config.loadOrder) {
 			try {
