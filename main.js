@@ -476,7 +476,7 @@ async function stageAllMods() {
 								logger.debug("Converting texture " + contentFilePath)
 								if (path.basename(contentFile).split(".")[0].split("~").length > 1) {
 									child_process.execSync(`"Third-Party\\HMTextureTools" rebuild H3 "${contentFilePath}" --metapath "${contentFilePath + ".meta"}" "${path.join(process.cwd(), "staging", chunkFolder, path.basename(contentFile).split(".")[0].split("~")[0] + ".TEXT")}" --rebuildboth --texdoutput "${path.join(process.cwd(), "staging", chunkFolder, path.basename(contentFile).split(".")[0].split("~")[1] + ".TEXD")}"`) // Rebuild texture to TEXT/TEXD
-									fs.writeFileSync(path.join(process.cwd(), "staging", chunkFolder, path.basename(contentFile).split(".")[0].split("~")[0] + ".TEXT.meta.JSON"), JSON.stringify({ // Create its meta
+									fs.writeFileSync(path.join(process.cwd(), "staging", chunkFolder, path.basename(contentFile).split(".")[0].split("~")[0] + ".TEXT.meta.JSON"), JSON.stringify({ // Create the TEXT meta
 										"hash_value": path.basename(contentFile).split(".")[0].split("~")[0],
 										"hash_offset": 163430439,
 										"hash_size": 2147483648,
@@ -488,7 +488,7 @@ async function stageAllMods() {
 										"hash_size_in_video_memory": 4294967295,
 										"hash_reference_data": [
 											{
-												"hash": path.join(process.cwd(), "staging", chunkFolder, path.basename(contentFile).split(".")[0].split("~")[1] + ".TEXD"),
+												"hash": path.basename(contentFile).split(".")[0].split("~")[1],
 												"flag": "5F"
 											}
 										]
