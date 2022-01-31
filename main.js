@@ -476,6 +476,24 @@ async function stageAllMods() {
 								logger.debug("Converting texture " + contentFilePath)
 								if (path.basename(contentFile).split(".")[0].split("~").length > 1) {
 									child_process.execSync(`"Third-Party\\HMTextureTools" rebuild H3 "${contentFilePath}" --metapath "${contentFilePath + ".meta"}" "${path.join(process.cwd(), "staging", chunkFolder, path.basename(contentFile).split(".")[0].split("~")[0] + ".TEXT")}" --rebuildboth --texdoutput "${path.join(process.cwd(), "staging", chunkFolder, path.basename(contentFile).split(".")[0].split("~")[1] + ".TEXD")}"`) // Rebuild texture to TEXT/TEXD
+									fs.writeFileSync(path.join(process.cwd(), "staging", chunkFolder, path.basename(contentFile).split(".")[0].split("~")[0] + ".TEXT.meta.JSON"), JSON.stringify({ // Create its meta
+										"hash_value": path.basename(contentFile).split(".")[0].split("~")[0],
+										"hash_offset": 163430439,
+										"hash_size": 2147483648,
+										"hash_resource_type": "TEXT",
+										"hash_reference_table_size": 13,
+										"hash_reference_table_dummy": 0,
+										"hash_size_final": 5,
+										"hash_size_in_memory": 4294967295,
+										"hash_size_in_video_memory": 4294967295,
+										"hash_reference_data": [
+											{
+												"hash": path.join(process.cwd(), "staging", chunkFolder, path.basename(contentFile).split(".")[0].split("~")[1] + ".TEXD"),
+												"flag": "5F"
+											}
+										]
+									}))
+									await rpkgInstance.callFunction(`-json_to_hash_meta "${path.join(process.cwd(), "staging", chunkFolder, path.basename(contentFile).split(".")[0].split("~")[0] + ".TEXT.meta.JSON")}"`) // Rebuild the meta
 								} else { // TEXT only
 									child_process.execSync(`"Third-Party\\HMTextureTools" rebuild H3 "${contentFilePath}" --metapath "${contentFilePath + ".meta"}" "${path.join(process.cwd(), "staging", chunkFolder, path.basename(contentFile).split(".")[0] + ".TEXT")}"`) // Rebuild texture to TEXT only
 								}
