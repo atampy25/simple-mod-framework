@@ -554,7 +554,7 @@ async function stageAllMods() {
 			});
 
 			global.currentWorkerPool = workerPool
-
+			
 			await Promise.all(entityPatches.map(({ tempHash, tempRPKG, tbluHash, tbluRPKG, chunkFolder, patches }) => {
 				index ++
 				return workerPool.run({
@@ -562,7 +562,7 @@ async function stageAllMods() {
 					assignedTemporaryDirectory: "patchWorker" + index,
 					useNiceLogs: !process.argv[2]
 				})
-			})); // Run each patch in the worker queue and wait for all of them to finish
+			})) // Run each patch in the worker queue and wait for all of them to finish
 
 			/* ---------------------------------------------------------------------------------------------- */
 			/*                                              Blobs                                             */
