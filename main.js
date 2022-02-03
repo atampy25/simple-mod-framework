@@ -12,6 +12,14 @@ const QuickEntity = {
 	"999.999": require("./quickentity")
 }
 
+const QuickEntityPatching = {
+    "0": require("./quickentity1136"),
+    "3": require("./quickentity20"),
+    "4": require("./quickentity"),
+	
+    "999": require("./quickentity")
+}
+
 const RPKG = require("./rpkg")
 
 const fs = require("fs-extra")
@@ -38,9 +46,6 @@ const luxon = require('luxon')
 const md5File = require('md5-file')
 
 require("clarify")
-
-// @ts-ignore
-const Piscina = require('piscina')
 
 const logger = !process.argv[2] ? {
 	debug: function (text) {
@@ -107,9 +112,6 @@ const rpkgInstance = new RPKG.RPKGInstance()
 
 function cleanExit() {
 	rpkgInstance.exit()
-	try {
-		global.currentWorkerPool.destroy()
-	} catch {}
 	process.exit()
 }
 
@@ -363,22 +365,74 @@ async function stageAllMods() {
 								break;
 							case "entity.patch.json":
 								entityContent = LosslessJSON.parse(String(fs.readFileSync(contentFilePath)))
-								entityContent.path = contentFilePath
 	
-								logger.debug("Preparing to apply patch " + contentFilePath)
-
-								if (entityPatches.some(a=>a.tempHash == entityContent.tempHash)) {
-									entityPatches.find(a=>a.tempHash == entityContent.tempHash).patches.push(entityContent)
-								} else {
-									entityPatches.push({
-										tempHash: entityContent.tempHash,
-										tempRPKG: await rpkgInstance.getRPKGOfHash(entityContent.tempHash),
-										tbluHash: entityContent.tbluHash,
-										tbluRPKG: await rpkgInstance.getRPKGOfHash(entityContent.tbluHash),
-										chunkFolder,
-										patches: [entityContent]
-									})
+								logger.debug("Applying patch " + contentFilePath)
+						
+								if (!QuickEntityPatching[Object.keys(QuickEntityPatching)[Object.keys(QuickEntityPatching).findIndex(a=> parseFloat(a) > Number(entityContent.patchVersion.value)) - 1]]) {
+									logger.error("Could not find matching QuickEntity version for patch version " + Number(entityContent.patchVersion.value) + "!")
 								}
+						
+								fs.writeFileSync(path.join(process.cwd(), "temp", "patch.json"), LosslessJSON.stringify(entityContent))
+
+								/* ---------------------------------- Extract original QN JSON ---------------------------------- */
+								if (!fs.existsSync(path.join(process.cwd(), "staging", chunkFolder, entityContent.tempHash + ".TEMP")) && !fs.existsSync(path.join(process.cwd(), "staging", chunkFolder, entityContent.tbluHash + ".TBLU"))) {
+									await rpkgInstance.callFunction(`-extract_entity_to_qn "${path.join(config.runtimePath)}" -filter "${entityContent.tempHash}" -output_path temp`)
+									fs.renameSync(path.join(process.cwd(), "temp", entityContent.tempHash + ".entity.json"), path.join(process.cwd(), "temp", "QuickEntityJSON.json"))
+								} else {
+									let tempRPKG = await rpkgInstance.getRPKGOfHash(entityContent.tempHash)
+									let tbluRPKG = await rpkgInstance.getRPKGOfHash(entityContent.tbluHash)
+
+									/* ---------------------------------------- Extract TEMP ---------------------------------------- */
+									await extractOrCopyToTemp(tempRPKG, entityContent.tempHash, "TEMP", chunkFolder)
+
+									/* ---------------------------------------- Extract TBLU ---------------------------------------- */
+									await extractOrCopyToTemp(tbluRPKG, entityContent.tbluHash, "TBLU", chunkFolder)
+
+									/* ------------------------------------ Convert to RT Source ------------------------------------ */
+									child_process.execSync("\"" + path.join(process.cwd(), "Third-Party", "ResourceTool.exe") + "\" HM3 convert TEMP \"" + path.join(process.cwd(), "temp", tempRPKG, "TEMP", entityContent.tempHash + ".TEMP") + "\" \"" + path.join(process.cwd(), "temp", tempRPKG, "TEMP", entityContent.tempHash + ".TEMP") + ".json\" --simple")
+									child_process.execSync("\"" + path.join(process.cwd(), "Third-Party", "ResourceTool.exe") + "\" HM3 convert TBLU \"" + path.join(process.cwd(), "temp", tbluRPKG, "TBLU", entityContent.tbluHash + ".TBLU") + "\" \"" + path.join(process.cwd(), "temp", tbluRPKG, "TBLU", entityContent.tbluHash + ".TBLU") + ".json\" --simple")
+									await rpkgInstance.callFunction(`-hash_meta_to_json "${path.join(process.cwd(), "temp", tempRPKG, "TEMP", entityContent.tempHash + ".TEMP.meta")}"`)
+									await rpkgInstance.callFunction(`-hash_meta_to_json "${path.join(process.cwd(), "temp", tbluRPKG, "TBLU", entityContent.tbluHash + ".TBLU.meta")}"`) // Generate the RT files from the binary files
+
+									/* ---------------------------------------- Convert to QN --------------------------------------- */
+									if (Number(entityContent.patchVersion.value) < 3) {
+										await (QuickEntityPatching[Object.keys(QuickEntityPatching)[Object.keys(QuickEntityPatching).findIndex(a=> parseFloat(a) > Number(entityContent.patchVersion.value)) - 1]]).convert("HM3", "ids",
+											path.join(process.cwd(), "temp", tempRPKG, "TEMP", entityContent.tempHash + ".TEMP.json"),
+											path.join(process.cwd(), "temp", tempRPKG, "TEMP", entityContent.tempHash + ".TEMP.meta.json"),
+											path.join(process.cwd(), "temp", tbluRPKG, "TBLU", entityContent.tbluHash + ".TBLU.json"),
+											path.join(process.cwd(), "temp", tbluRPKG, "TBLU", entityContent.tbluHash + ".TBLU.meta.json"),
+											path.join(process.cwd(), "temp", "QuickEntityJSON.json")) // Generate the QN json from the RT files
+									} else {
+										await (QuickEntityPatching[Object.keys(QuickEntityPatching)[Object.keys(QuickEntityPatching).findIndex(a=> parseFloat(a) > Number(entityContent.patchVersion.value)) - 1]]).convert("HM3",
+											path.join(process.cwd(), "temp", tempRPKG, "TEMP", entityContent.tempHash + ".TEMP.json"),
+											path.join(process.cwd(), "temp", tempRPKG, "TEMP", entityContent.tempHash + ".TEMP.meta.json"),
+											path.join(process.cwd(), "temp", tbluRPKG, "TBLU", entityContent.tbluHash + ".TBLU.json"),
+											path.join(process.cwd(), "temp", tbluRPKG, "TBLU", entityContent.tbluHash + ".TBLU.meta.json"),
+											path.join(process.cwd(), "temp", "QuickEntityJSON.json")) // Generate the QN json from the RT files
+									}
+								}
+						
+								/* ----------------------------------------- Apply patch ---------------------------------------- */
+								await (QuickEntityPatching[Object.keys(QuickEntityPatching)[Object.keys(QuickEntityPatching).findIndex(a=> parseFloat(a) > Number(entityContent.patchVersion.value)) - 1]]).applyPatchJSON(path.join(process.cwd(), "temp", "QuickEntityJSON.json"), path.join(process.cwd(), "temp", "patch.json"), path.join(process.cwd(), "temp", "PatchedQuickEntityJSON.json"))
+							
+								/* ------------------------------------ Convert to RT Source ------------------------------------ */
+								await (QuickEntityPatching[Object.keys(QuickEntityPatching)[Object.keys(QuickEntityPatching).findIndex(a=> parseFloat(a) > Number(entityContent.patchVersion.value)) - 1]]).generate("HM3", path.join(process.cwd(), "temp", "PatchedQuickEntityJSON.json"),
+									path.join(process.cwd(), "temp", "temp.TEMP.json"),
+									path.join(process.cwd(), "temp", "temp.TEMP.meta.json"),
+									path.join(process.cwd(), "temp", "temp.TBLU.json"),
+									path.join(process.cwd(), "temp", "temp.TBLU.meta.json")) // Generate the RT files from the QN json
+							
+								/* -------------------------------------- Convert to binary ------------------------------------- */
+								child_process.execSync("\"" + path.join(process.cwd(), "Third-Party", "ResourceTool.exe") + "\" HM3 generate TEMP \"" + path.join(process.cwd(), "temp", "temp.TEMP.json") + "\" \"" + path.join(process.cwd(), "temp", "temp.TEMP") + "\" --simple")
+								child_process.execSync("\"" + path.join(process.cwd(), "Third-Party", "ResourceTool.exe") + "\" HM3 generate TBLU \"" + path.join(process.cwd(), "temp", "temp.TBLU.json") + "\" \"" + path.join(process.cwd(), "temp", "temp.TBLU") + "\" --simple")
+								await rpkgInstance.callFunction(`-json_to_hash_meta "${path.join(process.cwd(), "temp", "temp.TEMP.meta.json")}"`)
+								await rpkgInstance.callFunction(`-json_to_hash_meta "${path.join(process.cwd(), "temp", "temp.TBLU.meta.json")}"`) // Generate the binary files from the RT json
+							
+								/* ------------------------------------- Stage binary files ------------------------------------- */
+								fs.copyFileSync(path.join(process.cwd(), "temp", "temp.TEMP"), path.join(process.cwd(), "staging", chunkFolder, entityContent.tempHash + ".TEMP"))
+								fs.copyFileSync(path.join(process.cwd(), "temp", "temp.TEMP.meta"), path.join(process.cwd(), "staging", chunkFolder, entityContent.tempHash + ".TEMP.meta"))
+								fs.copyFileSync(path.join(process.cwd(), "temp", "temp.TBLU"), path.join(process.cwd(), "staging", chunkFolder, entityContent.tbluHash + ".TBLU"))
+								fs.copyFileSync(path.join(process.cwd(), "temp", "temp.TBLU.meta"), path.join(process.cwd(), "staging", chunkFolder, entityContent.tbluHash + ".TBLU.meta")) // Copy the binary files to the staging directory
 								break;
 							case "unlockables.json":
 								entityContent = JSON.parse(String(fs.readFileSync(contentFilePath)))
@@ -569,25 +623,6 @@ async function stageAllMods() {
 					}
 				}
 			}
-	
-			/* ------------------------------------- Multithreaded patching ------------------------------------ */
-			let index = 0
-
-			let workerPool = new Piscina({
-				filename: "patchWorker.js",
-				maxThreads: os.cpus().length / 4 // For an 8-core CPU with 16 logical processors there are 4 max threads
-			});
-
-			global.currentWorkerPool = workerPool
-			
-			await Promise.all(entityPatches.map(({ tempHash, tempRPKG, tbluHash, tbluRPKG, chunkFolder, patches }) => {
-				index ++
-				return workerPool.run({
-					tempHash, tempRPKG, tbluHash, tbluRPKG, chunkFolder, patches,
-					assignedTemporaryDirectory: "patchWorker" + index,
-					useNiceLogs: !process.argv[2]
-				})
-			})) // Run each patch in the worker queue and wait for all of them to finish
 
 			/* ---------------------------------------------------------------------------------------------- */
 			/*                                              Blobs                                             */
