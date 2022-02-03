@@ -281,13 +281,15 @@ async function stageAllMods() {
 				}
 			}
 
-			for (let req of manifest.requirements) {
-				if (!config.loadOrder.includes(req)) {
-					logger.error(`Mod ${manifest.name} is missing requirement ${req}!`)
+			if (manifest.requirements && manifest.requirements.length) {
+				for (let req of manifest.requirements) {
+					if (!config.loadOrder.includes(req)) {
+						logger.error(`Mod ${manifest.name} is missing requirement ${req}!`)
+					}
 				}
 			}
 
-			if (manifest.supportedPlatforms.length) {
+			if (manifest.supportedPlatforms && manifest.supportedPlatforms.length) {
 				if (!manifest.supportedPlatforms.includes(config.platform)) {
 					logger.error(`Mod ${manifest.name} only supports the ${manifest.supportedPlatforms.slice(0, -1).length ? manifest.supportedPlatforms.slice(0, -1).join(", ") + " and " + manifest.supportedPlatforms[manifest.supportedPlatforms.length - 1] : manifest.supportedPlatforms[0]} platforms!`)
 				}
