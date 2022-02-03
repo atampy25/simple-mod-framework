@@ -74,6 +74,9 @@ Each mod contains a manifest. Manifests have the following format:
 	"dependencies": [ // Runtime IDs of files to extract the dependencies of and place in chunk0 (automatic porting of dependencies)
 		"00123456789ABCDE"
 	],
+	"supportedPlatforms": [ // Supported platforms for the mod - steam and epic are the only currently supported platforms - if this is omitted it is assumed that all are supported
+		"steam"
+	],
 	"requirements": [ // Required mods (if a requirement is missing the framework will not deploy and will warn the user)
 		"Atampy26.RequiredMod"
 	],
