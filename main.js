@@ -366,7 +366,7 @@ async function stageAllMods() {
 								entityContent.path = contentFilePath
 	
 								logger.debug("Preparing to apply patch " + contentFilePath)
-						
+
 								if (entityPatches.some(a=>a.tempHash == entityContent.tempHash)) {
 									entityPatches.find(a=>a.tempHash == entityContent.tempHash).patches.push(entityContent)
 								} else {
@@ -580,65 +580,14 @@ async function stageAllMods() {
 
 			global.currentWorkerPool = workerPool
 			
-			await Promise.all(await Promise.all(entityPatches.map(async ({ tempHash, tempRPKG, tbluHash, tbluRPKG, chunkFolder, patches }) => {
+			await Promise.all(entityPatches.map(({ tempHash, tempRPKG, tbluHash, tbluRPKG, chunkFolder, patches }) => {
 				index ++
-
-				if (!fs.existsSync(path.join(process.cwd(), "staging", chunkFolder, tempHash + ".TEMP")) && !fs.existsSync(path.join(process.cwd(), "staging", chunkFolder, tbluHash + ".TBLU"))) {
-					await rpkgInstance.callFunction(`-extract_entity_to_qn "${path.join(config.runtimePath)}" -filter "${tempHash}" -output_path "${"patchWorker" + index}"`)
-					fs.renameSync(path.join(process.cwd(), "patchWorker" + index, tempHash + ".entity.json"), path.join(process.cwd(), "patchWorker" + index, "QuickEntityJSON.json"))
-				} else {
-					/* ---------------------------------------- Extract TEMP ---------------------------------------- */
-					if (!fs.existsSync(path.join(process.cwd(), "staging", chunkFolder, tempHash + ".TEMP"))) {
-						await rpkgInstance.callFunction(`-extract_from_rpkg "${path.join(config.runtimePath, tempRPKG + ".rpkg")}" -filter "${tempHash}" -output_path "${"patchWorker" + index}"`)
-					} else {
-						try {
-							fs.ensureDirSync(path.join(process.cwd(), "patchWorker" + index, tempRPKG, "TEMP"))
-						} catch {}
-						fs.copyFileSync(path.join(process.cwd(), "staging", chunkFolder, tempHash + ".TEMP"), path.join(process.cwd(), "patchWorker" + index, tempRPKG, "TEMP", tempHash + ".TEMP")) // Use the staging one (for mod compat - one mod can extract, patch and build, then the next can patch that one instead)
-						fs.copyFileSync(path.join(process.cwd(), "staging", chunkFolder, tempHash + ".TEMP.meta"), path.join(process.cwd(), "patchWorker" + index, tempRPKG, "TEMP", tempHash + ".TEMP.meta"))
-					}
-				
-					/* ---------------------------------------- Extract TBLU ---------------------------------------- */
-					if (!fs.existsSync(path.join(process.cwd(), "staging", chunkFolder, tbluHash + ".TBLU"))) {
-						await rpkgInstance.callFunction(`-extract_from_rpkg "${path.join(config.runtimePath, tbluRPKG + ".rpkg")}" -filter "${tbluHash}" -output_path "${"patchWorker" + index}"`)
-					} else {
-						try {
-							fs.ensureDirSync(path.join(process.cwd(), "patchWorker" + index, tbluRPKG, "TBLU"))
-						} catch {}
-						fs.copyFileSync(path.join(process.cwd(), "staging", chunkFolder, tbluHash + ".TBLU"), path.join(process.cwd(), "patchWorker" + index, tbluRPKG, "TBLU", tbluHash + ".TBLU")) // Use the staging one (for mod compat - one mod can extract, patch and build, then the next can patch that one instead)
-						fs.copyFileSync(path.join(process.cwd(), "staging", chunkFolder, tbluHash + ".TBLU.meta"), path.join(process.cwd(), "patchWorker" + index, tbluRPKG, "TBLU", tbluHash + ".TBLU.meta"))
-					}
-				
-					/* ------------------------------------ Convert to RT Source ------------------------------------ */
-					child_process.execSync("\"" + path.join(process.cwd(), "Third-Party", "ResourceTool.exe") + "\" HM3 convert TEMP \"" + path.join(process.cwd(), "patchWorker" + index, tempRPKG, "TEMP", tempHash + ".TEMP") + "\" \"" + path.join(process.cwd(), "patchWorker" + index, tempRPKG, "TEMP", tempHash + ".TEMP") + ".json\" --simple")
-					child_process.execSync("\"" + path.join(process.cwd(), "Third-Party", "ResourceTool.exe") + "\" HM3 convert TBLU \"" + path.join(process.cwd(), "patchWorker" + index, tbluRPKG, "TBLU", tbluHash + ".TBLU") + "\" \"" + path.join(process.cwd(), "patchWorker" + index, tbluRPKG, "TBLU", tbluHash + ".TBLU") + ".json\" --simple")
-					await rpkgInstance.callFunction(`-hash_meta_to_json "${path.join(process.cwd(), "patchWorker" + index, tempRPKG, "TEMP", tempHash + ".TEMP.meta")}"`)
-					await rpkgInstance.callFunction(`-hash_meta_to_json "${path.join(process.cwd(), "patchWorker" + index, tbluRPKG, "TBLU", tbluHash + ".TBLU.meta")}"`) // Generate the RT files from the binary files
-			
-					/* ---------------------------------------- Convert to QN --------------------------------------- */
-					if (Number(patches[0].patchVersion.value) < 3) {
-						await (QuickEntity[Object.keys(QuickEntity)[Object.keys(QuickEntity).findIndex(a=> parseFloat(a) > Number(patches[0].patchVersion.value)) - 1]]).convert("HM3", "ids",
-							path.join(process.cwd(), "patchWorker" + index, tempRPKG, "TEMP", tempHash + ".TEMP.json"),
-							path.join(process.cwd(), "patchWorker" + index, tempRPKG, "TEMP", tempHash + ".TEMP.meta.json"),
-							path.join(process.cwd(), "patchWorker" + index, tbluRPKG, "TBLU", tbluHash + ".TBLU.json"),
-							path.join(process.cwd(), "patchWorker" + index, tbluRPKG, "TBLU", tbluHash + ".TBLU.meta.json"),
-							path.join(process.cwd(), "patchWorker" + index, "QuickEntityJSON.json")) // Generate the QN json from the RT files
-					} else {
-						await (QuickEntity[Object.keys(QuickEntity)[Object.keys(QuickEntity).findIndex(a=> parseFloat(a) > Number(patches[0].patchVersion.value)) - 1]]).convert("HM3",
-							path.join(process.cwd(), "patchWorker" + index, tempRPKG, "TEMP", tempHash + ".TEMP.json"),
-							path.join(process.cwd(), "patchWorker" + index, tempRPKG, "TEMP", tempHash + ".TEMP.meta.json"),
-							path.join(process.cwd(), "patchWorker" + index, tbluRPKG, "TBLU", tbluHash + ".TBLU.json"),
-							path.join(process.cwd(), "patchWorker" + index, tbluRPKG, "TBLU", tbluHash + ".TBLU.meta.json"),
-							path.join(process.cwd(), "patchWorker" + index, "QuickEntityJSON.json")) // Generate the QN json from the RT files
-					}
-				}
-
 				return workerPool.run({
 					tempHash, tempRPKG, tbluHash, tbluRPKG, chunkFolder, patches,
 					assignedTemporaryDirectory: "patchWorker" + index,
 					useNiceLogs: !process.argv[2]
 				})
-			}))) // Run each patch in the worker queue and wait for all of them to finish
+			})) // Run each patch in the worker queue and wait for all of them to finish
 
 			/* ---------------------------------------------------------------------------------------------- */
 			/*                                              Blobs                                             */
