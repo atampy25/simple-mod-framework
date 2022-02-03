@@ -35,6 +35,7 @@ const klaw = require('klaw-sync')
 const rfc6902 = require('rfc6902')
 const chalk = require('chalk')
 const luxon = require('luxon')
+const md5File = require('md5-file')
 
 require("clarify")
 
@@ -50,6 +51,10 @@ const logger = !process.argv[2] ? {
 		process.stdout.write(chalk`{blue INFO}\t${text}\n`)
 	},
 
+	warn: function (text) {
+		process.stdout.write(chalk`{yellow WARN}\t${text}\n`)
+	},
+
 	error: function (text, exitAfter = true) {
 		process.stderr.write(chalk`{red ERROR}\t${text}\n`)
 		console.trace()
@@ -61,11 +66,19 @@ const logger = !process.argv[2] ? {
 } : {
 	debug: console.debug,
 	info: console.info,
+	warn: console.warn,
 	error: function(a) {
 		console.log(a)
 		cleanExit()
 	}
 } // Any arguments will cause coloured logging to be disabled
+
+const gameHashes = {
+	"f8bff5b368f88845af690c61fbf34619": "epic",
+	"006b544ef4547fa9926c6db33ab1d6b3": "steam",
+	// "2531cd950d2022d7ea190d4eff333b58": "microsoft"
+	// Gamepass/store protects the EXE from reading so we can't hash it, instead we would hash the game config; support for these versions though is not currently in the framework
+}
 
 process.on('SIGINT', cleanExit)
 process.on('SIGTERM', cleanExit)
@@ -83,7 +96,10 @@ process.on('unhandledRejection', (err, origin) => {
 })
 
 const config = json5.parse(String(fs.readFileSync(path.join(process.cwd(), "config.json"))))
-if (typeof config.outputConfigToAppDataOnDeploy == "undefined") { config.outputConfigToAppDataOnDeploy = true; fs.writeFileSync(path.join(process.cwd(), "config.json"), json5.stringify(config)) }
+if (typeof config.outputConfigToAppDataOnDeploy == "undefined") { config.outputConfigToAppDataOnDeploy = true; fs.writeFileSync(path.join(process.cwd(), "config.json"), json5.stringify(config)) } // Backwards compatibility - output config to appdata on deploy
+
+config.platform = gameHashes[md5File.sync(path.join(path.resolve(process.cwd(), config.runtimePath), "..", "Retail", "HITMAN3.exe"))]
+if (typeof config.platform == "undefined") { logger.error("Unknown platform - contact Atampy26 on Hitman Forum!") }
 
 config.runtimePath = path.resolve(process.cwd(), config.runtimePath)
 
@@ -254,6 +270,9 @@ async function stageAllMods() {
 					manifest.requirements || (manifest.requirements = [])
 					option.requirements && manifest.requirements.push(...option.requirements)
 
+					manifest.supportedPlatforms || (manifest.supportedPlatforms = [])
+					option.supportedPlatforms && manifest.supportedPlatforms.push(...option.supportedPlatforms)
+
 					manifest.packagedefinition || (manifest.packagedefinition = [])
 					option.packagedefinition && manifest.packagedefinition.push(...option.packagedefinition)
 
@@ -262,11 +281,15 @@ async function stageAllMods() {
 				}
 			}
 
-			if (manifest.requirements) {
-				for (let req of manifest.requirements) {
-					if (!config.loadOrder.includes(req)) {
-						logger.error(`Mod ${manifest.name} is missing requirement ${req}!`)
-					}
+			for (let req of manifest.requirements) {
+				if (!config.loadOrder.includes(req)) {
+					logger.error(`Mod ${manifest.name} is missing requirement ${req}!`)
+				}
+			}
+
+			if (manifest.supportedPlatforms.length) {
+				if (!manifest.supportedPlatforms.includes(config.platform)) {
+					logger.error(`Mod ${manifest.name} only supports the ${manifest.supportedPlatforms.slice(0, -1).length ? manifest.supportedPlatforms.slice(0, -1).join(", ") + " and " + manifest.supportedPlatforms[manifest.supportedPlatforms.length - 1] : manifest.supportedPlatforms[0]} platforms!`)
 				}
 			}
 
