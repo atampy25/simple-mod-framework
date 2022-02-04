@@ -75,6 +75,7 @@ const logger = !process.argv[2] ? {
 
 const gameHashes = {
 	"f8bff5b368f88845af690c61fbf34619": "epic",
+	"1ab6a5e004d6c3ff4f330a9a8aa0e3bf": "epic",
 	"006b544ef4547fa9926c6db33ab1d6b3": "steam",
 	// "2531cd950d2022d7ea190d4eff333b58": "microsoft"
 	// Gamepass/store protects the EXE from reading so we can't hash it, instead we would hash the game config; support for these versions though is not currently in the framework
