@@ -99,12 +99,12 @@ process.on('unhandledRejection', (err, origin) => {
 const config = json5.parse(String(fs.readFileSync(path.join(process.cwd(), "config.json"))))
 if (typeof config.outputConfigToAppDataOnDeploy == "undefined") { config.outputConfigToAppDataOnDeploy = true; fs.writeFileSync(path.join(process.cwd(), "config.json"), json5.stringify(config)) } // Backwards compatibility - output config to appdata on deploy
 
-config.platform = gameHashes[md5File.sync(path.join(path.resolve(process.cwd(), config.runtimePath), "..", "Retail", "HITMAN3.exe"))]
-if (typeof config.platform == "undefined") { logger.error("Unknown platform - contact Atampy26 on Hitman Forum!") }
-
 config.runtimePath = path.resolve(process.cwd(), config.runtimePath)
 
 const rpkgInstance = new RPKG.RPKGInstance()
+
+config.platform = gameHashes[md5File.sync(path.join(path.resolve(process.cwd(), config.runtimePath), "..", "Retail", "HITMAN3.exe"))] // Platform detection
+if (typeof config.platform == "undefined") { logger.error("Unknown platform/game version - update both the game and the framework and if that doesn't work, contact Atampy26 on Hitman Forum!") }
 
 function cleanExit() {
 	rpkgInstance.exit()
@@ -589,6 +589,8 @@ async function stageAllMods() {
 					useNiceLogs: !process.argv[2]
 				})
 			})) // Run each patch in the worker queue and wait for all of them to finish
+
+			global.currentWorkerPool = { destroy: () => {} }
 
 			/* ---------------------------------------------------------------------------------------------- */
 			/*                                              Blobs                                             */
