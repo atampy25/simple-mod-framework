@@ -42,17 +42,20 @@ require("clarify")
 // @ts-ignore
 const Piscina = require('piscina')
 
-const logger = !process.argv[2] ? {
+const logger = (!process.argv[2] || process.argv[2] == "kevinMode") ? {
 	debug: function (text) {
 		process.stdout.write(chalk`{grey DEBUG\t${text}}\n`)
+		if (process.argv[2] == "kevinMode") { child_process.execSync("pause") }
 	},
 
 	info: function (text) {
 		process.stdout.write(chalk`{blue INFO}\t${text}\n`)
+		if (process.argv[2] == "kevinMode") { child_process.execSync("pause") }
 	},
 
 	warn: function (text) {
 		process.stdout.write(chalk`{yellow WARN}\t${text}\n`)
+		if (process.argv[2] == "kevinMode") { child_process.execSync("pause") }
 	},
 
 	error: function (text, exitAfter = true) {
@@ -504,14 +507,14 @@ async function stageAllMods() {
 									child_process.execSync(`"Third-Party\\HMTextureTools" rebuild H3 "${contentFilePath}" --metapath "${contentFilePath + ".meta"}" "${path.join(process.cwd(), "staging", chunkFolder, path.basename(contentFile).split(".")[0].split("~")[0] + ".TEXT")}" --rebuildboth --texdoutput "${path.join(process.cwd(), "staging", chunkFolder, path.basename(contentFile).split(".")[0].split("~")[1] + ".TEXD")}"`) // Rebuild texture to TEXT/TEXD
 									fs.writeFileSync(path.join(process.cwd(), "staging", chunkFolder, path.basename(contentFile).split(".")[0].split("~")[0] + ".TEXT.meta.JSON"), JSON.stringify({ // Create the TEXT meta
 										"hash_value": path.basename(contentFile).split(".")[0].split("~")[0],
-										"hash_offset": 163430439,
+										"hash_offset": 21488715,
 										"hash_size": 2147483648,
 										"hash_resource_type": "TEXT",
 										"hash_reference_table_size": 13,
 										"hash_reference_table_dummy": 0,
-										"hash_size_final": 5,
+										"hash_size_final": 6054,
 										"hash_size_in_memory": 4294967295,
-										"hash_size_in_video_memory": 4294967295,
+										"hash_size_in_video_memory": 688128,
 										"hash_reference_data": [
 											{
 												"hash": path.basename(contentFile).split(".")[0].split("~")[1],
@@ -519,9 +522,35 @@ async function stageAllMods() {
 											}
 										]
 									}))
-									await rpkgInstance.callFunction(`-json_to_hash_meta "${path.join(process.cwd(), "staging", chunkFolder, path.basename(contentFile).split(".")[0].split("~")[0] + ".TEXT.meta.JSON")}"`) // Rebuild the meta
+									fs.writeFileSync(path.join(process.cwd(), "staging", chunkFolder, path.basename(contentFile).split(".")[0].split("~")[1] + ".TEXD.meta.JSON"), JSON.stringify({ // Create the TEXD meta
+										"hash_value": path.basename(contentFile).split(".")[0].split("~")[1],
+										"hash_offset": 233821026,
+										"hash_size": 0,
+										"hash_resource_type": "TEXD",
+										"hash_reference_table_size": 0,
+										"hash_reference_table_dummy": 0,
+										"hash_size_final": 120811,
+										"hash_size_in_memory": 4294967295,
+										"hash_size_in_video_memory": 688128,
+										"hash_reference_data": []
+									}))
+									await rpkgInstance.callFunction(`-json_to_hash_meta "${path.join(process.cwd(), "staging", chunkFolder, path.basename(contentFile).split(".")[0].split("~")[0] + ".TEXT.meta.JSON")}"`) // Rebuild the TEXT meta
+									await rpkgInstance.callFunction(`-json_to_hash_meta "${path.join(process.cwd(), "staging", chunkFolder, path.basename(contentFile).split(".")[0].split("~")[1] + ".TEXD.meta.JSON")}"`) // Rebuild the TEXD meta
 								} else { // TEXT only
 									child_process.execSync(`"Third-Party\\HMTextureTools" rebuild H3 "${contentFilePath}" --metapath "${contentFilePath + ".meta"}" "${path.join(process.cwd(), "staging", chunkFolder, path.basename(contentFile).split(".")[0] + ".TEXT")}"`) // Rebuild texture to TEXT only
+									fs.writeFileSync(path.join(process.cwd(), "staging", chunkFolder, path.basename(contentFile).split(".")[0] + ".TEXT.meta.json"), JSON.stringify({ // Create the TEXT meta
+										"hash_value": path.basename(contentFile).split(".")[0].split("~")[0],
+										"hash_offset": 21488715,
+										"hash_size": 2147483648,
+										"hash_resource_type": "TEXT",
+										"hash_reference_table_size": 13,
+										"hash_reference_table_dummy": 0,
+										"hash_size_final": 6054,
+										"hash_size_in_memory": 4294967295,
+										"hash_size_in_video_memory": 688128,
+										"hash_reference_data": []
+									}))
+									await rpkgInstance.callFunction(`-json_to_hash_meta "${path.join(process.cwd(), "staging", chunkFolder, path.basename(contentFile).split(".")[0] + ".TEXT.meta.json")}"`) // Rebuild the meta
 								}
 								break;
 							case "sfx.wem":
