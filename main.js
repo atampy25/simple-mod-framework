@@ -515,7 +515,7 @@ async function stageAllMods() {
 										"hash_reference_data": [
 											{
 												"hash": path.basename(contentFile).split(".")[0].split("~")[1],
-												"flag": "5F"
+												"flag": "9F"
 											}
 										]
 									}))
