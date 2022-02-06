@@ -45,24 +45,24 @@ const Piscina = require('piscina')
 const logger = (!process.argv[2] || process.argv[2] == "kevinMode") ? {
 	debug: function (text) {
 		process.stdout.write(chalk`{grey DEBUG\t${text}}\n`)
-		if (process.argv[2] == "kevinMode") { child_process.execSync("pause") }
+		if (process.argv[2] == "kevinMode") { child_process.execSync("pause", { shell: true, stdio: [0,1,2] }) }
 	},
 
 	info: function (text) {
 		process.stdout.write(chalk`{blue INFO}\t${text}\n`)
-		if (process.argv[2] == "kevinMode") { child_process.execSync("pause") }
+		if (process.argv[2] == "kevinMode") { child_process.execSync("pause", { shell: true, stdio: [0,1,2] }) }
 	},
 
 	warn: function (text) {
 		process.stdout.write(chalk`{yellow WARN}\t${text}\n`)
-		if (process.argv[2] == "kevinMode") { child_process.execSync("pause") }
+		if (process.argv[2] == "kevinMode") { child_process.execSync("pause", { shell: true, stdio: [0,1,2] }) }
 	},
 
 	error: function (text, exitAfter = true) {
 		process.stderr.write(chalk`{red ERROR}\t${text}\n`)
 		console.trace()
 
-		child_process.execSync("pause")
+		child_process.execSync("pause", { shell: true, stdio: [0,1,2] })
 
 		if (exitAfter) cleanExit()
 	}
@@ -70,11 +70,11 @@ const logger = (!process.argv[2] || process.argv[2] == "kevinMode") ? {
 	debug: console.debug,
 	info: console.info,
 	warn: console.warn,
-	error: function(a) {
+	error: function(a, exitAfter = true) {
 		console.log(a)
-		cleanExit()
+		if (exitAfter) cleanExit()
 	}
-} // Any arguments will cause coloured logging to be disabled
+} // Any arguments (except kevinMode) will cause coloured logging to be disabled
 
 const gameHashes = {
 	"f8bff5b368f88845af690c61fbf34619": "epic",
