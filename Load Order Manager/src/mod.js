@@ -97,7 +97,7 @@ async function fetchModUpdates() {
 				var modUpdateData = await (await fetch(modManifest.updateCheck)).json()
 				if (semver.lt(modManifest.version, modUpdateData.version)) {
 					$("#modUpdateAvailable")[0].style.display = "block"
-					$("#modUpdateCards")[0].innerHTML += `<div class="text-lg text-center p-4 m-4 shadow-2xl bg-gradient-to-br from-gray-800 to-gray-900 cursor-pointer" onclick="updateMod('${sanitiseStrongly(modFolder.replaceAll(`"`, "").replaceAll(`\\`, ""))}')">
+					$("#modUpdateCards")[0].innerHTML += `<div class="text-lg text-center p-4 m-4 shadow-2xl bg-gradient-to-br from-gray-800 to-gray-900 cursor-pointer" onclick="updateMod('${sanitiseStrongly(modFolder.replaceAll(`'`, "").replaceAll(`\\`, ""))}')">
 															<div class="flex flex-initial flex-wrap flex-row justify-center w-full">
 																<div>
 																	<span class="font-bold">${sanitise(modManifest.name)}</span> v<span>${sanitise(modManifest.version)}</span> -> v<span>${sanitise(modUpdateData.version)}</span><br>
@@ -232,13 +232,13 @@ async function refreshMods() {
 					
 					$("#enabledMods")[0].innerHTML += `<div class="p-8 bg-gray-900 w-full flow-root shadow-xl rounded-md text-white">
 															<div class="float-right">
-																${modManifest.options && modManifest.options.some(a=>a.type == "checkbox" || a.type == "select") ? `<neo-button small label="" gradientFrom="thisisjustsoitworkslmao" gradientTo="bg-gray-800" onclick="modSettings('${sanitiseStrongly(modFolder.replaceAll(`"`, "").replaceAll(`\\`, ""))}')" style="display: inline">
+																${modManifest.options && modManifest.options.some(a=>a.type == "checkbox" || a.type == "select") ? `<neo-button small label="" gradientFrom="thisisjustsoitworkslmao" gradientTo="bg-gray-800" onclick="modSettings('${sanitiseStrongly(modFolder.replaceAll(`'`, "").replaceAll(`\\`, ""))}')" style="display: inline">
 																	<i class="fas fa-cog" slot="icon"></i>
 																</neo-button>` : ``}
-																<neo-button small label="Disable" gradientFrom="from-rose-400" gradientTo="to-red-500" onclick="disableMod('${sanitiseStrongly(modFolder.replaceAll(`"`, "").replaceAll(`\\`, ""))}')" style="display: inline">
+																<neo-button small label="Disable" gradientFrom="from-rose-400" gradientTo="to-red-500" onclick="disableMod('${sanitiseStrongly(modFolder.replaceAll(`'`, "").replaceAll(`\\`, ""))}')" style="display: inline">
 																	<i class="fas fa-times" slot="icon"></i>
 																</neo-button>
-																<neo-button small label="Move" gradientFrom="from-fuchsia-400" gradientTo="to-violet-400" onclick="moveMod('${sanitiseStrongly(modFolder.replaceAll(`"`, "").replaceAll(`\\`, ""))}')" style="display: inline">
+																<neo-button small label="Move" gradientFrom="from-fuchsia-400" gradientTo="to-violet-400" onclick="moveMod('${sanitiseStrongly(modFolder.replaceAll(`'`, "").replaceAll(`\\`, ""))}')" style="display: inline">
 																	<i class="fas fa-arrows-alt" slot="icon"></i>
 																</neo-button>
 															</div>
@@ -252,10 +252,10 @@ async function refreshMods() {
 				} else {
 					$("#enabledMods")[0].innerHTML += `<div class="p-8 bg-gray-900 w-full flow-root shadow-xl rounded-md text-white">
 															<div class="float-right">
-																<neo-button small label="Disable" gradientFrom="from-rose-400" gradientTo="to-red-500" onclick="disableMod('${sanitiseStrongly(modFolder.replaceAll(`"`, "").replaceAll(`\\`, ""))}')" style="display: inline">
+																<neo-button small label="Disable" gradientFrom="from-rose-400" gradientTo="to-red-500" onclick="disableMod('${sanitiseStrongly(modFolder.replaceAll(`'`, "").replaceAll(`\\`, ""))}')" style="display: inline">
 																	<i class="fas fa-times" slot="icon"></i>
 																</neo-button>
-																<neo-button small label="Move" gradientFrom="from-fuchsia-400" gradientTo="to-violet-400" onclick="moveMod('${sanitiseStrongly(modFolder.replaceAll(`"`, "").replaceAll(`\\`, ""))}')" style="display: inline">
+																<neo-button small label="Move" gradientFrom="from-fuchsia-400" gradientTo="to-violet-400" onclick="moveMod('${sanitiseStrongly(modFolder.replaceAll(`'`, "").replaceAll(`\\`, ""))}')" style="display: inline">
 																	<i class="fas fa-arrows-alt" slot="icon"></i>
 																</neo-button>
 															</div>
@@ -276,7 +276,7 @@ async function refreshMods() {
 					if (path.extname(modFolder) == ".zip") {
 						$("#availableMods")[0].innerHTML += `<div class="p-8 bg-gray-900 w-full flow-root shadow-xl rounded-md text-white">
 																<div class="float-right">
-																	<neo-button small label="Install" gradientFrom="from-teal-400" gradientTo="to-blue-500" onclick="importZIP('${path.join("..", "Mods", sanitiseStrongly(modFolder.replaceAll(`"`, "").replaceAll(`\\`, ""))).replaceAll(`\\`, `\\\\`)}', true)" style="display: inline">
+																	<neo-button small label="Install" gradientFrom="from-teal-400" gradientTo="to-blue-500" onclick="importZIP('${path.join("..", "Mods", sanitiseStrongly(modFolder.replaceAll(`'`, "").replaceAll(`\\`, ""))).replaceAll(`\\`, `\\\\`)}', true)" style="display: inline">
 																		<i class="fas fa-file-import" slot="icon"></i>
 																	</neo-button>
 																</div>
@@ -313,7 +313,7 @@ async function refreshMods() {
 					
 					$("#availableMods")[0].innerHTML += `<div class="p-8 bg-gray-900 w-full flow-root shadow-xl rounded-md text-white">
 															<div class="float-right">
-																<neo-button small label="Enable" gradientFrom="from-emerald-400" gradientTo="to-lime-600" onclick="enableMod('${sanitiseStrongly(modFolder.replaceAll(`"`, "").replaceAll(`\\`, ""))}')" style="display: inline">
+																<neo-button small label="Enable" gradientFrom="from-emerald-400" gradientTo="to-lime-600" onclick="enableMod('${sanitiseStrongly(modFolder.replaceAll(`'`, "").replaceAll(`\\`, ""))}')" style="display: inline">
 																	<i class="fas fa-plus" slot="icon"></i>
 																</neo-button>
 															</div>
@@ -327,7 +327,7 @@ async function refreshMods() {
 				} else if (klaw(path.join("..", "Mods", modFolder)).some(a=>a.stats.size > 0 && a.path.endsWith(".rpkg"))) {
 					$("#availableMods")[0].innerHTML += `<div class="p-8 bg-gray-900 w-full flow-root shadow-xl rounded-md text-white">
 															<div class="float-right">
-																<neo-button small label="Enable" gradientFrom="from-emerald-400" gradientTo="to-lime-600" onclick="enableMod('${sanitiseStrongly(modFolder.replaceAll(`"`, "").replaceAll(`\\`, ""))}')" style="display: inline">
+																<neo-button small label="Enable" gradientFrom="from-emerald-400" gradientTo="to-lime-600" onclick="enableMod('${sanitiseStrongly(modFolder.replaceAll(`'`, "").replaceAll(`\\`, ""))}')" style="display: inline">
 																	<i class="fas fa-plus" slot="icon"></i>
 																</neo-button>
 															</div>
@@ -844,7 +844,7 @@ function sanitise(html) {
 }
 
 function sanitiseStrongly(html) {
-	return sanitizeHtml(html, {
+	return sanitizeHtml(html.replaceAll(`"`, "").replaceAll(`\\`, ""), {
 		allowedTags: []
 	});
 }
