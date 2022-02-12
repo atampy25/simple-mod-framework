@@ -6,6 +6,7 @@ MyAmazingMod/
 ├─ content folder/
 │  ├─ chunk0/
 │  │  ├─ Vamprism.contract.json
+│  │  ├─ repo edits.repository.json
 │  │  ├─ 0098B17A37DE.GFXF
 │  │  ├─ GlobalDataPatch.entity.patch.json
 │  ├─ chunk1/
@@ -33,6 +34,8 @@ The content folder contains chunk folders, which contain files (and folders, the
 | `sfx.wem`             | A Wwise sound effect to patch a WWEV file with                               |
 
 The names of special files do not matter - it is their extensions that do, **except for texture.tga and sfx.wem files**. Raw files, which any non-special file is, are placed directly into the built RPKG and so must be named like usual.
+
+*Note: these are file types, not file names - instead of adding "repository.json" to your mod, add "edits.repository.json".*
 
 If a chunk meta file named chunkX.meta is placed at the top level of the chunk folder, the framework will overwrite the chunk with the content in the content folder. This allows for the creation of new chunks. Make sure you don't do this if you're trying to patch an existing chunk, or you may overwrite your game files!
 
