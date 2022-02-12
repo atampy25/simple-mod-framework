@@ -67,9 +67,15 @@
         </neo-button>
 	</section>
 	<section class="flex flex-initial flex-wrap flex-row justify-center mt-2 mb-4 px-2 w-full">
-		<neo-button label="Deploy Mods" gradientFrom="from-emerald-400" gradientTo="to-lime-600" onclick="deployMods()">
-            <i class="fas fa-save" slot="icon"></i>
-        </neo-button>
+		<span class="relative inline-flex">
+			<neo-button label="Apply Enabled Mods" gradientFrom="from-emerald-400" gradientTo="to-lime-600" onclick="deployMods()">
+				<i class="fas fa-save" slot="icon"></i>
+			</neo-button>
+			<span class="flex absolute h-3 w-3 top-0 right-0 mt-1 mr-1" id="deployReminder" style="display: none">
+			  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75"></span>
+			  <span class="relative inline-flex rounded-full h-3 w-3 bg-sky-500"></span>
+			</span>
+		  </span>
 	</section>
 	<section class="flex flex-initial flex-wrap flex-row justify-center mt-2 mb-8 px-2 w-full">
 		<label class="inline-flex items-center mb-3">
@@ -84,7 +90,7 @@
 				<div id="availableMods" class="overflow-auto" x-init="if (window.visualViewport.height > 1080) { $el.style.height = '62vh' } else { $el.style.height = '52vh' }"></div>
 			</div>
 			<div>
-				<h2 class="text-3xl font-bold text-center">Enabled Mods</h2><br>
+				<h2 class="text-3xl font-bold text-center" id="enabledModsText">Enabled Mods</h2><br>
 				<div id="enabledMods" class="overflow-auto" x-init="if (window.visualViewport.height > 1080) { $el.style.height = '62vh' } else { $el.style.height = '52vh' }"></div>
 			</div>
 		</div>

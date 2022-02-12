@@ -363,6 +363,8 @@ async function enableMod(mod) {
 	config.loadOrder.push(fs.existsSync(path.join("..", "Mods", mod, "manifest.json")) ? json5.parse(String(fs.readFileSync(path.join("..", "Mods", mod, "manifest.json")))).id : mod)
 
 	fs.writeFileSync("../config.json", json5.stringify(config))
+	document.getElementById("deployReminder").style.display = "block"
+	document.getElementById("enabledModsText").innerText = "To Be Applied"
 
 	await refreshMods()
 
@@ -377,6 +379,8 @@ async function disableMod(mod) {
 	config.loadOrder = config.loadOrder.filter(a => a != (fs.existsSync(path.join("..", "Mods", mod, "manifest.json")) ? json5.parse(String(fs.readFileSync(path.join("..", "Mods", mod, "manifest.json")))).id : mod))
 
 	fs.writeFileSync("../config.json", json5.stringify(config))
+	document.getElementById("deployReminder").style.display = "block"
+	document.getElementById("enabledModsText").innerText = "To Be Applied"
 
 	await refreshMods()
 }
@@ -411,6 +415,8 @@ async function moveMod(modID) {
 	}
 	
 	fs.writeFileSync("../config.json", json5.stringify(config))
+	document.getElementById("deployReminder").style.display = "block"
+	document.getElementById("enabledModsText").innerText = "To Be Applied"
 
 	await refreshMods()
 }
@@ -697,6 +703,9 @@ async function deployMods() {
 				deployProcess.on("close", (data) => {
 					if (fullOutput.includes("Deployed all mods successfully.")) {
 						Swal.close()
+
+						document.getElementById("deployReminder").style.display = "none"
+						document.getElementById("enabledModsText").innerText = "Enabled Mods"
 					
 						showMessage("Deployed successfully", "Successfully deployed. You can now play the game with mods!", "success")
 					} else {
