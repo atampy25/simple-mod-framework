@@ -13,7 +13,7 @@ const { randomUUID } = require("crypto");
 
 window.$ = window.jQuery = require('jquery');
 
-frameworkVersion = "1.2.2"
+frameworkVersion = "1.3.0"
 
 async function updateFramework() {
 	var frameworkUpdateData = await (await fetch("https://hitman-resources.netlify.app/framework/framework.json")).json()
