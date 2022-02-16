@@ -37,8 +37,8 @@ const chalk = require('chalk')
 const luxon = require('luxon')
 const md5File = require('md5-file')
 
-const Sentry = require("@sentry/node");
-const Tracing = require("@sentry/tracing");
+const Sentry = require("@sentry/node")
+const Tracing = require("@sentry/tracing")
 
 require("clarify")
 
@@ -118,6 +118,7 @@ if (config.reportErrors) {
 	Sentry.init({
 		dsn: "https://464c3dd1424b4270803efdf7885c1b90@o1144555.ingest.sentry.io/6208676",
 		release: FrameworkVersion,
+		environment: "production",
 		tracesSampleRate: 1.0
 	})
 
@@ -161,11 +162,13 @@ function cleanExit() {
 		sentryTransaction.finish()
 	}
 
-	rpkgInstance.exit()
-	try {
-		global.currentWorkerPool.destroy()
-	} catch {}
-	process.exit()
+	Sentry.close(2000).then(() => {
+		rpkgInstance.exit()
+		try {
+			global.currentWorkerPool.destroy()
+		} catch {}
+		process.exit()
+	})
 }
 
 function hexflip(input) {
