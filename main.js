@@ -93,15 +93,15 @@ process.on('SIGTERM', cleanExit)
 process.on('uncaughtException', (err, origin) => {
 	logger.error("Uncaught exception! " + err, false)
 	console.error(origin)
-    if (config.reportErrors) { Sentry.captureException(err); logger.info("Reporting the error!") }
-	cleanExit()
+    if (config.reportErrors) { Sentry.withScope(function(scope) { scope.setLevel(Sentry.Severity.Fatal); Sentry.captureException(err); logger.info("Reporting the error!"); cleanExit() }) }
+	else { cleanExit() }
 })
 
 process.on('unhandledRejection', (err, origin) => {
 	logger.error("Unhandled promise rejection! " + err, false)
 	console.error(origin)
-    if (config.reportErrors) { Sentry.captureException(err); logger.info("Reporting the error!") }
-	cleanExit()
+    if (config.reportErrors) { Sentry.withScope(function(scope) { scope.setLevel(Sentry.Severity.Fatal); Sentry.captureException(err); logger.info("Reporting the error!"); cleanExit() }) }
+	else { cleanExit() }
 })
 
 const config = json5.parse(String(fs.readFileSync(path.join(process.cwd(), "config.json"))))
