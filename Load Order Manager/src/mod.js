@@ -199,6 +199,7 @@ async function execute() {
 
 async function errorReportingPrompt() {
 	let dialog = await Swal.fire({
+		width: '40rem',
 		title: "Error/performance reporting",
 		html: "Would you like to send anonymous performance and error reporting data to the internet to improve the framework?",
 		showConfirmButton: true,
@@ -222,6 +223,8 @@ async function errorReportingPrompt() {
 
 		fs.writeFileSync("../config.json", json5.stringify(config))
 	}
+	
+	await refreshMods()
 }
 
 async function refreshMods() {
@@ -383,6 +386,7 @@ async function refreshMods() {
 
 function showMessage(title, message, icon) {
 	Swal.fire({
+		width: '40rem',
 		showConfirmButton: false,
 		allowEnterKey: true,
 		title: title,
