@@ -9,6 +9,7 @@ var semver = require('semver');
 var downloadFile = require("async-get-file");
 var json5 = require("json5");
 var klaw = require("klaw-sync");
+const { randomUUID } = require("crypto");
 
 window.$ = window.jQuery = require('jquery');
 
@@ -189,7 +190,38 @@ async function execute() {
 		return
 	}
 
+	if (typeof json5.parse(fs.readFileSync("../config.json")).reportErrors === "undefined") {
+		await errorReportingPrompt()
+	}
+
 	await refreshMods()
+}
+
+async function errorReportingPrompt() {
+	let dialog = await Swal.fire({
+		title: "Error/performance reporting",
+		html: "Would you like to send anonymous performance and error reporting data to the internet to improve the framework?",
+		showConfirmButton: true,
+		confirmButtonText: "Sure",
+		showDenyButton: true,
+		denyButtonText: "Nah"
+	})
+
+	if (dialog.isConfirmed) {
+		let config = json5.parse(String(fs.readFileSync("../config.json")))
+
+		config.reportErrors = true
+		config.errorReportingID = randomUUID()
+
+		fs.writeFileSync("../config.json", json5.stringify(config))
+	} else if (dialog.isDenied) {
+		let config = json5.parse(String(fs.readFileSync("../config.json")))
+
+		config.reportErrors = false
+		config.errorReportingID = undefined
+
+		fs.writeFileSync("../config.json", json5.stringify(config))
+	}
 }
 
 async function refreshMods() {
@@ -212,6 +244,8 @@ async function refreshMods() {
 	} // Remove mods that don't exist from the load order
 
 	fs.writeFileSync("../config.json", json5.stringify(config))
+
+	$("#errorReportingText")[0].innerText = json5.parse(fs.readFileSync("../config.json")).reportErrors ? ("Error reporting is enabled (click here to change that). Your ID is " + json5.parse(fs.readFileSync("../config.json")).errorReportingID) : "Error reporting is disabled (click here to change that)."
 
 	if (fs.readdirSync("../Mods").length > 0) {
 		for (let mod of config.loadOrder) {

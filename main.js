@@ -37,6 +37,9 @@ const chalk = require('chalk')
 const luxon = require('luxon')
 const md5File = require('md5-file')
 
+const Sentry = require("@sentry/node");
+const Tracing = require("@sentry/tracing");
+
 require("clarify")
 
 // @ts-ignore
@@ -90,26 +93,64 @@ process.on('SIGTERM', cleanExit)
 process.on('uncaughtException', (err, origin) => {
 	logger.error("Uncaught exception! " + err, false)
 	console.error(origin)
+    Sentry.captureException(err)
 	cleanExit()
 })
 
 process.on('unhandledRejection', (err, origin) => {
 	logger.error("Unhandled promise rejection! " + err, false)
 	console.error(origin)
+    Sentry.captureException(err)
 	cleanExit()
 })
 
 const config = json5.parse(String(fs.readFileSync(path.join(process.cwd(), "config.json"))))
 if (typeof config.outputConfigToAppDataOnDeploy == "undefined") { config.outputConfigToAppDataOnDeploy = true; fs.writeFileSync(path.join(process.cwd(), "config.json"), json5.stringify(config)) } // Backwards compatibility - output config to appdata on deploy
 
+if (typeof config.reportErrors == "undefined") { config.reportErrors = false; config.errorReportingID = null } // Do not report errors if no preference is set
+
 config.runtimePath = path.resolve(process.cwd(), config.runtimePath)
+
+let sentryTransaction = { startChild(...args) { return { finish() {} } }, finish() {} }
+if (config.reportErrors) {
+	Sentry.init({
+		dsn: "https://464c3dd1424b4270803efdf7885c1b90@o1144555.ingest.sentry.io/6208676",
+		release: FrameworkVersion,
+		tracesSampleRate: 1.0
+	})
+
+	Sentry.setUser({ id: config.errorReportingID });
+	
+	sentryTransaction = Sentry.startTransaction({
+	  op: "deploy",
+	  name: "Deploy",
+	});
+	
+	Sentry.configureScope(scope => {
+	  // @ts-ignore
+	  scope.setSpan(sentryTransaction);
+	});
+}
+
+function configureSentryScope(transaction) {
+	if (config.reportErrors)
+	Sentry.configureScope(scope => {
+		// @ts-ignore
+		scope.setSpan(transaction);
+	});
+}
 
 const rpkgInstance = new RPKG.RPKGInstance()
 
 config.platform = gameHashes[md5File.sync(path.join(path.resolve(process.cwd(), config.runtimePath), "..", "Retail", "HITMAN3.exe"))] // Platform detection
 if (typeof config.platform == "undefined") { logger.error("Unknown platform/game version - update both the game and the framework and if that doesn't work, contact Atampy26 on Hitman Forum!") }
 
+if (config.reportErrors) {
+	Sentry.setTag("game_hash", md5File.sync(path.join(path.resolve(process.cwd(), config.runtimePath), "..", "Retail", "HITMAN3.exe")))
+}
+
 function cleanExit() {
+	sentryTransaction.finish()
 	rpkgInstance.exit()
 	try {
 		global.currentWorkerPool.destroy()
@@ -304,6 +345,12 @@ async function stageAllMods() {
 			/* ---------------------------------------------------------------------------------------------- */
 			let entityPatches = []
 			
+			let sentryContentTransaction = sentryTransaction.startChild({
+				op: "stage",
+				description: "Content",
+			})
+			configureSentryScope(sentryContentTransaction)
+
 			for (let contentFolder of contentFolders) {
 				for (let chunkFolder of fs.readdirSync(path.join(process.cwd(), "Mods", mod, contentFolder))) {
 					try {
@@ -339,6 +386,13 @@ async function stageAllMods() {
 						let contentFilePath = path.join(process.cwd(), "Mods", mod, contentFolder, chunkFolder, contentFile)
 		
 						let entityContent
+
+						let sentryContentFileTransaction = sentryContentTransaction.startChild({
+							op: "stageContentFile",
+							description: "Stage " + contentType,
+						})
+						configureSentryScope(sentryContentFileTransaction)
+
 						switch (contentType) {
 							case "entity.json":
 								entityContent = LosslessJSON.parse(String(fs.readFileSync(contentFilePath)))
@@ -565,6 +619,8 @@ async function stageAllMods() {
 								fs.copyFileSync(contentFilePath, path.join(process.cwd(), "staging", chunkFolder, path.basename(contentFile))) // Copy the file to the staging directory
 								break;
 						}
+
+						sentryContentFileTransaction.finish()
 		
 						try {
 							await promisify(emptyFolder)("temp", true)
@@ -599,6 +655,8 @@ async function stageAllMods() {
 					}
 				}
 			}
+
+			sentryContentTransaction.finish()
 	
 			/* ------------------------------------- Multithreaded patching ------------------------------------ */
 			let index = 0
@@ -609,6 +667,12 @@ async function stageAllMods() {
 			});
 
 			global.currentWorkerPool = workerPool
+			
+			let sentryPatchTransaction = sentryTransaction.startChild({
+				op: "stage",
+				description: "Patches",
+			})
+			configureSentryScope(sentryPatchTransaction)
 			
 			await Promise.all(entityPatches.map(({ tempHash, tempRPKG, tbluHash, tbluRPKG, chunkFolder, patches }) => {
 				index ++
@@ -621,10 +685,18 @@ async function stageAllMods() {
 
 			global.currentWorkerPool = { destroy: () => {} }
 
+			sentryPatchTransaction.finish()
+
 			/* ---------------------------------------------------------------------------------------------- */
 			/*                                              Blobs                                             */
 			/* ---------------------------------------------------------------------------------------------- */
 			if (blobsFolders.length) {
+				let sentryBlobsTransaction = sentryTransaction.startChild({
+					op: "stage",
+					description: "Blobs",
+				})
+				configureSentryScope(sentryBlobsTransaction)
+
 				try {
 					await promisify(emptyFolder)("temp", true)
 				} catch {}
@@ -685,6 +757,8 @@ async function stageAllMods() {
 					await promisify(emptyFolder)("temp", true)
 				} catch {}
 				fs.mkdirSync("temp") // Clear the temp directory
+
+				sentryBlobsTransaction.finish()
 			}
 
 			/* -------------------------------------- Runtime packages -------------------------------------- */
@@ -700,6 +774,12 @@ async function stageAllMods() {
 
 			/* ---------------------------------------- Dependencies ---------------------------------------- */
 			if (manifest.dependencies) {
+				let sentryDependencyTransaction = sentryTransaction.startChild({
+					op: "stage",
+					description: "Dependencies",
+				})
+				configureSentryScope(sentryDependencyTransaction)
+
 				for (let dependency of manifest.dependencies) {
 					try {
 						await promisify(emptyFolder)("temp", true)
@@ -728,6 +808,8 @@ async function stageAllMods() {
 					} catch {}
 					fs.mkdirSync("temp") // Clear the temp directory
 				}
+
+				sentryDependencyTransaction.finish()
 			}
 		
 			/* ------------------------------------- Package definition ------------------------------------- */
@@ -808,6 +890,12 @@ async function stageAllMods() {
 	/* ---------------------------------------------------------------------------------------------- */
 	/*                                          WWEV patches                                          */
 	/* ---------------------------------------------------------------------------------------------- */
+	let sentryWWEVTransaction = sentryTransaction.startChild({
+		op: "stage",
+		description: "sfx.wem files",
+	})
+	configureSentryScope(sentryWWEVTransaction)
+
 	for (let entry of Object.entries(WWEVpatches)) {
 		logger.debug("Patching WWEV " + entry[0])
 
@@ -835,6 +923,8 @@ async function stageAllMods() {
 		fs.copyFileSync(path.join(workingPath, WWEVhash + ".WWEV.meta"), path.join(process.cwd(), "staging", entry[1][0].chunk, WWEVhash + ".WWEV.meta")) // Copy the WWEV and its meta
 	}
 
+	sentryWWEVTransaction.finish()
+
 	/* ---------------------------------------------------------------------------------------------- */
 	/*                                        Runtime packages                                        */
 	/* ---------------------------------------------------------------------------------------------- */
@@ -856,6 +946,12 @@ async function stageAllMods() {
 	logger.info("Localising text")
 
 	if (localisation.length) {
+		let sentryLocalisationTransaction = sentryTransaction.startChild({
+			op: "stage",
+			description: "Localisation",
+		})
+		configureSentryScope(sentryLocalisationTransaction)
+
 		let languages = {
 			"english": "en",
 			"french": "fr",
@@ -923,9 +1019,17 @@ async function stageAllMods() {
 			await promisify(emptyFolder)("temp", true)
 		} catch {}
 		fs.mkdirSync("temp") // Clear the temp directory
+
+		sentryLocalisationTransaction.finish()
 	}
 
 	if (Object.keys(localisationOverrides).length) {
+		let sentryLocalisationOverridesTransaction = sentryTransaction.startChild({
+			op: "stage",
+			description: "Localisation overrides",
+		})
+		configureSentryScope(sentryLocalisationOverridesTransaction)
+
 		let languages = {
 			"english": "en",
 			"french": "fr",
@@ -995,6 +1099,8 @@ async function stageAllMods() {
 			} catch {}
 			fs.mkdirSync("temp") // Clear the temp directory
 		}
+
+		sentryLocalisationOverridesTransaction.finish()
 	}
 
 	/* ---------------------------------------------------------------------------------------------- */
@@ -1071,11 +1177,19 @@ async function stageAllMods() {
 	/*                                         Generate RPKGs                                         */
 	/* ---------------------------------------------------------------------------------------------- */
 	logger.info("Generating RPKGs")
+	
+	let sentryRPKGGenerationTransaction = sentryTransaction.startChild({
+		op: "stage",
+		description: "RPKG generation",
+	})
+	configureSentryScope(sentryRPKGGenerationTransaction)
 
 	for (let stagingChunkFolder of fs.readdirSync(path.join(process.cwd(), "staging"))) {
 		await rpkgInstance.callFunction(`-generate_rpkg_quickly_from "${path.join(process.cwd(), "staging", stagingChunkFolder)}" -output_path "${path.join(process.cwd(), "staging")}"`)
 		fs.copyFileSync(path.join(process.cwd(), "staging", stagingChunkFolder + ".rpkg"), config.outputToSeparateDirectory ? path.join(process.cwd(), "Output", (rpkgTypes[stagingChunkFolder] == "base" ? stagingChunkFolder + ".rpkg" : stagingChunkFolder + "patch300.rpkg")) : path.join(config.runtimePath, (rpkgTypes[stagingChunkFolder] == "base" ? stagingChunkFolder + ".rpkg" : stagingChunkFolder + "patch300.rpkg")))
 	}
+
+	sentryRPKGGenerationTransaction.finish()
 
 	try {
 		await promisify(emptyFolder)("staging", true)
