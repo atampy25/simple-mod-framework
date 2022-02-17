@@ -71,8 +71,12 @@ Each mod contains a manifest. Manifests have the following format:
 			"path": "portedhashes.rpkg"
 		}
 	],
-	"dependencies": [ // Runtime IDs of files to extract the dependencies of and place in chunk0 (automatic porting of dependencies)
-		"00123456789ABCDE"
+	"dependencies": [ // Runtime IDs of files to extract the dependencies of and place in chunk0 (automatic porting of dependencies) OR objects containing a runtime ID and the chunk to place the dependencies in
+		"00123456789ABCDE",
+		{
+			"runtimeID": "00AAAAAAAAAAAAAA",
+			"toChunk": "chunk1"
+		}
 	],
 	"supportedPlatforms": [ // Supported platforms for the mod - steam and epic are the only currently supported platforms - if this is omitted it is assumed that all are supported
 		"steam"

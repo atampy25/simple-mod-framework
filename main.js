@@ -799,7 +799,7 @@ async function stageAllMods() {
 					} catch {}
 					fs.mkdirSync("temp") // Clear the temp directory
 
-					await rpkgInstance.callFunction(`-extract_non_base_hash_depends_from "${path.join(config.runtimePath)}" -filter "${dependency}" -output_path temp`)
+					await rpkgInstance.callFunction(`-extract_non_base_hash_depends_from "${path.join(config.runtimePath)}" -filter "${typeof dependency == "string" ? dependency : dependency.runtimeID}" -output_path temp`)
 
 					let allFiles = klaw(path.join(process.cwd(), "temp")).filter(a=>a.stats.size > 0).map(a=>a.path).map(a=>{ return {rpkg: (/00[0-9A-F]*\..*?\\(chunk[0-9]*(?:patch[0-9]*)?)\\/gi).exec(a)[1], path: a} }).sort((a,b) => b.rpkg.localeCompare(a.rpkg, undefined, {numeric: true, sensitivity: 'base'}))
 					// Sort files by RPKG name in descending order
@@ -811,9 +811,9 @@ async function stageAllMods() {
 					allFilesSuperseded = allFilesSuperseded.filter(a=>!/chunk[0-9]*(?:patch[0-9]*)?\.meta/gi.exec(path.basename(a)))
 					// Remove RPKG metas
 
-					fs.ensureDirSync(path.join(process.cwd(), "staging", "chunk0"))
+					fs.ensureDirSync(path.join(process.cwd(), "staging", typeof dependency == "string" ? "chunk0" : dependency.toChunk))
 					allFilesSuperseded.forEach(file => {
-						fs.copySync(file, path.join(process.cwd(), "staging", "chunk0", path.basename(file)), { overwrite: false }) // Stage the files, but don't overwrite if they already exist (such as if another mod has edited them)
+						fs.copySync(file, path.join(process.cwd(), "staging", typeof dependency == "string" ? "chunk0" : dependency.toChunk, path.basename(file)), { overwrite: false }) // Stage the files, but don't overwrite if they already exist (such as if another mod has edited them)
 					})
 
 					try {
