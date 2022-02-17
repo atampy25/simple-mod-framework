@@ -111,7 +111,7 @@ if (typeof config.reportErrors == "undefined") { config.reportErrors = false; co
 
 config.runtimePath = path.resolve(process.cwd(), config.runtimePath)
 
-let sentryTransaction = { startChild(...args) { return { finish() {} } }, finish() {} }
+let sentryTransaction = { startChild(...args) { return { startChild(...args) { return { finish() {} } }, finish() {} } }, finish() {} }
 if (config.reportErrors) {
 	logger.info("Initialising error reporting")
 	
