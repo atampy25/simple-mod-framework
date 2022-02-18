@@ -42,7 +42,7 @@
     "json5": "^2.2.0",
     "klaw-sync": "^6.0.0",
     "run-async": "^2.4.1",
-    "sanitize-html": "^2.6.1",
+    "sanitize-html": "^2.7.0",
     "semver": "^7.3.5",
     "sweetalert2": "^11.3.10",
     "tailwindcss": "^2.2.19"
