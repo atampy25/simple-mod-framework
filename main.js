@@ -129,7 +129,8 @@ if (config.reportErrors) {
 				logger.error("Uncaught exception! " + err, false)
 				logger.info("Reporting the error!")
 				cleanExit()
-			} })
+			} }),
+			new Sentry.Integrations.OnUnhandledRejection({ mode: "strict" })
 		]
 	})
 
