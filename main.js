@@ -90,26 +90,30 @@ const gameHashes = {
 process.on('SIGINT', cleanExit)
 process.on('SIGTERM', cleanExit)
 
-process.on('uncaughtException', (err, origin) => {
-	logger.error("Uncaught exception! " + err, false)
-	console.error(origin)
-    if (config.reportErrors) { Sentry.withScope(function(scope) { scope.setLevel(Sentry.Severity.Fatal); Sentry.captureException(err); logger.info("Reporting the error!"); cleanExit() }) }
-	else { cleanExit() }
-})
-
-process.on('unhandledRejection', (err, origin) => {
-	logger.error("Unhandled promise rejection! " + err, false)
-	console.error(origin)
-    if (config.reportErrors) { Sentry.withScope(function(scope) { scope.setLevel(Sentry.Severity.Fatal); Sentry.captureException(err); logger.info("Reporting the error!"); cleanExit() }) }
-	else { cleanExit() }
-})
-
 const config = json5.parse(String(fs.readFileSync(path.join(process.cwd(), "config.json"))))
 if (typeof config.outputConfigToAppDataOnDeploy == "undefined") { config.outputConfigToAppDataOnDeploy = true; fs.writeFileSync(path.join(process.cwd(), "config.json"), json5.stringify(config)) } // Backwards compatibility - output config to appdata on deploy
 
 if (typeof config.reportErrors == "undefined") { config.reportErrors = false; config.errorReportingID = null } // Do not report errors if no preference is set
 
 config.runtimePath = path.resolve(process.cwd(), config.runtimePath)
+
+if (!config.reportErrors) {
+	process.on('uncaughtException', (err, origin) => {
+		if (!process.argv[2] || process.argv[2] == "kevinMode") { logger.warn("Error reporting is disabled; if you experience this issue again, please enable it so that the problem can be debugged.")  }
+
+		logger.error("Uncaught exception! " + err, false)
+		console.error(origin)
+		cleanExit()
+	})
+
+	process.on('unhandledRejection', (err, origin) => {
+		if (!process.argv[2] || process.argv[2] == "kevinMode") { logger.warn("Error reporting is disabled; if you experience this issue again, please enable it so that the problem can be debugged.")  }
+
+		logger.error("Unhandled promise rejection! " + err, false)
+		console.error(origin)
+		cleanExit()
+	})
+}
 
 let sentryTransaction = { startChild(...args) { return { startChild(...args) { return { finish() {} } }, finish() {} } }, finish() {} }
 if (config.reportErrors) {
@@ -119,7 +123,19 @@ if (config.reportErrors) {
 		dsn: "https://464c3dd1424b4270803efdf7885c1b90@o1144555.ingest.sentry.io/6208676",
 		release: FrameworkVersion,
 		environment: "production",
-		tracesSampleRate: 1.0
+		tracesSampleRate: 1.0,
+		integrations: [
+			new Sentry.Integrations.OnUncaughtException({ onFatalError: (err) => {
+				logger.error("Uncaught exception! " + err, false)
+
+				Sentry.withScope(function(scope) {
+					scope.setLevel(Sentry.Severity.Fatal)
+					Sentry.captureException(err)
+					logger.info("Reporting the error!")
+					cleanExit()
+				})
+			} })
+		]
 	})
 
 	Sentry.setUser({ id: config.errorReportingID });
