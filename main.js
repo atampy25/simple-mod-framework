@@ -145,11 +145,19 @@ function configureSentryScope(transaction) {
 
 const rpkgInstance = new RPKG.RPKGInstance()
 
-config.platform = gameHashes[md5File.sync(path.join(path.resolve(process.cwd(), config.runtimePath), "..", "Retail", "HITMAN3.exe"))] // Platform detection
+if (!fs.existsSync(config.runtimePath)) {
+	logger.error("The Runtime folder couldn't be located, please re-read the installation instructions!")
+}
+
+if (!fs.existsSync(path.join(config.runtimePath, "..", "Retail", "HITMAN3.exe"))) {
+	logger.error("HITMAN3.exe couldn't be located, please re-read the installation instructions!")
+}
+
+config.platform = gameHashes[md5File.sync(path.join(config.runtimePath, "..", "Retail", "HITMAN3.exe"))] // Platform detection
 if (typeof config.platform == "undefined") { logger.error("Unknown platform/game version - update both the game and the framework and if that doesn't work, contact Atampy26 on Hitman Forum!") }
 
 if (config.reportErrors) {
-	Sentry.setTag("game_hash", md5File.sync(path.join(path.resolve(process.cwd(), config.runtimePath), "..", "Retail", "HITMAN3.exe")))
+	Sentry.setTag("game_hash", md5File.sync(path.join(config.runtimePath, "..", "Retail", "HITMAN3.exe")))
 }
 
 function cleanExit() {

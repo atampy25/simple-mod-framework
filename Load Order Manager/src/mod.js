@@ -185,8 +185,13 @@ async function execute() {
 			showMessage("Invalid Runtime path", "The framework can't find a folder it's looking for. Please re-read the installation instructions to ensure everything was installed correctly.", "error")
 			return
 		}
+
+		if (!fs.existsSync(path.join(path.resolve("..", json5.parse(fs.readFileSync("../config.json")).runtimePath), "..", "Retail", "HITMAN3.exe"))) {
+			showMessage("Invalid Runtime path", "The framework can't find HITMAN3.exe in the right place. Please re-read the installation instructions to ensure everything was installed correctly.", "error")
+			return
+		}
 	} catch {
-		showMessage("Invalid Runtime path", "The framework can't find a folder it's looking for. Please re-read the installation instructions to ensure everything was installed correctly.", "error")
+		showMessage("Invalid Runtime path/files", "The framework can't find a folder it's looking for, or it can't see the files it needs. Please re-read the installation instructions to ensure everything was installed correctly.", "error")
 		return
 	}
 
