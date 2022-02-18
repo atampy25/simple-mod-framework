@@ -127,13 +127,8 @@ if (config.reportErrors) {
 		integrations: [
 			new Sentry.Integrations.OnUncaughtException({ onFatalError: (err) => {
 				logger.error("Uncaught exception! " + err, false)
-
-				Sentry.withScope(function(scope) {
-					scope.setLevel(Sentry.Severity.Fatal)
-					Sentry.captureException(err)
-					logger.info("Reporting the error!")
-					cleanExit()
-				})
+				logger.info("Reporting the error!")
+				cleanExit()
 			} })
 		]
 	})
