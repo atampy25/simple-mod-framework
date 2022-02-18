@@ -813,7 +813,11 @@ async function stageAllMods() {
 				})
 				configureSentryScope(sentryDependencyTransaction)
 
+				let doneHashes = []
 				for (let dependency of manifest.dependencies) {
+					if (doneHashes.includes(typeof dependency == "string" ? dependency : dependency.runtimeID)) { continue }
+					doneHashes.push(typeof dependency == "string" ? dependency : dependency.runtimeID)
+
 					try {
 						await promisify(emptyFolder)("temp", true)
 					} catch {}
