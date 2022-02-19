@@ -134,6 +134,12 @@ if (config.reportErrors) {
 		]
 	})
 
+	process.on('unhandledRejection', (err, origin) => {
+		logger.error("Unhandled promise rejection! " + err, false)
+		logger.info("Reporting the error!")
+		cleanExit()
+	})
+
 	Sentry.setUser({ id: config.errorReportingID });
 	
 	sentryTransaction = Sentry.startTransaction({
