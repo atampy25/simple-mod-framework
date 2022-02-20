@@ -261,12 +261,6 @@ async function stageAllMods() {
 	/*                                         Stage all mods                                         */
 	/* ---------------------------------------------------------------------------------------------- */
 	for (let mod of config.loadOrder) {
-		let sentryModTransaction = sentryModsTransaction.startChild({
-			op: "stage",
-			description: "Mod",
-		})
-		configureSentryScope(sentryModTransaction)
-
 		// NOT Mod folder exists, mod has no manifest, mod has RPKGs (mod is an RPKG-only mod)
 		if (!(fs.existsSync(path.join(process.cwd(), "Mods", mod)) && !fs.existsSync(path.join(process.cwd(), "Mods", mod, "manifest.json")) && klaw(path.join(process.cwd(), "Mods", mod)).filter(a=>a.stats.size > 0).map(a=>a.path).some(a=>a.endsWith(".rpkg")))) {
 			// Find mod with ID in Mods folder, set the current mod to that folder
@@ -274,6 +268,12 @@ async function stageAllMods() {
 		} // Essentially, if the mod isn't an RPKG mod, it is referenced by its ID, so this finds the mod folder with the right ID
 
 		if (!fs.existsSync(path.join(process.cwd(), "Mods", mod, "manifest.json"))) {
+			let sentryModTransaction = sentryModsTransaction.startChild({
+				op: "stage",
+				description: "RPKG mod",
+			})
+			configureSentryScope(sentryModTransaction)
+
 			for (let chunkFolder of fs.readdirSync(path.join(process.cwd(), "Mods", mod))) {
 				try {
 					fs.mkdirSync(path.join(process.cwd(), "staging", chunkFolder))
@@ -299,7 +299,15 @@ async function stageAllMods() {
 				} catch {}
 				fs.mkdirSync("temp") // Clear the temp directory
 			}
+			
+			sentryModTransaction.finish()
 		} else {
+			let sentryModTransaction = sentryModsTransaction.startChild({
+				op: "stage",
+				description: "Framework mod",
+			})
+			configureSentryScope(sentryModTransaction)
+
 			let manifest = json5.parse(String(fs.readFileSync(path.join(process.cwd(), "Mods", mod, "manifest.json"))))
 
 			logger.info("Staging mod: " + manifest.name)
@@ -900,6 +908,12 @@ async function stageAllMods() {
 			}
 
 			if (manifest.localisedLines) {
+				let sentryLocalisedLinesTransaction = sentryModTransaction.startChild({
+					op: "stage",
+					description: "Localised lines",
+				})
+				configureSentryScope(sentryLocalisedLinesTransaction)
+
 				for (let lineHash of Object.keys(manifest.localisedLines)) {
 					fs.ensureDirSync(path.join(process.cwd(), "staging", "chunk0"))
 					
@@ -924,10 +938,12 @@ async function stageAllMods() {
 					}))
 					await rpkgInstance.callFunction(`-json_to_hash_meta "${path.join(process.cwd(), "staging", "chunk0", lineHash + ".LINE.meta.JSON")}"`) // Rebuild the meta
 				}
-			}
-		}
 
-		sentryModTransaction.finish()
+				sentryLocalisedLinesTransaction.finish()
+			}
+
+			sentryModTransaction.finish()
+		}
 	}
 
 	sentryModsTransaction.finish()
@@ -1160,6 +1176,12 @@ async function stageAllMods() {
 	/* ---------------------------------------------------------------------------------------------- */
 	logger.info("Patching thumbs")
 
+	let sentryThumbsPatchingTransaction = sentryTransaction.startChild({
+		op: "stage",
+		description: "Thumbs patching",
+	})
+	configureSentryScope(sentryThumbsPatchingTransaction)
+
 	try {
 		await promisify(emptyFolder)("temp", true)
 	} catch {}
@@ -1184,10 +1206,18 @@ async function stageAllMods() {
 	child_process.execSync(`"Third-Party\\h6xtea.exe" -e --src "${path.join(process.cwd(), "temp", "thumbs.dat.decrypted")}" --dst "${path.join(process.cwd(), "temp", "thumbs.dat.decrypted.encrypted")}"`) // Encrypt thumbs
 	fs.copyFileSync(path.join(process.cwd(), "temp", "thumbs.dat.decrypted.encrypted"), config.outputToSeparateDirectory ? path.join(process.cwd(), "Output", "thumbs.dat") : path.join(config.runtimePath, "..", "Retail", "thumbs.dat")) // Output thumbs
 
+	sentryThumbsPatchingTransaction.finish()
+
 	/* ---------------------------------------------------------------------------------------------- */
 	/*                                       Package definition                                       */
 	/* ---------------------------------------------------------------------------------------------- */
 	logger.info("Patching packagedefinition")
+
+	let sentryPackagedefPatchingTransaction = sentryTransaction.startChild({
+		op: "stage",
+		description: "packagedefinition patching",
+	})
+	configureSentryScope(sentryPackagedefPatchingTransaction)
 
 	try {
 		await promisify(emptyFolder)("temp", true)
@@ -1224,6 +1254,8 @@ async function stageAllMods() {
 	child_process.execSync(`"Third-Party\\h6xtea.exe" -e --src "${path.join(process.cwd(), "temp", "packagedefinition.txt.decrypted")}" --dst "${path.join(process.cwd(), "temp", "packagedefinition.txt.decrypted.encrypted")}"`) // Encrypt PD
 
 	fs.copyFileSync(path.join(process.cwd(), "temp", "packagedefinition.txt.decrypted.encrypted"), config.outputToSeparateDirectory ? path.join(process.cwd(), "Output", "packagedefinition.txt") : path.join(config.runtimePath, "packagedefinition.txt")) // Output PD
+
+	sentryPackagedefPatchingTransaction.finish()
 
 	/* ---------------------------------------------------------------------------------------------- */
 	/*                                         Generate RPKGs                                         */
