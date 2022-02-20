@@ -115,7 +115,7 @@ if (!config.reportErrors) {
 	})
 }
 
-let sentryTransaction = { startChild(...args) { return { startChild(...args) { return { finish() {} } }, finish() {} } }, finish() {} }
+let sentryTransaction = { startChild(...args) { return { startChild(...args) { return { startChild(...args) { return { startChild(...args) { return { finish() {} } }, finish() {} } }, finish() {} } }, finish() {} } }, finish() {} }
 if (config.reportErrors) {
 	logger.info("Initialising error reporting")
 	
@@ -251,11 +251,22 @@ async function stageAllMods() {
 
 	let rpkgTypes = {}
 
+	let sentryModsTransaction = sentryTransaction.startChild({
+		op: "stage",
+		description: "All mods",
+	})
+	configureSentryScope(sentryModsTransaction)
 
 	/* ---------------------------------------------------------------------------------------------- */
 	/*                                         Stage all mods                                         */
 	/* ---------------------------------------------------------------------------------------------- */
 	for (let mod of config.loadOrder) {
+		let sentryModTransaction = sentryModsTransaction.startChild({
+			op: "stage",
+			description: "Mod",
+		})
+		configureSentryScope(sentryModTransaction)
+
 		// NOT Mod folder exists, mod has no manifest, mod has RPKGs (mod is an RPKG-only mod)
 		if (!(fs.existsSync(path.join(process.cwd(), "Mods", mod)) && !fs.existsSync(path.join(process.cwd(), "Mods", mod, "manifest.json")) && klaw(path.join(process.cwd(), "Mods", mod)).filter(a=>a.stats.size > 0).map(a=>a.path).some(a=>a.endsWith(".rpkg")))) {
 			// Find mod with ID in Mods folder, set the current mod to that folder
@@ -378,7 +389,7 @@ async function stageAllMods() {
 			/* ---------------------------------------------------------------------------------------------- */
 			let entityPatches = []
 			
-			let sentryContentTransaction = sentryTransaction.startChild({
+			let sentryContentTransaction = sentryModTransaction.startChild({
 				op: "stage",
 				description: "Content",
 			})
@@ -701,7 +712,7 @@ async function stageAllMods() {
 
 			global.currentWorkerPool = workerPool
 			
-			let sentryPatchTransaction = sentryTransaction.startChild({
+			let sentryPatchTransaction = sentryModTransaction.startChild({
 				op: "stage",
 				description: "Patches",
 			})
@@ -724,7 +735,7 @@ async function stageAllMods() {
 			/*                                              Blobs                                             */
 			/* ---------------------------------------------------------------------------------------------- */
 			if (blobsFolders.length) {
-				let sentryBlobsTransaction = sentryTransaction.startChild({
+				let sentryBlobsTransaction = sentryModTransaction.startChild({
 					op: "stage",
 					description: "Blobs",
 				})
@@ -807,7 +818,7 @@ async function stageAllMods() {
 
 			/* ---------------------------------------- Dependencies ---------------------------------------- */
 			if (manifest.dependencies) {
-				let sentryDependencyTransaction = sentryTransaction.startChild({
+				let sentryDependencyTransaction = sentryModTransaction.startChild({
 					op: "stage",
 					description: "Dependencies",
 				})
@@ -915,7 +926,11 @@ async function stageAllMods() {
 				}
 			}
 		}
+
+		sentryModTransaction.finish()
 	}
+
+	sentryModsTransaction.finish()
 
 	if (config.outputToSeparateDirectory) {
 		try {
