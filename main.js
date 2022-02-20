@@ -439,10 +439,10 @@ async function stageAllMods() {
 		
 						let entityContent
 
-						let sentryContentFileTransaction = sentryContentTransaction.startChild({
+						let sentryContentFileTransaction = (["entity.json", "entity.patch.json", "unlockables.json", "repository.json", "contract.json", "JSON.patch.json", "texture.tga", "sfx.wem"].includes(contentType)) ? sentryContentTransaction.startChild({
 							op: "stageContentFile",
 							description: "Stage " + contentType,
-						})
+						}) : { startChild(...args) { return { startChild(...args) { return { startChild(...args) { return { startChild(...args) { return { finish() {} } }, finish() {} } }, finish() {} } }, finish() {} } }, finish() {} } // Don't track raw files, only special file types
 						configureSentryScope(sentryContentFileTransaction)
 
 						switch (contentType) {
