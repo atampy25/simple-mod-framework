@@ -265,9 +265,11 @@ async function stageAllMods() {
 		if (!fs.existsSync(path.join(process.cwd(), "Mods", mod, "manifest.json"))) {
 			let sentryModTransaction = sentryModsTransaction.startChild({
 				op: "stage",
-				description: "RPKG mod",
+				description: mod,
 			})
 			configureSentryScope(sentryModTransaction)
+
+			logger.info("Staging RPKG mod: " + mod)
 
 			for (let chunkFolder of fs.readdirSync(path.join(process.cwd(), "Mods", mod))) {
 				try {
@@ -291,12 +293,6 @@ async function stageAllMods() {
 			
 			sentryModTransaction.finish()
 		} else {
-			let sentryModTransaction = sentryModsTransaction.startChild({
-				op: "stage",
-				description: "Framework mod",
-			})
-			configureSentryScope(sentryModTransaction)
-
 			let manifest = json5.parse(String(fs.readFileSync(path.join(process.cwd(), "Mods", mod, "manifest.json"))))
 
 			logger.info("Staging mod: " + manifest.name)
@@ -316,6 +312,12 @@ async function stageAllMods() {
 			if (semver.gt(manifest.frameworkVersion, FrameworkVersion)) {
 				logger.error(`Mod ${manifest.name} is designed for a newer version of the framework and is likely incompatible!`)
 			}
+
+			let sentryModTransaction = sentryModsTransaction.startChild({
+				op: "stage",
+				description: manifest.id,
+			})
+			configureSentryScope(sentryModTransaction)
 
 			let contentFolders = []
 			let blobsFolders = []
