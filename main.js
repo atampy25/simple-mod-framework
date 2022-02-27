@@ -402,7 +402,11 @@ async function stageAllMods() {
 					if (klaw(path.join(process.cwd(), "Mods", mod, contentFolder, chunkFolder)).some(a=>a.path.endsWith("contract.json"))) {
 						fs.emptyDirSync(path.join(process.cwd(), "temp2"))
 	
-						contractsORESChunk = await rpkgInstance.getRPKGOfHash("002B07020D21D727")
+						try {
+							contractsORESChunk = await rpkgInstance.getRPKGOfHash("002B07020D21D727")
+						} catch {
+							logger.error("Couldn't find the contracts ORES in the game files! Make sure you've installed the framework in the right place.")
+						}
 	
 						if (!fs.existsSync(path.join(process.cwd(), "staging", "chunk0", "002B07020D21D727.ORES"))) {
 							await rpkgInstance.callFunction(`-extract_from_rpkg "${path.join(config.runtimePath, contractsORESChunk + ".rpkg")}" -filter "002B07020D21D727" -output_path temp2`) // Extract the contracts ORES
@@ -469,19 +473,29 @@ async function stageAllMods() {
 								if (entityPatches.some(a=>a.tempHash == entityContent.tempHash)) {
 									entityPatches.find(a=>a.tempHash == entityContent.tempHash).patches.push(entityContent)
 								} else {
-									entityPatches.push({
-										tempHash: entityContent.tempHash,
-										tempRPKG: await rpkgInstance.getRPKGOfHash(entityContent.tempHash),
-										tbluHash: entityContent.tbluHash,
-										tbluRPKG: await rpkgInstance.getRPKGOfHash(entityContent.tbluHash),
-										chunkFolder,
-										patches: [entityContent]
-									})
+									try {
+										entityPatches.push({
+											tempHash: entityContent.tempHash,
+											tempRPKG: await rpkgInstance.getRPKGOfHash(entityContent.tempHash),
+											tbluHash: entityContent.tbluHash,
+											tbluRPKG: await rpkgInstance.getRPKGOfHash(entityContent.tbluHash),
+											chunkFolder,
+											patches: [entityContent]
+										})
+									} catch {
+										logger.error("Couldn't find the entity to patch in the game files! Make sure you've installed the framework in the right place.")
+									}
 								}
 								break;
 							case "unlockables.json":
 								entityContent = JSON.parse(String(fs.readFileSync(contentFilePath)))
-								let oresChunk = await rpkgInstance.getRPKGOfHash("0057C2C3941115CA")
+
+								let oresChunk
+								try {
+									oresChunk = await rpkgInstance.getRPKGOfHash("0057C2C3941115CA")
+								} catch {
+									logger.error("Couldn't find the unlockables ORES in the game files! Make sure you've installed the framework in the right place.")
+								}
 
 								logger.debug("Applying unlockable patch " + contentFilePath)
 
@@ -504,7 +518,12 @@ async function stageAllMods() {
 							case "repository.json":
 								entityContent = JSON.parse(String(fs.readFileSync(contentFilePath)))
 	
-								let repoRPKG = await rpkgInstance.getRPKGOfHash("00204D1AFD76AB13")
+								let repoRPKG
+								try {
+									repoRPKG = await rpkgInstance.getRPKGOfHash("00204D1AFD76AB13")
+								} catch {
+									logger.error("Couldn't find the repository in the game files! Make sure you've installed the framework in the right place.")
+								}
 
 								logger.debug("Applying repository patch " + contentFilePath)
 
@@ -567,8 +586,14 @@ async function stageAllMods() {
 								break;
 							case "JSON.patch.json":
 								entityContent = JSON.parse(String(fs.readFileSync(contentFilePath)))
-	
-								let rpkgOfFile = await rpkgInstance.getRPKGOfHash(entityContent.file)
+
+								let rpkgOfFile
+								try {
+									rpkgOfFile = await rpkgInstance.getRPKGOfHash(entityContent.file)
+								} catch {
+									logger.error("Couldn't find the file to patch in the game files! Make sure you've installed the framework in the right place.")
+								}
+
 								let fileType = entityContent.type || "JSON"
 
 								logger.debug("Applying JSON patch " + contentFilePath)
@@ -583,7 +608,17 @@ async function stageAllMods() {
 	
 								let fileContent = JSON.parse(String(fs.readFileSync(path.join(process.cwd(), "temp", rpkgOfFile, fileType, entityContent.file + "." + fileType))))
 
+								if (entityContent.type == "ORES" && Array.isArray(fileContent)) {
+									fileContent = Object.fromEntries(fileContent.map(a=>[a.Id, a])) // Change unlockables ORES to be an object
+								} else if (entityContent.type == "REPO") {
+									fileContent = Object.fromEntries(fileContent.map(a=>[a["ID_"], a])) // Change REPO to be an object
+								}
+
 								rfc6902.applyPatch(fileContent, entityContent.patch) // Apply the JSON patch
+
+								if ((entityContent.type == "ORES" && Object.prototype.toString.call(fileContent) == "[object Object]") || entityContent.type == "REPO") {
+									fileContent = Object.values(fileContent) // Change back to an array
+								}
 
 								if (entityContent.type == "ORES") {
 									fs.renameSync(path.join(process.cwd(), "temp", rpkgOfFile, fileType, entityContent.file + "." + fileType), path.join(process.cwd(), "temp", rpkgOfFile, fileType, entityContent.file + "." + fileType + ".json"))
@@ -737,7 +772,12 @@ async function stageAllMods() {
 
 				fs.ensureDirSync(path.join(process.cwd(), "staging", "chunk0"))
 
-				let oresChunk = await rpkgInstance.getRPKGOfHash("00858D45F5F9E3CA")
+				let oresChunk
+				try {
+					oresChunk = await rpkgInstance.getRPKGOfHash("00858D45F5F9E3CA")
+				} catch {
+					logger.error("Couldn't find the blobs ORES in the game files! Make sure you've installed the framework in the right place.")
+				}
 
 				await extractOrCopyToTemp(oresChunk, "00858D45F5F9E3CA", "ORES") // Extract the ORES to temp
 
@@ -939,7 +979,13 @@ async function stageAllMods() {
 		fs.emptyDirSync(path.join(process.cwd(), "temp"))
 
 		let WWEVhash = entry[0]
-		let rpkgOfWWEV = await rpkgInstance.getRPKGOfHash(WWEVhash)
+
+		let rpkgOfWWEV
+		try {
+			rpkgOfWWEV = await rpkgInstance.getRPKGOfHash(WWEVhash)
+		} catch {
+			logger.error("Couldn't find the WWEV in the game files! Make sure you've installed the framework in the right place.")
+		}
 	
 		await rpkgInstance.callFunction(`-extract_wwev_to_ogg_from "${path.join(config.runtimePath)}" -filter "${WWEVhash}" -output_path temp`) // Extract the WWEV
 
@@ -1000,7 +1046,13 @@ async function stageAllMods() {
 
 		fs.emptyDirSync(path.join(process.cwd(), "temp"))
 
-		let localisationFileRPKG = await rpkgInstance.getRPKGOfHash("00F5817876E691F1")
+		let localisationFileRPKG
+		try {
+			localisationFileRPKG = await rpkgInstance.getRPKGOfHash("00F5817876E691F1")
+		} catch {
+			logger.error("Couldn't find the localisation file in the game files! Make sure you've installed the framework in the right place.")
+		}
+
 		await rpkgInstance.callFunction(`-extract_locr_to_json_from "${path.join(config.runtimePath, localisationFileRPKG + ".rpkg")}" -filter "00F5817876E691F1" -output_path temp`)
 		
 		fs.ensureDirSync(path.join(process.cwd(), "staging", "chunk0"))
@@ -1073,7 +1125,13 @@ async function stageAllMods() {
 		fs.emptyDirSync(path.join(process.cwd(), "temp"))
 
 		for (let locrHash of Object.keys(localisationOverrides)) {
-			let localisationFileRPKG = await rpkgInstance.getRPKGOfHash(locrHash)
+			let localisationFileRPKG
+			try {
+				localisationFileRPKG = await rpkgInstance.getRPKGOfHash(locrHash)
+			} catch {
+				logger.error("Couldn't find the localisation file in the game files! Make sure you've installed the framework in the right place.")
+			}
+			
 			await rpkgInstance.callFunction(`-extract_locr_to_json_from "${path.join(config.runtimePath, localisationFileRPKG + ".rpkg")}" -filter "${locrHash}" -output_path temp`)
 			
 			fs.ensureDirSync(path.join(process.cwd(), "staging", "chunk0"))
@@ -1218,7 +1276,12 @@ async function stageAllMods() {
 
 	for (let stagingChunkFolder of fs.readdirSync(path.join(process.cwd(), "staging"))) {
 		await rpkgInstance.callFunction(`-generate_rpkg_quickly_from "${path.join(process.cwd(), "staging", stagingChunkFolder)}" -output_path "${path.join(process.cwd(), "staging")}"`)
-		fs.copyFileSync(path.join(process.cwd(), "staging", stagingChunkFolder + ".rpkg"), config.outputToSeparateDirectory ? path.join(process.cwd(), "Output", (rpkgTypes[stagingChunkFolder] == "base" ? stagingChunkFolder + ".rpkg" : stagingChunkFolder + "patch300.rpkg")) : path.join(config.runtimePath, (rpkgTypes[stagingChunkFolder] == "base" ? stagingChunkFolder + ".rpkg" : stagingChunkFolder + "patch300.rpkg")))
+		
+		try {
+			fs.copyFileSync(path.join(process.cwd(), "staging", stagingChunkFolder + ".rpkg"), config.outputToSeparateDirectory ? path.join(process.cwd(), "Output", (rpkgTypes[stagingChunkFolder] == "base" ? stagingChunkFolder + ".rpkg" : stagingChunkFolder + "patch300.rpkg")) : path.join(config.runtimePath, (rpkgTypes[stagingChunkFolder] == "base" ? stagingChunkFolder + ".rpkg" : stagingChunkFolder + "patch300.rpkg")))
+		} catch {
+			logger.error("Couldn't copy the RPKG files! Make sure the game isn't running when you deploy your mods.")
+		}
 	}
 
 	sentryRPKGGenerationTransaction.finish()
