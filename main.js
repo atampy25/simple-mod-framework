@@ -16,18 +16,14 @@ const RPKG = require("./rpkg")
 
 const fs = require("fs-extra")
 const path = require("path")
-const emptyFolder = require("empty-folder")
-const { promisify } = require("util")
 const child_process = require("child_process")
 const LosslessJSON = require("lossless-json")
 const md5 = require("md5")
-const glob = require("glob")
 const deepMerge = require("lodash.merge")
 
 // @ts-ignore
 const { crc32 } = require("./crc32")
 
-const readRecursive = require('fs-readdir-recursive')
 const os = require("os")
 const json5 = require("json5")
 const semver = require('semver')
@@ -48,16 +44,22 @@ const Piscina = require('piscina')
 const logger = (!process.argv[2] || process.argv[2] == "kevinMode") ? {
 	debug: function (text) {
 		process.stdout.write(chalk`{grey DEBUG\t${text}}\n`)
+
+		// @ts-ignore
 		if (process.argv[2] == "kevinMode") { child_process.execSync("pause", { shell: true, stdio: [0,1,2] }) }
 	},
 
 	info: function (text) {
 		process.stdout.write(chalk`{blue INFO}\t${text}\n`)
+
+		// @ts-ignore
 		if (process.argv[2] == "kevinMode") { child_process.execSync("pause", { shell: true, stdio: [0,1,2] }) }
 	},
 
 	warn: function (text) {
 		process.stdout.write(chalk`{yellow WARN}\t${text}\n`)
+
+		// @ts-ignore
 		if (process.argv[2] == "kevinMode") { child_process.execSync("pause", { shell: true, stdio: [0,1,2] }) }
 	},
 
@@ -65,6 +67,7 @@ const logger = (!process.argv[2] || process.argv[2] == "kevinMode") ? {
 		process.stderr.write(chalk`{red ERROR}\t${text}\n`)
 		console.trace()
 
+		// @ts-ignore
 		child_process.execSync("pause", { shell: true, stdio: [0,1,2] })
 
 		if (exitAfter) cleanExit()
@@ -231,16 +234,8 @@ async function stageAllMods() {
 		} catch {}
 	}
 
-	try {
-		await promisify(emptyFolder)("staging", true)
-	} catch {}
-
-	try {
-		await promisify(emptyFolder)("temp", true)
-	} catch {}
-
-	fs.mkdirSync("staging")
-	fs.mkdirSync("temp")
+	fs.emptyDirSync(path.join(process.cwd(), "staging"))
+	fs.emptyDirSync(path.join(process.cwd(), "temp"))
 
 	let thumbs = []
 	let packagedefinition = []
@@ -279,10 +274,7 @@ async function stageAllMods() {
 					fs.mkdirSync(path.join(process.cwd(), "staging", chunkFolder))
 				} catch {}
 
-				try {
-					await promisify(emptyFolder)("temp", true)
-				} catch {}
-				fs.mkdirSync("temp") // Clear the temp directory
+				fs.emptyDirSync(path.join(process.cwd(), "temp"))
 
 				for (let contentFile of fs.readdirSync(path.join(process.cwd(), "Mods", mod, chunkFolder))) {
 					await rpkgInstance.callFunction(`-extract_from_rpkg "${path.join(process.cwd(), "Mods", mod, chunkFolder, contentFile)}" -output_path "${path.join(process.cwd(), "temp")}"`)
@@ -294,10 +286,7 @@ async function stageAllMods() {
 
 				allFiles.forEach(a=>fs.copyFileSync(a, path.join(process.cwd(), "staging", chunkFolder, path.basename(a))))
 
-				try {
-					await promisify(emptyFolder)("temp", true)
-				} catch {}
-				fs.mkdirSync("temp") // Clear the temp directory
+				fs.emptyDirSync(path.join(process.cwd(), "temp"))
 			}
 			
 			sentryModTransaction.finish()
@@ -410,11 +399,8 @@ async function stageAllMods() {
 					} catch {}
 	
 					let contractsORESChunk, contractsORESContent, contractsORESMetaContent
-					if (readRecursive(path.join(process.cwd(), "Mods", mod, contentFolder, chunkFolder)).some(a=>a.endsWith("contract.json"))) {
-						try {
-							await promisify(emptyFolder)("temp2", true)
-						} catch {}
-						fs.mkdirSync("temp2") // Make/clear the temp2 directory
+					if (klaw(path.join(process.cwd(), "Mods", mod, contentFolder, chunkFolder)).some(a=>a.path.endsWith("contract.json"))) {
+						fs.emptyDirSync(path.join(process.cwd(), "temp2"))
 	
 						contractsORESChunk = await rpkgInstance.getRPKGOfHash("002B07020D21D727")
 	
@@ -433,9 +419,8 @@ async function stageAllMods() {
 						contractsORESMetaContent = JSON.parse(String(fs.readFileSync(path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES.meta.JSON"))))
 					} // There are contracts, extract the contracts ORES and copy it to the temp2 directory
 	
-					for (let contentFile of readRecursive(path.join(process.cwd(), "Mods", mod, contentFolder, chunkFolder))) {
-						let contentType = path.basename(contentFile).split(".").slice(1).join(".")
-						let contentFilePath = path.join(process.cwd(), "Mods", mod, contentFolder, chunkFolder, contentFile)
+					for (let contentFilePath of klaw(path.join(process.cwd(), "Mods", mod, contentFolder, chunkFolder)).map(a=>a.path)) {
+						let contentType = path.basename(contentFilePath).split(".").slice(1).join(".")
 		
 						let entityContent
 
@@ -451,8 +436,12 @@ async function stageAllMods() {
 
 								logger.debug("Converting entity " + contentFilePath)
 
-								if (!QuickEntity[Object.keys(QuickEntity)[Object.keys(QuickEntity).findIndex(a=> parseFloat(a) > Number(entityContent.quickEntityVersion.value)) - 1]]) {
-									logger.error("Could not find matching QuickEntity version for " + Number(entityContent.quickEntityVersion.value) + "!")
+								try {
+									if (!QuickEntity[Object.keys(QuickEntity)[Object.keys(QuickEntity).findIndex(a=> parseFloat(a) > Number(entityContent.quickEntityVersion.value)) - 1]]) {
+										logger.error("Could not find matching QuickEntity version for " + Number(entityContent.quickEntityVersion.value) + "!")
+									}
+								} catch {
+									logger.error("Improper QuickEntity JSON; couldn't find the version!")
 								}
 
 								await (QuickEntity[Object.keys(QuickEntity)[Object.keys(QuickEntity).findIndex(a=> parseFloat(a) > Number(entityContent.quickEntityVersion.value)) - 1]]).generate("HM3", contentFilePath,
@@ -609,10 +598,10 @@ async function stageAllMods() {
 								break;
 							case "texture.tga":
 								logger.debug("Converting texture " + contentFilePath)
-								if (path.basename(contentFile).split(".")[0].split("~").length > 1) {
-									child_process.execSync(`"Third-Party\\HMTextureTools" rebuild H3 "${contentFilePath}" --metapath "${contentFilePath + ".meta"}" "${path.join(process.cwd(), "staging", chunkFolder, path.basename(contentFile).split(".")[0].split("~")[0] + ".TEXT")}" --rebuildboth --texdoutput "${path.join(process.cwd(), "staging", chunkFolder, path.basename(contentFile).split(".")[0].split("~")[1] + ".TEXD")}"`) // Rebuild texture to TEXT/TEXD
-									fs.writeFileSync(path.join(process.cwd(), "staging", chunkFolder, path.basename(contentFile).split(".")[0].split("~")[0] + ".TEXT.meta.JSON"), JSON.stringify({ // Create the TEXT meta
-										"hash_value": path.basename(contentFile).split(".")[0].split("~")[0],
+								if (path.basename(contentFilePath).split(".")[0].split("~").length > 1) {
+									child_process.execSync(`"Third-Party\\HMTextureTools" rebuild H3 "${contentFilePath}" --metapath "${contentFilePath + ".meta"}" "${path.join(process.cwd(), "staging", chunkFolder, path.basename(contentFilePath).split(".")[0].split("~")[0] + ".TEXT")}" --rebuildboth --texdoutput "${path.join(process.cwd(), "staging", chunkFolder, path.basename(contentFilePath).split(".")[0].split("~")[1] + ".TEXD")}"`) // Rebuild texture to TEXT/TEXD
+									fs.writeFileSync(path.join(process.cwd(), "staging", chunkFolder, path.basename(contentFilePath).split(".")[0].split("~")[0] + ".TEXT.meta.JSON"), JSON.stringify({ // Create the TEXT meta
+										"hash_value": path.basename(contentFilePath).split(".")[0].split("~")[0],
 										"hash_offset": 21488715,
 										"hash_size": 2147483648,
 										"hash_resource_type": "TEXT",
@@ -623,13 +612,13 @@ async function stageAllMods() {
 										"hash_size_in_video_memory": 688128,
 										"hash_reference_data": [
 											{
-												"hash": path.basename(contentFile).split(".")[0].split("~")[1],
+												"hash": path.basename(contentFilePath).split(".")[0].split("~")[1],
 												"flag": "9F"
 											}
 										]
 									}))
-									fs.writeFileSync(path.join(process.cwd(), "staging", chunkFolder, path.basename(contentFile).split(".")[0].split("~")[1] + ".TEXD.meta.JSON"), JSON.stringify({ // Create the TEXD meta
-										"hash_value": path.basename(contentFile).split(".")[0].split("~")[1],
+									fs.writeFileSync(path.join(process.cwd(), "staging", chunkFolder, path.basename(contentFilePath).split(".")[0].split("~")[1] + ".TEXD.meta.JSON"), JSON.stringify({ // Create the TEXD meta
+										"hash_value": path.basename(contentFilePath).split(".")[0].split("~")[1],
 										"hash_offset": 233821026,
 										"hash_size": 0,
 										"hash_resource_type": "TEXD",
@@ -640,12 +629,12 @@ async function stageAllMods() {
 										"hash_size_in_video_memory": 688128,
 										"hash_reference_data": []
 									}))
-									await rpkgInstance.callFunction(`-json_to_hash_meta "${path.join(process.cwd(), "staging", chunkFolder, path.basename(contentFile).split(".")[0].split("~")[0] + ".TEXT.meta.JSON")}"`) // Rebuild the TEXT meta
-									await rpkgInstance.callFunction(`-json_to_hash_meta "${path.join(process.cwd(), "staging", chunkFolder, path.basename(contentFile).split(".")[0].split("~")[1] + ".TEXD.meta.JSON")}"`) // Rebuild the TEXD meta
+									await rpkgInstance.callFunction(`-json_to_hash_meta "${path.join(process.cwd(), "staging", chunkFolder, path.basename(contentFilePath).split(".")[0].split("~")[0] + ".TEXT.meta.JSON")}"`) // Rebuild the TEXT meta
+									await rpkgInstance.callFunction(`-json_to_hash_meta "${path.join(process.cwd(), "staging", chunkFolder, path.basename(contentFilePath).split(".")[0].split("~")[1] + ".TEXD.meta.JSON")}"`) // Rebuild the TEXD meta
 								} else { // TEXT only
-									child_process.execSync(`"Third-Party\\HMTextureTools" rebuild H3 "${contentFilePath}" --metapath "${contentFilePath + ".meta"}" "${path.join(process.cwd(), "staging", chunkFolder, path.basename(contentFile).split(".")[0] + ".TEXT")}"`) // Rebuild texture to TEXT only
-									fs.writeFileSync(path.join(process.cwd(), "staging", chunkFolder, path.basename(contentFile).split(".")[0] + ".TEXT.meta.json"), JSON.stringify({ // Create the TEXT meta
-										"hash_value": path.basename(contentFile).split(".")[0].split("~")[0],
+									child_process.execSync(`"Third-Party\\HMTextureTools" rebuild H3 "${contentFilePath}" --metapath "${contentFilePath + ".meta"}" "${path.join(process.cwd(), "staging", chunkFolder, path.basename(contentFilePath).split(".")[0] + ".TEXT")}"`) // Rebuild texture to TEXT only
+									fs.writeFileSync(path.join(process.cwd(), "staging", chunkFolder, path.basename(contentFilePath).split(".")[0] + ".TEXT.meta.json"), JSON.stringify({ // Create the TEXT meta
+										"hash_value": path.basename(contentFilePath).split(".")[0].split("~")[0],
 										"hash_offset": 21488715,
 										"hash_size": 2147483648,
 										"hash_resource_type": "TEXT",
@@ -656,32 +645,29 @@ async function stageAllMods() {
 										"hash_size_in_video_memory": 688128,
 										"hash_reference_data": []
 									}))
-									await rpkgInstance.callFunction(`-json_to_hash_meta "${path.join(process.cwd(), "staging", chunkFolder, path.basename(contentFile).split(".")[0] + ".TEXT.meta.json")}"`) // Rebuild the meta
+									await rpkgInstance.callFunction(`-json_to_hash_meta "${path.join(process.cwd(), "staging", chunkFolder, path.basename(contentFilePath).split(".")[0] + ".TEXT.meta.json")}"`) // Rebuild the meta
 								}
 								break;
 							case "sfx.wem":
-								if (!WWEVpatches[path.basename(contentFile).split(".")[0].split("~")[0]]) { WWEVpatches[path.basename(contentFile).split(".")[0].split("~")[0]] = [] }
-								WWEVpatches[path.basename(contentFile).split(".")[0].split("~")[0]].push({
-									index: path.basename(contentFile).split(".")[0].split("~")[1],
+								if (!WWEVpatches[path.basename(contentFilePath).split(".")[0].split("~")[0]]) { WWEVpatches[path.basename(contentFilePath).split(".")[0].split("~")[0]] = [] }
+								WWEVpatches[path.basename(contentFilePath).split(".")[0].split("~")[0]].push({
+									index: path.basename(contentFilePath).split(".")[0].split("~")[1],
 									filepath: contentFilePath,
 									chunk: chunkFolder
 								})
 								break;
 							default:
-								fs.copyFileSync(contentFilePath, path.join(process.cwd(), "staging", chunkFolder, path.basename(contentFile))) // Copy the file to the staging directory
+								fs.copyFileSync(contentFilePath, path.join(process.cwd(), "staging", chunkFolder, path.basename(contentFilePath))) // Copy the file to the staging directory
 								break;
 						}
 
 						sentryContentFileTransaction.finish()
 		
-						try {
-							await promisify(emptyFolder)("temp", true)
-						} catch {}
-						fs.mkdirSync("temp") // Clear the temp directory
+						fs.emptyDirSync(path.join(process.cwd(), "temp"))
 					}
 	
 					/* --------- There are contracts, repackage the contracts ORES from the temp2 directory --------- */
-					if (readRecursive(path.join(process.cwd(), "Mods", mod, contentFolder, chunkFolder)).some(a=>a.endsWith("contract.json"))) {
+					if (klaw(path.join(process.cwd(), "Mods", mod, contentFolder, chunkFolder)).some(a=>a.path.endsWith("contract.json"))) {
 						fs.writeFileSync(path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES.meta.JSON"), JSON.stringify(contractsORESMetaContent))
 						fs.rmSync(path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES.meta"))
 						await rpkgInstance.callFunction(`-json_to_hash_meta "${path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES.meta.JSON")}"`) // Rebuild the ORES meta
@@ -693,9 +679,7 @@ async function stageAllMods() {
 						fs.copyFileSync(path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES"), path.join(process.cwd(), "staging", "chunk0", "002B07020D21D727.ORES"))
 						fs.copyFileSync(path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES.meta"), path.join(process.cwd(), "staging", "chunk0", "002B07020D21D727.ORES.meta")) // Copy the ORES to the staging directory
 					
-						try {
-							await promisify(emptyFolder)("temp2", true)
-						} catch {}
+						fs.removeSync(path.join(process.cwd(), "temp2"))
 					}
 	
 					/* ------------------------------ Copy chunk meta to staging folder ----------------------------- */
@@ -749,10 +733,7 @@ async function stageAllMods() {
 				})
 				configureSentryScope(sentryBlobsTransaction)
 
-				try {
-					await promisify(emptyFolder)("temp", true)
-				} catch {}
-				fs.mkdirSync("temp") // Clear the temp directory
+				fs.emptyDirSync(path.join(process.cwd(), "temp"))
 
 				fs.ensureDirSync(path.join(process.cwd(), "staging", "chunk0"))
 
@@ -767,8 +748,8 @@ async function stageAllMods() {
 				let metaContent = JSON.parse(String(fs.readFileSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES.meta.JSON"))))
 
 				for (let blobsFolder of blobsFolders) {
-					for (let blob of glob.sync(path.join(process.cwd(), "Mods", mod, blobsFolder, "**/*.*"))) {
-						let blobPath = path.resolve(blob).split(path.resolve(process.cwd()))[1].split(path.sep).slice(4).join("/").toLowerCase()
+					for (let blob of klaw(path.join(process.cwd(), "Mods", mod, blobsFolder)).map(a=>a.path)) {
+						let blobPath = blob.replace(path.join(process.cwd(), "Mods", mod, blobsFolder), "").slice(1).split(path.sep).join("/").toLowerCase()
 	
 						let blobHash
 						if (path.extname(blob).startsWith(".jp") || path.extname(blob) == ".png") {
@@ -805,10 +786,7 @@ async function stageAllMods() {
 				fs.copyFileSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES"), path.join(process.cwd(), "staging", "chunk0", "00858D45F5F9E3CA.ORES"))
 				fs.copyFileSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES.meta"), path.join(process.cwd(), "staging", "chunk0", "00858D45F5F9E3CA.ORES.meta")) // Copy the ORES to the staging directory
 
-				try {
-					await promisify(emptyFolder)("temp", true)
-				} catch {}
-				fs.mkdirSync("temp") // Clear the temp directory
+				fs.emptyDirSync(path.join(process.cwd(), "temp"))
 
 				sentryBlobsTransaction.finish()
 			}
@@ -837,10 +815,7 @@ async function stageAllMods() {
 					if (doneHashes.includes(typeof dependency == "string" ? dependency : dependency.runtimeID)) { continue }
 					doneHashes.push(typeof dependency == "string" ? dependency : dependency.runtimeID)
 
-					try {
-						await promisify(emptyFolder)("temp", true)
-					} catch {}
-					fs.mkdirSync("temp") // Clear the temp directory
+					fs.emptyDirSync(path.join(process.cwd(), "temp"))
 
 					await rpkgInstance.callFunction(`-extract_non_base_hash_depends_from "${path.join(config.runtimePath)}" -filter "${typeof dependency == "string" ? dependency : dependency.runtimeID}" -output_path temp`)
 
@@ -859,10 +834,7 @@ async function stageAllMods() {
 						fs.copySync(file, path.join(process.cwd(), "staging", typeof dependency == "string" ? "chunk0" : dependency.toChunk, path.basename(file)), { overwrite: false }) // Stage the files, but don't overwrite if they already exist (such as if another mod has edited them)
 					})
 
-					try {
-						await promisify(emptyFolder)("temp", true)
-					} catch {}
-					fs.mkdirSync("temp") // Clear the temp directory
+					fs.emptyDirSync(path.join(process.cwd(), "temp"))
 				}
 
 				sentryDependencyTransaction.finish()
@@ -949,10 +921,7 @@ async function stageAllMods() {
 	sentryModsTransaction.finish()
 
 	if (config.outputToSeparateDirectory) {
-		try {
-			await promisify(emptyFolder)("Output", true)
-		} catch {}
-		fs.mkdirSync("Output")
+		fs.emptyDirSync(path.join(process.cwd(), "Output"))
 	} // Make output folder
 
 	/* ---------------------------------------------------------------------------------------------- */
@@ -967,10 +936,7 @@ async function stageAllMods() {
 	for (let entry of Object.entries(WWEVpatches)) {
 		logger.debug("Patching WWEV " + entry[0])
 
-		try {
-			await promisify(emptyFolder)("temp", true)
-		} catch {}
-		fs.mkdirSync("temp") // Clear the temp directory
+		fs.emptyDirSync(path.join(process.cwd(), "temp"))
 
 		let WWEVhash = entry[0]
 		let rpkgOfWWEV = await rpkgInstance.getRPKGOfHash(WWEVhash)
@@ -1032,10 +998,7 @@ async function stageAllMods() {
 			"japanese": "jp"
 		}
 
-		try {
-			await promisify(emptyFolder)("temp", true)
-		} catch {}
-		fs.mkdirSync("temp") // Clear the temp directory
+		fs.emptyDirSync(path.join(process.cwd(), "temp"))
 
 		let localisationFileRPKG = await rpkgInstance.getRPKGOfHash("00F5817876E691F1")
 		await rpkgInstance.callFunction(`-extract_locr_to_json_from "${path.join(config.runtimePath, localisationFileRPKG + ".rpkg")}" -filter "00F5817876E691F1" -output_path temp`)
@@ -1083,10 +1046,7 @@ async function stageAllMods() {
 		await rpkgInstance.callFunction(`-rebuild_locr_from_json_from "${path.join(process.cwd(), "temp", "LOCR", localisationFileRPKG + ".rpkg")}"`) // Rebuild the LOCR
 		fs.copyFileSync(path.join(process.cwd(), "temp", "LOCR", localisationFileRPKG + ".rpkg", "LOCR.rebuilt", "00F5817876E691F1.LOCR"), path.join(process.cwd(), "staging", localisationFileRPKG.replace(/patch[0-9]*/gi, ""), "00F5817876E691F1.LOCR"))
 
-		try {
-			await promisify(emptyFolder)("temp", true)
-		} catch {}
-		fs.mkdirSync("temp") // Clear the temp directory
+		fs.emptyDirSync(path.join(process.cwd(), "temp"))
 
 		sentryLocalisationTransaction.finish()
 	}
@@ -1110,10 +1070,7 @@ async function stageAllMods() {
 			"japanese": "jp"
 		}
 
-		try {
-			await promisify(emptyFolder)("temp", true)
-		} catch {}
-		fs.mkdirSync("temp") // Clear the temp directory
+		fs.emptyDirSync(path.join(process.cwd(), "temp"))
 
 		for (let locrHash of Object.keys(localisationOverrides)) {
 			let localisationFileRPKG = await rpkgInstance.getRPKGOfHash(locrHash)
@@ -1162,10 +1119,7 @@ async function stageAllMods() {
 			await rpkgInstance.callFunction(`-rebuild_locr_from_json_from "${path.join(process.cwd(), "temp", "LOCR", localisationFileRPKG + ".rpkg")}"`) // Rebuild the LOCR
 			fs.copyFileSync(path.join(process.cwd(), "temp", "LOCR", localisationFileRPKG + ".rpkg", "LOCR.rebuilt", locrHash + ".LOCR"), path.join(process.cwd(), "staging", localisationFileRPKG.replace(/patch[0-9]*/gi, ""), locrHash + ".LOCR"))
 	
-			try {
-				await promisify(emptyFolder)("temp", true)
-			} catch {}
-			fs.mkdirSync("temp") // Clear the temp directory
+			fs.emptyDirSync(path.join(process.cwd(), "temp"))
 		}
 
 		sentryLocalisationOverridesTransaction.finish()
@@ -1182,10 +1136,7 @@ async function stageAllMods() {
 	})
 	configureSentryScope(sentryThumbsPatchingTransaction)
 
-	try {
-		await promisify(emptyFolder)("temp", true)
-	} catch {}
-	fs.mkdirSync("temp") // Clear the temp directory
+	fs.emptyDirSync(path.join(process.cwd(), "temp"))
 
 	if (!fs.existsSync(path.join(process.cwd(), "cleanThumbs.dat"))) { // If there is no clean thumbs, copy the one from Retail
 		fs.copyFileSync(path.join(config.runtimePath, "..", "Retail", "thumbs.dat"), path.join(process.cwd(), "cleanThumbs.dat"))
@@ -1219,10 +1170,7 @@ async function stageAllMods() {
 	})
 	configureSentryScope(sentryPackagedefPatchingTransaction)
 
-	try {
-		await promisify(emptyFolder)("temp", true)
-	} catch {}
-	fs.mkdirSync("temp") // Clear the temp directory
+	fs.emptyDirSync(path.join(process.cwd(), "temp"))
 
 	if (!fs.existsSync(path.join(process.cwd(), "cleanPackageDefinition.txt"))) { // If there is no clean PD, copy the one from Runtime
 		fs.copyFileSync(path.join(config.runtimePath, "packagedefinition.txt"), path.join(process.cwd(), "cleanPackageDefinition.txt"))
@@ -1275,12 +1223,8 @@ async function stageAllMods() {
 
 	sentryRPKGGenerationTransaction.finish()
 
-	try {
-		await promisify(emptyFolder)("staging", true)
-	} catch {}
-	try {
-		await promisify(emptyFolder)("temp", true)
-	} catch {}
+	fs.removeSync(path.join(process.cwd(), "staging"))
+	fs.removeSync(path.join(process.cwd(), "temp"))
 
 	if (config.outputConfigToAppDataOnDeploy) {
 		fs.ensureDirSync(path.join(process.env.LOCALAPPDATA, "Simple Mod Framework"))
