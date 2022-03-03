@@ -379,7 +379,7 @@ async function stageAllMods() {
 
 			if (manifest.supportedPlatforms && manifest.supportedPlatforms.length) {
 				if (!manifest.supportedPlatforms.includes(config.platform)) {
-					logger.error(`Mod ${manifest.name} only supports the ${manifest.supportedPlatforms.slice(0, -1).length ? manifest.supportedPlatforms.slice(0, -1).join(", ") + " and " + manifest.supportedPlatforms[manifest.supportedPlatforms.length - 1] : manifest.supportedPlatforms[0]} platforms!`)
+					logger.error(`Mod ${manifest.name} only supports the ${manifest.supportedPlatforms.slice(0, -1).length ? manifest.supportedPlatforms.slice(0, -1).join(", ") + " and " + manifest.supportedPlatforms[manifest.supportedPlatforms.length - 1] : manifest.supportedPlatforms[0]} platform${manifest.supportedPlatforms.length > 1 ? 's' : ''}!`)
 				}
 			}
 
