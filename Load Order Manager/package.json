@@ -44,7 +44,7 @@
     "run-async": "^2.4.1",
     "sanitize-html": "^2.7.0",
     "semver": "^7.3.5",
-    "sweetalert2": "^11.4.4",
+    "sweetalert2": "^11.4.7",
     "tailwindcss": "^2.2.19"
   },
   "devDependencies": {
