@@ -86,8 +86,8 @@ const gameHashes = {
 	"f8bff5b368f88845af690c61fbf34619": "epic",
 	"1ab6a5e004d6c3ff4f330a9a8aa0e3bf": "epic",
 	"006b544ef4547fa9926c6db33ab1d6b3": "steam",
-	// "2531cd950d2022d7ea190d4eff333b58": "microsoft"
-	// Gamepass/store protects the EXE from reading so we can't hash it, instead we would hash the game config; support for these versions though is not currently in the framework
+	"0ccb00174e1cca55deb6b07d37d75f53": "microsoft"
+	// Gamepass/store protects the EXE from reading so we can't hash it, instead we hash the game config
 }
 
 process.on('SIGINT', cleanExit)
@@ -95,10 +95,14 @@ process.on('SIGTERM', cleanExit)
 
 const config = json5.parse(String(fs.readFileSync(path.join(process.cwd(), "config.json"))))
 if (typeof config.outputConfigToAppDataOnDeploy == "undefined") { config.outputConfigToAppDataOnDeploy = true; fs.writeFileSync(path.join(process.cwd(), "config.json"), json5.stringify(config)) } // Backwards compatibility - output config to appdata on deploy
+if (typeof config.retailPath == "undefined") { config.retailPath = "..\\Retail"; fs.writeFileSync(path.join(process.cwd(), "config.json"), json5.stringify(config)) } // Backwards compatibility - retail path
+
+if (typeof config.reportErrors == "undefined" && config.runtimePath == "..\\Runtime" && fs.existsSync(path.join(config.retailPath, "Runtime", "chunk0.rpkg"))) { config.runtimePath = "..\\Retail\\Runtime"; fs.writeFileSync(path.join(process.cwd(), "config.json"), json5.stringify(config)) } // Automatically set runtime path if using MS platform
 
 if (typeof config.reportErrors == "undefined") { config.reportErrors = false; config.errorReportingID = null } // Do not report errors if no preference is set
 
 config.runtimePath = path.resolve(process.cwd(), config.runtimePath)
+config.retailPath = path.resolve(process.cwd(), config.retailPath)
 
 if (!config.reportErrors) {
 	process.on('uncaughtException', (err, origin) => {
@@ -164,15 +168,19 @@ if (!fs.existsSync(config.runtimePath)) {
 	logger.error("The Runtime folder couldn't be located, please re-read the installation instructions!")
 }
 
-if (!fs.existsSync(path.join(config.runtimePath, "..", "Retail", "HITMAN3.exe"))) {
+if (!fs.existsSync(path.join(config.retailPath, "Runtime", "chunk0.rpkg")) && !fs.existsSync(path.join(config.runtimePath, "..", "Retail", "HITMAN3.exe"))) {
 	logger.error("HITMAN3.exe couldn't be located, please re-read the installation instructions!")
 }
 
-config.platform = gameHashes[md5File.sync(path.join(config.runtimePath, "..", "Retail", "HITMAN3.exe"))] // Platform detection
+if (fs.existsSync(path.join(config.retailPath, "Runtime", "chunk0.rpkg")) && !fs.existsSync(path.join(config.retailPath, "MicrosoftGame.Config"))) {
+	logger.error("The game config couldn't be located, please re-read the installation instructions!")
+}
+
+config.platform = fs.existsSync(path.join(config.retailPath, "Runtime", "chunk0.rpkg")) ? gameHashes[md5File.sync(path.join(config.retailPath, "MicrosoftGame.Config"))] : gameHashes[md5File.sync(path.join(config.runtimePath, "..", "Retail", "HITMAN3.exe"))] // Platform detection
 if (typeof config.platform == "undefined") { logger.error("Unknown platform/game version - update both the game and the framework and if that doesn't work, contact Atampy26 on Hitman Forum!") }
 
 if (config.reportErrors) {
-	Sentry.setTag("game_hash", md5File.sync(path.join(config.runtimePath, "..", "Retail", "HITMAN3.exe")))
+	Sentry.setTag("game_hash", fs.existsSync(path.join(config.retailPath, "Runtime", "chunk0.rpkg")) ? md5File.sync(path.join(config.retailPath, "MicrosoftGame.Config")) : md5File.sync(path.join(config.runtimePath, "..", "Retail", "HITMAN3.exe")))
 }
 
 function cleanExit() {
@@ -1199,7 +1207,7 @@ async function stageAllMods() {
 	fs.emptyDirSync(path.join(process.cwd(), "temp"))
 
 	if (!fs.existsSync(path.join(process.cwd(), "cleanThumbs.dat"))) { // If there is no clean thumbs, copy the one from Retail
-		fs.copyFileSync(path.join(config.runtimePath, "..", "Retail", "thumbs.dat"), path.join(process.cwd(), "cleanThumbs.dat"))
+		fs.copyFileSync(path.join(config.retailPath, "thumbs.dat"), path.join(process.cwd(), "cleanThumbs.dat"))
 	}
 
 	child_process.execSync(`"Third-Party\\h6xtea.exe" -d --src "${path.join(process.cwd(), "cleanThumbs.dat")}" --dst "${path.join(process.cwd(), "temp", "thumbs.dat.decrypted")}"`) // Decrypt thumbs
@@ -1215,7 +1223,7 @@ async function stageAllMods() {
 
 	fs.writeFileSync(path.join(process.cwd(), "temp", "thumbs.dat.decrypted"), thumbsContent)
 	child_process.execSync(`"Third-Party\\h6xtea.exe" -e --src "${path.join(process.cwd(), "temp", "thumbs.dat.decrypted")}" --dst "${path.join(process.cwd(), "temp", "thumbs.dat.decrypted.encrypted")}"`) // Encrypt thumbs
-	fs.copyFileSync(path.join(process.cwd(), "temp", "thumbs.dat.decrypted.encrypted"), config.outputToSeparateDirectory ? path.join(process.cwd(), "Output", "thumbs.dat") : path.join(config.runtimePath, "..", "Retail", "thumbs.dat")) // Output thumbs
+	fs.copyFileSync(path.join(process.cwd(), "temp", "thumbs.dat.decrypted.encrypted"), config.outputToSeparateDirectory ? path.join(process.cwd(), "Output", "thumbs.dat") : path.join(config.retailPath, "thumbs.dat")) // Output thumbs
 
 	sentryThumbsPatchingTransaction.finish()
 

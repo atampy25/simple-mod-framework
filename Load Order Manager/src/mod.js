@@ -179,6 +179,12 @@ async function execute() {
 		showMessage("Improper installation", "Please re-read the installation instructions to ensure everything was installed correctly.", "error")
 		return
 	}
+
+	if (typeof json5.parse(fs.readFileSync("../config.json")).retailPath === "undefined") {
+		let config = json5.parse(String(fs.readFileSync("../config.json")))
+		config.retailPath = "..\\Retail"
+		fs.writeFileSync("../config.json", json5.stringify(config))
+	}
 	
 	try {
 		if (!fs.existsSync(path.resolve("..", json5.parse(fs.readFileSync("../config.json")).runtimePath))) {
@@ -186,8 +192,13 @@ async function execute() {
 			return
 		}
 
-		if (!fs.existsSync(path.join(path.resolve("..", json5.parse(fs.readFileSync("../config.json")).runtimePath), "..", "Retail", "HITMAN3.exe"))) {
-			showMessage("Invalid Runtime path", "The framework can't find HITMAN3.exe in the right place. Please re-read the installation instructions to ensure everything was installed correctly.", "error")
+		if (!fs.existsSync(path.join(json5.parse(fs.readFileSync("../config.json")).retailPath, "Runtime", "chunk0.rpkg")) && !fs.existsSync(path.join(path.resolve("..", json5.parse(fs.readFileSync("../config.json")).retailPath), "HITMAN3.exe"))) {
+			showMessage("Invalid Retail path", "The framework can't find HITMAN3.exe in the right place. Please re-read the installation instructions to ensure everything was installed correctly.", "error")
+			return
+		}
+
+		if (fs.existsSync(path.join(json5.parse(fs.readFileSync("../config.json")).retailPath, "Runtime", "chunk0.rpkg")) && !fs.existsSync(path.join(path.resolve("..", json5.parse(fs.readFileSync("../config.json")).retailPath), "HITMAN3.exe"))) {
+			showMessage("Invalid Retail path", "The framework can't find the game config in the right place. Please re-read the installation instructions to ensure everything was installed correctly.", "error")
 			return
 		}
 	} catch {
