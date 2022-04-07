@@ -172,15 +172,15 @@ if (!fs.existsSync(path.join(config.retailPath, "Runtime", "chunk0.rpkg")) && !f
 	logger.error("HITMAN3.exe couldn't be located, please re-read the installation instructions!")
 }
 
-if (fs.existsSync(path.join(config.retailPath, "Runtime", "chunk0.rpkg")) && !fs.existsSync(path.join(config.retailPath, "MicrosoftGame.Config"))) {
+if (fs.existsSync(path.join(config.retailPath, "Runtime", "chunk0.rpkg")) && !fs.existsSync(path.join(config.retailPath, "..", "MicrosoftGame.Config"))) {
 	logger.error("The game config couldn't be located, please re-read the installation instructions!")
 }
 
-config.platform = fs.existsSync(path.join(config.retailPath, "Runtime", "chunk0.rpkg")) ? gameHashes[md5File.sync(path.join(config.retailPath, "MicrosoftGame.Config"))] : gameHashes[md5File.sync(path.join(config.runtimePath, "..", "Retail", "HITMAN3.exe"))] // Platform detection
+config.platform = fs.existsSync(path.join(config.retailPath, "Runtime", "chunk0.rpkg")) ? gameHashes[md5File.sync(path.join(config.retailPath, "..", "MicrosoftGame.Config"))] : gameHashes[md5File.sync(path.join(config.runtimePath, "..", "Retail", "HITMAN3.exe"))] // Platform detection
 if (typeof config.platform == "undefined") { logger.error("Unknown platform/game version - update both the game and the framework and if that doesn't work, contact Atampy26 on Hitman Forum!") }
 
 if (config.reportErrors) {
-	Sentry.setTag("game_hash", fs.existsSync(path.join(config.retailPath, "Runtime", "chunk0.rpkg")) ? md5File.sync(path.join(config.retailPath, "MicrosoftGame.Config")) : md5File.sync(path.join(config.runtimePath, "..", "Retail", "HITMAN3.exe")))
+	Sentry.setTag("game_hash", fs.existsSync(path.join(config.retailPath, "Runtime", "chunk0.rpkg")) ? md5File.sync(path.join(config.retailPath, "..", "MicrosoftGame.Config")) : md5File.sync(path.join(config.runtimePath, "..", "Retail", "HITMAN3.exe")))
 }
 
 function cleanExit() {
@@ -433,7 +433,7 @@ async function stageAllMods() {
 						contractsORESMetaContent = JSON.parse(String(fs.readFileSync(path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES.meta.JSON"))))
 					} // There are contracts, extract the contracts ORES and copy it to the temp2 directory
 	
-					for (let contentFilePath of klaw(path.join(process.cwd(), "Mods", mod, contentFolder, chunkFolder)).map(a=>a.path)) {
+					for (let contentFilePath of klaw(path.join(process.cwd(), "Mods", mod, contentFolder, chunkFolder)).filter(a=>a.stats.isFile()).map(a=>a.path)) {
 						let contentType = path.basename(contentFilePath).split(".").slice(1).join(".")
 		
 						let entityContent

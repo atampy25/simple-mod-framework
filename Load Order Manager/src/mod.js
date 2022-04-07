@@ -197,7 +197,7 @@ async function execute() {
 			return
 		}
 
-		if (fs.existsSync(path.join(json5.parse(fs.readFileSync("../config.json")).retailPath, "Runtime", "chunk0.rpkg")) && !fs.existsSync(path.join(path.resolve("..", json5.parse(fs.readFileSync("../config.json")).retailPath), "HITMAN3.exe"))) {
+		if (fs.existsSync(path.join(json5.parse(fs.readFileSync("../config.json")).retailPath, "Runtime", "chunk0.rpkg")) && !fs.existsSync(path.join(path.resolve("..", json5.parse(fs.readFileSync("../config.json")).retailPath), "..", "MicrosoftGame.Config"))) {
 			showMessage("Invalid Retail path", "The framework can't find the game config in the right place. Please re-read the installation instructions to ensure everything was installed correctly.", "error")
 			return
 		}
