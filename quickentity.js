@@ -499,7 +499,7 @@ async function rebuildProperty(property, propertyValues, TEMP, TBLU, TEMPmeta, T
 	var propertyToAdd = await rebuildSpecificProp(property, propertyValues, TEMP, TBLU, TEMPmeta, TBLUmeta, entity, entry, findEntityCache)
 
 	// @ts-ignore
-	if (!isNaN(parseInt(propertyToAdd.nPropertyID))) {
+	if (!isNaN(parseInt(propertyToAdd.nPropertyID)) && (parseInt(propertyToAdd.nPropertyID).toString(16).length == 8 || parseInt(propertyToAdd.nPropertyID).toString(16).length == 7)) { // Property is a number and a CRC32
 		// @ts-ignore
 		propertyToAdd.nPropertyID = parseInt(propertyToAdd.nPropertyID)
 	}
