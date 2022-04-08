@@ -1199,36 +1199,38 @@ async function stageAllMods() {
 	/* ---------------------------------------------------------------------------------------------- */
 	/*                                             Thumbs                                             */
 	/* ---------------------------------------------------------------------------------------------- */
-	logger.info("Patching thumbs")
+	if (config.skipIntro || thumbs.length) {
+		logger.info("Patching thumbs")
 
-	let sentryThumbsPatchingTransaction = sentryTransaction.startChild({
-		op: "stage",
-		description: "Thumbs patching",
-	})
-	configureSentryScope(sentryThumbsPatchingTransaction)
+		let sentryThumbsPatchingTransaction = sentryTransaction.startChild({
+			op: "stage",
+			description: "Thumbs patching",
+		})
+		configureSentryScope(sentryThumbsPatchingTransaction)
 
-	fs.emptyDirSync(path.join(process.cwd(), "temp"))
+		fs.emptyDirSync(path.join(process.cwd(), "temp"))
 
-	if (!fs.existsSync(path.join(process.cwd(), "cleanThumbs.dat"))) { // If there is no clean thumbs, copy the one from Retail
-		fs.copyFileSync(path.join(config.retailPath, "thumbs.dat"), path.join(process.cwd(), "cleanThumbs.dat"))
+		if (!fs.existsSync(path.join(process.cwd(), "cleanThumbs.dat"))) { // If there is no clean thumbs, copy the one from Retail
+			fs.copyFileSync(path.join(config.retailPath, "thumbs.dat"), path.join(process.cwd(), "cleanThumbs.dat"))
+		}
+
+		child_process.execSync(`"Third-Party\\h6xtea.exe" -d --src "${path.join(process.cwd(), "cleanThumbs.dat")}" --dst "${path.join(process.cwd(), "temp", "thumbs.dat.decrypted")}"`) // Decrypt thumbs
+
+		let thumbsContent = String(fs.readFileSync(path.join(process.cwd(), "temp", "thumbs.dat.decrypted")))
+		if (config.skipIntro) { // Skip intro
+			thumbsContent = thumbsContent.replace("Boot.entity", "MainMenu.entity")
+		}
+
+		for (let patch of thumbs) { // Manifest patches
+			thumbsContent.replace(/\[Hitman5\]\n/gi, "[Hitman5]\n" + patch + "\n")
+		}
+
+		fs.writeFileSync(path.join(process.cwd(), "temp", "thumbs.dat.decrypted"), thumbsContent)
+		child_process.execSync(`"Third-Party\\h6xtea.exe" -e --src "${path.join(process.cwd(), "temp", "thumbs.dat.decrypted")}" --dst "${path.join(process.cwd(), "temp", "thumbs.dat.decrypted.encrypted")}"`) // Encrypt thumbs
+		fs.copyFileSync(path.join(process.cwd(), "temp", "thumbs.dat.decrypted.encrypted"), config.outputToSeparateDirectory ? path.join(process.cwd(), "Output", "thumbs.dat") : path.join(config.retailPath, "thumbs.dat")) // Output thumbs
+
+		sentryThumbsPatchingTransaction.finish()
 	}
-
-	child_process.execSync(`"Third-Party\\h6xtea.exe" -d --src "${path.join(process.cwd(), "cleanThumbs.dat")}" --dst "${path.join(process.cwd(), "temp", "thumbs.dat.decrypted")}"`) // Decrypt thumbs
-
-	let thumbsContent = String(fs.readFileSync(path.join(process.cwd(), "temp", "thumbs.dat.decrypted")))
-	if (config.skipIntro) { // Skip intro
-		thumbsContent = thumbsContent.replace("Boot.entity", "MainMenu.entity")
-	}
-
-	for (let patch of thumbs) { // Manifest patches
-		thumbsContent.replace(/\[Hitman5\]\n/gi, "[Hitman5]\n" + patch + "\n")
-	}
-
-	fs.writeFileSync(path.join(process.cwd(), "temp", "thumbs.dat.decrypted"), thumbsContent)
-	child_process.execSync(`"Third-Party\\h6xtea.exe" -e --src "${path.join(process.cwd(), "temp", "thumbs.dat.decrypted")}" --dst "${path.join(process.cwd(), "temp", "thumbs.dat.decrypted.encrypted")}"`) // Encrypt thumbs
-	fs.copyFileSync(path.join(process.cwd(), "temp", "thumbs.dat.decrypted.encrypted"), config.outputToSeparateDirectory ? path.join(process.cwd(), "Output", "thumbs.dat") : path.join(config.retailPath, "thumbs.dat")) // Output thumbs
-
-	sentryThumbsPatchingTransaction.finish()
 
 	/* ---------------------------------------------------------------------------------------------- */
 	/*                                       Package definition                                       */
