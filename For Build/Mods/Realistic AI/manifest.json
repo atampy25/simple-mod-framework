@@ -3,8 +3,10 @@
 	"id": "Atampy26.RealisticAI",
 	"name": "Realistic AI",
 	"description": "Makes the AI smarter, more realistic and more attentive in Master mode.",
-	"authors": ["Atampy26"],
-	"frameworkVersion": "1.3.1",
+	"authors": [
+		"Atampy26"
+	],
+	"frameworkVersion": "1.4.0",
 	"updateCheck": "https://hitman-resources.netlify.app/framework/updates/Realistic AI.json",
 	"options": [
 		{
