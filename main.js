@@ -1,4 +1,4 @@
-const FrameworkVersion = "1.4.0"
+const FrameworkVersion = "1.4.1"
 
 // @ts-ignore
 // eslint-disable-next-line no-undef
@@ -268,7 +268,7 @@ async function stageAllMods() {
 	/* ---------------------------------------------------------------------------------------------- */
 	for (let mod of config.loadOrder) {
 		// NOT Mod folder exists, mod has no manifest, mod has RPKGs (mod is an RPKG-only mod)
-		if (!(fs.existsSync(path.join(process.cwd(), "Mods", mod)) && !fs.existsSync(path.join(process.cwd(), "Mods", mod, "manifest.json")) && klaw(path.join(process.cwd(), "Mods", mod)).filter(a=>a.stats.size > 0).map(a=>a.path).some(a=>a.endsWith(".rpkg")))) {
+		if (!(fs.existsSync(path.join(process.cwd(), "Mods", mod)) && !fs.existsSync(path.join(process.cwd(), "Mods", mod, "manifest.json")) && klaw(path.join(process.cwd(), "Mods", mod)).filter(a=>a.stats.isFile()).map(a=>a.path).some(a=>a.endsWith(".rpkg")))) {
 			// Find mod with ID in Mods folder, set the current mod to that folder
 			mod = fs.readdirSync(path.join(process.cwd(), "Mods")).find(a=>fs.existsSync(path.join(process.cwd(), "Mods", a, "manifest.json")) && json5.parse(String(fs.readFileSync(path.join(process.cwd(), "Mods", a, "manifest.json")))).id == mod)
 		} // Essentially, if the mod isn't an RPKG mod, it is referenced by its ID, so this finds the mod folder with the right ID
@@ -295,7 +295,7 @@ async function stageAllMods() {
 				
 				rpkgTypes[chunkFolder] = "patch"
 
-				let allFiles = klaw(path.join(process.cwd(), "temp")).filter(a=>a.stats.size > 0).map(a=>a.path)
+				let allFiles = klaw(path.join(process.cwd(), "temp")).filter(a=>a.stats.isFile()).map(a=>a.path)
 
 				allFiles.forEach(a=>fs.copyFileSync(a, path.join(process.cwd(), "staging", chunkFolder, path.basename(a))))
 
@@ -412,7 +412,7 @@ async function stageAllMods() {
 					} catch {}
 	
 					let contractsORESChunk, contractsORESContent, contractsORESMetaContent
-					if (klaw(path.join(process.cwd(), "Mods", mod, contentFolder, chunkFolder)).some(a=>a.path.endsWith("contract.json"))) {
+					if (klaw(path.join(process.cwd(), "Mods", mod, contentFolder, chunkFolder)).filter(a=>a.stats.isFile()).some(a=>a.path.endsWith("contract.json"))) {
 						fs.emptyDirSync(path.join(process.cwd(), "temp2"))
 	
 						try {
@@ -715,7 +715,7 @@ async function stageAllMods() {
 					}
 	
 					/* --------- There are contracts, repackage the contracts ORES from the temp2 directory --------- */
-					if (klaw(path.join(process.cwd(), "Mods", mod, contentFolder, chunkFolder)).some(a=>a.path.endsWith("contract.json"))) {
+					if (klaw(path.join(process.cwd(), "Mods", mod, contentFolder, chunkFolder)).filter(a=>a.stats.isFile()).some(a=>a.path.endsWith("contract.json"))) {
 						fs.writeFileSync(path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES.meta.JSON"), JSON.stringify(contractsORESMetaContent))
 						fs.rmSync(path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES.meta"))
 						await rpkgInstance.callFunction(`-json_to_hash_meta "${path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES.meta.JSON")}"`) // Rebuild the ORES meta
@@ -801,7 +801,7 @@ async function stageAllMods() {
 				let metaContent = JSON.parse(String(fs.readFileSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES.meta.JSON"))))
 
 				for (let blobsFolder of blobsFolders) {
-					for (let blob of klaw(path.join(process.cwd(), "Mods", mod, blobsFolder)).map(a=>a.path)) {
+					for (let blob of klaw(path.join(process.cwd(), "Mods", mod, blobsFolder)).filter(a=>a.stats.isFile()).map(a=>a.path)) {
 						let blobPath = blob.replace(path.join(process.cwd(), "Mods", mod, blobsFolder), "").slice(1).split(path.sep).join("/").toLowerCase()
 	
 						let blobHash
@@ -872,7 +872,7 @@ async function stageAllMods() {
 
 					await rpkgInstance.callFunction(`-extract_non_base_hash_depends_from "${path.join(config.runtimePath)}" -filter "${typeof dependency == "string" ? dependency : dependency.runtimeID}" -output_path temp`)
 
-					let allFiles = klaw(path.join(process.cwd(), "temp")).filter(a=>a.stats.size > 0).map(a=>a.path).map(a=>{ return {rpkg: (/00[0-9A-F]*\..*?\\(chunk[0-9]*(?:patch[0-9]*)?)\\/gi).exec(a)[1], path: a} }).sort((a,b) => b.rpkg.localeCompare(a.rpkg, undefined, {numeric: true, sensitivity: 'base'}))
+					let allFiles = klaw(path.join(process.cwd(), "temp")).filter(a=>a.stats.isFile()).map(a=>a.path).map(a=>{ return {rpkg: (/00[0-9A-F]*\..*?\\(chunk[0-9]*(?:patch[0-9]*)?)\\/gi).exec(a)[1], path: a} }).sort((a,b) => b.rpkg.localeCompare(a.rpkg, undefined, {numeric: true, sensitivity: 'base'}))
 					// Sort files by RPKG name in descending order
 					
 					let allFilesSuperseded = []
