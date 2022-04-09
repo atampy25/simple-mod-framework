@@ -103,6 +103,9 @@ Mutates the given JSON file with a patch. The content of the `JSON.patch.json` f
 }
 ```
 
+If the file is the unlockables ORES, it will be transformed to the format used by the `unlockables.json` filetype (Id -> ORES entry).
+If the file is the REPO, it will be transformed to the format sued by the `repository.json` filetype (ID_ -> REPO entry).
+
 ## texture.tga
 **Note:** The filename matters for this special type.
 
