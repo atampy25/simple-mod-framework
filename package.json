@@ -27,7 +27,7 @@
     "semver": "^7.3.5"
   },
   "devDependencies": {
-    "eslint": "^8.9.0"
+    "eslint": "^8.13.0"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
