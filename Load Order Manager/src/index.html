@@ -15,6 +15,22 @@
 	<script src="https://unpkg.com/alpinejs" defer></script>
 	<script src="https://unpkg.com/@popperjs/core@2"></script>
 	<script src="https://unpkg.com/tippy.js@6"></script>
+	<style>
+		.changelog > h1 {
+			font-size: 1.8rem;
+			font-weight: bold
+		}
+
+		.changelog > h2 {
+			font-size: 1.5rem;
+			font-weight: bold
+		}
+
+		.changelog > h3 {
+			font-size: 1.2rem;
+			font-weight: bold
+		}
+	</style>
 </head>
 
 <body style="font-family: Inter; text-underline-position: under;">
@@ -27,10 +43,10 @@
 		</h2><br>
 		<h2 class="text-lg text-center">
 			v<span id="frameworkVersionCurrent">1.0</span> -> v<span id="frameworkVersionNext">1.1</span><br>
-			<span id="frameworkChangelog">Added extra stuff and things.</span>
+			<div id="frameworkChangelog" class="changelog mt-4">Added extra stuff and things.</div>
 		</h2>
 		<div class="flex flex-initial flex-wrap flex-row justify-center mt-8 px-2 w-full">
-			<neo-button label="Update" gradientFrom="from-emerald-400" gradientTo="to-emerald-500" onclick="this.parentElement.style = 'display: none'; updateFramework()">
+			<neo-button id="frameworkUpdateButton" label="Update" gradientFrom="from-emerald-400" gradientTo="to-emerald-500" onclick="this.parentElement.style = 'display: none'; updateFramework()">
 				<i class="fas fa-cog" slot="icon"></i>
 			</neo-button>
 			<neo-button label="Close" gradientFrom="from-rose-400" gradientTo="to-red-500" onclick="this.parentElement.parentElement.style = 'display: none'">

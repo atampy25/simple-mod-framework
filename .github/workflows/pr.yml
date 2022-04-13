@@ -27,46 +27,46 @@ jobs:
         uses: actions/cache@v2.1.6
         with:
           path: Load Order Manager/node_modules
-          key: buildCache2v9
-         
+          key: buildCache2v10
+
       - name: Install dependencies
         if: steps.cache.outputs.cache-hit != 'true'
         run: |
           npm install
-      
+
       - name: Prep
         run: |
           npm install -g pkg
-      
+
       - name: Build EXE
         run: |
           New-Item -ItemType Directory -Force -Path ./node_modules/piscina
           robocopy ./piscina ./node_modules/piscina /COPYALL /E /is /it; if ($lastexitcode -lt 8) { $global:LASTEXITCODE = $null }
           pkg package.json --targets node14-win-x64 --output Deploy.exe --compress Brotli
-          
+
       - name: Download RPKG
         uses: aochmann/actions-download-artifact@5709392f11b5937bd316e52687ad87f7deced5f5
         with:
           repo: glacier-modding/RPKG-Tool
           name: rpkg
           latest: true
-          path: "./Third-Party"
-          
+          path: './Third-Party'
+
       - name: Download ResourceTool
         uses: aochmann/actions-download-artifact@5709392f11b5937bd316e52687ad87f7deced5f5
         with:
           repo: OrfeasZ/ZHMTools
           name: ResourceTool-win-x64
           latest: true
-          path: "./Third-Party"
-      
+          path: './Third-Party'
+
       - name: Install GUI dependencies
         if: steps.cache2.outputs.cache-hit != 'true'
         run: |
           cd "Load Order Manager"
           npm install
           cd ../
-      
+
       - name: Build GUI
         run: |
           cd "Load Order Manager"

@@ -1,26 +1,31 @@
 var Swal = require("sweetalert2/dist/sweetalert2")
 var fs = require('fs-extra')
-var path = require('path');
-var child_process = require("child_process");
+var path = require('path')
+var child_process = require("child_process")
 var AdmZip = require('adm-zip')
 var sanitizeHtml = require('sanitize-html')
 var remote = require('@electron/remote')
-var semver = require('semver');
-var downloadFile = require("async-get-file");
-var json5 = require("json5");
-var klaw = require("klaw-sync");
-const { randomUUID } = require("crypto");
+var semver = require('semver')
+var downloadFile = require("async-get-file")
+var json5 = require("json5")
+var klaw = require("klaw-sync")
+const { randomUUID } = require("crypto")
+const { marked } = require('marked')
 
-window.$ = window.jQuery = require('jquery');
+window.$ = window.jQuery = require('jquery')
 
-frameworkVersion = "1.4.2"
+frameworkVersion = "1.4.1"
 
 async function updateFramework() {
-	var frameworkUpdateData = await (await fetch("https://hitman-resources.netlify.app/framework/framework.json")).json()
+	var latestGithubRelease = await (await fetch("https://api.github.com/repos/hitman-resources/simple-mod-framework/releases/latest", {
+		headers: {
+			"Accept": "application/vnd.github.v3+json"
+		}
+	})).json()
 	
 	await Swal.fire({
 		title: 'Updating the framework',
-		html: 'Please wait - the framework is being updated to the latest version (' + frameworkUpdateData.version + '):<br><br><i>' + frameworkUpdateData.changelog + "</i>",
+		html: 'Please wait - the framework is being updated to the latest version (' + latestGithubRelease.tag_name + ').',
 		width: '40rem',
 		didOpen: async () => {
 			Swal.showLoading()
@@ -79,13 +84,24 @@ async function updateFramework() {
 }
 
 async function fetchUpdates() {
-	var frameworkUpdateData = await (await fetch("https://hitman-resources.netlify.app/framework/framework.json")).json()
-	if (semver.lt(frameworkVersion, frameworkUpdateData.version)) {
-		document.getElementById("frameworkUpdateAvailableText").innerHTML = ({patch: "Patch available", minor: "Minor update available", major: "Major update available"})[semver.diff(frameworkVersion, frameworkUpdateData.version)] || "Update available"
-		document.getElementById("frameworkUpdateProcessText").innerHTML = frameworkUpdateData.processText
+	var latestGithubRelease = await (await fetch("https://api.github.com/repos/hitman-resources/simple-mod-framework/releases/latest", {
+		headers: {
+			"Accept": "application/vnd.github.v3+json"
+		}
+	})).json()
+
+	if (semver.lt(frameworkVersion, latestGithubRelease.tag_name)) {
+		document.getElementById("frameworkUpdateAvailableText").innerHTML = ({patch: "Patch available", minor: "Minor update available", major: "Major update available"})[semver.diff(frameworkVersion, latestGithubRelease.tag_name)] || "Update available"
+		document.getElementById("frameworkUpdateProcessText").innerHTML = latestGithubRelease.body.includes("CANNOT BE APPLIED AUTOMATICALLY") ? "The update must be applied manually. Re-download the framework from the Nexus Mods page." : "The update can be applied automatically."
 		document.getElementById("frameworkVersionCurrent").innerHTML = frameworkVersion
-		document.getElementById("frameworkVersionNext").innerHTML = frameworkUpdateData.version
-		document.getElementById("frameworkChangelog").innerHTML = frameworkUpdateData.changelog
+		document.getElementById("frameworkVersionNext").innerHTML = latestGithubRelease.tag_name
+
+		if (latestGithubRelease.body.includes("CANNOT BE APPLIED AUTOMATICALLY")) document.getElementById("frameworkUpdateButton").style.display = "none"
+
+		document.getElementById("frameworkChangelog").innerHTML = marked(latestGithubRelease.body, {
+			gfm: true
+		})
+
 		document.getElementById("frameworkUpdateAvailable").style.display = "block"
 	}
 }
@@ -904,6 +920,10 @@ function sanitise(html) {
 	return sanitizeHtml(html, {
 		allowedTags: [ 'b', 'i', 'em', 'strong', 'br']
 	});
+}
+
+function sanitiseWeakly(html) {
+	return sanitizeHtml(html);
 }
 
 function sanitiseStrongly(html) {

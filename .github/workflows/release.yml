@@ -3,7 +3,7 @@ name: Release
 on:
   push:
     tags:
-      - "*.*.*"
+      - '*.*.*'
 
 jobs:
   build:
@@ -27,46 +27,46 @@ jobs:
         uses: actions/cache@v2.1.6
         with:
           path: Load Order Manager/node_modules
-          key: buildCache2v9
-         
+          key: buildCache2v10
+
       - name: Install dependencies
         if: steps.cache.outputs.cache-hit != 'true'
         run: |
           npm install
-      
+
       - name: Prep
         run: |
           npm install -g pkg
-      
+
       - name: Build EXE
         run: |
           New-Item -ItemType Directory -Force -Path ./node_modules/piscina
           robocopy ./piscina ./node_modules/piscina /COPYALL /E /is /it; if ($lastexitcode -lt 8) { $global:LASTEXITCODE = $null }
           pkg package.json --targets node14-win-x64 --output Deploy.exe --compress Brotli
-          
+
       - name: Download RPKG
         uses: aochmann/actions-download-artifact@5709392f11b5937bd316e52687ad87f7deced5f5
         with:
           repo: glacier-modding/RPKG-Tool
           name: rpkg
           latest: true
-          path: "./Third-Party"
-          
+          path: './Third-Party'
+
       - name: Download ResourceTool
         uses: aochmann/actions-download-artifact@5709392f11b5937bd316e52687ad87f7deced5f5
         with:
           repo: OrfeasZ/ZHMTools
           name: ResourceTool-win-x64
           latest: true
-          path: "./Third-Party"
-      
+          path: './Third-Party'
+
       - name: Install GUI dependencies
         if: steps.cache2.outputs.cache-hit != 'true'
         run: |
           cd "Load Order Manager"
           npm install
           cd ../
-      
+
       - name: Build GUI
         run: |
           cd "Load Order Manager"
@@ -85,7 +85,7 @@ jobs:
           robocopy ".\Load Order Manager\out\Load Order Manager-win32-x64" "./dist/Load Order Manager" /COPYALL /E; if ($lastexitcode -lt 8) { $global:LASTEXITCODE = $null }
           copy Deploy.exe dist
           New-Item -Path dist -Name "Mod Manager.cmd" -ItemType "file" -Value "@echo off`ncd `"Load Order Manager`"`nstart `"`" `"Load Order Manager.exe`""
-          
+
       - name: Zip
         uses: TheDoctor0/zip-release@4fb9e4ff72847dd3d1c111cf63834e353ed7cb3d
         with:
@@ -94,7 +94,7 @@ jobs:
 
       - name: 'Get latest tag'
         id: latestTag
-        uses: "WyriHaximus/github-action-get-previous-tag@v1.1.0"
+        uses: 'WyriHaximus/github-action-get-previous-tag@v1.1.0'
         with:
           fallback: unknown
 
@@ -104,7 +104,7 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           exclude_types: other,doc,chore,build
-          
+
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
@@ -113,7 +113,7 @@ jobs:
           tag_name: ${{ steps.latestTag.outputs.tag }}
           repository: hitman-resources/simple-mod-framework
           files: dist/Release.zip
-  
+
   sentry-release:
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/')
