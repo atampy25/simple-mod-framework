@@ -6,7 +6,7 @@
   "dependencies": {
     "@sentry/node": "^6.19.6",
     "@sentry/tracing": "^6.19.6",
-    "chalk": "^4.1.2",
+    "chalk": "^5.0.1",
     "clarify": "^2.1.0",
     "decimal.js": "^10.3.1",
     "eventemitter-asyncresource": "^1.0.0",
