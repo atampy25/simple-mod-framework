@@ -13,7 +13,7 @@
     "fs-extra": "^10.0.1",
     "hdr-histogram-js": "^3.0.0",
     "hdr-histogram-percentiles-obj": "^3.0.0",
-    "json5": "^2.2.0",
+    "json5": "^2.2.1",
     "klaw-sync": "^6.0.0",
     "lodash.isequal": "^4.5.0",
     "lodash.merge": "^4.6.2",
