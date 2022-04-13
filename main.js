@@ -1,4 +1,4 @@
-const FrameworkVersion = "1.4.1"
+const FrameworkVersion = "1.4.2"
 
 // @ts-ignore
 // eslint-disable-next-line no-undef
@@ -97,7 +97,7 @@ const config = json5.parse(String(fs.readFileSync(path.join(process.cwd(), "conf
 if (typeof config.outputConfigToAppDataOnDeploy == "undefined") { config.outputConfigToAppDataOnDeploy = true; fs.writeFileSync(path.join(process.cwd(), "config.json"), json5.stringify(config)) } // Backwards compatibility - output config to appdata on deploy
 if (typeof config.retailPath == "undefined") { config.retailPath = "..\\Retail"; fs.writeFileSync(path.join(process.cwd(), "config.json"), json5.stringify(config)) } // Backwards compatibility - retail path
 
-if (typeof config.reportErrors == "undefined" && config.runtimePath == "..\\Runtime" && fs.existsSync(path.join(config.retailPath, "Runtime", "chunk0.rpkg"))) {
+if (config.runtimePath == "..\\Runtime" && fs.existsSync(path.join(config.retailPath, "Runtime", "chunk0.rpkg"))) {
 	config.runtimePath = "..\\Retail\\Runtime"; fs.writeFileSync(path.join(process.cwd(), "config.json"), json5.stringify(config))
 	fs.copyFileSync(path.join(process.cwd(), "cleanMicrosoftThumbs.dat"), path.join(process.cwd(), "cleanThumbs.dat"))
 } // Automatically set runtime path and fix clean thumbs if using MS platform
