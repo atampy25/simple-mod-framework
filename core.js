@@ -21,16 +21,10 @@ if (typeof config.retailPath == "undefined") {
 	fs.writeFileSync(path.join(process.cwd(), "config.json"), json5.stringify(config))
 } // Backwards compatibility - retail path
 
-if (
-	config.runtimePath == "..\\Runtime" &&
-	fs.existsSync(path.join(config.retailPath, "Runtime", "chunk0.rpkg"))
-) {
+if (config.runtimePath == "..\\Runtime" && fs.existsSync(path.join(config.retailPath, "Runtime", "chunk0.rpkg"))) {
 	config.runtimePath = "..\\Retail\\Runtime"
 	fs.writeFileSync(path.join(process.cwd(), "config.json"), json5.stringify(config))
-	fs.copyFileSync(
-		path.join(process.cwd(), "cleanMicrosoftThumbs.dat"),
-		path.join(process.cwd(), "cleanThumbs.dat")
-	)
+	fs.copyFileSync(path.join(process.cwd(), "cleanMicrosoftThumbs.dat"), path.join(process.cwd(), "cleanThumbs.dat"))
 } // Automatically set runtime path and fix clean thumbs if using MS platform
 
 if (typeof config.reportErrors == "undefined") {

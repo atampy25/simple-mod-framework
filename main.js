@@ -32,9 +32,7 @@ process.on("SIGTERM", core.cleanExit)
 if (!core.config.reportErrors) {
 	process.on("uncaughtException", (err, origin) => {
 		if (!process.argv[2] || process.argv[2] == "kevinMode") {
-			logger.warn(
-				"Error reporting is disabled; if you experience this issue again, please enable it so that the problem can be debugged."
-			)
+			logger.warn("Error reporting is disabled; if you experience this issue again, please enable it so that the problem can be debugged.")
 		}
 
 		logger.error("Uncaught exception! " + err, false)
@@ -44,9 +42,7 @@ if (!core.config.reportErrors) {
 
 	process.on("unhandledRejection", (err, origin) => {
 		if (!process.argv[2] || process.argv[2] == "kevinMode") {
-			logger.warn(
-				"Error reporting is disabled; if you experience this issue again, please enable it so that the problem can be debugged."
-			)
+			logger.warn("Error reporting is disabled; if you experience this issue again, please enable it so that the problem can be debugged.")
 		}
 
 		logger.error("Unhandled promise rejection! " + err, false)
@@ -56,25 +52,15 @@ if (!core.config.reportErrors) {
 }
 
 if (!fs.existsSync(core.config.runtimePath)) {
-	logger.error(
-		"The Runtime folder couldn't be located, please re-read the installation instructions!"
-	)
+	logger.error("The Runtime folder couldn't be located, please re-read the installation instructions!")
 }
 
-if (
-	!fs.existsSync(path.join(core.config.retailPath, "Runtime", "chunk0.rpkg")) &&
-	!fs.existsSync(path.join(core.config.runtimePath, "..", "Retail", "HITMAN3.exe"))
-) {
+if (!fs.existsSync(path.join(core.config.retailPath, "Runtime", "chunk0.rpkg")) && !fs.existsSync(path.join(core.config.runtimePath, "..", "Retail", "HITMAN3.exe"))) {
 	logger.error("HITMAN3.exe couldn't be located, please re-read the installation instructions!")
 }
 
-if (
-	fs.existsSync(path.join(core.config.retailPath, "Runtime", "chunk0.rpkg")) &&
-	!fs.existsSync(path.join(core.config.retailPath, "..", "MicrosoftGame.Config"))
-) {
-	logger.error(
-		"The game config couldn't be located, please re-read the installation instructions!"
-	)
+if (fs.existsSync(path.join(core.config.retailPath, "Runtime", "chunk0.rpkg")) && !fs.existsSync(path.join(core.config.retailPath, "..", "MicrosoftGame.Config"))) {
+	logger.error("The game config couldn't be located, please re-read the installation instructions!")
 }
 
 core.config.platform = fs.existsSync(path.join(core.config.retailPath, "Runtime", "chunk0.rpkg"))
@@ -82,9 +68,7 @@ core.config.platform = fs.existsSync(path.join(core.config.retailPath, "Runtime"
 	: gameHashes[md5File.sync(path.join(core.config.runtimePath, "..", "Retail", "HITMAN3.exe"))] // Platform detection
 
 if (typeof core.config.platform == "undefined") {
-	logger.error(
-		"Unknown platform/game version - update both the game and the framework and if that doesn't work, contact Atampy26 on Hitman Forum!"
-	)
+	logger.error("Unknown platform/game version - update both the game and the framework and if that doesn't work, contact Atampy26 on Hitman Forum!")
 }
 
 async function doTheThing() {
@@ -95,14 +79,8 @@ async function doTheThing() {
 	for (let chunkPatchFile of fs.readdirSync(core.config.runtimePath)) {
 		try {
 			if (chunkPatchFile.includes("patch")) {
-				let chunkPatchNumberMatches = [
-					...chunkPatchFile.matchAll(/chunk[0-9]*patch([0-9]*)\.rpkg/g)
-				]
-				let chunkPatchNumber = parseInt(
-					chunkPatchNumberMatches[chunkPatchNumberMatches.length - 1][
-						chunkPatchNumberMatches[chunkPatchNumberMatches.length - 1].length - 1
-					]
-				)
+				let chunkPatchNumberMatches = [...chunkPatchFile.matchAll(/chunk[0-9]*patch([0-9]*)\.rpkg/g)]
+				let chunkPatchNumber = parseInt(chunkPatchNumberMatches[chunkPatchNumberMatches.length - 1][chunkPatchNumberMatches[chunkPatchNumberMatches.length - 1].length - 1])
 
 				if (chunkPatchNumber >= 200 && chunkPatchNumber <= 300) {
 					// The mod framework manages patch files between 200 (inc) and 300 (inc), allowing mods to place runtime files in those ranges
@@ -126,22 +104,11 @@ async function doTheThing() {
 
 	let rpkgTypes = {}
 
-	await deploy(
-		rpkgTypes,
-		WWEVpatches,
-		runtimePackages,
-		packagedefinition,
-		thumbs,
-		localisation,
-		localisationOverrides
-	)
+	await deploy(rpkgTypes, WWEVpatches, runtimePackages, packagedefinition, thumbs, localisation, localisationOverrides)
 
 	if (core.config.outputConfigToAppDataOnDeploy) {
 		fs.ensureDirSync(path.join(process.env.LOCALAPPDATA, "Simple Mod Framework"))
-		fs.writeFileSync(
-			path.join(process.env.LOCALAPPDATA, "Simple Mod Framework", "lastDeploy.json"),
-			json5.stringify(core.config)
-		)
+		fs.writeFileSync(path.join(process.env.LOCALAPPDATA, "Simple Mod Framework", "lastDeploy.json"), json5.stringify(core.config))
 	}
 
 	if (process.argv[2]) {

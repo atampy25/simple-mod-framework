@@ -27,22 +27,11 @@ function hexflip(input) {
  */
 async function extractOrCopyToTemp(rpkgOfFile, file, type, stagingChunk = "chunk0") {
 	if (!fs.existsSync(path.join(process.cwd(), "staging", stagingChunk, file + "." + type))) {
-		await rpkgInstance.callFunction(
-			`-extract_from_rpkg "${path.join(
-				config.runtimePath,
-				rpkgOfFile + ".rpkg"
-			)}" -filter "${file}" -output_path temp`
-		) // Extract the file
+		await rpkgInstance.callFunction(`-extract_from_rpkg "${path.join(config.runtimePath, rpkgOfFile + ".rpkg")}" -filter "${file}" -output_path temp`) // Extract the file
 	} else {
 		fs.ensureDirSync(path.join(process.cwd(), "temp", rpkgOfFile, type))
-		fs.copyFileSync(
-			path.join(process.cwd(), "staging", stagingChunk, file + "." + type),
-			path.join(process.cwd(), "temp", rpkgOfFile, type, file + "." + type)
-		) // Use the staging one (for mod compat - one mod can extract, patch and build, then the next can patch that one instead)
-		fs.copyFileSync(
-			path.join(process.cwd(), "staging", stagingChunk, file + "." + type + ".meta"),
-			path.join(process.cwd(), "temp", rpkgOfFile, type, file + "." + type + ".meta")
-		)
+		fs.copyFileSync(path.join(process.cwd(), "staging", stagingChunk, file + "." + type), path.join(process.cwd(), "temp", rpkgOfFile, type, file + "." + type)) // Use the staging one (for mod compat - one mod can extract, patch and build, then the next can patch that one instead)
+		fs.copyFileSync(path.join(process.cwd(), "staging", stagingChunk, file + "." + type + ".meta"), path.join(process.cwd(), "temp", rpkgOfFile, type, file + "." + type + ".meta"))
 	}
 }
 
