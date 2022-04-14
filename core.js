@@ -5,7 +5,7 @@ const Tracing = require("@sentry/tracing")
 
 const fs = require("fs-extra")
 const path = require("path")
-const md5File = require('md5-file')
+const md5File = require("md5-file")
 const json5 = require("json5")
 
 const RPKG = require("./rpkg")
@@ -21,10 +21,16 @@ if (typeof config.retailPath == "undefined") {
 	fs.writeFileSync(path.join(process.cwd(), "config.json"), json5.stringify(config))
 } // Backwards compatibility - retail path
 
-if (config.runtimePath == "..\\Runtime" && fs.existsSync(path.join(config.retailPath, "Runtime", "chunk0.rpkg"))) {
+if (
+	config.runtimePath == "..\\Runtime" &&
+	fs.existsSync(path.join(config.retailPath, "Runtime", "chunk0.rpkg"))
+) {
 	config.runtimePath = "..\\Retail\\Runtime"
 	fs.writeFileSync(path.join(process.cwd(), "config.json"), json5.stringify(config))
-	fs.copyFileSync(path.join(process.cwd(), "cleanMicrosoftThumbs.dat"), path.join(process.cwd(), "cleanThumbs.dat"))
+	fs.copyFileSync(
+		path.join(process.cwd(), "cleanMicrosoftThumbs.dat"),
+		path.join(process.cwd(), "cleanThumbs.dat")
+	)
 } // Automatically set runtime path and fix clean thumbs if using MS platform
 
 if (typeof config.reportErrors == "undefined") {
@@ -44,9 +50,7 @@ module.exports = {
 	config
 }
 
-const {
-	logger
-} = require("./utils")
+const { logger } = require("./utils")
 
 let sentryTransaction = {
 	startChild(...args) {
@@ -115,20 +119,25 @@ if (config.reportErrors) {
 
 	sentryTransaction = Sentry.startTransaction({
 		op: "deploy",
-		name: "Deploy",
+		name: "Deploy"
 	})
 
-	Sentry.configureScope(scope => {
+	Sentry.configureScope((scope) => {
 		// @ts-ignore
 		scope.setSpan(sentryTransaction)
 	})
 
-	Sentry.setTag("game_hash", fs.existsSync(path.join(config.retailPath, "Runtime", "chunk0.rpkg")) ? md5File.sync(path.join(config.retailPath, "..", "MicrosoftGame.Config")) : md5File.sync(path.join(config.runtimePath, "..", "Retail", "HITMAN3.exe")))
+	Sentry.setTag(
+		"game_hash",
+		fs.existsSync(path.join(config.retailPath, "Runtime", "chunk0.rpkg"))
+			? md5File.sync(path.join(config.retailPath, "..", "MicrosoftGame.Config"))
+			: md5File.sync(path.join(config.runtimePath, "..", "Retail", "HITMAN3.exe"))
+	)
 }
 
 function configureSentryScope(transaction) {
 	if (config.reportErrors)
-		Sentry.configureScope(scope => {
+		Sentry.configureScope((scope) => {
 			// @ts-ignore
 			scope.setSpan(transaction)
 		})
@@ -136,10 +145,7 @@ function configureSentryScope(transaction) {
 
 function cleanExit() {
 	if (config.reportErrors) {
-		Sentry.getCurrentHub()
-			.getScope()
-			.getTransaction()
-			.finish()
+		Sentry.getCurrentHub().getScope().getTransaction().finish()
 
 		sentryTransaction.finish()
 	}
