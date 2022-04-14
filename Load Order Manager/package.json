@@ -39,7 +39,7 @@
     "electron-squirrel-startup": "^1.0.0",
     "fs-extra": "^10.0.1",
     "jquery": "^3.6.0",
-    "json5": "^2.2.0",
+    "json5": "^2.2.1",
     "klaw-sync": "^6.0.0",
     "marked": "^4.0.14",
     "run-async": "^2.4.1",
