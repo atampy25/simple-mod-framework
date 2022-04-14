@@ -87,7 +87,7 @@ Each mod contains a manifest. Manifests have the following format:
     }
   ],
   "supportedPlatforms": [
-    // Supported platforms for the mod - steam and epic are the only currently supported platforms - if this is omitted it is assumed that all are supported
+    // Supported platforms for the mod - steam, epic and microsoft are the only currently supported platforms - if this is omitted it is assumed that all are supported
     "steam"
   ],
   "requirements": [
