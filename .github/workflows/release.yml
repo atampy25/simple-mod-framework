@@ -103,7 +103,7 @@ jobs:
         uses: loopwerk/tag-changelog@v1.0.4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          exclude_types: other,doc,chore,build
+          exclude_types: other,docs,chore,build
 
       - name: Release
         uses: softprops/action-gh-release@v1
