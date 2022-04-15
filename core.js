@@ -1,12 +1,10 @@
 const FrameworkVersion = "1.4.2"
 
-const Sentry = require("@sentry/node")
-const Tracing = require("@sentry/tracing")
-
 const fs = require("fs-extra")
 const path = require("path")
-const md5File = require("md5-file")
 const json5 = require("json5")
+const child_process = require("child_process")
+const chalk = require("chalk")
 
 const RPKG = require("./rpkg")
 const rpkgInstance = new RPKG.RPKGInstance()
@@ -35,123 +33,68 @@ if (typeof config.reportErrors == "undefined") {
 config.runtimePath = path.resolve(process.cwd(), config.runtimePath)
 config.retailPath = path.resolve(process.cwd(), config.retailPath)
 
+const logger =
+	!process.argv[2] || process.argv[2] == "kevinMode"
+		? {
+				debug: function (/** @type {unknown} */ text) {
+					process.stdout.write(chalk`{grey DEBUG\t${text}}\n`)
+
+					if (process.argv[2] == "kevinMode") {
+						child_process.execSync("pause", {
+							// @ts-ignore
+							shell: true,
+							stdio: [0, 1, 2]
+						})
+					}
+				},
+
+				info: function (/** @type {unknown} */ text) {
+					process.stdout.write(chalk`{blue INFO}\t${text}\n`)
+
+					if (process.argv[2] == "kevinMode") {
+						child_process.execSync("pause", {
+							// @ts-ignore
+							shell: true,
+							stdio: [0, 1, 2]
+						})
+					}
+				},
+
+				warn: function (/** @type {unknown} */ text) {
+					process.stdout.write(chalk`{yellow WARN}\t${text}\n`)
+
+					if (process.argv[2] == "kevinMode") {
+						child_process.execSync("pause", {
+							// @ts-ignore
+							shell: true,
+							stdio: [0, 1, 2]
+						})
+					}
+				},
+
+				error: function (/** @type {unknown} */ text, exitAfter = true) {
+					process.stderr.write(chalk`{red ERROR}\t${text}\n`)
+					console.trace()
+
+					child_process.execSync("pause", {
+						// @ts-ignore
+						shell: true,
+						stdio: [0, 1, 2]
+					})
+				}
+		  }
+		: {
+				debug: console.debug,
+				info: console.info,
+				warn: console.warn,
+				error: function (/** @type {any} */ a, exitAfter = true) {
+					console.log(a)
+				}
+		  } // Any arguments (except kevinMode) will cause coloured logging to be disabled
+
 module.exports = {
-	Sentry,
-	Tracing,
 	FrameworkVersion,
 	rpkgInstance,
-	cleanExit,
-	config
+	config,
+	logger
 }
-
-const { logger } = require("./utils")
-
-let sentryTransaction = {
-	startChild(...args) {
-		return {
-			startChild(...args) {
-				return {
-					startChild(...args) {
-						return {
-							startChild(...args) {
-								return {
-									startChild(...args) {
-										return {
-											startChild(...args) {
-												return {
-													startChild(...args) {
-														return {
-															finish() {}
-														}
-													},
-													finish() {}
-												}
-											},
-											finish() {}
-										}
-									},
-									finish() {}
-								}
-							},
-							finish() {}
-						}
-					},
-					finish() {}
-				}
-			},
-			finish() {}
-		}
-	},
-	finish() {}
-}
-
-if (config.reportErrors) {
-	logger.info("Initialising error reporting")
-
-	Sentry.init({
-		dsn: "https://464c3dd1424b4270803efdf7885c1b90@o1144555.ingest.sentry.io/6208676",
-		release: FrameworkVersion,
-		environment: "production",
-		tracesSampleRate: 1.0,
-		integrations: [
-			new Sentry.Integrations.OnUncaughtException({
-				onFatalError: (err) => {
-					logger.error("Uncaught exception! " + err, false)
-					logger.info("Reporting the error!")
-					cleanExit()
-				}
-			}),
-			new Sentry.Integrations.OnUnhandledRejection({
-				mode: "strict"
-			})
-		]
-	})
-
-	Sentry.setUser({
-		id: config.errorReportingID
-	})
-
-	sentryTransaction = Sentry.startTransaction({
-		op: "deploy",
-		name: "Deploy"
-	})
-
-	Sentry.configureScope((scope) => {
-		// @ts-ignore
-		scope.setSpan(sentryTransaction)
-	})
-
-	Sentry.setTag(
-		"game_hash",
-		fs.existsSync(path.join(config.retailPath, "Runtime", "chunk0.rpkg"))
-			? md5File.sync(path.join(config.retailPath, "..", "MicrosoftGame.Config"))
-			: md5File.sync(path.join(config.runtimePath, "..", "Retail", "HITMAN3.exe"))
-	)
-}
-
-function configureSentryScope(transaction) {
-	if (config.reportErrors)
-		Sentry.configureScope((scope) => {
-			// @ts-ignore
-			scope.setSpan(transaction)
-		})
-}
-
-function cleanExit() {
-	if (config.reportErrors) {
-		Sentry.getCurrentHub().getScope().getTransaction().finish()
-
-		sentryTransaction.finish()
-	}
-
-	Sentry.close(2000).then(() => {
-		rpkgInstance.exit()
-		try {
-			global.currentWorkerPool.destroy()
-		} catch {}
-		process.exit()
-	})
-}
-
-module.exports.sentryTransaction = sentryTransaction
-module.exports.configureSentryScope = configureSentryScope

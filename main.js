@@ -9,10 +9,13 @@ const json5 = require("json5")
 const luxon = require("luxon")
 const md5File = require("md5-file")
 
-const core = require("./core")
+const Sentry = require("@sentry/node")
+const Tracing = require("@sentry/tracing")
 
-const { logger } = require("./utils")
+const core = require("./core-singleton")
 
+const discover = require("./discover")
+const difference = require("./difference")
 const deploy = require("./deploy")
 
 require("clarify")
@@ -26,41 +29,38 @@ const gameHashes = {
 	// Gamepass/store protects the EXE from reading so we can't hash it, instead we hash the game config
 }
 
-process.on("SIGINT", core.cleanExit)
-process.on("SIGTERM", core.cleanExit)
-
 if (!core.config.reportErrors) {
 	process.on("uncaughtException", (err, origin) => {
 		if (!process.argv[2] || process.argv[2] == "kevinMode") {
-			logger.warn("Error reporting is disabled; if you experience this issue again, please enable it so that the problem can be debugged.")
+			core.logger.warn("Error reporting is disabled; if you experience this issue again, please enable it so that the problem can be debugged.")
 		}
 
-		logger.error("Uncaught exception! " + err, false)
+		core.logger.error("Uncaught exception! " + err, false)
 		console.error(origin)
-		core.cleanExit()
+		core.interoperability.cleanExit()
 	})
 
 	process.on("unhandledRejection", (err, origin) => {
 		if (!process.argv[2] || process.argv[2] == "kevinMode") {
-			logger.warn("Error reporting is disabled; if you experience this issue again, please enable it so that the problem can be debugged.")
+			core.logger.warn("Error reporting is disabled; if you experience this issue again, please enable it so that the problem can be debugged.")
 		}
 
-		logger.error("Unhandled promise rejection! " + err, false)
+		core.logger.error("Unhandled promise rejection! " + err, false)
 		console.error(origin)
-		core.cleanExit()
+		core.interoperability.cleanExit()
 	})
 }
 
 if (!fs.existsSync(core.config.runtimePath)) {
-	logger.error("The Runtime folder couldn't be located, please re-read the installation instructions!")
+	core.logger.error("The Runtime folder couldn't be located, please re-read the installation instructions!")
 }
 
 if (!fs.existsSync(path.join(core.config.retailPath, "Runtime", "chunk0.rpkg")) && !fs.existsSync(path.join(core.config.runtimePath, "..", "Retail", "HITMAN3.exe"))) {
-	logger.error("HITMAN3.exe couldn't be located, please re-read the installation instructions!")
+	core.logger.error("HITMAN3.exe couldn't be located, please re-read the installation instructions!")
 }
 
 if (fs.existsSync(path.join(core.config.retailPath, "Runtime", "chunk0.rpkg")) && !fs.existsSync(path.join(core.config.retailPath, "..", "MicrosoftGame.Config"))) {
-	logger.error("The game config couldn't be located, please re-read the installation instructions!")
+	core.logger.error("The game config couldn't be located, please re-read the installation instructions!")
 }
 
 core.config.platform = fs.existsSync(path.join(core.config.retailPath, "Runtime", "chunk0.rpkg"))
@@ -68,8 +68,118 @@ core.config.platform = fs.existsSync(path.join(core.config.retailPath, "Runtime"
 	: gameHashes[md5File.sync(path.join(core.config.runtimePath, "..", "Retail", "HITMAN3.exe"))] // Platform detection
 
 if (typeof core.config.platform == "undefined") {
-	logger.error("Unknown platform/game version - update both the game and the framework and if that doesn't work, contact Atampy26 on Hitman Forum!")
+	core.logger.error("Unknown platform/game version - update both the game and the framework and if that doesn't work, contact Atampy26 on Hitman Forum!")
 }
+
+core.interoperability.sentryTransaction = {
+	startChild(...args) {
+		return {
+			startChild(...args) {
+				return {
+					startChild(...args) {
+						return {
+							startChild(...args) {
+								return {
+									startChild(...args) {
+										return {
+											startChild(...args) {
+												return {
+													startChild(...args) {
+														return {
+															finish() {}
+														}
+													},
+													finish() {}
+												}
+											},
+											finish() {}
+										}
+									},
+									finish() {}
+								}
+							},
+							finish() {}
+						}
+					},
+					finish() {}
+				}
+			},
+			finish() {}
+		}
+	},
+	finish() {}
+}
+
+function configureSentryScope(transaction) {
+	if (core.config.reportErrors)
+		Sentry.configureScope((scope) => {
+			// @ts-ignore
+			scope.setSpan(transaction)
+		})
+}
+
+core.interoperability.cleanExit = function () {
+	if (core.config.reportErrors) {
+		Sentry.getCurrentHub().getScope().getTransaction().finish()
+
+		core.interoperability.sentryTransaction.finish()
+	}
+
+	Sentry.close(2000).then(() => {
+		core.rpkgInstance.exit()
+		try {
+			global.currentWorkerPool.destroy()
+		} catch {}
+		process.exit()
+	})
+}
+
+if (core.config.reportErrors) {
+	core.logger.info("Initialising error reporting")
+
+	Sentry.init({
+		dsn: "https://464c3dd1424b4270803efdf7885c1b90@o1144555.ingest.sentry.io/6208676",
+		release: core.FrameworkVersion,
+		environment: "production",
+		tracesSampleRate: 1.0,
+		integrations: [
+			new Sentry.Integrations.OnUncaughtException({
+				onFatalError: (err) => {
+					core.logger.error("Uncaught exception! " + err, false)
+					core.logger.info("Reporting the error!")
+					core.interoperability.cleanExit()
+				}
+			}),
+			new Sentry.Integrations.OnUnhandledRejection({
+				mode: "strict"
+			})
+		]
+	})
+
+	Sentry.setUser({
+		id: core.config.errorReportingID
+	})
+
+	core.interoperability.sentryTransaction = Sentry.startTransaction({
+		op: "deploy",
+		name: "Deploy"
+	})
+
+	Sentry.configureScope((scope) => {
+		// @ts-ignore
+		scope.setSpan(core.interoperability.sentryTransaction)
+	})
+
+	Sentry.setTag(
+		"game_hash",
+		fs.existsSync(path.join(core.config.retailPath, "Runtime", "chunk0.rpkg"))
+			? md5File.sync(path.join(core.config.retailPath, "..", "MicrosoftGame.Config"))
+			: md5File.sync(path.join(core.config.runtimePath, "..", "Retail", "HITMAN3.exe"))
+	)
+}
+
+process.on("SIGINT", core.interoperability.cleanExit)
+process.on("SIGTERM", core.interoperability.cleanExit)
 
 async function doTheThing() {
 	let startedDate = luxon.DateTime.now()
@@ -102,9 +212,29 @@ async function doTheThing() {
 	let runtimePackages = []
 	let WWEVpatches = {}
 
+	/** @type {{ [x: string]: string; }} */
 	let rpkgTypes = {}
 
-	await deploy(rpkgTypes, WWEVpatches, runtimePackages, packagedefinition, thumbs, localisation, localisationOverrides)
+	const fileMap = await discover()
+	fs.ensureDirSync(path.join(process.cwd(), "cache"))
+
+	const { invalidData, cachedData } = await difference(fs.existsSync(path.join(process.cwd(), "cache", "map.json")) ? fs.readJSONSync(path.join(process.cwd(), "cache", "map.json")) : {}, fileMap)
+
+	fs.writeJSONSync(path.join(process.cwd(), "cache", "map.json"), fileMap)
+
+	await deploy(
+		core.interoperability.sentryTransaction,
+		configureSentryScope,
+		invalidData,
+		cachedData,
+		rpkgTypes,
+		WWEVpatches,
+		runtimePackages,
+		packagedefinition,
+		thumbs,
+		localisation,
+		localisationOverrides
+	)
 
 	if (core.config.outputConfigToAppDataOnDeploy) {
 		fs.ensureDirSync(path.join(process.env.LOCALAPPDATA, "Simple Mod Framework"))
@@ -112,9 +242,9 @@ async function doTheThing() {
 	}
 
 	if (process.argv[2]) {
-		logger.info("Deployed all mods successfully.")
+		core.logger.info("Deployed all mods successfully.")
 	} else {
-		logger.info(
+		core.logger.info(
 			"Done " +
 				luxon.DateTime.now()
 					.plus({
@@ -126,7 +256,7 @@ async function doTheThing() {
 		)
 	}
 
-	core.cleanExit()
+	core.interoperability.cleanExit()
 }
 
 doTheThing()

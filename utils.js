@@ -1,10 +1,9 @@
 const fs = require("fs-extra")
 const path = require("path")
-const chalk = require("chalk")
-const child_process = require("child_process")
-const xxHash64 = require("hash-wasm").xxhash64
+const checkDiskSpace = require("util").promisify(require("diskspace").check)
+const freeSpace = async () => Number((await checkDiskSpace(process.cwd().split(":")[0])).free) / 1024 / 1024 / 1024
 
-const { rpkgInstance, cleanExit, config } = require("./core")
+const { rpkgInstance, config } = require("./core-singleton")
 
 /**
  * @param {string} input
@@ -36,77 +35,44 @@ async function extractOrCopyToTemp(rpkgOfFile, file, type, stagingChunk = "chunk
 }
 
 /**
- * @param {number | fs.PathLike} path
+ * @param {string} mod
+ * @param {string} cachePath
+ * @param {string} outputPath
  */
-async function xxHashFile(path) {
-	return await xxHash64(await fs.readFile(path))
+async function copyFromCache(mod, cachePath, outputPath) {
+	if (fs.existsSync(path.join(process.cwd(), "cache", winPathEscape(mod), cachePath))) {
+		fs.ensureDirSync(outputPath)
+		fs.copySync(path.join(process.cwd(), "cache", winPathEscape(mod), cachePath), outputPath)
+		return true
+	}
+
+	return false
 }
 
-const logger =
-	!process.argv[2] || process.argv[2] == "kevinMode"
-		? {
-				debug: function (/** @type {unknown} */ text) {
-					process.stdout.write(chalk`{grey DEBUG\t${text}}\n`)
+/**
+ * @param {string} mod
+ * @param {string} originalPath
+ * @param {string} cachePath
+ */
+async function copyToCache(mod, originalPath, cachePath) {
+	// do not cache if less than 5 GB remaining on disk
+	if (fs.existsSync(originalPath) && (await freeSpace()) > 5) {
+		fs.ensureDirSync(path.join(process.cwd(), "cache", winPathEscape(mod), cachePath))
+		fs.copySync(originalPath, path.join(process.cwd(), "cache", winPathEscape(mod), cachePath))
+		return true
+	}
 
-					if (process.argv[2] == "kevinMode") {
-						child_process.execSync("pause", {
-							// @ts-ignore
-							shell: true,
-							stdio: [0, 1, 2]
-						})
-					}
-				},
+	return false
+}
 
-				info: function (/** @type {unknown} */ text) {
-					process.stdout.write(chalk`{blue INFO}\t${text}\n`)
-
-					if (process.argv[2] == "kevinMode") {
-						child_process.execSync("pause", {
-							// @ts-ignore
-							shell: true,
-							stdio: [0, 1, 2]
-						})
-					}
-				},
-
-				warn: function (/** @type {unknown} */ text) {
-					process.stdout.write(chalk`{yellow WARN}\t${text}\n`)
-
-					if (process.argv[2] == "kevinMode") {
-						child_process.execSync("pause", {
-							// @ts-ignore
-							shell: true,
-							stdio: [0, 1, 2]
-						})
-					}
-				},
-
-				error: function (/** @type {unknown} */ text, exitAfter = true) {
-					process.stderr.write(chalk`{red ERROR}\t${text}\n`)
-					console.trace()
-
-					child_process.execSync("pause", {
-						// @ts-ignore
-						shell: true,
-						stdio: [0, 1, 2]
-					})
-
-					if (exitAfter) cleanExit()
-				}
-		  }
-		: {
-				debug: console.debug,
-				info: console.info,
-				warn: console.warn,
-				error: function (/** @type {any} */ a, exitAfter = true) {
-					console.log(a)
-					if (exitAfter) cleanExit()
-				}
-		  } // Any arguments (except kevinMode) will cause coloured logging to be disabled
+function winPathEscape(str) {
+	return str.replace("<", "").replace(">", "").replace(":", "").replace('"', "").replace("/", "").replace("\\", "").replace("|", "").replace("?", "").replace("*", "")
+}
 
 module.exports = {
 	hexflip,
 	extractOrCopyToTemp,
-	xxHashFile,
-	logger
+	copyFromCache,
+	copyToCache,
+	winPathEscape
 }
