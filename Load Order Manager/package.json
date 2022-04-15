@@ -1,15 +1,15 @@
 {
-  "name": "LoadOrderManager",
+  "name": "load-order-manager",
   "productName": "Load Order Manager",
   "version": "1.0.0",
   "description": "Load order manager for the framework",
   "main": "src/index.js",
   "scripts": {
-    "start": "electron-forge start",
-    "package": "electron-forge package",
-    "make": "electron-forge make",
-    "publish": "electron-forge publish",
-    "lint": "echo \"No linting configured\""
+    "lom:start": "electron-forge start",
+    "lom:package": "electron-forge package",
+    "lom:make": "electron-forge make",
+    "lom:publish": "electron-forge publish",
+    "lom:lint": "echo \"No linting configured\""
   },
   "keywords": [],
   "author": {

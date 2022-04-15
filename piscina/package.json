@@ -1,28 +1,4 @@
 {
-  "_from": "piscina",
-  "_id": "piscina@3.1.0",
-  "_inBundle": false,
-  "_integrity": "sha512-KTW4sjsCD34MHrUbx9eAAbuUSpVj407hQSgk/6Epkg0pbRBmv4a3UX7Sr8wxm9xYqQLnsN4mFOjqGDzHAdgKQg==",
-  "_location": "/piscina",
-  "_phantomChildren": {},
-  "_requested": {
-    "type": "tag",
-    "registry": true,
-    "raw": "piscina",
-    "name": "piscina",
-    "escapedName": "piscina",
-    "rawSpec": "",
-    "saveSpec": null,
-    "fetchSpec": "latest"
-  },
-  "_requiredBy": [
-    "#USER",
-    "/"
-  ],
-  "_resolved": "https://registry.npmjs.org/piscina/-/piscina-3.1.0.tgz",
-  "_shasum": "2333636865b6cb69c5a370bbc499a98cabcf3e04",
-  "_spec": "piscina",
-  "_where": "C:\\Users\\User\\Documents\\Github\\simple-mod-framework",
   "author": {
     "name": "James M Snell",
     "email": "jasnell@gmail.com"
@@ -44,8 +20,7 @@
   "dependencies": {
     "eventemitter-asyncresource": "^1.0.0",
     "hdr-histogram-js": "^2.0.1",
-    "hdr-histogram-percentiles-obj": "^3.0.0",
-    "nice-napi": "^1.0.2"
+    "hdr-histogram-percentiles-obj": "^3.0.0"
   },
   "deprecated": false,
   "description": "A fast, efficient Node.js Worker Thread Pool implementation",
@@ -108,7 +83,7 @@
   "scripts": {
     "build": "tsc && gen-esm-wrapper . dist/esm-wrapper.mjs",
     "lint": "standardx \"**/*.{ts,mjs,js,cjs}\" | snazzy",
-    "prepack": "npm run build"
+    "prepack": "yarn build"
   },
   "standardx": {
     "parser": "@typescript-eslint/parser",

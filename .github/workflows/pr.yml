@@ -19,30 +19,16 @@ jobs:
         id: cache
         uses: actions/cache@v2.1.6
         with:
-          path: node_modules
+          path: .yarn/cache
           key: buildCachev17
 
-      - name: Cache
-        id: cache2
-        uses: actions/cache@v2.1.6
-        with:
-          path: Load Order Manager/node_modules
-          key: buildCache2v10
-
       - name: Install dependencies
-        if: steps.cache.outputs.cache-hit != 'true'
         run: |
-          npm install
-
-      - name: Prep
-        run: |
-          npm install -g pkg
+          yarn
 
       - name: Build EXE
         run: |
-          New-Item -ItemType Directory -Force -Path ./node_modules/piscina
-          robocopy ./piscina ./node_modules/piscina /COPYALL /E /is /it; if ($lastexitcode -lt 8) { $global:LASTEXITCODE = $null }
-          pkg package.json --targets node14-win-x64 --output Deploy.exe --compress Brotli
+          yarn build-exe
 
       - name: Download RPKG
         uses: aochmann/actions-download-artifact@5709392f11b5937bd316e52687ad87f7deced5f5
@@ -60,18 +46,9 @@ jobs:
           latest: true
           path: './Third-Party'
 
-      - name: Install GUI dependencies
-        if: steps.cache2.outputs.cache-hit != 'true'
-        run: |
-          cd "Load Order Manager"
-          npm install
-          cd ../
-
       - name: Build GUI
         run: |
-          cd "Load Order Manager"
-          npm run make
-          cd ../
+          yarn lom:make
 
       - name: Ready for zip
         run: |

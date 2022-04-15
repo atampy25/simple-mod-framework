@@ -420,7 +420,7 @@ if (!automateMode) {
 		})).value
 	} else {
 		var allEntityNames = TBLU.subEntities.map(object => object.entityName)
-	
+
 		if (new Set(allEntityNames).size == allEntityNames.length) {
 			argsMode = "names"
 		} else {
@@ -514,7 +514,7 @@ for (var entry of TEMP.subEntities) {
 		"entityID": new Decimal(TBLU.subEntities[index].entityId.value).toHex().substring(2)
 	})
 
-	if (argsMode == "ids") {
+	if (argsMode === "ids") {
 		entity.entities[index].refID = index
 	}
 
@@ -561,15 +561,15 @@ for (var entry of entity.entities) {
 	if (!entry.propertyAliases.length) {
 		delete entry.propertyAliases
 	}
-	
+
 	if (!entry.exposedEntities.length) {
 		delete entry.exposedEntities
 	}
-	
+
 	if (!entry.exposedInterfaces.length) {
 		delete entry.exposedInterfaces
 	}
-	
+
 	if (!entry.entitySubsets.length) {
 		delete entry.entitySubsets
 	}
@@ -1302,8 +1302,8 @@ async function createPatchJSON(automateQN1Path = false, automateQN2Path = false,
 		}
 
 		if (entry.exposedInterfaces)
-		for (let interface of entry.exposedInterfaces) {
-			interface[1] = entity1.entities[findEntityCacheEntity1[interface[1]]].entityID
+		for (let theInterface of entry.exposedInterfaces) {
+			theInterface[1] = entity1.entities[findEntityCacheEntity1[theInterface[1]]].entityID
 		}
 
 		if (entry.entitySubsets)
@@ -1386,8 +1386,8 @@ async function createPatchJSON(automateQN1Path = false, automateQN2Path = false,
 		}
 
 		if (entry.exposedInterfaces)
-		for (let interface of entry.exposedInterfaces) {
-			interface[1] = entity2.entities[findEntityCacheEntity2[interface[1]]].entityID
+		for (let theInterface of entry.exposedInterfaces) {
+			theInterface[1] = entity2.entities[findEntityCacheEntity2[theInterface[1]]].entityID
 		}
 
 		if (entry.entitySubsets)
@@ -1478,7 +1478,7 @@ async function createPatchJSON(automateQN1Path = false, automateQN2Path = false,
 	delete entity2.quickEntityVersion
 
 		let patch = rfc6902.createPatch(entity1, entity2, patchCheckLosslessNumber)
-	
+
 	let outputPatchJSON = {
 		tempHash: entity2.tempHash,
     	tbluHash: entity2.tbluHash,
@@ -1538,8 +1538,8 @@ async function applyPatchJSON(automateQNPath = false, automatePatchPath = false,
 		}
 
 		if (entry.exposedInterfaces)
-		for (let interface of entry.exposedInterfaces) {
-			interface[1] = entity.entities[findEntityCache[interface[1]]].entityID
+		for (let theInterface of entry.exposedInterfaces) {
+			theInterface[1] = entity.entities[findEntityCache[theInterface[1]]].entityID
 		}
 
 		if (entry.entitySubsets)
@@ -1614,7 +1614,7 @@ async function applyPatchJSON(automateQNPath = false, automatePatchPath = false,
 	entity.entities = candidate
 
 		rfc6902.applyPatch(entity, patch.patch)
-	
+
 	let newEntity = LosslessJSON.parse(LosslessJSON.stringify(entity))
 	newEntity.entities = []
 
@@ -1622,7 +1622,7 @@ async function applyPatchJSON(automateQNPath = false, automatePatchPath = false,
 	for (let entry of Object.entries(entity.entities)) {
 		newEntity.entities.push(entry[1])
 		newEntity.entities[index].entityID = entry[0]
-		
+
 		index++
 	}
 
@@ -1654,8 +1654,8 @@ async function applyPatchJSON(automateQNPath = false, automatePatchPath = false,
 		}
 
 		if (entry.exposedInterfaces)
-		for (let interface of entry.exposedInterfaces) {
-			interface[1] = new LosslessJSON.LosslessNumber(newFindEntityCache[interface[1]])
+		for (let theInterface of entry.exposedInterfaces) {
+			theInterface[1] = new LosslessJSON.LosslessNumber(newFindEntityCache[theInterface[1]])
 		}
 
 		if (entry.entitySubsets)
