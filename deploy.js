@@ -636,7 +636,7 @@ module.exports = async function deploy(
 										child_process.execSync(
 											`"Third-Party\\HMTextureTools" rebuild H3 "${contentFilePath}" --metapath "${contentFilePath + ".meta"}" "${path.join(
 												process.cwd(),
-												"staging",
+												"temp",
 												chunkFolder,
 												path.basename(contentFilePath).split(".")[0].split("~")[0] + ".TEXT"
 											)}" --rebuildboth --texdoutput "${path.join(process.cwd(), "temp", chunkFolder, path.basename(contentFilePath).split(".")[0].split("~")[1] + ".TEXD")}"`
@@ -688,14 +688,14 @@ module.exports = async function deploy(
 										child_process.execSync(
 											`"Third-Party\\HMTextureTools" rebuild H3 "${contentFilePath}" --metapath "${contentFilePath + ".meta"}" "${path.join(
 												process.cwd(),
-												"staging",
+												"temp",
 												chunkFolder,
 												path.basename(contentFilePath).split(".")[0] + ".TEXT"
 											)}"`
 										) // Rebuild texture to TEXT only
 
 										fs.writeFileSync(
-											path.join(process.cwd(), "staging", chunkFolder, path.basename(contentFilePath).split(".")[0] + ".TEXT.meta.json"),
+											path.join(process.cwd(), "temp", chunkFolder, path.basename(contentFilePath).split(".")[0] + ".TEXT.meta.json"),
 											JSON.stringify({
 												hash_value: path.basename(contentFilePath).split(".")[0].split("~")[0],
 												hash_offset: 21488715,
@@ -710,7 +710,7 @@ module.exports = async function deploy(
 											})
 										)
 										await rpkgInstance.callFunction(
-											`-json_to_hash_meta "${path.join(process.cwd(), "staging", chunkFolder, path.basename(contentFilePath).split(".")[0] + ".TEXT.meta.json")}"`
+											`-json_to_hash_meta "${path.join(process.cwd(), "temp", chunkFolder, path.basename(contentFilePath).split(".")[0] + ".TEXT.meta.json")}"`
 										) // Rebuild the meta
 									}
 
