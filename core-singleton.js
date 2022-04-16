@@ -5,5 +5,6 @@ module.exports = {
 	rpkgInstance: core.rpkgInstance,
 	config: core.config,
 	logger: core.logger,
+	isDevBuild: core.isDevBuild,
 	interoperability: {}
 }

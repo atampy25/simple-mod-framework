@@ -139,7 +139,7 @@ if (core.config.reportErrors) {
 
 	Sentry.init({
 		dsn: "https://464c3dd1424b4270803efdf7885c1b90@o1144555.ingest.sentry.io/6208676",
-		release: core.FrameworkVersion,
+		release: core.isDevBuild ? "dev" : core.FrameworkVersion,
 		environment: "production",
 		tracesSampleRate: 1.0,
 		integrations: [

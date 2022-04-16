@@ -1,4 +1,5 @@
 const FrameworkVersion = "1.4.2"
+const isDevBuild = true
 
 const fs = require("fs-extra")
 const path = require("path")
@@ -98,5 +99,6 @@ module.exports = {
 	FrameworkVersion,
 	rpkgInstance,
 	config,
-	logger
+	logger,
+	isDevBuild
 }
