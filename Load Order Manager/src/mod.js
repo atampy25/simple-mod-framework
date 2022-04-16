@@ -33,24 +33,48 @@ async function updateFramework() {
 			Swal.showLoading()
 
 			setTimeout(async () => {
-				await downloadFile((await fetch("https://github.com/hitman-resources/simple-mod-framework/releases/latest/download/Release.zip")).url, {
-					directory: ".",
-					filename: "latest-release.zip",
-					timeout: 999999999
-				})
+				try {
+					await downloadFile((await fetch("https://github.com/hitman-resources/simple-mod-framework/releases/latest/download/Release.zip")).url, {
+						directory: ".",
+						filename: "latest-release.zip",
+						timeout: 999999999
+					})
+				} catch {
+					Swal.close()
+					await Swal.fire({
+						title: "Update failed",
+						html: "The update failed to download. Please try again later.",
+						width: "40rem",
+						icon: "error"
+					})
+					return
+				}
 
 				fs.removeSync("./staging")
 				fs.ensureDirSync("./staging")
 
 				let success = false
-				while (!success) {
+				let tried = 0
+				while (!success && tried < 30) {
 					try {
 						new AdmZip("./latest-release.zip").extractAllTo("./staging")
 						success = true
 					} catch {
 						success = false
+						tried++
 						await new Promise((r) => setTimeout(r, 2000))
 					}
+				}
+
+				if (!success) {
+					Swal.close()
+					await Swal.fire({
+						title: "Update failed",
+						html: "The update failed to download. Please try again later.",
+						width: "40rem",
+						icon: "error"
+					})
+					return
 				}
 
 				fs.removeSync("./staging/Mods")
@@ -153,24 +177,45 @@ async function updateMod(modFolder) {
 					Swal.showLoading()
 
 					setTimeout(async () => {
-						await downloadFile((await fetch(updateData.url.startsWith("https://") ? updateData.url : new Error())).url, {
-							directory: ".",
-							filename: "mod.zip",
-							timeout: 999999999
-						})
-
-						fs.removeSync("./staging")
-						fs.ensureDirSync("./staging")
+						try {
+							await downloadFile((await fetch(updateData.url.startsWith("https://") ? updateData.url : new Error())).url, {
+								directory: ".",
+								filename: "mod.zip",
+								timeout: 999999999
+							})
+						} catch {
+							Swal.close()
+							await Swal.fire({
+								title: "Update failed",
+								html: "The update failed to download. Please try again later.",
+								width: "40rem",
+								icon: "error"
+							})
+							return
+						}
 
 						let success = false
-						while (!success) {
+						let tried = 0
+						while (!success && tried < 30) {
 							try {
 								new AdmZip("./mod.zip").extractAllTo("./staging")
 								success = true
 							} catch {
 								success = false
+								tried++
 								await new Promise((r) => setTimeout(r, 2000))
 							}
+						}
+
+						if (!success) {
+							Swal.close()
+							await Swal.fire({
+								title: "Update failed",
+								html: "The update failed to download. Please try again later.",
+								width: "40rem",
+								icon: "error"
+							})
+							return
 						}
 
 						for (var managedFile of updateData.managedFilesAndFolders) {
