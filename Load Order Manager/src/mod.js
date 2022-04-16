@@ -213,6 +213,12 @@ async function execute() {
 		fs.writeFileSync("../config.json", json5.stringify(config))
 	}
 
+	if (fs.existsSync(path.join(json5.parse(fs.readFileSync("../config.json")).retailPath, "Runtime", "chunk0.rpkg")) && json5.parse(fs.readFileSync("../config.json")).runtimePath == "..\\Runtime") {
+		let config = json5.parse(String(fs.readFileSync("../config.json")))
+		config.runtimePath = "..\\Retail\\Runtime"
+		fs.writeFileSync("../config.json", json5.stringify(config))
+	}
+
 	try {
 		if (!fs.existsSync(path.resolve("..", json5.parse(fs.readFileSync("../config.json")).runtimePath))) {
 			showMessage(
