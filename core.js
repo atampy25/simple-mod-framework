@@ -10,10 +10,12 @@ const RPKG = require("./rpkg")
 const rpkgInstance = new RPKG.RPKGInstance()
 
 const config = json5.parse(String(fs.readFileSync(path.join(process.cwd(), "config.json"))))
+
 if (typeof config.outputConfigToAppDataOnDeploy == "undefined") {
 	config.outputConfigToAppDataOnDeploy = true
 	fs.writeFileSync(path.join(process.cwd(), "config.json"), json5.stringify(config))
 } // Backwards compatibility - output config to appdata on deploy
+
 if (typeof config.retailPath == "undefined") {
 	config.retailPath = "..\\Retail"
 	fs.writeFileSync(path.join(process.cwd(), "config.json"), json5.stringify(config))
@@ -23,7 +25,7 @@ if (config.runtimePath == "..\\Runtime" && fs.existsSync(path.join(config.retail
 	config.runtimePath = "..\\Retail\\Runtime"
 	fs.writeFileSync(path.join(process.cwd(), "config.json"), json5.stringify(config))
 	fs.copyFileSync(path.join(process.cwd(), "cleanMicrosoftThumbs.dat"), path.join(process.cwd(), "cleanThumbs.dat"))
-} // Automatically set runtime path and fix clean thumbs if using MS platform
+} // Automatically set runtime path and fix clean thumbs if using microsoft platform
 
 if (typeof config.reportErrors == "undefined") {
 	config.reportErrors = false
