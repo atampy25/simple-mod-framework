@@ -1,7 +1,7 @@
 const fs = require("fs-extra")
 const path = require("path")
-const checkDiskSpace = require("util").promisify(require("diskspace").check)
-const freeSpace = async () => Number((await checkDiskSpace(process.cwd().split(":")[0])).free) / 1024 / 1024 / 1024
+const checkDiskSpace = require("check-disk-space").default
+const freeSpace = async () => Number((await checkDiskSpace(process.cwd())).free) / 1024 / 1024 / 1024
 
 const { rpkgInstance, config } = require("./core-singleton")
 
