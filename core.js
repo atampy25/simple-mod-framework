@@ -84,6 +84,8 @@ const logger =
 						shell: true,
 						stdio: [0, 1, 2]
 					})
+
+					if (exitAfter) global.errored = true
 				}
 		  }
 		: {
@@ -92,6 +94,8 @@ const logger =
 				warn: console.warn,
 				error: function (/** @type {any} */ a, exitAfter = true) {
 					console.log(a)
+
+					if (exitAfter) global.errored = true
 				}
 		  } // Any arguments (except kevinMode) will cause coloured logging to be disabled
 

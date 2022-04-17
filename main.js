@@ -236,27 +236,32 @@ async function doTheThing() {
 		localisationOverrides
 	)
 
-	if (core.config.outputConfigToAppDataOnDeploy) {
-		fs.ensureDirSync(path.join(process.env.LOCALAPPDATA, "Simple Mod Framework"))
-		fs.writeFileSync(path.join(process.env.LOCALAPPDATA, "Simple Mod Framework", "lastDeploy.json"), json5.stringify(core.config))
-	}
-
-	if (process.argv[2]) {
-		core.logger.info("Deployed all mods successfully.")
+	if (global.errored) {
+		core.logger.error("Deploy failed.", false)
+		core.interoperability.cleanExit()
 	} else {
-		core.logger.info(
-			"Done " +
-				luxon.DateTime.now()
-					.plus({
-						// @ts-ignore
-						milliseconds: luxon.DateTime.now() - startedDate
-					})
-					.toRelative() +
-				"."
-		)
-	}
+		if (core.config.outputConfigToAppDataOnDeploy) {
+			fs.ensureDirSync(path.join(process.env.LOCALAPPDATA, "Simple Mod Framework"))
+			fs.writeFileSync(path.join(process.env.LOCALAPPDATA, "Simple Mod Framework", "lastDeploy.json"), json5.stringify(core.config))
+		}
 
-	core.interoperability.cleanExit()
+		if (process.argv[2]) {
+			core.logger.info("Deployed all mods successfully.")
+		} else {
+			core.logger.info(
+				"Done " +
+					luxon.DateTime.now()
+						.plus({
+							// @ts-ignore
+							milliseconds: luxon.DateTime.now() - startedDate
+						})
+						.toRelative() +
+					"."
+			)
+		}
+
+		core.interoperability.cleanExit()
+	}
 }
 
 doTheThing()
