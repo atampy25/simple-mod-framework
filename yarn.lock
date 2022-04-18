@@ -1698,15 +1698,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"async@npm:^2.0.0":
-  version: 2.6.4
-  resolution: "async@npm:2.6.4"
-  dependencies:
-    lodash: ^4.17.14
-  checksum: a52083fb32e1ebe1d63e5c5624038bb30be68ff07a6c8d7dfe35e47c93fc144bd8652cbec869e0ac07d57dde387aa5f1386be3559cdee799cb1f789678d88e19
-  languageName: node
-  linkType: hard
-
 "asynckit@npm:^0.4.0":
   version: 0.4.0
   resolution: "asynckit@npm:0.4.0"
@@ -2118,6 +2109,13 @@ __metadata:
   version: 0.0.2
   resolution: "charenc@npm:0.0.2"
   checksum: 81dcadbe57e861d527faf6dd3855dc857395a1c4d6781f4847288ab23cffb7b3ee80d57c15bba7252ffe3e5e8019db767757ee7975663ad2ca0939bb8fcaf2e5
+  languageName: node
+  linkType: hard
+
+"check-disk-space@npm:^3.3.0":
+  version: 3.3.0
+  resolution: "check-disk-space@npm:3.3.0"
+  checksum: a4f5e06ed1b5b949b8a96c87263102b73683afd3da29434c11395d51ec73502455c32fdf62970fe981e72b933f7bfc47df596ed0375171295239487ea714a8b7
   languageName: node
   linkType: hard
 
@@ -2985,20 +2983,6 @@ __metadata:
   bin:
     electron-installer-redhat: src/cli.js
   conditions: (os=darwin | os=linux)
-  languageName: node
-  linkType: hard
-
-"electron-json-storage@npm:^4.5.0":
-  version: 4.5.0
-  resolution: "electron-json-storage@npm:4.5.0"
-  dependencies:
-    async: ^2.0.0
-    lockfile: ^1.0.4
-    lodash: ^4.0.1
-    mkdirp: ^0.5.1
-    rimraf: ^2.5.1
-    write-file-atomic: ^2.4.2
-  checksum: 25b0cbfed7c0020b4ce0e9422933ea717441efbfb5918751b6acd115b4a375bdcdca2cb5564b7c1aa16ef56aa0d845b89e83d69f2e9bdccdc3e8c71cc354f858
   languageName: node
   linkType: hard
 
@@ -5706,15 +5690,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"lockfile@npm:^1.0.4":
-  version: 1.0.4
-  resolution: "lockfile@npm:1.0.4"
-  dependencies:
-    signal-exit: ^3.0.2
-  checksum: 8de35aace8acbe883cbca3cc3959e88904d57c79dccd4afffc64aea8f9cf7b4c63598d08b8add66fbf381f8fb3ce4fd4c518cd231c797c266b6c790eb7b33abc
-  languageName: node
-  linkType: hard
-
 "lodash._reinterpolate@npm:^3.0.0":
   version: 3.0.0
   resolution: "lodash._reinterpolate@npm:3.0.0"
@@ -5783,7 +5758,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"lodash@npm:^4.0.1, lodash@npm:^4.17.10, lodash@npm:^4.17.11, lodash@npm:^4.17.14, lodash@npm:^4.17.15, lodash@npm:^4.17.20, lodash@npm:^4.17.21, lodash@npm:^4.17.4":
+"lodash@npm:^4.17.10, lodash@npm:^4.17.11, lodash@npm:^4.17.15, lodash@npm:^4.17.20, lodash@npm:^4.17.21, lodash@npm:^4.17.4":
   version: 4.17.21
   resolution: "lodash@npm:4.17.21"
   checksum: eb835a2e51d381e561e508ce932ea50a8e5a68f4ebdd771ea240d3048244a8d13658acbd502cd4829768c56f2e16bdd4340b9ea141297d472517b83868e677f7
@@ -7919,7 +7894,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"rimraf@npm:^2.5.1, rimraf@npm:^2.6.3":
+"rimraf@npm:^2.6.3":
   version: 2.7.1
   resolution: "rimraf@npm:2.7.1"
   dependencies:
@@ -8170,10 +8145,10 @@ __metadata:
     "@sentry/node": ^6.19.6
     "@sentry/tracing": ^6.19.6
     chalk: ^4.1.2
+    check-disk-space: ^3.3.0
     clarify: ^2.1.0
     decimal.js: ^10.3.1
     diskspace: ^2.0.0
-    electron-json-storage: ^4.5.0
     eslint: ^8.13.0
     eventemitter-asyncresource: ^1.0.0
     fs-extra: ^10.0.1
@@ -9514,17 +9489,6 @@ __metadata:
   version: 1.0.2
   resolution: "wrappy@npm:1.0.2"
   checksum: 159da4805f7e84a3d003d8841557196034155008f817172d4e986bd591f74aa82aa7db55929a54222309e01079a65a92a9e6414da5a6aa4b01ee44a511ac3ee5
-  languageName: node
-  linkType: hard
-
-"write-file-atomic@npm:^2.4.2":
-  version: 2.4.3
-  resolution: "write-file-atomic@npm:2.4.3"
-  dependencies:
-    graceful-fs: ^4.1.11
-    imurmurhash: ^0.1.4
-    signal-exit: ^3.0.2
-  checksum: 2db81f92ae974fd87ab4a5e7932feacaca626679a7c98fcc73ad8fcea5a1950eab32fa831f79e9391ac99b562ca091ad49be37a79045bd65f595efbb8f4596ae
   languageName: node
   linkType: hard
 
