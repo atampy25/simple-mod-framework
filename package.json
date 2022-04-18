@@ -37,6 +37,7 @@
     "typescript": "^4.6.3"
   },
   "scripts": {
+    "build-exe": "pkg package.json --targets node16-win-x64 --output Deploy.exe --compress Brotli",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "bin": "main.js",
