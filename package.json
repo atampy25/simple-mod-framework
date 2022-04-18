@@ -11,7 +11,7 @@
     "clarify": "^2.1.0",
     "decimal.js": "^10.3.1",
     "eventemitter-asyncresource": "^1.0.0",
-    "fs-extra": "^10.0.1",
+    "fs-extra": "^10.1.0",
     "hash-wasm": "^4.9.0",
     "hdr-histogram-js": "^3.0.0",
     "hdr-histogram-percentiles-obj": "^3.0.0",
