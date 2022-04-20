@@ -355,14 +355,18 @@ module.exports = async function deploy(
 									invalidatedData.some((a) => a.filePath == path.join(process.cwd(), "Mods", mod, chunkFolder, path.basename(contentFilePath))) || // must redeploy, invalid cache
 									!(await copyFromCache(mod, path.join(chunkFolder, path.basename(contentFilePath)), path.join(process.cwd(), "staging", chunkFolder))) // cache is not available
 								) {
-									await QuickEntity[Object.keys(QuickEntity)[Object.keys(QuickEntity).findIndex((a) => parseFloat(a) > Number(entityContent.quickEntityVersion.value)) - 1]].generate(
-										"HM3",
-										contentFilePath,
-										path.join(process.cwd(), "temp", "temp.TEMP.json"),
-										path.join(process.cwd(), "temp", entityContent.tempHash + ".TEMP.meta.json"),
-										path.join(process.cwd(), "temp", "temp.TBLU.json"),
-										path.join(process.cwd(), "temp", entityContent.tbluHash + ".TBLU.meta.json")
-									)
+									try {
+										await QuickEntity[Object.keys(QuickEntity)[Object.keys(QuickEntity).findIndex((a) => parseFloat(a) > Number(entityContent.quickEntityVersion.value)) - 1]].generate(
+											"HM3",
+											contentFilePath,
+											path.join(process.cwd(), "temp", "temp.TEMP.json"),
+											path.join(process.cwd(), "temp", entityContent.tempHash + ".TEMP.meta.json"),
+											path.join(process.cwd(), "temp", "temp.TBLU.json"),
+											path.join(process.cwd(), "temp", entityContent.tbluHash + ".TBLU.meta.json")
+										)
+									} catch {
+										logger.error(`Could not generate entity ${contentFilePath}!`)
+									}
 									// Generate the RT source from the QN json
 
 									child_process.execSync(
