@@ -1,8 +1,9 @@
 const { app, BrowserWindow } = require('electron');
 const path = require('path');
+const electronSquirrel = require('electron-squirrel-startup');
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
-if (require('electron-squirrel-startup')) { // eslint-disable-line global-require
+if (electronSquirrel) {
   app.quit();
 }
 
@@ -49,7 +50,7 @@ app.on('window-all-closed', () => {
 });
 
 app.on('activate', () => {
-  // On OS X it's common to re-create a window in the app when the
+  // On macOS it's common to re-create a window in the app when the
   // dock icon is clicked and there are no other windows open.
   if (BrowserWindow.getAllWindows().length === 0) {
     createWindow();
