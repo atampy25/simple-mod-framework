@@ -2,6 +2,7 @@
   "name": "simple-mod-framework",
   "version": "1.0.0",
   "description": "",
+  "private": true,
   "main": "main.js",
   "dependencies": {
     "@sentry/node": "^6.19.6",
@@ -53,6 +54,6 @@
     "Load Order Manager"
   ],
   "resolutions": {
-    "piscina@3.1.0": "patch:piscina@npm:3.1.0#.yarn/patches/piscina-npm-3.1.0-6798ed6dc5.patch"
+    "piscina": "./.yarn/patches/piscina.tgz"
   }
 }
