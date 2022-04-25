@@ -14,7 +14,7 @@ const { marked } = require("marked")
 
 window.$ = window.jQuery = require("jquery")
 
-frameworkVersion = "1.5.0"
+frameworkVersion = "1.5.1"
 
 async function updateFramework() {
 	var latestGithubRelease = await (

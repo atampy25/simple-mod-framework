@@ -1,5 +1,5 @@
-const FrameworkVersion = "1.5.0"
-const isDevBuild = true
+const FrameworkVersion = "1.5.1"
+const isDevBuild = false
 
 const fs = require("fs-extra")
 const path = require("path")
