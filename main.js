@@ -221,9 +221,10 @@ async function doTheThing() {
 	if (fs.existsSync(path.join(process.cwd(), "cache", "map.json"))) {
 		if (
 			fs.readJSONSync(path.join(process.cwd(), "cache", "map.json")).frameworkVersion < core.FrameworkVersion ||
-			fs.readJSONSync(path.join(process.cwd(), "cache", "map.json")).game != fs.existsSync(path.join(core.config.retailPath, "Runtime", "chunk0.rpkg"))
-				? md5File.sync(path.join(core.config.retailPath, "..", "MicrosoftGame.Config"))
-				: md5File.sync(path.join(core.config.runtimePath, "..", "Retail", "HITMAN3.exe"))
+			fs.readJSONSync(path.join(process.cwd(), "cache", "map.json")).game !=
+				(fs.existsSync(path.join(core.config.retailPath, "Runtime", "chunk0.rpkg"))
+					? md5File.sync(path.join(core.config.retailPath, "..", "MicrosoftGame.Config"))
+					: md5File.sync(path.join(core.config.runtimePath, "..", "Retail", "HITMAN3.exe")))
 		) {
 			fs.emptyDirSync(path.join(process.cwd(), "cache")) // Empty the cache when the framework or game updates
 		}
