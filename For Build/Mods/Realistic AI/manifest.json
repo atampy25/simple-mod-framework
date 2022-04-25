@@ -6,7 +6,7 @@
 	"authors": [
 		"Atampy26"
 	],
-	"frameworkVersion": "1.4.2",
+	"frameworkVersion": "1.5.0",
 	"updateCheck": "https://hitman-resources.netlify.app/framework/updates/Realistic AI.json",
 	"options": [
 		{
