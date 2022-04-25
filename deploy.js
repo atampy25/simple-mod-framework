@@ -636,6 +636,8 @@ module.exports = async function deploy(
 									invalidatedData.some((a) => a.filePath == path.join(process.cwd(), "Mods", mod, chunkFolder, path.basename(contentFilePath))) || // must redeploy, invalid cache
 									!(await copyFromCache(mod, path.join(chunkFolder, path.basename(contentFilePath)), path.join(process.cwd(), "temp", chunkFolder))) // cache is not available
 								) {
+									fs.ensureDirSync(path.join(process.cwd(), "temp", chunkFolder))
+
 									if (path.basename(contentFilePath).split(".")[0].split("~").length > 1) {
 										child_process.execSync(
 											`"Third-Party\\HMTextureTools" rebuild H3 "${contentFilePath}" --metapath "${contentFilePath + ".meta"}" "${path.join(
