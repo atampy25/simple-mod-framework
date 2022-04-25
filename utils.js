@@ -66,7 +66,17 @@ async function copyToCache(mod, originalPath, cachePath) {
 }
 
 function winPathEscape(str) {
-	return str.replaceAll("<", "").replaceAll(">", "").replaceAll(":", "").replaceAll('"', "").replaceAll("/", "").replaceAll("\\", "").replaceAll("|", "").replaceAll("?", "").replaceAll("*", "")
+	return str
+		.replace(/</gi, "")
+		.replace(/>/gi, "")
+		.replace(/:/gi, "")
+		.replace(/"/gi, "")
+		.replace(/\//gi, "")
+		.replace(/\\/gi, "")
+		.replace(/\"/gi, "")
+		.replace(/\|/gi, "")
+		.replace(/\?/gi, "")
+		.replace(/\*/gi, "")
 }
 
 module.exports = {
