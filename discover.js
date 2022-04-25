@@ -317,5 +317,3 @@ module.exports = async function discover() {
 
 	return fileMap
 }
-
-// TODO: invalidate all on game update

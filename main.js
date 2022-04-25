@@ -218,9 +218,29 @@ async function doTheThing() {
 	const fileMap = await discover()
 	fs.ensureDirSync(path.join(process.cwd(), "cache"))
 
-	const { invalidData, cachedData } = await difference(fs.existsSync(path.join(process.cwd(), "cache", "map.json")) ? fs.readJSONSync(path.join(process.cwd(), "cache", "map.json")) : {}, fileMap)
+	if (fs.existsSync(path.join(process.cwd(), "cache", "map.json"))) {
+		if (
+			fs.readJSONSync(path.join(process.cwd(), "cache", "map.json")).frameworkVersion < core.FrameworkVersion ||
+			fs.readJSONSync(path.join(process.cwd(), "cache", "map.json")).game != fs.existsSync(path.join(core.config.retailPath, "Runtime", "chunk0.rpkg"))
+				? md5File.sync(path.join(core.config.retailPath, "..", "MicrosoftGame.Config"))
+				: md5File.sync(path.join(core.config.runtimePath, "..", "Retail", "HITMAN3.exe"))
+		) {
+			fs.emptyDirSync(path.join(process.cwd(), "cache")) // Empty the cache when the framework or game updates
+		}
+	}
 
-	fs.writeJSONSync(path.join(process.cwd(), "cache", "map.json"), fileMap)
+	const { invalidData, cachedData } = await difference(
+		fs.existsSync(path.join(process.cwd(), "cache", "map.json")) ? fs.readJSONSync(path.join(process.cwd(), "cache", "map.json")).files : {},
+		fileMap
+	)
+
+	fs.writeJSONSync(path.join(process.cwd(), "cache", "map.json"), {
+		files: fileMap,
+		frameworkVersion: core.FrameworkVersion,
+		game: fs.existsSync(path.join(core.config.retailPath, "Runtime", "chunk0.rpkg"))
+			? md5File.sync(path.join(core.config.retailPath, "..", "MicrosoftGame.Config"))
+			: md5File.sync(path.join(core.config.runtimePath, "..", "Retail", "HITMAN3.exe"))
+	})
 
 	await deploy(
 		core.interoperability.sentryTransaction,

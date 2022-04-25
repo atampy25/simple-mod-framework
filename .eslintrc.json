@@ -1,12 +1,11 @@
 {
     "env": {
         "commonjs": true,
-        "es2021": true,
         "node": true
     },
     "extends": "eslint:recommended",
     "parserOptions": {
-        "ecmaVersion": "latest"
+        "ecmaVersion": 2020
     },
     "rules": {
         "accessor-pairs": "error",
@@ -79,7 +78,8 @@
             "beside"
         ],
         "indent": [
-          "warning", "tab"
+            "warning",
+            "tab"
         ],
         "init-declarations": "off",
         "jsx-quotes": "error",
