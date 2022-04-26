@@ -14,9 +14,8 @@ const RPKG = require("./rpkg")
 const fs = require("fs-extra")
 const path = require("path")
 const child_process = require("child_process")
-const json5 = require("json5")
-const chalk = require("chalk")
 const LosslessJSON = require("lossless-json")
+const { xxhash3 } = require("hash-wasm")
 
 require("clarify")
 
@@ -24,8 +23,8 @@ const { config, logger } = require("./core-singleton")
 const { copyFromCache, copyToCache } = require("./utils")
 
 const execCommand = function (/** @type {string} */ command) {
-	logger.verbose(`Executing ${command}`)
-	execCommand(command)
+	logger.verbose(`Executing command ${command}`)
+	child_process.execSync(command)
 }
 
 module.exports = async ({ tempHash, tempRPKG, tbluHash, tbluRPKG, chunkFolder, assignedTemporaryDirectory, patches, invalidatedData, mod }) => {
@@ -33,7 +32,7 @@ module.exports = async ({ tempHash, tempRPKG, tbluHash, tbluRPKG, chunkFolder, a
 
 	if (
 		!patches.every((patch) => !invalidatedData.some((a) => a.filePath == patch.path)) || // must redeploy, invalid cache
-		!(await copyFromCache(mod, path.join(chunkFolder, path.basename(patches[patches.length - 1].path)), path.join(process.cwd(), assignedTemporaryDirectory))) // cache is not available
+		!(await copyFromCache(mod, path.join(chunkFolder, await xxhash3(patches[patches.length - 1].path)), path.join(process.cwd(), assignedTemporaryDirectory))) // cache is not available
 	) {
 		let rpkgInstance = new RPKG.RPKGInstance()
 
@@ -41,7 +40,7 @@ module.exports = async ({ tempHash, tempRPKG, tbluHash, tbluRPKG, chunkFolder, a
 
 		const callRPKGFunction = async function (/** @type {string} */ command) {
 			logger.verbose(`Executing RPKG function ${command}`)
-			return await callRPKGFunction(command)
+			return await rpkgInstance.callFunction(command)
 		}
 
 		/* ---------------------------------------- Extract TEMP ---------------------------------------- */
@@ -172,7 +171,7 @@ module.exports = async ({ tempHash, tempRPKG, tbluHash, tbluRPKG, chunkFolder, a
 
 		rpkgInstance.exit()
 
-		await copyToCache(mod, path.join(process.cwd(), assignedTemporaryDirectory), path.join(chunkFolder, path.basename(patches[patches.length - 1].path)))
+		await copyToCache(mod, path.join(process.cwd(), assignedTemporaryDirectory), path.join(chunkFolder, await xxhash3(patches[patches.length - 1].path)))
 	} else {
 		logger.debug("Restored patch chain ending in " + patches[patches.length - 1].path + " from cache")
 	}
