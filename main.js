@@ -31,7 +31,7 @@ const gameHashes = {
 
 if (!core.config.reportErrors) {
 	process.on("uncaughtException", (err, origin) => {
-		if (!process.argv[2] || process.argv[2] == "kevinMode") {
+		if (!core.args["--useConsoleLogging"]) {
 			core.logger.warn("Error reporting is disabled; if you experience this issue again, please enable it so that the problem can be debugged.")
 		}
 
@@ -41,7 +41,7 @@ if (!core.config.reportErrors) {
 	})
 
 	process.on("unhandledRejection", (err, origin) => {
-		if (!process.argv[2] || process.argv[2] == "kevinMode") {
+		if (!core.args["--useConsoleLogging"]) {
 			core.logger.warn("Error reporting is disabled; if you experience this issue again, please enable it so that the problem can be debugged.")
 		}
 
@@ -184,8 +184,10 @@ process.on("SIGTERM", core.interoperability.cleanExit)
 async function doTheThing() {
 	let startedDate = luxon.DateTime.now()
 
+	core.logger.verbose("Initialising RPKG instance")
 	await core.rpkgInstance.waitForInitialised()
 
+	core.logger.verbose("Removing existing patch files")
 	for (let chunkPatchFile of fs.readdirSync(core.config.runtimePath)) {
 		try {
 			if (chunkPatchFile.includes("patch")) {
@@ -202,6 +204,7 @@ async function doTheThing() {
 		} catch {}
 	}
 
+	core.logger.verbose("Emptying folders")
 	fs.emptyDirSync(path.join(process.cwd(), "staging"))
 	fs.emptyDirSync(path.join(process.cwd(), "temp"))
 
@@ -215,9 +218,11 @@ async function doTheThing() {
 	/** @type {{ [x: string]: string; }} */
 	let rpkgTypes = {}
 
+	core.logger.verbose("Beginning discovery")
 	const fileMap = await discover()
 	fs.ensureDirSync(path.join(process.cwd(), "cache"))
 
+	core.logger.verbose("Checking cache versions")
 	if (fs.existsSync(path.join(process.cwd(), "cache", "map.json"))) {
 		if (
 			fs.readJSONSync(path.join(process.cwd(), "cache", "map.json")).frameworkVersion < core.FrameworkVersion ||
@@ -230,11 +235,13 @@ async function doTheThing() {
 		}
 	}
 
+	core.logger.verbose("Beginning difference")
 	const { invalidData, cachedData } = await difference(
 		fs.existsSync(path.join(process.cwd(), "cache", "map.json")) ? fs.readJSONSync(path.join(process.cwd(), "cache", "map.json")).files : {},
 		fileMap
 	)
 
+	core.logger.verbose("Writing cache")
 	fs.writeJSONSync(path.join(process.cwd(), "cache", "map.json"), {
 		files: fileMap,
 		frameworkVersion: core.FrameworkVersion,
@@ -243,6 +250,7 @@ async function doTheThing() {
 			: md5File.sync(path.join(core.config.runtimePath, "..", "Retail", "HITMAN3.exe"))
 	})
 
+	core.logger.verbose("Beginning deploy")
 	await deploy(
 		core.interoperability.sentryTransaction,
 		configureSentryScope,
@@ -257,6 +265,7 @@ async function doTheThing() {
 		localisationOverrides
 	)
 
+	core.logger.verbose("Finishing")
 	if (global.errored) {
 		core.logger.error("Deploy failed.", false)
 		core.interoperability.cleanExit()
@@ -266,7 +275,7 @@ async function doTheThing() {
 			fs.writeFileSync(path.join(process.env.LOCALAPPDATA, "Simple Mod Framework", "lastDeploy.json"), json5.stringify(core.config))
 		}
 
-		if (process.argv[2]) {
+		if (core.args["--useConsoleLogging"]) {
 			core.logger.info("Deployed all mods successfully.")
 		} else {
 			core.logger.info(

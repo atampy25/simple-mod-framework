@@ -1,11 +1,22 @@
 const FrameworkVersion = "1.5.3"
-const isDevBuild = false
+const isDevBuild = true
 
 const fs = require("fs-extra")
 const path = require("path")
 const json5 = require("json5")
 const child_process = require("child_process")
 const chalk = require("chalk")
+const arg = require("arg")
+
+const args = arg({
+	"--useConsoleLogging": Boolean,
+	"--pauseAfterLogging": Boolean,
+	"--logLevel": [String]
+})
+
+if (!args["--logLevel"] || !args["--logLevel"].length) {
+	args["--logLevel"] = ["debug", "info", "warn", "error"]
+}
 
 const RPKG = require("./rpkg")
 const rpkgInstance = new RPKG.RPKGInstance()
@@ -36,46 +47,77 @@ if (typeof config.reportErrors == "undefined") {
 config.runtimePath = path.resolve(process.cwd(), config.runtimePath)
 config.retailPath = path.resolve(process.cwd(), config.retailPath)
 
-const logger =
-	!process.argv[2] || process.argv[2] == "kevinMode"
-		? {
-				debug: function (/** @type {unknown} */ text) {
+const logger = args["--useConsoleLogging"]
+	? {
+			verbose: () => {},
+			debug: console.debug,
+			info: console.info,
+			warn: console.warn,
+			error: function (/** @type {any} */ a, exitAfter = true) {
+				console.log(a)
+
+				if (exitAfter) global.errored = true
+			}
+	  }
+	: {
+			verbose: function (/** @type {string} */ text) {
+				if (args["--logLevel"].includes("verbose")) {
+					process.stdout.write(chalk`{grey DETAIL\t${text}}\n`)
+
+					if (args["--pauseAfterLogging"]) {
+						child_process.execSync("pause", {
+							// @ts-ignore
+							shell: true,
+							stdio: [0, 1, 2]
+						})
+					}
+				}
+			},
+
+			debug: function (/** @type {string} */ text) {
+				if (args["--logLevel"].includes("debug")) {
 					process.stdout.write(chalk`{grey DEBUG\t${text}}\n`)
 
-					if (process.argv[2] == "kevinMode") {
+					if (args["--pauseAfterLogging"]) {
 						child_process.execSync("pause", {
 							// @ts-ignore
 							shell: true,
 							stdio: [0, 1, 2]
 						})
 					}
-				},
+				}
+			},
 
-				info: function (/** @type {unknown} */ text) {
+			info: function (/** @type {string} */ text) {
+				if (args["--logLevel"].includes("info")) {
 					process.stdout.write(chalk`{blue INFO}\t${text}\n`)
 
-					if (process.argv[2] == "kevinMode") {
+					if (args["--pauseAfterLogging"]) {
 						child_process.execSync("pause", {
 							// @ts-ignore
 							shell: true,
 							stdio: [0, 1, 2]
 						})
 					}
-				},
+				}
+			},
 
-				warn: function (/** @type {unknown} */ text) {
+			warn: function (/** @type {string} */ text) {
+				if (args["--logLevel"].includes("warn")) {
 					process.stdout.write(chalk`{yellow WARN}\t${text}\n`)
 
-					if (process.argv[2] == "kevinMode") {
+					if (args["--pauseAfterLogging"]) {
 						child_process.execSync("pause", {
 							// @ts-ignore
 							shell: true,
 							stdio: [0, 1, 2]
 						})
 					}
-				},
+				}
+			},
 
-				error: function (/** @type {unknown} */ text, exitAfter = true) {
+			error: function (/** @type {string} */ text, exitAfter = true) {
+				if (args["--logLevel"].includes("error")) {
 					process.stderr.write(chalk`{red ERROR}\t${text}\n`)
 					console.trace()
 
@@ -87,22 +129,14 @@ const logger =
 
 					if (exitAfter) global.errored = true
 				}
-		  }
-		: {
-				debug: console.debug,
-				info: console.info,
-				warn: console.warn,
-				error: function (/** @type {any} */ a, exitAfter = true) {
-					console.log(a)
-
-					if (exitAfter) global.errored = true
-				}
-		  } // Any arguments (except kevinMode) will cause coloured logging to be disabled
+			}
+	  }
 
 module.exports = {
 	FrameworkVersion,
 	rpkgInstance,
 	config,
 	logger,
-	isDevBuild
+	isDevBuild,
+	args
 }

@@ -12,6 +12,8 @@ module.exports = async function difference(oldMap, newMap) {
 	const invalidData = []
 	const validData = []
 
+	logger.verbose(`changedFiles`)
+
 	const changedFiles = []
 	for (const [filePath, newData] of Object.entries(newMap)) {
 		const oldData = oldMap[filePath]
@@ -20,6 +22,8 @@ module.exports = async function difference(oldMap, newMap) {
 			changedFiles.push(filePath)
 		}
 	}
+
+	logger.verbose(`invalidatedHashes`)
 
 	const invalidatedHashes = []
 	for (const changedFile of changedFiles) {
@@ -30,6 +34,8 @@ module.exports = async function difference(oldMap, newMap) {
 		invalidatedHashes.push(...newMap[changedFile].affected)
 	}
 
+	logger.verbose(`filePath, newData`)
+
 	for (const [filePath, newData] of Object.entries(newMap)) {
 		const oldData = oldMap[filePath]
 
@@ -37,6 +43,8 @@ module.exports = async function difference(oldMap, newMap) {
 			invalidFiles.push(filePath) // Must redeploy any files that depend on a changed file
 		}
 	}
+
+	logger.verbose(`filePath, data`)
 
 	for (const [filePath, data] of Object.entries(newMap)) {
 		if (!invalidFiles.includes(filePath)) {

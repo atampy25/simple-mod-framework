@@ -3,7 +3,7 @@ const path = require("path")
 const checkDiskSpace = require("check-disk-space").default
 const freeSpace = async () => Number((await checkDiskSpace(process.cwd())).free) / 1024 / 1024 / 1024
 
-const { rpkgInstance, config } = require("./core-singleton")
+const { rpkgInstance, config, logger } = require("./core-singleton")
 
 /**
  * @param {string} input
@@ -25,6 +25,8 @@ function hexflip(input) {
  * @param {string} [stagingChunk]
  */
 async function extractOrCopyToTemp(rpkgOfFile, file, type, stagingChunk = "chunk0") {
+	logger.verbose(`Extract or copy to temp: ${rpkgOfFile} ${file} ${type} ${stagingChunk}`)
+
 	if (!fs.existsSync(path.join(process.cwd(), "staging", stagingChunk, file + "." + type))) {
 		await rpkgInstance.callFunction(`-extract_from_rpkg "${path.join(config.runtimePath, rpkgOfFile + ".rpkg")}" -filter "${file}" -output_path temp`) // Extract the file
 	} else {
@@ -40,6 +42,8 @@ async function extractOrCopyToTemp(rpkgOfFile, file, type, stagingChunk = "chunk
  * @param {string} outputPath
  */
 async function copyFromCache(mod, cachePath, outputPath) {
+	logger.verbose(`Copy from cache: ${mod} ${cachePath} ${outputPath}`)
+
 	if (fs.existsSync(path.join(process.cwd(), "cache", winPathEscape(mod), cachePath))) {
 		fs.ensureDirSync(outputPath)
 		fs.copySync(path.join(process.cwd(), "cache", winPathEscape(mod), cachePath), outputPath)
@@ -55,6 +59,8 @@ async function copyFromCache(mod, cachePath, outputPath) {
  * @param {string} cachePath
  */
 async function copyToCache(mod, originalPath, cachePath) {
+	logger.verbose(`Copy to cache: ${mod} ${originalPath} ${cachePath}`)
+
 	// do not cache if less than 5 GB remaining on disk
 	if (fs.existsSync(originalPath) && (await freeSpace()) > 5) {
 		fs.ensureDirSync(path.join(process.cwd(), "cache", winPathEscape(mod), cachePath))

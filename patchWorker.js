@@ -23,20 +23,30 @@ require("clarify")
 const { config, logger } = require("./core-singleton")
 const { copyFromCache, copyToCache } = require("./utils")
 
-module.exports = async ({ tempHash, tempRPKG, tbluHash, tbluRPKG, chunkFolder, assignedTemporaryDirectory, useNiceLogs, patches, invalidatedData, cachedData, mod }) => {
-	let rpkgInstance = new RPKG.RPKGInstance()
+const execCommand = function (/** @type {string} */ command) {
+	logger.verbose(`Executing ${command}`)
+	execCommand(command)
+}
 
+module.exports = async ({ tempHash, tempRPKG, tbluHash, tbluRPKG, chunkFolder, assignedTemporaryDirectory, patches, invalidatedData, mod }) => {
 	fs.ensureDirSync(path.join(process.cwd(), assignedTemporaryDirectory))
-
-	await rpkgInstance.waitForInitialised()
 
 	if (
 		!patches.every((patch) => !invalidatedData.some((a) => a.filePath == patch.path)) || // must redeploy, invalid cache
 		!(await copyFromCache(mod, path.join(chunkFolder, path.basename(patches[patches.length - 1].path)), path.join(process.cwd(), assignedTemporaryDirectory))) // cache is not available
 	) {
+		let rpkgInstance = new RPKG.RPKGInstance()
+
+		await rpkgInstance.waitForInitialised()
+
+		const callRPKGFunction = async function (/** @type {string} */ command) {
+			logger.verbose(`Executing RPKG function ${command}`)
+			return await callRPKGFunction(command)
+		}
+
 		/* ---------------------------------------- Extract TEMP ---------------------------------------- */
 		if (!fs.existsSync(path.join(process.cwd(), "staging", chunkFolder, tempHash + ".TEMP"))) {
-			await rpkgInstance.callFunction(`-extract_from_rpkg "${path.join(config.runtimePath, tempRPKG + ".rpkg")}" -filter "${tempHash}" -output_path "${assignedTemporaryDirectory}"`)
+			await callRPKGFunction(`-extract_from_rpkg "${path.join(config.runtimePath, tempRPKG + ".rpkg")}" -filter "${tempHash}" -output_path "${assignedTemporaryDirectory}"`)
 		} else {
 			try {
 				fs.ensureDirSync(path.join(process.cwd(), assignedTemporaryDirectory, tempRPKG, "TEMP"))
@@ -47,7 +57,7 @@ module.exports = async ({ tempHash, tempRPKG, tbluHash, tbluRPKG, chunkFolder, a
 
 		/* ---------------------------------------- Extract TBLU ---------------------------------------- */
 		if (!fs.existsSync(path.join(process.cwd(), "staging", chunkFolder, tbluHash + ".TBLU"))) {
-			await rpkgInstance.callFunction(`-extract_from_rpkg "${path.join(config.runtimePath, tbluRPKG + ".rpkg")}" -filter "${tbluHash}" -output_path "${assignedTemporaryDirectory}"`)
+			await callRPKGFunction(`-extract_from_rpkg "${path.join(config.runtimePath, tbluRPKG + ".rpkg")}" -filter "${tbluHash}" -output_path "${assignedTemporaryDirectory}"`)
 		} else {
 			try {
 				fs.ensureDirSync(path.join(process.cwd(), assignedTemporaryDirectory, tbluRPKG, "TBLU"))
@@ -57,7 +67,7 @@ module.exports = async ({ tempHash, tempRPKG, tbluHash, tbluRPKG, chunkFolder, a
 		}
 
 		/* ------------------------------------ Convert to RT Source ------------------------------------ */
-		child_process.execSync(
+		execCommand(
 			'"' +
 				path.join(process.cwd(), "Third-Party", "ResourceTool.exe") +
 				'" HM3 convert TEMP "' +
@@ -66,7 +76,7 @@ module.exports = async ({ tempHash, tempRPKG, tbluHash, tbluRPKG, chunkFolder, a
 				path.join(process.cwd(), assignedTemporaryDirectory, tempRPKG, "TEMP", tempHash + ".TEMP") +
 				'.json" --simple'
 		)
-		child_process.execSync(
+		execCommand(
 			'"' +
 				path.join(process.cwd(), "Third-Party", "ResourceTool.exe") +
 				'" HM3 convert TBLU "' +
@@ -75,8 +85,8 @@ module.exports = async ({ tempHash, tempRPKG, tbluHash, tbluRPKG, chunkFolder, a
 				path.join(process.cwd(), assignedTemporaryDirectory, tbluRPKG, "TBLU", tbluHash + ".TBLU") +
 				'.json" --simple'
 		)
-		await rpkgInstance.callFunction(`-hash_meta_to_json "${path.join(process.cwd(), assignedTemporaryDirectory, tempRPKG, "TEMP", tempHash + ".TEMP.meta")}"`)
-		await rpkgInstance.callFunction(`-hash_meta_to_json "${path.join(process.cwd(), assignedTemporaryDirectory, tbluRPKG, "TBLU", tbluHash + ".TBLU.meta")}"`) // Generate the RT files from the binary files
+		await callRPKGFunction(`-hash_meta_to_json "${path.join(process.cwd(), assignedTemporaryDirectory, tempRPKG, "TEMP", tempHash + ".TEMP.meta")}"`)
+		await callRPKGFunction(`-hash_meta_to_json "${path.join(process.cwd(), assignedTemporaryDirectory, tbluRPKG, "TBLU", tbluHash + ".TBLU.meta")}"`) // Generate the RT files from the binary files
 
 		/* ---------------------------------------- Convert to QN --------------------------------------- */
 		if (Number(patches[0].patchVersion.value) < 3) {
@@ -133,7 +143,7 @@ module.exports = async ({ tempHash, tempRPKG, tbluHash, tbluRPKG, chunkFolder, a
 		) // Generate the RT files from the QN json
 
 		/* -------------------------------------- Convert to binary ------------------------------------- */
-		child_process.execSync(
+		execCommand(
 			'"' +
 				path.join(process.cwd(), "Third-Party", "ResourceTool.exe") +
 				'" HM3 generate TEMP "' +
@@ -142,7 +152,7 @@ module.exports = async ({ tempHash, tempRPKG, tbluHash, tbluRPKG, chunkFolder, a
 				path.join(process.cwd(), assignedTemporaryDirectory, tempHash + ".TEMP") +
 				'" --simple'
 		)
-		child_process.execSync(
+		execCommand(
 			'"' +
 				path.join(process.cwd(), "Third-Party", "ResourceTool.exe") +
 				'" HM3 generate TBLU "' +
@@ -151,8 +161,8 @@ module.exports = async ({ tempHash, tempRPKG, tbluHash, tbluRPKG, chunkFolder, a
 				path.join(process.cwd(), assignedTemporaryDirectory, tbluHash + ".TBLU") +
 				'" --simple'
 		)
-		await rpkgInstance.callFunction(`-json_to_hash_meta "${path.join(process.cwd(), assignedTemporaryDirectory, tempHash + ".TEMP.meta.json")}"`)
-		await rpkgInstance.callFunction(`-json_to_hash_meta "${path.join(process.cwd(), assignedTemporaryDirectory, tbluHash + ".TBLU.meta.json")}"`) // Generate the binary files from the RT json
+		await callRPKGFunction(`-json_to_hash_meta "${path.join(process.cwd(), assignedTemporaryDirectory, tempHash + ".TEMP.meta.json")}"`)
+		await callRPKGFunction(`-json_to_hash_meta "${path.join(process.cwd(), assignedTemporaryDirectory, tbluHash + ".TBLU.meta.json")}"`) // Generate the binary files from the RT json
 
 		fs.rmSync(path.join(process.cwd(), assignedTemporaryDirectory, "QuickEntityJSON.json"))
 		fs.rmSync(path.join(process.cwd(), assignedTemporaryDirectory, "temp.TEMP.json"))
@@ -160,9 +170,11 @@ module.exports = async ({ tempHash, tempRPKG, tbluHash, tbluRPKG, chunkFolder, a
 		fs.rmSync(path.join(process.cwd(), assignedTemporaryDirectory, "temp.TBLU.json"))
 		fs.rmSync(path.join(process.cwd(), assignedTemporaryDirectory, tbluHash + ".TBLU.meta.json"))
 
+		rpkgInstance.exit()
+
 		await copyToCache(mod, path.join(process.cwd(), assignedTemporaryDirectory), path.join(chunkFolder, path.basename(patches[patches.length - 1].path)))
 	} else {
-		logger.debug("Restoring patch chain ending in " + patches[patches.length - 1].path + " from cache")
+		logger.debug("Restored patch chain ending in " + patches[patches.length - 1].path + " from cache")
 	}
 
 	/* ------------------------------------- Stage binary files ------------------------------------- */
@@ -172,8 +184,6 @@ module.exports = async ({ tempHash, tempRPKG, tbluHash, tbluRPKG, chunkFolder, a
 	fs.copyFileSync(path.join(process.cwd(), assignedTemporaryDirectory, tbluHash + ".TBLU.meta"), path.join(process.cwd(), "staging", chunkFolder, tbluHash + ".TBLU.meta")) // Copy the binary files to the staging directory
 
 	fs.removeSync(path.join(process.cwd(), assignedTemporaryDirectory))
-
-	rpkgInstance.exit()
 
 	return
 }

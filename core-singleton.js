@@ -6,5 +6,6 @@ module.exports = {
 	config: core.config,
 	logger: core.logger,
 	isDevBuild: core.isDevBuild,
+	args: core.args,
 	interoperability: {}
 }

@@ -20,6 +20,8 @@ module.exports = async function discover() {
 	const fileMap = {}
 
 	for (let mod of config.loadOrder) {
+		logger.verbose(`Resolving ${mod}`)
+
 		// NOT Mod folder exists, mod has no manifest, mod has RPKGs (mod is an RPKG-only mod)
 		if (
 			!(
@@ -39,6 +41,7 @@ module.exports = async function discover() {
 				)
 		} // Essentially, if the mod isn't an RPKG mod, it is referenced by its ID, so this finds the mod folder with the right ID
 
+		logger.verbose(`Beginning mod discovery of ${mod}`)
 		if (!fs.existsSync(path.join(process.cwd(), "Mods", mod, "manifest.json"))) {
 			logger.info("Discovering RPKG mod: " + mod)
 
@@ -46,8 +49,10 @@ module.exports = async function discover() {
 				for (let contentFile of fs.readdirSync(path.join(process.cwd(), "Mods", mod, chunkFolder))) {
 					fs.emptyDirSync(path.join(process.cwd(), "temp"))
 
+					logger.verbose(`-extract_from_rpkg "${path.join(process.cwd(), "Mods", mod, chunkFolder, contentFile)}" -output_path "${path.join(process.cwd(), "temp")}"`)
 					await rpkgInstance.callFunction(`-extract_from_rpkg "${path.join(process.cwd(), "Mods", mod, chunkFolder, contentFile)}" -output_path "${path.join(process.cwd(), "temp")}"`)
 
+					logger.verbose(`Adding ${path.join(process.cwd(), "Mods", mod, chunkFolder, contentFile)} to fileMap`)
 					fileMap[path.join(process.cwd(), "Mods", mod, chunkFolder, contentFile)] = {
 						hash: await xxhash3(fs.readFileSync(path.join(process.cwd(), "Mods", mod, chunkFolder, contentFile))),
 						dependencies: [], // Raw files: depend on nothing, overwrite contained files
@@ -65,6 +70,8 @@ module.exports = async function discover() {
 
 			logger.info("Discovering mod: " + manifest.name)
 
+			logger.verbose(`Validating manifest`)
+
 			for (let key of ["id", "name", "description", "authors", "version", "frameworkVersion"]) {
 				if (typeof manifest[key] == "undefined") {
 					logger.error(`Mod ${manifest.name} is missing required manifest field "${key}"!`)
@@ -80,6 +87,8 @@ module.exports = async function discover() {
 			if (semver.gt(manifest.frameworkVersion, FrameworkVersion)) {
 				logger.error(`Mod ${manifest.name} is designed for a newer version of the framework and is likely incompatible!`)
 			}
+
+			logger.verbose(`Getting folders`)
 
 			let contentFolders = []
 			let blobsFolders = []
@@ -103,6 +112,8 @@ module.exports = async function discover() {
 			}
 
 			if (config.modOptions[manifest.id] && manifest.options && manifest.options.length) {
+				logger.verbose(`Merging mod options`)
+
 				for (let option of manifest.options.filter(
 					(a) =>
 						config.modOptions[manifest.id].includes(a.name) ||
@@ -156,6 +167,8 @@ module.exports = async function discover() {
 				}
 			}
 
+			logger.verbose(`Validating manifest requirements`)
+
 			if (manifest.requirements && manifest.requirements.length) {
 				for (let req of manifest.requirements) {
 					if (!config.loadOrder.includes(req)) {
@@ -175,6 +188,8 @@ module.exports = async function discover() {
 					)
 				}
 			}
+
+			logger.verbose(`Discovering content`)
 
 			/* ---------------------------------------------------------------------------------------------- */
 			/*                                             Content                                            */
@@ -244,6 +259,8 @@ module.exports = async function discover() {
 				}
 			}
 
+			logger.verbose(`Discovering blobs`)
+
 			/* ---------------------------------------------------------------------------------------------- */
 			/*                                              Blobs                                             */
 			/* ---------------------------------------------------------------------------------------------- */
@@ -275,6 +292,8 @@ module.exports = async function discover() {
 
 			const manifestDependencies = []
 			const manifestAffected = []
+
+			logger.verbose(`Discovering manifest keys`)
 
 			/* ---------------------------------------- Localisation ---------------------------------------- */
 			if (manifest.localisation) {
