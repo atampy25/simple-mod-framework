@@ -113,7 +113,7 @@ module.exports = async function deploy(
 						!(await copyFromCache(mod, path.join(chunkFolder, contentFile), path.join(process.cwd(), "temp"))) // cache is not available
 					) {
 						await callRPKGFunction(`-extract_from_rpkg "${path.join(process.cwd(), "Mods", mod, chunkFolder, contentFile)}" -output_path "${path.join(process.cwd(), "temp")}"`)
-						copyToCache(mod, path.join(process.cwd(), "temp"), path.join(chunkFolder, contentFile))
+						await copyToCache(mod, path.join(process.cwd(), "temp"), path.join(chunkFolder, contentFile))
 					}
 				}
 
@@ -438,7 +438,7 @@ module.exports = async function deploy(
 									)
 									// Copy the binary files to the staging directory
 
-									copyToCache(mod, path.join(process.cwd(), "temp"), path.join(chunkFolder, await xxhash3(contentFilePath)))
+									await copyToCache(mod, path.join(process.cwd(), "temp"), path.join(chunkFolder, await xxhash3(contentFilePath)))
 									// Copy the binary files to the cache
 								}
 
