@@ -12,6 +12,7 @@ const child_process = require("child_process")
 const LosslessJSON = require("lossless-json")
 const md5 = require("md5")
 const deepMerge = require("lodash.merge")
+const { xxhash3 } = require("hash-wasm")
 
 const {
 	// @ts-ignore
@@ -24,7 +25,7 @@ const klaw = require("klaw-sync")
 const rfc6902 = require("rfc6902")
 
 const execCommand = function (/** @type {string} */ command) {
-	logger.verbose(`Executing ${command}`)
+	logger.verbose(`Executing command ${command}`)
 	child_process.execSync(command)
 }
 
@@ -380,7 +381,7 @@ module.exports = async function deploy(
 								logger.verbose(`Cache check`)
 								if (
 									invalidatedData.some((a) => a.filePath == path.join(process.cwd(), "Mods", mod, chunkFolder, path.basename(contentFilePath))) || // must redeploy, invalid cache
-									!(await copyFromCache(mod, path.join(chunkFolder, path.basename(contentFilePath)), path.join(process.cwd(), "staging", chunkFolder))) // cache is not available
+									!(await copyFromCache(mod, path.join(chunkFolder, await xxhash3(contentFilePath)), path.join(process.cwd(), "staging", chunkFolder))) // cache is not available
 								) {
 									try {
 										logger.verbose(`QN generate`)
@@ -437,7 +438,7 @@ module.exports = async function deploy(
 									)
 									// Copy the binary files to the staging directory
 
-									copyToCache(mod, path.join(process.cwd(), "temp"), path.join(chunkFolder, path.basename(contentFilePath)))
+									copyToCache(mod, path.join(process.cwd(), "temp"), path.join(chunkFolder, await xxhash3(contentFilePath)))
 									// Copy the binary files to the cache
 								}
 
@@ -480,7 +481,7 @@ module.exports = async function deploy(
 
 								if (
 									invalidatedData.some((a) => a.filePath == path.join(process.cwd(), "Mods", mod, chunkFolder, path.basename(contentFilePath))) || // must redeploy, invalid cache
-									!(await copyFromCache(mod, path.join(chunkFolder, path.basename(contentFilePath)), path.join(process.cwd(), "temp", oresChunk))) // cache is not available
+									!(await copyFromCache(mod, path.join(chunkFolder, await xxhash3(contentFilePath)), path.join(process.cwd(), "temp", oresChunk))) // cache is not available
 								) {
 									await extractOrCopyToTemp(oresChunk, "0057C2C3941115CA", "ORES") // Extract the ORES to temp
 
@@ -496,7 +497,7 @@ module.exports = async function deploy(
 									fs.rmSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "0057C2C3941115CA.ORES"))
 									execCommand(`"Third-Party\\OREStool.exe" "${path.join(process.cwd(), "temp", oresChunk, "ORES", "0057C2C3941115CA.ORES.json")}"`)
 
-									await copyToCache(mod, path.join(process.cwd(), "temp", oresChunk), path.join(chunkFolder, path.basename(contentFilePath)))
+									await copyToCache(mod, path.join(process.cwd(), "temp", oresChunk), path.join(chunkFolder, await xxhash3(contentFilePath)))
 								}
 
 								fs.copyFileSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "0057C2C3941115CA.ORES"), path.join(process.cwd(), "staging", "chunk0", "0057C2C3941115CA.ORES"))
@@ -519,7 +520,7 @@ module.exports = async function deploy(
 
 								if (
 									invalidatedData.some((a) => a.filePath == path.join(process.cwd(), "Mods", mod, chunkFolder, path.basename(contentFilePath))) || // must redeploy, invalid cache
-									!(await copyFromCache(mod, path.join(chunkFolder, path.basename(contentFilePath)), path.join(process.cwd(), "temp", repoRPKG))) // cache is not available
+									!(await copyFromCache(mod, path.join(chunkFolder, await xxhash3(contentFilePath)), path.join(process.cwd(), "temp", repoRPKG))) // cache is not available
 								) {
 									await extractOrCopyToTemp(repoRPKG, "00204D1AFD76AB13", "REPO") // Extract the REPO to temp
 
@@ -566,7 +567,7 @@ module.exports = async function deploy(
 
 									fs.writeFileSync(path.join(process.cwd(), "temp", repoRPKG, "REPO", "00204D1AFD76AB13.REPO"), JSON.stringify(repoToWrite))
 
-									await copyToCache(mod, path.join(process.cwd(), "temp", repoRPKG), path.join(chunkFolder, path.basename(contentFilePath)))
+									await copyToCache(mod, path.join(process.cwd(), "temp", repoRPKG), path.join(chunkFolder, await xxhash3(contentFilePath)))
 								}
 
 								fs.copyFileSync(path.join(process.cwd(), "temp", repoRPKG, "REPO", "00204D1AFD76AB13.REPO"), path.join(process.cwd(), "staging", "chunk0", "00204D1AFD76AB13.REPO"))
@@ -611,7 +612,7 @@ module.exports = async function deploy(
 
 								if (
 									invalidatedData.some((a) => a.filePath == path.join(process.cwd(), "Mods", mod, chunkFolder, path.basename(contentFilePath))) || // must redeploy, invalid cache
-									!(await copyFromCache(mod, path.join(chunkFolder, path.basename(contentFilePath)), path.join(process.cwd(), "temp", rpkgOfFile))) // cache is not available
+									!(await copyFromCache(mod, path.join(chunkFolder, await xxhash3(contentFilePath)), path.join(process.cwd(), "temp", rpkgOfFile))) // cache is not available
 								) {
 									await extractOrCopyToTemp(rpkgOfFile, entityContent.file, fileType, chunkFolder) // Extract the JSON to temp
 
@@ -649,7 +650,7 @@ module.exports = async function deploy(
 										fs.writeFileSync(path.join(process.cwd(), "temp", rpkgOfFile, fileType, entityContent.file + "." + fileType), JSON.stringify(fileContent))
 									}
 
-									await copyToCache(mod, path.join(process.cwd(), "temp", rpkgOfFile), path.join(chunkFolder, path.basename(contentFilePath)))
+									await copyToCache(mod, path.join(process.cwd(), "temp", rpkgOfFile), path.join(chunkFolder, await xxhash3(contentFilePath)))
 								}
 
 								fs.copyFileSync(
@@ -666,7 +667,7 @@ module.exports = async function deploy(
 
 								if (
 									invalidatedData.some((a) => a.filePath == path.join(process.cwd(), "Mods", mod, chunkFolder, path.basename(contentFilePath))) || // must redeploy, invalid cache
-									!(await copyFromCache(mod, path.join(chunkFolder, path.basename(contentFilePath)), path.join(process.cwd(), "temp", chunkFolder))) // cache is not available
+									!(await copyFromCache(mod, path.join(chunkFolder, await xxhash3(contentFilePath)), path.join(process.cwd(), "temp", chunkFolder))) // cache is not available
 								) {
 									fs.ensureDirSync(path.join(process.cwd(), "temp", chunkFolder))
 
@@ -752,7 +753,7 @@ module.exports = async function deploy(
 										) // Rebuild the meta
 									}
 
-									await copyToCache(mod, path.join(process.cwd(), "temp", chunkFolder), path.join(chunkFolder, path.basename(contentFilePath)))
+									await copyToCache(mod, path.join(process.cwd(), "temp", chunkFolder), path.join(chunkFolder, await xxhash3(contentFilePath)))
 								}
 
 								fs.ensureDirSync(path.join(process.cwd(), "staging", chunkFolder))
@@ -901,73 +902,63 @@ module.exports = async function deploy(
 					logger.error("Couldn't find the blobs ORES in the game files! Make sure you've installed the framework in the right place.")
 				}
 
-				if (invalidatedData.some((a) => a.data.affected.includes("00858D45F5F9E3CA")) || !(await copyFromCache(mod, "blobsORES", path.join(process.cwd(), "temp")))) {
-					// we need to re-deploy the blobs ORES OR the blobs ORES couldn't be copied from cache
+				await extractOrCopyToTemp(oresChunk, "00858D45F5F9E3CA", "ORES") // Extract the ORES to temp
 
-					await extractOrCopyToTemp(oresChunk, "00858D45F5F9E3CA", "ORES") // Extract the ORES to temp
+				execCommand(`"Third-Party\\OREStool.exe" "${path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES")}"`)
+				let oresContent = JSON.parse(String(fs.readFileSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES.JSON"))))
 
-					execCommand(`"Third-Party\\OREStool.exe" "${path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES")}"`)
-					let oresContent = JSON.parse(String(fs.readFileSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES.JSON"))))
+				await callRPKGFunction(`-hash_meta_to_json "${path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES.meta")}"`)
+				let metaContent = JSON.parse(String(fs.readFileSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES.meta.JSON"))))
 
-					await callRPKGFunction(`-hash_meta_to_json "${path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES.meta")}"`)
-					let metaContent = JSON.parse(String(fs.readFileSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES.meta.JSON"))))
+				for (let blobsFolder of blobsFolders) {
+					for (let blob of klaw(path.join(process.cwd(), "Mods", mod, blobsFolder))
+						.filter((a) => a.stats.isFile())
+						.map((a) => a.path)) {
+						let blobPath = blob.replace(path.join(process.cwd(), "Mods", mod, blobsFolder), "").slice(1).split(path.sep).join("/").toLowerCase()
 
-					for (let blobsFolder of blobsFolders) {
-						for (let blob of klaw(path.join(process.cwd(), "Mods", mod, blobsFolder))
-							.filter((a) => a.stats.isFile())
-							.map((a) => a.path)) {
-							let blobPath = blob.replace(path.join(process.cwd(), "Mods", mod, blobsFolder), "").slice(1).split(path.sep).join("/").toLowerCase()
-
-							let blobHash
-							if (path.extname(blob).startsWith(".jp") || path.extname(blob) == ".png") {
-								blobHash = "00" + md5(`[assembly:/_pro/online/default/cloudstorage/resources/${blobPath}].pc_gfx`.toLowerCase()).slice(2, 16).toUpperCase()
-							} else if (path.extname(blob) == ".json") {
-								blobHash = "00" + md5(`[assembly:/_pro/online/default/cloudstorage/resources/${blobPath}].pc_json`.toLowerCase()).slice(2, 16).toUpperCase()
-							} else {
-								blobHash =
-									"00" +
-									md5(`[assembly:/_pro/online/default/cloudstorage/resources/${blobPath}].pc_${path.extname(blob).slice(1)}`.toLowerCase())
-										.slice(2, 16)
-										.toUpperCase()
-							}
-
-							oresContent[blobHash] = blobPath // Add the blob to the ORES
-
-							if (!metaContent["hash_reference_data"].find((/** @type {{ hash: any; }} */ a) => a.hash == blobHash)) {
-								metaContent["hash_reference_data"].push({
-									hash: blobHash,
-									flag: "9F"
-								})
-							}
-
-							fs.copyFileSync(
-								blob,
-								path.join(
-									process.cwd(),
-									"staging",
-									"chunk0",
-									blobHash +
-										"." +
-										(path.extname(blob) == ".json"
-											? "JSON"
-											: path.extname(blob).startsWith(".jp") || path.extname(blob) == ".png"
-											? "GFXI"
-											: path.extname(blob).slice(1).toUpperCase())
-								)
-							) // Copy the actual blob to the staging directory
+						let blobHash
+						if (path.extname(blob).startsWith(".jp") || path.extname(blob) == ".png") {
+							blobHash = "00" + md5(`[assembly:/_pro/online/default/cloudstorage/resources/${blobPath}].pc_gfx`.toLowerCase()).slice(2, 16).toUpperCase()
+						} else if (path.extname(blob) == ".json") {
+							blobHash = "00" + md5(`[assembly:/_pro/online/default/cloudstorage/resources/${blobPath}].pc_json`.toLowerCase()).slice(2, 16).toUpperCase()
+						} else {
+							blobHash =
+								"00" +
+								md5(`[assembly:/_pro/online/default/cloudstorage/resources/${blobPath}].pc_${path.extname(blob).slice(1)}`.toLowerCase())
+									.slice(2, 16)
+									.toUpperCase()
 						}
+
+						oresContent[blobHash] = blobPath // Add the blob to the ORES
+
+						if (!metaContent["hash_reference_data"].find((/** @type {{ hash: any; }} */ a) => a.hash == blobHash)) {
+							metaContent["hash_reference_data"].push({
+								hash: blobHash,
+								flag: "9F"
+							})
+						}
+
+						fs.copyFileSync(
+							blob,
+							path.join(
+								process.cwd(),
+								"staging",
+								"chunk0",
+								blobHash +
+									"." +
+									(path.extname(blob) == ".json" ? "JSON" : path.extname(blob).startsWith(".jp") || path.extname(blob) == ".png" ? "GFXI" : path.extname(blob).slice(1).toUpperCase())
+							)
+						) // Copy the actual blob to the staging directory
 					}
-
-					fs.writeFileSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES.meta.JSON"), JSON.stringify(metaContent))
-					fs.rmSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES.meta"))
-					await callRPKGFunction(`-json_to_hash_meta "${path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES.meta.JSON")}"`) // Rebuild the meta
-
-					fs.writeFileSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES.JSON"), JSON.stringify(oresContent))
-					fs.rmSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES"))
-					execCommand(`"Third-Party\\OREStool.exe" "${path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES.json")}"`) // Rebuild the ORES
-
-					await copyToCache(mod, path.join(process.cwd(), "temp"), "blobsORES")
 				}
+
+				fs.writeFileSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES.meta.JSON"), JSON.stringify(metaContent))
+				fs.rmSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES.meta"))
+				await callRPKGFunction(`-json_to_hash_meta "${path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES.meta.JSON")}"`) // Rebuild the meta
+
+				fs.writeFileSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES.JSON"), JSON.stringify(oresContent))
+				fs.rmSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES"))
+				execCommand(`"Third-Party\\OREStool.exe" "${path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES.json")}"`) // Rebuild the ORES
 
 				fs.copyFileSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES"), path.join(process.cwd(), "staging", "chunk0", "00858D45F5F9E3CA.ORES"))
 				fs.copyFileSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES.meta"), path.join(process.cwd(), "staging", "chunk0", "00858D45F5F9E3CA.ORES.meta")) // Copy the ORES to the staging directory
@@ -1005,6 +996,8 @@ module.exports = async function deploy(
 							(a) => a.id == (typeof dependency == "string" ? dependency : dependency.runtimeID) && a.chunk == (typeof dependency == "string" ? "chunk0" : dependency.toChunk)
 						)
 					) {
+						logger.debug("Extracting dependency " + (typeof dependency == "string" ? dependency : dependency.runtimeID))
+
 						doneHashes.push({
 							id: typeof dependency == "string" ? dependency : dependency.runtimeID,
 							chunk: typeof dependency == "string" ? "chunk0" : dependency.toChunk

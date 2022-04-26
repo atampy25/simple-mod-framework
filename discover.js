@@ -4,8 +4,8 @@ const path = require("path")
 const semver = require("semver")
 const json5 = require("json5")
 const LosslessJSON = require("lossless-json")
-const xxhash3 = require("hash-wasm").xxhash3
-const md5 = require("hash-wasm").md5
+const { xxhash3 } = require("hash-wasm")
+const { md5 } = require("hash-wasm")
 const deepMerge = require("lodash.merge")
 
 const { config, FrameworkVersion, rpkgInstance, logger } = require("./core-singleton")
