@@ -16,7 +16,7 @@ Then, put a file called `manifest.json` in it. Paste the following into it:
   "description": "Extremely good description",
   "authors": ["YourNameOrUserName"],
   "contentFolder": "content",
-  "frameworkVersion": "1.5.4"
+  "frameworkVersion": "1.5.5"
 }
 ```
 
