@@ -1180,12 +1180,12 @@ module.exports = async function deploy(
 			logger.error("Couldn't find the WWEV in the game files! Make sure you've installed the framework in the right place.")
 		}
 
-		let workingPath = path.join(process.cwd(), "temp", "WWEV", rpkgOfWWEV + ".rpkg", fs.readdirSync(path.join(process.cwd(), "temp", "WWEV", rpkgOfWWEV + ".rpkg"))[0])
-
 		if (invalidatedData.some((a) => a.data.affected.includes(WWEVhash)) || !(await copyFromCache("global", path.join("WWEV", WWEVhash), path.join(process.cwd(), "temp")))) {
 			// we need to re-deploy WWEV OR WWEV data couldn't be copied from cache
 
 			await callRPKGFunction(`-extract_wwev_to_ogg_from "${path.join(config.runtimePath)}" -filter "${WWEVhash}" -output_path temp`) // Extract the WWEV
+
+			let workingPath = path.join(process.cwd(), "temp", "WWEV", rpkgOfWWEV + ".rpkg", fs.readdirSync(path.join(process.cwd(), "temp", "WWEV", rpkgOfWWEV + ".rpkg"))[0])
 
 			for (let patch of entry[1]) {
 				fs.copyFileSync(patch.filepath, path.join(workingPath, "wem", patch.index + ".wem")) // Copy the wem
@@ -1195,6 +1195,8 @@ module.exports = async function deploy(
 
 			await copyToCache("global", path.join(process.cwd(), "temp"), path.join("WWEV", WWEVhash))
 		}
+
+		let workingPath = path.join(process.cwd(), "temp", "WWEV", rpkgOfWWEV + ".rpkg", fs.readdirSync(path.join(process.cwd(), "temp", "WWEV", rpkgOfWWEV + ".rpkg"))[0])
 
 		fs.ensureDirSync(path.join(process.cwd(), "staging", entry[1][0].chunk))
 
