@@ -39,7 +39,7 @@ module.exports = async function difference(oldMap, newMap) {
 	for (const [filePath, newData] of Object.entries(newMap)) {
 		const oldData = oldMap[filePath]
 
-		if (invalidatedHashes.some((a) => oldData.dependencies.includes(a) || newData.dependencies.includes(a))) {
+		if (invalidatedHashes.some((a) => (oldData || { dependencies: [] }).dependencies.includes(a) || newData.dependencies.includes(a))) {
 			invalidFiles.push(filePath) // Must redeploy any files that depend on a changed file
 		}
 	}
