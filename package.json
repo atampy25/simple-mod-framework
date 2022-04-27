@@ -4,7 +4,7 @@
   "description": "",
   "main": "main.js",
   "dependencies": {
-    "@sentry/node": "^6.19.6",
+    "@sentry/node": "^6.19.7",
     "@sentry/tracing": "^6.19.6",
     "arg": "^5.0.1",
     "chalk": "^4.1.2",
