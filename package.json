@@ -2,7 +2,7 @@
   "name": "simple-mod-framework",
   "version": "1.0.0",
   "description": "",
-  "main": "main.js",
+  "main": "compiled/main.js",
   "dependencies": {
     "@sentry/node": "^6.19.7",
     "@sentry/tracing": "^6.19.7",
@@ -27,19 +27,27 @@
     "minimist": "^1.2.6",
     "promisify-child-process": "^4.1.1",
     "rfc6902": "^5.0.1",
-    "semver": "^7.3.7"
+    "semver": "^7.3.7",
+    "tslib": "^2.4.0"
   },
   "devDependencies": {
+    "@types/fs-extra": "^9.0.13",
+    "@types/klaw-sync": "^6.0.1",
+    "@types/lodash.merge": "^4.6.7",
+    "@types/lossless-json": "^1.0.1",
+    "@types/luxon": "^2.3.1",
+    "@types/md5": "^2.3.2",
+    "@types/semver": "^7.3.9",
     "eslint": "^8.14.0"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "bin": "main.js",
+  "bin": "compiled/main.js",
   "pkg": {
     "scripts": [
       "node_modules/piscina/dist/src/worker.js",
-      "patchWorker.js"
+      "compiled/patchWorker.js"
     ]
   },
   "author": "Atampy26",

@@ -1,23 +1,21 @@
-const fs = require("fs-extra")
-const klaw = require("klaw-sync")
-const path = require("path")
-const semver = require("semver")
-const json5 = require("json5")
-const LosslessJSON = require("lossless-json")
-const { xxhash3 } = require("hash-wasm")
-const { md5 } = require("hash-wasm")
-const deepMerge = require("lodash.merge")
+import * as LosslessJSON from "lossless-json"
 
-const { config, FrameworkVersion, rpkgInstance, logger } = require("./core-singleton")
+import { FrameworkVersion, config, logger, rpkgInstance } from "./core-singleton"
 
-/**
- * @return {Promise<{ [x: string]: { hash: string; dependencies: string[]; affected: string[]; }; }>}
- */
-module.exports = async function discover() {
+import type { Manifest } from "./types"
+import deepMerge from "lodash.merge"
+import fs from "fs-extra"
+import json5 from "json5"
+import klaw from "klaw-sync"
+import { md5 } from "hash-wasm"
+import path from "path"
+import semver from "semver"
+import { xxhash3 } from "hash-wasm"
+
+export default async function discover(): Promise<{ [x: string]: { hash: string; dependencies: string[]; affected: string[] } }> {
 	logger.info("Discovering mod contents")
 
-	/** @type {{ [x: string]: { hash: string, dependencies: Array<string>, affected: Array<string> }; }} */
-	const fileMap = {}
+	const fileMap: { [x: string]: { hash: string; dependencies: Array<string>; affected: Array<string> } } = {}
 
 	for (let mod of config.loadOrder) {
 		logger.verbose(`Resolving ${mod}`)
@@ -66,7 +64,7 @@ module.exports = async function discover() {
 				}
 			}
 		} else {
-			let manifest = json5.parse(String(fs.readFileSync(path.join(process.cwd(), "Mods", mod, "manifest.json"))))
+			let manifest: Manifest = json5.parse(String(fs.readFileSync(path.join(process.cwd(), "Mods", mod, "manifest.json"))))
 
 			logger.info("Discovering mod: " + manifest.name)
 

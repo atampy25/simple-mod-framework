@@ -1,12 +1,14 @@
 const FrameworkVersion = "1.5.5"
 const isDevBuild = false
 
-const fs = require("fs-extra")
-const path = require("path")
-const json5 = require("json5")
-const child_process = require("child_process")
-const chalk = require("chalk")
-const arg = require("arg")
+import type { Config } from "./types"
+import RPKG from "./rpkg"
+import arg from "arg"
+import chalk from "chalk"
+import child_process from "child_process"
+import fs from "fs-extra"
+import json5 from "json5"
+import path from "path"
 
 const args = arg({
 	"--useConsoleLogging": Boolean,
@@ -18,10 +20,9 @@ if (!args["--logLevel"] || !args["--logLevel"].length) {
 	args["--logLevel"] = ["debug", "info", "warn", "error"]
 }
 
-const RPKG = require("./rpkg")
 const rpkgInstance = new RPKG.RPKGInstance()
 
-const config = json5.parse(String(fs.readFileSync(path.join(process.cwd(), "config.json"))))
+const config: Config = json5.parse(String(fs.readFileSync(path.join(process.cwd(), "config.json"))))
 
 if (typeof config.outputConfigToAppDataOnDeploy == "undefined") {
 	config.outputConfigToAppDataOnDeploy = true
@@ -53,15 +54,16 @@ const logger = args["--useConsoleLogging"]
 			debug: console.debug,
 			info: console.info,
 			warn: console.warn,
-			error: function (/** @type {any} */ a, exitAfter = true) {
+			error: function (a: unknown, exitAfter = true) {
 				console.log(a)
 
+				// @ts-expect-error Assigning stuff on global is probably bad practice
 				if (exitAfter) global.errored = true
 			}
 	  }
 	: {
-			verbose: function (/** @type {string} */ text) {
-				if (args["--logLevel"].includes("verbose")) {
+			verbose: function (text: string) {
+				if (args["--logLevel"]!.includes("verbose")) {
 					process.stdout.write(chalk`{grey DETAIL\t${text}}\n`)
 
 					if (args["--pauseAfterLogging"]) {
@@ -74,8 +76,8 @@ const logger = args["--useConsoleLogging"]
 				}
 			},
 
-			debug: function (/** @type {string} */ text) {
-				if (args["--logLevel"].includes("debug")) {
+			debug: function (text: string) {
+				if (args["--logLevel"]!.includes("debug")) {
 					process.stdout.write(chalk`{grey DEBUG\t${text}}\n`)
 
 					if (args["--pauseAfterLogging"]) {
@@ -88,8 +90,8 @@ const logger = args["--useConsoleLogging"]
 				}
 			},
 
-			info: function (/** @type {string} */ text) {
-				if (args["--logLevel"].includes("info")) {
+			info: function (text: string) {
+				if (args["--logLevel"]!.includes("info")) {
 					process.stdout.write(chalk`{blue INFO}\t${text}\n`)
 
 					if (args["--pauseAfterLogging"]) {
@@ -102,8 +104,8 @@ const logger = args["--useConsoleLogging"]
 				}
 			},
 
-			warn: function (/** @type {string} */ text) {
-				if (args["--logLevel"].includes("warn")) {
+			warn: function (text: string) {
+				if (args["--logLevel"]!.includes("warn")) {
 					process.stdout.write(chalk`{yellow WARN}\t${text}\n`)
 
 					if (args["--pauseAfterLogging"]) {
@@ -116,8 +118,8 @@ const logger = args["--useConsoleLogging"]
 				}
 			},
 
-			error: function (/** @type {string} */ text, exitAfter = true) {
-				if (args["--logLevel"].includes("error")) {
+			error: function (text: string, exitAfter = true) {
+				if (args["--logLevel"]!.includes("error")) {
 					process.stderr.write(chalk`{red ERROR}\t${text}\n`)
 					console.trace()
 
@@ -127,12 +129,13 @@ const logger = args["--useConsoleLogging"]
 						stdio: [0, 1, 2]
 					})
 
+					// @ts-expect-error Assigning stuff on global is probably bad practice
 					if (exitAfter) global.errored = true
 				}
 			}
 	  }
 
-module.exports = {
+export default {
 	FrameworkVersion,
 	rpkgInstance,
 	config,

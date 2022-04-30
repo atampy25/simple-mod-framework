@@ -20,7 +20,7 @@ jobs:
         uses: actions/cache@v2.1.6
         with:
           path: node_modules
-          key: buildCachev18
+          key: buildCachev19
 
       - name: Cache
         id: cache2
@@ -36,12 +36,13 @@ jobs:
 
       - name: Prep
         run: |
-          npm install -g pkg
+          npm install -g pkg typescript
 
       - name: Build EXE
         run: |
           New-Item -ItemType Directory -Force -Path ./node_modules/piscina
           robocopy ./piscina ./node_modules/piscina /COPYALL /E /is /it; if ($lastexitcode -lt 8) { $global:LASTEXITCODE = $null }
+          tsc
           pkg package.json --targets node14-win-x64 --output Deploy.exe --compress Brotli
 
       - name: Download RPKG

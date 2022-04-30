@@ -1,22 +1,19 @@
-// @ts-ignore
-// eslint-disable-next-line no-undef
-THREE = require("./three-onlymath.min")
+// @ts-expect-error Need to assign on global because of QuickEntity
+global.THREE = require("./three-onlymath.min")
 
-const fs = require("fs-extra")
-const path = require("path")
+import * as Sentry from "@sentry/node"
+import * as Tracing from "@sentry/tracing"
 
-const json5 = require("json5")
-const luxon = require("luxon")
-const md5File = require("md5-file")
-
-const Sentry = require("@sentry/node")
-const Tracing = require("@sentry/tracing")
-
-const core = require("./core-singleton")
-
-const discover = require("./discover")
-const difference = require("./difference")
-const deploy = require("./deploy")
+import { DateTime } from "luxon"
+import type { Transaction } from "@sentry/tracing"
+import core from "./core-singleton"
+import deploy from "./deploy"
+import difference from "./difference"
+import discover from "./discover"
+import fs from "fs-extra"
+import json5 from "json5"
+import md5File from "md5-file"
+import path from "path"
 
 require("clarify")
 
@@ -27,6 +24,8 @@ const gameHashes = {
 	"006b544ef4547fa9926c6db33ab1d6b3": "steam",
 	"0ccb00174e1cca55deb6b07d37d75f53": "microsoft"
 	// Gamepass/store protects the EXE from reading so we can't hash it, instead we hash the game config
+} as {
+	[k: string]: "epic" | "steam" | "microsoft"
 }
 
 if (!core.config.reportErrors) {
@@ -63,6 +62,14 @@ if (fs.existsSync(path.join(core.config.retailPath, "Runtime", "chunk0.rpkg")) &
 	core.logger.error("The game config couldn't be located, please re-read the installation instructions!")
 }
 
+if (fs.existsSync(path.join(core.config.retailPath, "Runtime", "chunk0.rpkg"))) {
+	try {
+		fs.accessSync(path.join(core.config.retailPath, "thumbs.dat"), fs.constants.R_OK | fs.constants.W_OK)
+	} catch {
+		core.logger.error("thumbs.dat couldn't be accessed; try running Load Order Manager.exe in the similarly named folder as administrator!")
+	}
+}
+
 core.config.platform = fs.existsSync(path.join(core.config.retailPath, "Runtime", "chunk0.rpkg"))
 	? gameHashes[md5File.sync(path.join(core.config.retailPath, "..", "MicrosoftGame.Config"))]
 	: gameHashes[md5File.sync(path.join(core.config.runtimePath, "..", "Retail", "HITMAN3.exe"))] // Platform detection
@@ -86,31 +93,31 @@ core.interoperability.sentryTransaction = {
 												return {
 													startChild(...args) {
 														return {
-															finish() {}
+															finish(...args) {}
 														}
 													},
-													finish() {}
+													finish(...args) {}
 												}
 											},
-											finish() {}
+											finish(...args) {}
 										}
 									},
-									finish() {}
+									finish(...args) {}
 								}
 							},
-							finish() {}
+							finish(...args) {}
 						}
 					},
-					finish() {}
+					finish(...args) {}
 				}
 			},
-			finish() {}
+			finish(...args) {}
 		}
 	},
-	finish() {}
-}
+	finish(...args) {}
+} as Transaction
 
-function configureSentryScope(transaction) {
+function configureSentryScope(transaction: any) {
 	if (core.config.reportErrors)
 		Sentry.configureScope((scope) => {
 			// @ts-ignore
@@ -120,7 +127,7 @@ function configureSentryScope(transaction) {
 
 core.interoperability.cleanExit = function () {
 	if (core.config.reportErrors) {
-		Sentry.getCurrentHub().getScope().getTransaction().finish()
+		Sentry.getCurrentHub().getScope()!.getTransaction()!.finish()
 
 		core.interoperability.sentryTransaction.finish()
 	}
@@ -128,6 +135,7 @@ core.interoperability.cleanExit = function () {
 	Sentry.close(2000).then(() => {
 		core.rpkgInstance.exit()
 		try {
+			// @ts-expect-error Assigning stuff on global is probably bad practice
 			global.currentWorkerPool.destroy()
 		} catch {}
 		process.exit()
@@ -157,9 +165,10 @@ if (core.config.reportErrors) {
 	})
 
 	Sentry.setUser({
-		id: core.config.errorReportingID
+		id: core.config.errorReportingID!
 	})
 
+	// @ts-expect-error TypeScript what are you on
 	core.interoperability.sentryTransaction = Sentry.startTransaction({
 		op: "deploy",
 		name: "Deploy"
@@ -182,7 +191,7 @@ process.on("SIGINT", core.interoperability.cleanExit)
 process.on("SIGTERM", core.interoperability.cleanExit)
 
 async function doTheThing() {
-	let startedDate = luxon.DateTime.now()
+	let startedDate = DateTime.now()
 
 	core.logger.verbose("Initialising RPKG instance")
 	await core.rpkgInstance.waitForInitialised()
@@ -208,15 +217,14 @@ async function doTheThing() {
 	fs.emptyDirSync(path.join(process.cwd(), "staging"))
 	fs.emptyDirSync(path.join(process.cwd(), "temp"))
 
-	let thumbs = []
-	let packagedefinition = []
-	let localisation = []
+	let thumbs: any[] = []
+	let packagedefinition: any[] = []
+	let localisation: any[] = []
 	let localisationOverrides = {}
-	let runtimePackages = []
+	let runtimePackages: any[] = []
 	let WWEVpatches = {}
 
-	/** @type {{ [x: string]: string; }} */
-	let rpkgTypes = {}
+	let rpkgTypes: { [x: string]: string } = {}
 
 	core.logger.verbose("Beginning discovery")
 	const fileMap = await discover()
@@ -266,13 +274,15 @@ async function doTheThing() {
 	)
 
 	core.logger.verbose("Finishing")
+
+	// @ts-expect-error Assigning stuff on global is probably bad practice
 	if (global.errored) {
 		core.logger.error("Deploy failed.", false)
 		core.interoperability.cleanExit()
 	} else {
 		if (core.config.outputConfigToAppDataOnDeploy) {
-			fs.ensureDirSync(path.join(process.env.LOCALAPPDATA, "Simple Mod Framework"))
-			fs.writeFileSync(path.join(process.env.LOCALAPPDATA, "Simple Mod Framework", "lastDeploy.json"), json5.stringify(core.config))
+			fs.ensureDirSync(path.join(process.env.LOCALAPPDATA!, "Simple Mod Framework"))
+			fs.writeFileSync(path.join(process.env.LOCALAPPDATA!, "Simple Mod Framework", "lastDeploy.json"), json5.stringify(core.config))
 		}
 
 		if (core.args["--useConsoleLogging"]) {
@@ -280,10 +290,10 @@ async function doTheThing() {
 		} else {
 			core.logger.info(
 				"Done " +
-					luxon.DateTime.now()
+					DateTime.now()
 						.plus({
-							// @ts-ignore
-							milliseconds: luxon.DateTime.now() - startedDate
+							// @ts-expect-error TypeScript doesn't like date operations
+							milliseconds: DateTime.now() - startedDate
 						})
 						.toRelative() +
 					"."

@@ -1,63 +1,56 @@
-const QuickEntity = {
-	"0.1": require("./quickentity1136"),
-	"2.0": require("./quickentity20"),
-	"2.1": require("./quickentity"),
+import * as LosslessJSON from "lossless-json"
+import * as rfc6902 from "rfc6902"
 
-	"999.999": require("./quickentity")
-}
+import { config, logger, rpkgInstance } from "./core-singleton"
+import { copyFromCache, copyToCache, extractOrCopyToTemp, getQuickEntityFromVersion, hexflip } from "./utils"
 
-const fs = require("fs-extra")
-const path = require("path")
-const child_process = require("child_process")
-const LosslessJSON = require("lossless-json")
-const md5 = require("md5")
-const deepMerge = require("lodash.merge")
-const { xxhash3 } = require("hash-wasm")
+import type { Manifest } from "./types"
+import Piscina from "piscina"
+import type { Transaction } from "@sentry/tracing"
+import child_process from "child_process"
+import { crc32 } from "./crc32"
+import deepMerge from "lodash.merge"
+import fs from "fs-extra"
+import json5 from "json5"
+import klaw from "klaw-sync"
+import md5 from "md5"
+import os from "os"
+import path from "path"
+import { xxhash3 } from "hash-wasm"
 
-const {
-	// @ts-ignore
-	crc32
-} = require("./crc32")
-
-const os = require("os")
-const json5 = require("json5")
-const klaw = require("klaw-sync")
-const rfc6902 = require("rfc6902")
-
-const execCommand = function (/** @type {string} */ command) {
+const execCommand = function (command: string) {
 	logger.verbose(`Executing command ${command}`)
 	child_process.execSync(command)
 }
 
-const callRPKGFunction = async function (/** @type {string} */ command) {
+const callRPKGFunction = async function (command: string) {
 	logger.verbose(`Executing RPKG function ${command}`)
 	return await rpkgInstance.callFunction(command)
 }
 
-const getRPKGOfHash = async function (/** @type {string} */ hash) {
+const getRPKGOfHash = async function (hash: string) {
 	logger.verbose(`Getting RPKG of hash ${hash}`)
 	return await rpkgInstance.getRPKGOfHash(hash)
 }
 
-// @ts-ignore
-const Piscina = require("piscina")
-
-const { config, rpkgInstance, logger } = require("./core-singleton")
-
-const { extractOrCopyToTemp, copyFromCache, copyToCache, hexflip } = require("./utils")
-
-module.exports = async function deploy(
-	sentryTransaction,
-	configureSentryScope,
-	/** @type {{ filePath: string; data: { hash: string; dependencies: string[]; affected: string[]; }; }[]} */ invalidatedData,
-	/** @type {{ filePath: string; data: { hash: string; dependencies: string[]; affected: string[]; }; }[]} */ cachedData,
-	/** @type {{ [x: string]: string; }} */ rpkgTypes,
-	/** @type {{ [s: string]: any; }} */ WWEVpatches,
-	/** @type {any[]} */ runtimePackages,
-	/** @type {any[]} */ packagedefinition,
-	/** @type {any[]} */ thumbs,
-	/** @type {any[]} */ localisation,
-	/** @type {{ [x: string]: any; }} */ localisationOverrides
+export default async function deploy(
+	sentryTransaction: Transaction,
+	configureSentryScope: (transaction: any) => void,
+	invalidatedData: {
+		filePath: string
+		data: { hash: string; dependencies: string[]; affected: string[] }
+	}[],
+	cachedData: {
+		filePath: string
+		data: { hash: string; dependencies: string[]; affected: string[] }
+	}[],
+	rpkgTypes: { [x: string]: string },
+	WWEVpatches: { [s: string]: any },
+	runtimePackages: any[],
+	packagedefinition: any[],
+	thumbs: any[],
+	localisation: any[],
+	localisationOverrides: { [x: string]: any }
 ) {
 	let sentryModsTransaction = sentryTransaction.startChild({
 		op: "stage",
@@ -83,11 +76,18 @@ module.exports = async function deploy(
 			)
 		) {
 			// Find mod with ID in Mods folder, set the current mod to that folder
-			mod = fs
+			let foundMod = fs
 				.readdirSync(path.join(process.cwd(), "Mods"))
 				.find(
 					(a) => fs.existsSync(path.join(process.cwd(), "Mods", a, "manifest.json")) && json5.parse(String(fs.readFileSync(path.join(process.cwd(), "Mods", a, "manifest.json")))).id == mod
 				)
+
+			if (!foundMod) {
+				logger.error(`Could not resolve mod ${mod} to its folder in Mods!`)
+				return
+			}
+
+			mod = foundMod
 		} // Essentially, if the mod isn't an RPKG mod, it is referenced by its ID, so this finds the mod folder with the right ID
 
 		logger.verbose(`Beginning deploy of ${mod}`)
@@ -130,7 +130,7 @@ module.exports = async function deploy(
 
 			sentryModTransaction.finish()
 		} else {
-			let manifest = json5.parse(String(fs.readFileSync(path.join(process.cwd(), "Mods", mod, "manifest.json"))))
+			let manifest: Manifest = json5.parse(String(fs.readFileSync(path.join(process.cwd(), "Mods", mod, "manifest.json"))))
 
 			logger.info("Staging mod: " + manifest.name)
 
@@ -140,7 +140,7 @@ module.exports = async function deploy(
 			})
 			configureSentryScope(sentryModTransaction)
 
-			logger.verbose(`Getting folders`)
+			logger.verbose(`Resolving deploy information`)
 
 			let contentFolders = []
 			let blobsFolders = []
@@ -167,10 +167,10 @@ module.exports = async function deploy(
 				logger.verbose(`Merging mod options`)
 
 				for (let option of manifest.options.filter(
-					(/** @type {{ name: string; group: string; type: string; mods: any[]; }} */ a) =>
-						config.modOptions[manifest.id].includes(a.name) ||
-						config.modOptions[manifest.id].includes(a.group + ":" + a.name) ||
-						(a.type == "requirement" && a.mods.every((/** @type {any} */ b) => config.loadOrder.includes(b)))
+					(a) =>
+						(a.type == "checkbox" && config.modOptions[manifest.id].includes(a.name)) ||
+						(a.type == "select" && config.modOptions[manifest.id].includes(a.group + ":" + a.name)) ||
+						(a.type == "requirement" && a.mods.every((b) => config.loadOrder.includes(b)))
 				)) {
 					if (
 						option.contentFolder &&
@@ -224,7 +224,7 @@ module.exports = async function deploy(
 			/* ---------------------------------------------------------------------------------------------- */
 			/*                                             Content                                            */
 			/* ---------------------------------------------------------------------------------------------- */
-			let entityPatches = []
+			let entityPatches: any = []
 
 			let sentryContentTransaction = sentryModTransaction.startChild({
 				op: "stage",
@@ -239,13 +239,14 @@ module.exports = async function deploy(
 					} catch {}
 
 					let contractsORESChunk,
-						contractsORESContent = {},
-						contractsORESMetaContent = { hash_reference_data: [] }
+						contractsORESContent = {} as { [k: string]: Record<string, any> },
+						contractsORESMetaContent = { hash_reference_data: [] as Record<string, any>[] }
 
 					try {
 						contractsORESChunk = await getRPKGOfHash("002B07020D21D727")
 					} catch {
 						logger.error("Couldn't find the contracts ORES in the game files! Make sure you've installed the framework in the right place.")
+						return
 					}
 
 					logger.verbose(`Check contracts ORES necessary`)
@@ -287,7 +288,7 @@ module.exports = async function deploy(
 						.map((a) => a.path)) {
 						let contentType = path.basename(contentFilePath).split(".").slice(1).join(".")
 
-						let entityContent
+						let entityContent: any
 
 						let sentryContentFileTransaction = [
 							"entity.json",
@@ -304,40 +305,19 @@ module.exports = async function deploy(
 									description: "Stage " + contentType
 							  })
 							: {
-									/**
-									 * @param {any[]} args
-									 */
-									startChild(...args) {
+									startChild() {
 										return {
-											/**
-											 * @param {any[]} args
-											 */
-											startChild(...args) {
+											startChild() {
 												return {
-													/**
-													 * @param {any[]} args
-													 */
-													startChild(...args) {
+													startChild() {
 														return {
-															/**
-															 * @param {any[]} args
-															 */
-															startChild(...args) {
+															startChild() {
 																return {
-																	/**
-																	 * @param {any[]} args
-																	 */
-																	startChild(...args) {
+																	startChild() {
 																		return {
-																			/**
-																			 * @param {any[]} args
-																			 */
-																			startChild(...args) {
+																			startChild() {
 																				return {
-																					/**
-																					 * @param {any[]} args
-																					 */
-																					startChild(...args) {
+																					startChild() {
 																						return {
 																							finish() {}
 																						}
@@ -364,6 +344,8 @@ module.exports = async function deploy(
 							  } // Don't track raw files, only special file types
 						configureSentryScope(sentryContentFileTransaction)
 
+						logger.verbose(`Staging ${contentType} file ${contentFilePath}`)
+
 						switch (contentType) {
 							case "entity.json":
 								entityContent = LosslessJSON.parse(String(fs.readFileSync(contentFilePath)))
@@ -371,7 +353,7 @@ module.exports = async function deploy(
 								logger.debug("Converting entity " + contentFilePath)
 
 								try {
-									if (!QuickEntity[Object.keys(QuickEntity)[Object.keys(QuickEntity).findIndex((a) => parseFloat(a) > Number(entityContent.quickEntityVersion.value)) - 1]]) {
+									if (!getQuickEntityFromVersion(entityContent.quickEntityVersion.value)) {
 										logger.error("Could not find matching QuickEntity version for " + Number(entityContent.quickEntityVersion.value) + "!")
 									}
 								} catch {
@@ -386,9 +368,7 @@ module.exports = async function deploy(
 									try {
 										logger.verbose(`QN generate`)
 
-										await QuickEntity[
-											Object.keys(QuickEntity)[Object.keys(QuickEntity).findIndex((a) => parseFloat(a) > Number(entityContent.quickEntityVersion.value)) - 1]
-										].generate(
+										await getQuickEntityFromVersion(entityContent.quickEntityVersion.value).generate(
 											"HM3",
 											contentFilePath,
 											path.join(process.cwd(), "temp", "temp.TEMP.json"),
@@ -475,6 +455,7 @@ module.exports = async function deploy(
 									oresChunk = await getRPKGOfHash("0057C2C3941115CA")
 								} catch {
 									logger.error("Couldn't find the unlockables ORES in the game files! Make sure you've installed the framework in the right place.")
+									return
 								}
 
 								logger.debug("Applying unlockable patch " + contentFilePath)
@@ -489,7 +470,7 @@ module.exports = async function deploy(
 									let oresContent = JSON.parse(String(fs.readFileSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "0057C2C3941115CA.ORES.JSON"))))
 
 									logger.verbose(`Deep merge`)
-									let oresToPatch = Object.fromEntries(oresContent.map((/** @type {{ Id: any; }} */ a) => [a.Id, a]))
+									let oresToPatch = Object.fromEntries(oresContent.map((a: { Id: any }) => [a.Id, a]))
 									deepMerge(oresToPatch, entityContent)
 									let oresToWrite = Object.values(oresToPatch)
 
@@ -514,6 +495,7 @@ module.exports = async function deploy(
 									repoRPKG = await getRPKGOfHash("00204D1AFD76AB13")
 								} catch {
 									logger.error("Couldn't find the repository in the game files! Make sure you've installed the framework in the right place.")
+									return
 								}
 
 								logger.debug("Applying repository patch " + contentFilePath)
@@ -526,7 +508,7 @@ module.exports = async function deploy(
 
 									let repoContent = JSON.parse(String(fs.readFileSync(path.join(process.cwd(), "temp", repoRPKG, "REPO", "00204D1AFD76AB13.REPO"))))
 
-									let repoToPatch = Object.fromEntries(repoContent.map((/** @type {{ [x: string]: any; }} */ a) => [a["ID_"], a]))
+									let repoToPatch = Object.fromEntries(repoContent.map((a: { [x: string]: any }) => [a["ID_"], a]))
 									deepMerge(repoToPatch, entityContent)
 									let repoToWrite = Object.values(repoToPatch)
 
@@ -537,7 +519,7 @@ module.exports = async function deploy(
 									for (let repoItem of repoToWrite) {
 										if (editedItems.has(repoItem.ID_)) {
 											if (repoItem.Runtime) {
-												if (!metaContent["hash_reference_data"].find((/** @type {{ hash: string; }} */ a) => a.hash == parseInt(repoItem.Runtime).toString(16).toUpperCase())) {
+												if (!metaContent["hash_reference_data"].find((a: { hash: string }) => a.hash == parseInt(repoItem.Runtime).toString(16).toUpperCase())) {
 													metaContent["hash_reference_data"].push({
 														hash: parseInt(repoItem.Runtime).toString(16).toUpperCase(),
 														flag: "9F"
@@ -548,7 +530,7 @@ module.exports = async function deploy(
 											if (repoItem.Image) {
 												if (
 													!metaContent["hash_reference_data"].find(
-														(/** @type {{ hash: string; }} */ a) =>
+														(a: { hash: string }) =>
 															a.hash ==
 															"00" + md5(`[assembly:/_pro/online/default/cloudstorage/resources/${repoItem.Image}].pc_gfx`.toLowerCase()).slice(2, 16).toUpperCase()
 													)
@@ -604,6 +586,7 @@ module.exports = async function deploy(
 									rpkgOfFile = await getRPKGOfHash(entityContent.file)
 								} catch {
 									logger.error("Couldn't find the file to patch in the game files! Make sure you've installed the framework in the right place.")
+									return
 								}
 
 								let fileType = entityContent.type || "JSON"
@@ -630,7 +613,7 @@ module.exports = async function deploy(
 									if (entityContent.type == "ORES" && Array.isArray(fileContent)) {
 										fileContent = Object.fromEntries(fileContent.map((a) => [a.Id, a])) // Change unlockables ORES to be an object
 									} else if (entityContent.type == "REPO") {
-										fileContent = Object.fromEntries(fileContent.map((/** @type {{ [x: string]: any; }} */ a) => [a["ID_"], a])) // Change REPO to be an object
+										fileContent = Object.fromEntries(fileContent.map((a: { [x: string]: any }) => [a["ID_"], a])) // Change REPO to be an object
 									}
 
 									rfc6902.applyPatch(fileContent, entityContent.patch) // Apply the JSON patch
@@ -850,6 +833,7 @@ module.exports = async function deploy(
 				maxThreads: os.cpus().length / 4 // For an 8-core CPU with 16 logical processors there are 4 max threads
 			})
 
+			// @ts-expect-error Assigning stuff on global is probably bad practice
 			global.currentWorkerPool = workerPool
 
 			let sentryPatchTransaction = sentryModTransaction.startChild({
@@ -875,6 +859,7 @@ module.exports = async function deploy(
 				})
 			) // Run each patch in the worker queue and wait for all of them to finish
 
+			// @ts-expect-error Assigning stuff on global is probably bad practice
 			global.currentWorkerPool = {
 				destroy: () => {}
 			}
@@ -900,6 +885,7 @@ module.exports = async function deploy(
 					oresChunk = await getRPKGOfHash("00858D45F5F9E3CA")
 				} catch {
 					logger.error("Couldn't find the blobs ORES in the game files! Make sure you've installed the framework in the right place.")
+					return
 				}
 
 				await extractOrCopyToTemp(oresChunk, "00858D45F5F9E3CA", "ORES") // Extract the ORES to temp
@@ -931,7 +917,7 @@ module.exports = async function deploy(
 
 						oresContent[blobHash] = blobPath // Add the blob to the ORES
 
-						if (!metaContent["hash_reference_data"].find((/** @type {{ hash: any; }} */ a) => a.hash == blobHash)) {
+						if (!metaContent["hash_reference_data"].find((a: { hash: any }) => a.hash == blobHash)) {
 							metaContent["hash_reference_data"].push({
 								hash: blobHash,
 								flag: "9F"
@@ -971,7 +957,7 @@ module.exports = async function deploy(
 			/* -------------------------------------- Runtime packages -------------------------------------- */
 			if (manifest.runtimePackages) {
 				runtimePackages.push(
-					...manifest.runtimePackages.map((/** @type {{ chunk: any; path: any; }} */ a) => {
+					...manifest.runtimePackages.map((a: { chunk: any; path: any }) => {
 						return {
 							chunk: a.chunk,
 							path: a.path,
@@ -1287,8 +1273,7 @@ module.exports = async function deploy(
 				}
 			}
 
-			/** @type Array<Array<{Language: string}|{StringHash: number, String: string}>> */
-			let locrToWrite = []
+			let locrToWrite: Array<Array<{ Language: string } | { StringHash: number; String: string }>> = []
 
 			for (let language of Object.keys(locrContent)) {
 				locrToWrite.push([
@@ -1358,7 +1343,11 @@ module.exports = async function deploy(
 				fs.ensureDirSync(path.join(process.cwd(), "staging", "chunk0"))
 
 				let locrFileContent = JSON.parse(String(fs.readFileSync(path.join(process.cwd(), "temp", "LOCR", localisationFileRPKG + ".rpkg", locrHash + ".LOCR.JSON"))))
-				let locrContent = {}
+				let locrContent = {} as {
+					[k: string]: {
+						[k: string]: string
+					}
+				}
 
 				for (let localisationLanguage of locrFileContent) {
 					locrContent[localisationLanguage[0].Language] = {}
@@ -1368,7 +1357,9 @@ module.exports = async function deploy(
 				}
 
 				for (let item of localisationOverrides[locrHash]) {
-					let toMerge = {}
+					let toMerge = {} as {
+						[k: string]: string
+					}
 					toMerge["abc" + item.locString] = item.text
 
 					deepMerge(locrContent[languages[item.language]], toMerge)
@@ -1378,8 +1369,7 @@ module.exports = async function deploy(
 					}
 				}
 
-				/** @type Array<Array<{Language: string}|{StringHash: number, String: string}>> */
-				let locrToWrite = []
+				let locrToWrite: Array<Array<{ Language: string } | { StringHash: number; String: string }>> = []
 
 				for (let language of Object.keys(locrContent)) {
 					locrToWrite.push([

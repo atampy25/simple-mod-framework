@@ -1,0 +1,20 @@
+{
+    "compilerOptions": {
+        "outDir": "./compiled",
+        "allowJs": true,
+        "target": "ES2019",
+        "module": "CommonJS",
+        "esModuleInterop": true,
+        "noImplicitAny": true,
+        "strictNullChecks": true,
+        "importsNotUsedAsValues": "error",
+        "sourceMap": true,
+        "inlineSources": true,
+        "sourceRoot": "/",
+        "noEmitHelpers": true,
+        "importHelpers": true
+    },
+    "include": [
+        "./src/**/*"
+    ]
+}

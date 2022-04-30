@@ -1,12 +1,21 @@
-const fs = require("fs")
-const path = require("path")
-const json5 = require("json5")
-const child_process = require("child_process")
+import child_process from "child_process"
+import fs from "fs"
+import json5 from "json5"
+import path from "path"
+
 require("clarify")
 
 const config = json5.parse(String(fs.readFileSync(path.join(process.cwd(), "config.json"))))
 
 class RPKGInstance {
+	rpkgProcess: child_process.ChildProcessWithoutNullStreams
+
+	output: string
+	previousOutput: string
+
+	initialised: boolean
+	ready: boolean
+
 	constructor() {
 		this.rpkgProcess = child_process.spawn(path.join(process.cwd(), "Third-Party", "rpkg-cli"), ["-i"])
 		this.output = ""
@@ -38,16 +47,16 @@ class RPKGInstance {
 		return new Promise(waitForInitialised.bind(this))
 	}
 
-	async callFunction(func) {
+	async callFunction(func: string): Promise<string> {
 		this.ready = false
 
-		await this.rpkgProcess.stdin.write(func)
-		await this.rpkgProcess.stdin.write("\n")
+		this.rpkgProcess.stdin.write(func)
+		this.rpkgProcess.stdin.write("\n")
 
 		return new Promise(waitForReady.bind(this))
 	}
 
-	async getRPKGOfHash(hash) {
+	async getRPKGOfHash(hash: string): Promise<string> {
 		let result = [
 			...(await this.callFunction('-hash_probe "' + path.resolve(process.cwd(), config.runtimePath) + '" -filter "' + hash + '"')).matchAll(
 				/is in RPKG file: (chunk[0-9]*(?:patch[1-9])?)\.rpkg/g
@@ -61,7 +70,7 @@ class RPKGInstance {
 	}
 }
 
-function waitForInitialised(resolve) {
+function waitForInitialised(resolve: (result: string) => {}) {
 	// yes, bad, pls tell me how to make good
 	if (this.initialised) {
 		resolve(this.previousOutput)
@@ -70,7 +79,7 @@ function waitForInitialised(resolve) {
 	}
 }
 
-function waitForReady(resolve) {
+function waitForReady(resolve: (result: string) => {}) {
 	// yes, bad, pls tell me how to make good
 	if (this.ready) {
 		resolve(this.previousOutput.slice(0, -8).replace(/Running command: .*\r\n\r\n/g, ""))
@@ -79,6 +88,6 @@ function waitForReady(resolve) {
 	}
 }
 
-module.exports = {
+export default {
 	RPKGInstance
 }

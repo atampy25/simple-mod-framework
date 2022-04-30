@@ -1,10 +1,9 @@
-const { logger } = require("./core-singleton")
+import { logger } from "./core-singleton"
 
-/**
- * @param {{ [x: string]: { hash: string, dependencies: Array<string>, affected: Array<string> }; }} oldMap
- * @param {{ [x: string]: { hash: string, dependencies: Array<string>, affected: Array<string> }; }} newMap
- */
-module.exports = async function difference(oldMap, newMap) {
+export default async function difference(
+	oldMap: { [x: string]: { hash: string; dependencies: Array<string>; affected: Array<string> } },
+	newMap: { [x: string]: { hash: string; dependencies: Array<string>; affected: Array<string> } }
+) {
 	logger.info("Invalidating cache")
 
 	const invalidFiles = []

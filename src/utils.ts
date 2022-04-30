@@ -1,14 +1,50 @@
-const fs = require("fs-extra")
-const path = require("path")
+import { config, logger, rpkgInstance } from "./core-singleton"
+
+import fs from "fs-extra"
+import path from "path"
+
 const checkDiskSpace = require("check-disk-space").default
 const freeSpace = async () => Number((await checkDiskSpace(process.cwd())).free) / 1024 / 1024 / 1024
 
-const { rpkgInstance, config, logger } = require("./core-singleton")
+const QuickEntity = {
+	"0.1": require("./quickentity1136"),
+	"2.0": require("./quickentity20"),
+	"2.1": require("./quickentity"),
 
-/**
- * @param {string} input
- */
-function hexflip(input) {
+	"999.999": require("./quickentity")
+} as {
+	[k: string]: {
+		convert: (game: string, TEMP: string, TEMPmeta: string, TBLU: string, TBLUmeta: string, output: string) => Promise<void>
+		generate: (game: string, input: string, TEMP: string, TEMPmeta: string, TBLU: string, TBLUmeta: string) => Promise<void>
+		applyPatchJSON: (original: string, patch: string, output: string) => Promise<void>
+	}
+}
+
+const QuickEntityPatch = {
+	"0": require("./quickentity1136"),
+	"3": require("./quickentity20"),
+	"4": require("./quickentity"),
+
+	"999": require("./quickentity")
+} as {
+	[k: string]: {
+		convert: (game: string, TEMP: string, TEMPmeta: string, TBLU: string, TBLUmeta: string, output: string) => Promise<void>
+		generate: (game: string, input: string, TEMP: string, TEMPmeta: string, TBLU: string, TBLUmeta: string) => Promise<void>
+		applyPatchJSON: (original: string, patch: string, output: string) => Promise<void>
+	}
+}
+
+export function getQuickEntityFromVersion(version: string) {
+	logger.verbose(`Getting QuickEntity version from entity version ${version}`)
+	return QuickEntity[Object.keys(QuickEntity)[Object.keys(QuickEntity).findIndex((a) => parseFloat(a) > Number(version)) - 1]]
+}
+
+export function getQuickEntityFromPatchVersion(version: string) {
+	logger.verbose(`Getting QuickEntity version from patch version ${version}`)
+	return QuickEntityPatch[Object.keys(QuickEntityPatch)[Object.keys(QuickEntityPatch).findIndex((a) => parseFloat(a) > Number(version)) - 1]]
+}
+
+export function hexflip(input: string) {
 	let output = ""
 
 	for (let i = input.length; i > 0 / 2; i = i - 2) {
@@ -18,13 +54,7 @@ function hexflip(input) {
 	return output
 }
 
-/**
- * @param {string} rpkgOfFile
- * @param {string} file
- * @param {string} type
- * @param {string} [stagingChunk]
- */
-async function extractOrCopyToTemp(rpkgOfFile, file, type, stagingChunk = "chunk0") {
+export async function extractOrCopyToTemp(rpkgOfFile: string, file: string, type: string, stagingChunk: string = "chunk0") {
 	logger.verbose(`Extract or copy to temp: ${rpkgOfFile} ${file} ${type} ${stagingChunk}`)
 
 	if (!fs.existsSync(path.join(process.cwd(), "staging", stagingChunk, file + "." + type))) {
@@ -36,12 +66,7 @@ async function extractOrCopyToTemp(rpkgOfFile, file, type, stagingChunk = "chunk
 	}
 }
 
-/**
- * @param {string} mod
- * @param {string} cachePath
- * @param {string} outputPath
- */
-async function copyFromCache(mod, cachePath, outputPath) {
+export async function copyFromCache(mod: string, cachePath: string, outputPath: string) {
 	logger.verbose(`Copy from cache: ${mod} ${cachePath} ${outputPath}`)
 
 	if (fs.existsSync(path.join(process.cwd(), "cache", winPathEscape(mod), cachePath))) {
@@ -53,12 +78,7 @@ async function copyFromCache(mod, cachePath, outputPath) {
 	return false
 }
 
-/**
- * @param {string} mod
- * @param {string} originalPath
- * @param {string} cachePath
- */
-async function copyToCache(mod, originalPath, cachePath) {
+export async function copyToCache(mod: string, originalPath: string, cachePath: string) {
 	logger.verbose(`Copy to cache: ${mod} ${originalPath} ${cachePath}`)
 
 	// do not cache if less than 5 GB remaining on disk
@@ -71,7 +91,7 @@ async function copyToCache(mod, originalPath, cachePath) {
 	return false
 }
 
-function winPathEscape(str) {
+export function winPathEscape(str: string) {
 	return str
 		.replace(/</gi, "")
 		.replace(/>/gi, "")
@@ -83,12 +103,4 @@ function winPathEscape(str) {
 		.replace(/\|/gi, "")
 		.replace(/\?/gi, "")
 		.replace(/\*/gi, "")
-}
-
-module.exports = {
-	hexflip,
-	extractOrCopyToTemp,
-	copyFromCache,
-	copyToCache,
-	winPathEscape
 }

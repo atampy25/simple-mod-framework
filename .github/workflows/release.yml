@@ -20,7 +20,7 @@ jobs:
         uses: actions/cache@v2.1.6
         with:
           path: node_modules
-          key: buildCachev18
+          key: buildCachev19
 
       - name: Cache
         id: cache2
@@ -36,12 +36,13 @@ jobs:
 
       - name: Prep
         run: |
-          npm install -g pkg
+          npm install -g pkg typescript
 
       - name: Build EXE
         run: |
           New-Item -ItemType Directory -Force -Path ./node_modules/piscina
           robocopy ./piscina ./node_modules/piscina /COPYALL /E /is /it; if ($lastexitcode -lt 8) { $global:LASTEXITCODE = $null }
+          tsc
           pkg package.json --targets node14-win-x64 --output Deploy.exe --compress Brotli
 
       - name: Download RPKG
@@ -92,13 +93,13 @@ jobs:
           filename: Release.zip
           directory: dist
 
-      - name: 'Get latest tag'
+      - name: Get latest tag
         id: latestTag
         uses: 'WyriHaximus/github-action-get-previous-tag@v1.1.0'
         with:
           fallback: unknown
 
-      - name: 'Generate changelog'
+      - name: Generate changelog
         id: changelog
         uses: loopwerk/tag-changelog@v1.0.4
         with:
@@ -123,7 +124,12 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Sentry Release
+      - name: Compile TypeScript
+        run: |
+          npm install -g typescript
+          tsc
+
+      - name: Sentry release
         uses: getsentry/action-release@v1.1.6
         env:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
@@ -132,3 +138,4 @@ jobs:
         with:
           environment: production
           version: ${{ github.ref }}
+          sourcemaps: './compiled/core-singleton.js.map ./compiled/core.js.map ./compiled/crc32.js.map ./compiled/deploy.js.map ./compiled/difference.js.map ./compiled/discover.js.map ./compiled/main.js.map ./compiled/patchWorker.js.map ./compiled/quickentity.js.map ./compiled/quickentity20.js.map ./compiled/quickentity1136.js.map ./compiled/rpkg.js.map ./compiled/three-onlymath.min.js.map ./compiled/types.js.map ./compiled/utils.js.map'
