@@ -57,8 +57,8 @@ class RPKGInstance {
 	}
 
 	async getRPKGOfHash(hash: string): Promise<string> {
-		let result = [
-			...(await this.callFunction('-hash_probe "' + path.resolve(process.cwd(), config.runtimePath) + '" -filter "' + hash + '"')).matchAll(
+		const result = [
+			...(await this.callFunction("-hash_probe \"" + path.resolve(process.cwd(), config.runtimePath) + "\" -filter \"" + hash + "\"")).matchAll(
 				/is in RPKG file: (chunk[0-9]*(?:patch[1-9])?)\.rpkg/g
 			)
 		]
@@ -70,7 +70,7 @@ class RPKGInstance {
 	}
 }
 
-function waitForInitialised(resolve: (result: string) => {}) {
+function waitForInitialised(resolve: (result: string) => unknown) {
 	// yes, bad, pls tell me how to make good
 	if (this.initialised) {
 		resolve(this.previousOutput)
@@ -79,7 +79,7 @@ function waitForInitialised(resolve: (result: string) => {}) {
 	}
 }
 
-function waitForReady(resolve: (result: string) => {}) {
+function waitForReady(resolve: (result: string) => unknown) {
 	// yes, bad, pls tell me how to make good
 	if (this.ready) {
 		resolve(this.previousOutput.slice(0, -8).replace(/Running command: .*\r\n\r\n/g, ""))

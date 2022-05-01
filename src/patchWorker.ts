@@ -19,14 +19,37 @@ const execCommand = function (command: string) {
 	child_process.execSync(command)
 }
 
-export = async ({ tempHash, tempRPKG, tbluHash, tbluRPKG, chunkFolder, assignedTemporaryDirectory, patches, invalidatedData, mod }) => {
+export = async ({
+	tempHash,
+	tempRPKG,
+	tbluHash,
+	tbluRPKG,
+	chunkFolder,
+	assignedTemporaryDirectory,
+	patches,
+	invalidatedData,
+	cacheFolder
+}: {
+	tempHash: string
+	tempRPKG: string
+	tbluHash: string
+	tbluRPKG: string
+	chunkFolder: string
+	assignedTemporaryDirectory: string
+	patches: any[]
+	invalidatedData: {
+		filePath: string
+		data: { hash: string; dependencies: string[]; affected: string[] }
+	}[]
+	cacheFolder: string
+}) => {
 	fs.ensureDirSync(path.join(process.cwd(), assignedTemporaryDirectory))
 
 	if (
 		!patches.every((patch) => !invalidatedData.some((a) => a.filePath == patch.path)) || // must redeploy, invalid cache
-		!(await copyFromCache(mod, path.join(chunkFolder, await xxhash3(patches[patches.length - 1].path)), path.join(process.cwd(), assignedTemporaryDirectory))) // cache is not available
+		!(await copyFromCache(cacheFolder, path.join(chunkFolder, await xxhash3(patches[patches.length - 1].path)), path.join(process.cwd(), assignedTemporaryDirectory))) // cache is not available
 	) {
-		let rpkgInstance = new RPKG.RPKGInstance()
+		const rpkgInstance = new RPKG.RPKGInstance()
 
 		await rpkgInstance.waitForInitialised()
 
@@ -59,22 +82,22 @@ export = async ({ tempHash, tempRPKG, tbluHash, tbluRPKG, chunkFolder, assignedT
 
 		/* ------------------------------------ Convert to RT Source ------------------------------------ */
 		execCommand(
-			'"' +
+			"\"" +
 				path.join(process.cwd(), "Third-Party", "ResourceTool.exe") +
-				'" HM3 convert TEMP "' +
+				"\" HM3 convert TEMP \"" +
 				path.join(process.cwd(), assignedTemporaryDirectory, tempRPKG, "TEMP", tempHash + ".TEMP") +
-				'" "' +
+				"\" \"" +
 				path.join(process.cwd(), assignedTemporaryDirectory, tempRPKG, "TEMP", tempHash + ".TEMP") +
-				'.json" --simple'
+				".json\" --simple"
 		)
 		execCommand(
-			'"' +
+			"\"" +
 				path.join(process.cwd(), "Third-Party", "ResourceTool.exe") +
-				'" HM3 convert TBLU "' +
+				"\" HM3 convert TBLU \"" +
 				path.join(process.cwd(), assignedTemporaryDirectory, tbluRPKG, "TBLU", tbluHash + ".TBLU") +
-				'" "' +
+				"\" \"" +
 				path.join(process.cwd(), assignedTemporaryDirectory, tbluRPKG, "TBLU", tbluHash + ".TBLU") +
-				'.json" --simple'
+				".json\" --simple"
 		)
 		await callRPKGFunction(`-hash_meta_to_json "${path.join(process.cwd(), assignedTemporaryDirectory, tempRPKG, "TEMP", tempHash + ".TEMP.meta")}"`)
 		await callRPKGFunction(`-hash_meta_to_json "${path.join(process.cwd(), assignedTemporaryDirectory, tbluRPKG, "TBLU", tbluHash + ".TBLU.meta")}"`) // Generate the RT files from the binary files
@@ -102,7 +125,7 @@ export = async ({ tempHash, tempRPKG, tbluHash, tbluRPKG, chunkFolder, assignedT
 			) // Generate the QN json from the RT files
 		}
 
-		for (let patch of patches) {
+		for (const patch of patches) {
 			logger.debug("Applying patch " + patch.path)
 
 			if (!getQuickEntityFromPatchVersion(patch.patchVersion.value)) {
@@ -136,22 +159,22 @@ export = async ({ tempHash, tempRPKG, tbluHash, tbluRPKG, chunkFolder, assignedT
 
 		/* -------------------------------------- Convert to binary ------------------------------------- */
 		execCommand(
-			'"' +
+			"\"" +
 				path.join(process.cwd(), "Third-Party", "ResourceTool.exe") +
-				'" HM3 generate TEMP "' +
+				"\" HM3 generate TEMP \"" +
 				path.join(process.cwd(), assignedTemporaryDirectory, "temp.TEMP.json") +
-				'" "' +
+				"\" \"" +
 				path.join(process.cwd(), assignedTemporaryDirectory, tempHash + ".TEMP") +
-				'" --simple'
+				"\" --simple"
 		)
 		execCommand(
-			'"' +
+			"\"" +
 				path.join(process.cwd(), "Third-Party", "ResourceTool.exe") +
-				'" HM3 generate TBLU "' +
+				"\" HM3 generate TBLU \"" +
 				path.join(process.cwd(), assignedTemporaryDirectory, "temp.TBLU.json") +
-				'" "' +
+				"\" \"" +
 				path.join(process.cwd(), assignedTemporaryDirectory, tbluHash + ".TBLU") +
-				'" --simple'
+				"\" --simple"
 		)
 		await callRPKGFunction(`-json_to_hash_meta "${path.join(process.cwd(), assignedTemporaryDirectory, tempHash + ".TEMP.meta.json")}"`)
 		await callRPKGFunction(`-json_to_hash_meta "${path.join(process.cwd(), assignedTemporaryDirectory, tbluHash + ".TBLU.meta.json")}"`) // Generate the binary files from the RT json
@@ -164,7 +187,7 @@ export = async ({ tempHash, tempRPKG, tbluHash, tbluRPKG, chunkFolder, assignedT
 
 		rpkgInstance.exit()
 
-		await copyToCache(mod, path.join(process.cwd(), assignedTemporaryDirectory), path.join(chunkFolder, await xxhash3(patches[patches.length - 1].path)))
+		await copyToCache(cacheFolder, path.join(process.cwd(), assignedTemporaryDirectory), path.join(chunkFolder, await xxhash3(patches[patches.length - 1].path)))
 	} else {
 		logger.debug("Restored patch chain ending in " + patches[patches.length - 1].path + " from cache")
 	}

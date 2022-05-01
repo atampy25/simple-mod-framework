@@ -4,8 +4,9 @@ global.THREE = require("./three-onlymath.min")
 import * as Sentry from "@sentry/node"
 import * as Tracing from "@sentry/tracing"
 
+import type { Span, Transaction } from "@sentry/tracing"
+
 import { DateTime } from "luxon"
-import type { Transaction } from "@sentry/tracing"
 import core from "./core-singleton"
 import deploy from "./deploy"
 import difference from "./difference"
@@ -117,10 +118,9 @@ core.interoperability.sentryTransaction = {
 	finish(...args) {}
 } as Transaction
 
-function configureSentryScope(transaction: any) {
+function configureSentryScope(transaction: Span) {
 	if (core.config.reportErrors)
 		Sentry.configureScope((scope) => {
-			// @ts-ignore
 			scope.setSpan(transaction)
 		})
 }
@@ -175,7 +175,6 @@ if (core.config.reportErrors) {
 	})
 
 	Sentry.configureScope((scope) => {
-		// @ts-ignore
 		scope.setSpan(core.interoperability.sentryTransaction)
 	})
 
@@ -191,17 +190,17 @@ process.on("SIGINT", core.interoperability.cleanExit)
 process.on("SIGTERM", core.interoperability.cleanExit)
 
 async function doTheThing() {
-	let startedDate = DateTime.now()
+	const startedDate = DateTime.now()
 
 	core.logger.verbose("Initialising RPKG instance")
 	await core.rpkgInstance.waitForInitialised()
 
 	core.logger.verbose("Removing existing patch files")
-	for (let chunkPatchFile of fs.readdirSync(core.config.runtimePath)) {
+	for (const chunkPatchFile of fs.readdirSync(core.config.runtimePath)) {
 		try {
 			if (chunkPatchFile.includes("patch")) {
-				let chunkPatchNumberMatches = [...chunkPatchFile.matchAll(/chunk[0-9]*patch([0-9]*)\.rpkg/g)]
-				let chunkPatchNumber = parseInt(chunkPatchNumberMatches[chunkPatchNumberMatches.length - 1][chunkPatchNumberMatches[chunkPatchNumberMatches.length - 1].length - 1])
+				const chunkPatchNumberMatches = [...chunkPatchFile.matchAll(/chunk[0-9]*patch([0-9]*)\.rpkg/g)]
+				const chunkPatchNumber = parseInt(chunkPatchNumberMatches[chunkPatchNumberMatches.length - 1][chunkPatchNumberMatches[chunkPatchNumberMatches.length - 1].length - 1])
 
 				if (chunkPatchNumber >= 200 && chunkPatchNumber <= 300) {
 					// The mod framework manages patch files between 200 (inc) and 300 (inc), allowing mods to place runtime files in those ranges
@@ -216,15 +215,6 @@ async function doTheThing() {
 	core.logger.verbose("Emptying folders")
 	fs.emptyDirSync(path.join(process.cwd(), "staging"))
 	fs.emptyDirSync(path.join(process.cwd(), "temp"))
-
-	let thumbs: any[] = []
-	let packagedefinition: any[] = []
-	let localisation: any[] = []
-	let localisationOverrides = {}
-	let runtimePackages: any[] = []
-	let WWEVpatches = {}
-
-	let rpkgTypes: { [x: string]: string } = {}
 
 	core.logger.verbose("Beginning discovery")
 	const fileMap = await discover()
@@ -244,10 +234,7 @@ async function doTheThing() {
 	}
 
 	core.logger.verbose("Beginning difference")
-	const { invalidData, cachedData } = await difference(
-		fs.existsSync(path.join(process.cwd(), "cache", "map.json")) ? fs.readJSONSync(path.join(process.cwd(), "cache", "map.json")).files : {},
-		fileMap
-	)
+	const { invalidData } = await difference(fs.existsSync(path.join(process.cwd(), "cache", "map.json")) ? fs.readJSONSync(path.join(process.cwd(), "cache", "map.json")).files : {}, fileMap)
 
 	core.logger.verbose("Writing cache")
 	fs.writeJSONSync(path.join(process.cwd(), "cache", "map.json"), {
@@ -259,19 +246,7 @@ async function doTheThing() {
 	})
 
 	core.logger.verbose("Beginning deploy")
-	await deploy(
-		core.interoperability.sentryTransaction,
-		configureSentryScope,
-		invalidData,
-		cachedData,
-		rpkgTypes,
-		WWEVpatches,
-		runtimePackages,
-		packagedefinition,
-		thumbs,
-		localisation,
-		localisationOverrides
-	)
+	await deploy(core.interoperability.sentryTransaction, configureSentryScope, invalidData)
 
 	core.logger.verbose("Finishing")
 

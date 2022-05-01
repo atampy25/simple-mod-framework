@@ -1,6 +1,6 @@
 import * as LosslessJSON from "lossless-json"
 
-import { FrameworkVersion, config, logger, rpkgInstance } from "./core-singleton"
+import { FrameworkVersion, config, interoperability, logger, rpkgInstance } from "./core-singleton"
 
 import type { Manifest } from "./types"
 import deepMerge from "lodash.merge"
@@ -43,8 +43,8 @@ export default async function discover(): Promise<{ [x: string]: { hash: string;
 		if (!fs.existsSync(path.join(process.cwd(), "Mods", mod, "manifest.json"))) {
 			logger.info("Discovering RPKG mod: " + mod)
 
-			for (let chunkFolder of fs.readdirSync(path.join(process.cwd(), "Mods", mod))) {
-				for (let contentFile of fs.readdirSync(path.join(process.cwd(), "Mods", mod, chunkFolder))) {
+			for (const chunkFolder of fs.readdirSync(path.join(process.cwd(), "Mods", mod))) {
+				for (const contentFile of fs.readdirSync(path.join(process.cwd(), "Mods", mod, chunkFolder))) {
 					fs.emptyDirSync(path.join(process.cwd(), "temp"))
 
 					logger.verbose(`-extract_from_rpkg "${path.join(process.cwd(), "Mods", mod, chunkFolder, contentFile)}" -output_path "${path.join(process.cwd(), "temp")}"`)
@@ -64,32 +64,38 @@ export default async function discover(): Promise<{ [x: string]: { hash: string;
 				}
 			}
 		} else {
-			let manifest: Manifest = json5.parse(String(fs.readFileSync(path.join(process.cwd(), "Mods", mod, "manifest.json"))))
+			const manifest: Manifest = json5.parse(String(fs.readFileSync(path.join(process.cwd(), "Mods", mod, "manifest.json"))))
 
 			logger.info("Discovering mod: " + manifest.name)
 
-			logger.verbose(`Validating manifest`)
+			logger.verbose("Validating manifest")
 
-			for (let key of ["id", "name", "description", "authors", "version", "frameworkVersion"]) {
+			for (const key of ["id", "name", "description", "authors", "version", "frameworkVersion"]) {
 				if (typeof manifest[key] == "undefined") {
 					logger.error(`Mod ${manifest.name} is missing required manifest field "${key}"!`)
+					interoperability.cleanExit()
+					return
 				}
 			}
 
 			if (semver.lt(manifest.frameworkVersion, FrameworkVersion)) {
 				if (semver.diff(manifest.frameworkVersion, FrameworkVersion) == "major") {
 					logger.error(`Mod ${manifest.name} is designed for an older version of the framework and is likely incompatible!`)
+					interoperability.cleanExit()
+					return
 				}
 			}
 
 			if (semver.gt(manifest.frameworkVersion, FrameworkVersion)) {
 				logger.error(`Mod ${manifest.name} is designed for a newer version of the framework and is likely incompatible!`)
+				interoperability.cleanExit()
+				return
 			}
 
-			logger.verbose(`Getting folders`)
+			logger.verbose("Getting folders")
 
-			let contentFolders = []
-			let blobsFolders = []
+			const contentFolders = []
+			const blobsFolders = []
 
 			if (
 				manifest.contentFolder &&
@@ -110,9 +116,9 @@ export default async function discover(): Promise<{ [x: string]: { hash: string;
 			}
 
 			if (config.modOptions[manifest.id] && manifest.options && manifest.options.length) {
-				logger.verbose(`Merging mod options`)
+				logger.verbose("Merging mod options")
 
-				for (let option of manifest.options.filter(
+				for (const option of manifest.options.filter(
 					(a) =>
 						config.modOptions[manifest.id].includes(a.name) ||
 						config.modOptions[manifest.id].includes(a.group + ":" + a.name) ||
@@ -165,12 +171,14 @@ export default async function discover(): Promise<{ [x: string]: { hash: string;
 				}
 			}
 
-			logger.verbose(`Validating manifest requirements`)
+			logger.verbose("Validating manifest requirements")
 
 			if (manifest.requirements && manifest.requirements.length) {
-				for (let req of manifest.requirements) {
+				for (const req of manifest.requirements) {
 					if (!config.loadOrder.includes(req)) {
 						logger.error(`Mod ${manifest.name} is missing requirement ${req}!`)
+						interoperability.cleanExit()
+						return
 					}
 				}
 			}
@@ -184,17 +192,19 @@ export default async function discover(): Promise<{ [x: string]: { hash: string;
 								: manifest.supportedPlatforms[0]
 						} platform${manifest.supportedPlatforms.length > 1 ? "s" : ""}!`
 					)
+					interoperability.cleanExit()
+					return
 				}
 			}
 
-			logger.verbose(`Discovering content`)
+			logger.verbose("Discovering content")
 
 			/* ---------------------------------------------------------------------------------------------- */
 			/*                                             Content                                            */
 			/* ---------------------------------------------------------------------------------------------- */
-			for (let contentFolder of contentFolders) {
-				for (let chunkFolder of fs.readdirSync(path.join(process.cwd(), "Mods", mod, contentFolder))) {
-					for (let contentFilePath of klaw(path.join(process.cwd(), "Mods", mod, contentFolder, chunkFolder))
+			for (const contentFolder of contentFolders) {
+				for (const chunkFolder of fs.readdirSync(path.join(process.cwd(), "Mods", mod, contentFolder))) {
+					for (const contentFilePath of klaw(path.join(process.cwd(), "Mods", mod, contentFolder, chunkFolder))
 						.filter((a) => a.stats.isFile())
 						.map((a) => a.path)) {
 						const dependencies = []
@@ -257,17 +267,17 @@ export default async function discover(): Promise<{ [x: string]: { hash: string;
 				}
 			}
 
-			logger.verbose(`Discovering blobs`)
+			logger.verbose("Discovering blobs")
 
 			/* ---------------------------------------------------------------------------------------------- */
 			/*                                              Blobs                                             */
 			/* ---------------------------------------------------------------------------------------------- */
 			if (blobsFolders.length) {
-				for (let blobsFolder of blobsFolders) {
-					for (let blob of klaw(path.join(process.cwd(), "Mods", mod, blobsFolder))
+				for (const blobsFolder of blobsFolders) {
+					for (const blob of klaw(path.join(process.cwd(), "Mods", mod, blobsFolder))
 						.filter((a) => a.stats.isFile())
 						.map((a) => a.path)) {
-						let blobPath = blob.replace(path.join(process.cwd(), "Mods", mod, blobsFolder), "").slice(1).split(path.sep).join("/").toLowerCase()
+						const blobPath = blob.replace(path.join(process.cwd(), "Mods", mod, blobsFolder), "").slice(1).split(path.sep).join("/").toLowerCase()
 
 						let blobHash
 						if (path.extname(blob).startsWith(".jp") || path.extname(blob) == ".png") {
@@ -291,12 +301,12 @@ export default async function discover(): Promise<{ [x: string]: { hash: string;
 			const manifestDependencies = []
 			const manifestAffected = []
 
-			logger.verbose(`Discovering manifest keys`)
+			logger.verbose("Discovering manifest keys")
 
 			/* ---------------------------------------- Localisation ---------------------------------------- */
 			if (manifest.localisation) {
-				for (let language of Object.keys(manifest.localisation)) {
-					for (let string of Object.entries(manifest.localisation[language])) {
+				for (const language of Object.keys(manifest.localisation)) {
+					for (const string of Object.entries(manifest.localisation[language])) {
 						manifestDependencies.push("00F5817876E691F1")
 						manifestAffected.push("00F5817876E691F1")
 					}
@@ -304,14 +314,14 @@ export default async function discover(): Promise<{ [x: string]: { hash: string;
 			}
 
 			if (manifest.localisationOverrides) {
-				for (let locrHash of Object.keys(manifest.localisationOverrides)) {
+				for (const locrHash of Object.keys(manifest.localisationOverrides)) {
 					manifestDependencies.push(locrHash)
 					manifestAffected.push(locrHash)
 				}
 			}
 
 			if (manifest.localisedLines) {
-				for (let lineHash of Object.keys(manifest.localisedLines)) {
+				for (const lineHash of Object.keys(manifest.localisedLines)) {
 					manifestAffected.push(lineHash)
 				}
 			}

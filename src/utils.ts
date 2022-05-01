@@ -54,7 +54,7 @@ export function hexflip(input: string) {
 	return output
 }
 
-export async function extractOrCopyToTemp(rpkgOfFile: string, file: string, type: string, stagingChunk: string = "chunk0") {
+export async function extractOrCopyToTemp(rpkgOfFile: string, file: string, type: string, stagingChunk = "chunk0") {
 	logger.verbose(`Extract or copy to temp: ${rpkgOfFile} ${file} ${type} ${stagingChunk}`)
 
 	if (!fs.existsSync(path.join(process.cwd(), "staging", stagingChunk, file + "." + type))) {
@@ -67,26 +67,30 @@ export async function extractOrCopyToTemp(rpkgOfFile: string, file: string, type
 }
 
 export async function copyFromCache(mod: string, cachePath: string, outputPath: string) {
-	logger.verbose(`Copy from cache: ${mod} ${cachePath} ${outputPath}`)
-
 	if (fs.existsSync(path.join(process.cwd(), "cache", winPathEscape(mod), cachePath))) {
+		logger.verbose(`Cache hit: ${mod} ${cachePath} ${outputPath}`)
+
 		fs.ensureDirSync(outputPath)
 		fs.copySync(path.join(process.cwd(), "cache", winPathEscape(mod), cachePath), outputPath)
 		return true
 	}
 
+	logger.verbose(`No cache hit: ${mod} ${cachePath} ${outputPath}`)
+
 	return false
 }
 
 export async function copyToCache(mod: string, originalPath: string, cachePath: string) {
-	logger.verbose(`Copy to cache: ${mod} ${originalPath} ${cachePath}`)
-
 	// do not cache if less than 5 GB remaining on disk
 	if (fs.existsSync(originalPath) && (await freeSpace()) > 5) {
+		logger.verbose(`Copy to cache: ${mod} ${originalPath} ${cachePath}`)
+
 		fs.ensureDirSync(path.join(process.cwd(), "cache", winPathEscape(mod), cachePath))
 		fs.copySync(originalPath, path.join(process.cwd(), "cache", winPathEscape(mod), cachePath))
 		return true
 	}
+
+	logger.verbose(`Not enough space/nonexistent path: ${mod} ${originalPath} ${cachePath}`)
 
 	return false
 }

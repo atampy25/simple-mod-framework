@@ -53,31 +53,31 @@ export interface ManifestOptionData {
 
 	/** Localisation for each supported language. */
 	localisation: {
-		english?: {
+		english: {
 			[k: LocalisationID]: string
 		}
-		french?: {
+		french: {
 			[k: LocalisationID]: string
 		}
-		italian?: {
+		italian: {
 			[k: LocalisationID]: string
 		}
-		german?: {
+		german: {
 			[k: LocalisationID]: string
 		}
-		spanish?: {
+		spanish: {
 			[k: LocalisationID]: string
 		}
-		russian?: {
+		russian: {
 			[k: LocalisationID]: string
 		}
-		chineseSimplified?: {
+		chineseSimplified: {
 			[k: LocalisationID]: string
 		}
-		chineseTraditional?: {
+		chineseTraditional: {
 			[k: LocalisationID]: string
 		}
-		japanese?: {
+		japanese: {
 			[k: LocalisationID]: string
 		}
 	}
@@ -85,31 +85,31 @@ export interface ManifestOptionData {
 	/** Overridden localisation from the game files. */
 	localisationOverrides: {
 		[k: RuntimeID]: {
-			english?: {
+			english: {
 				[k: string]: string
 			}
-			french?: {
+			french: {
 				[k: string]: string
 			}
-			italian?: {
+			italian: {
 				[k: string]: string
 			}
-			german?: {
+			german: {
 				[k: string]: string
 			}
-			spanish?: {
+			spanish: {
 				[k: string]: string
 			}
-			russian?: {
+			russian: {
 				[k: string]: string
 			}
-			chineseSimplified?: {
+			chineseSimplified: {
 				[k: string]: string
 			}
-			chineseTraditional?: {
+			chineseTraditional: {
 				[k: string]: string
 			}
-			japanese?: {
+			japanese: {
 				[k: string]: string
 			}
 		}
@@ -121,18 +121,18 @@ export interface ManifestOptionData {
 	}
 
 	/** Partitions and paths to add to packagedefinition.
-	 * Custom chunks are supported but discouraged; their support is very minimal and will cause compatibility problems */
+	 * Custom chunks (partitions) are supported but discouraged; their support is very minimal and will cause compatibility problems */
 	packagedefinition: (
 		| {
-				type: string
-				name?: string
-				parent?: string
-				partitionType?: string
+				type: "partition"
+				name: string
+				parent: string
+				partitionType: string
 		  }
 		| {
-				type: string
-				partition?: string
-				path?: string
+				type: "entity"
+				partition: string
+				path: string
 		  }
 	)[]
 
@@ -174,6 +174,12 @@ export interface ManifestOptionData {
 }
 
 export interface DeployInstruction {
+	/** Unique identifier. Should be the mod's ID. */
+	id: string
+
+	/** Cache folder. Should be the mod's folder name in Mods. */
+	cacheFolder: string
+
 	manifestSources: {
 		/** Localisation for each supported language.
 		 * Note: this is not deployed in the mod stage due to tool limitations. Instead, it is deployed after all mods are deployed. */
@@ -215,9 +221,16 @@ export interface DeployInstruction {
 				/** Whether the content is from the disk (from a content folder) or from another source. */
 				source: "disk"
 
-				/** The chunk this content will be deployed to. */
-				chunkFolder: string
+				/** Will be locale compared and sorted to determine the order in which content is deployed.
+				 * If nonexistent, will be computed from the chunk and the file path.
+				 * Note that file type also matters; entity patches are always deployed last due to multithreading and sfx.wem files are handled after all mods are deployed due to tool limitations. */
+				order?: string
 
+				/** The chunk this content will be deployed to. */
+				chunk: string
+
+				/** The path to the content. This will never be mutated; it is safe to pass the real path in Mods.
+				 * If you are going to create a file and pass it to the framework, you should instead use a virtual source and pass a JS Blob. */
 				path: string
 
 				/** The filetype (extension) of the content.
@@ -228,15 +241,44 @@ export interface DeployInstruction {
 				/** Whether the content is from disk (from a content folder) or from another source. */
 				source: "virtual"
 
-				/** The chunk this content will be deployed to. */
-				chunkFolder: string
+				/** Will be locale compared and sorted to determine the order in which content is deployed.
+				 * If nonexistent, will be computed from the chunk and the identifier.
+				 * Note that file type also matters; entity patches are always deployed last due to multithreading and sfx.wem files are handled after all mods are deployed due to tool limitations. */
+				order?: string
 
-				/** The content. This will be written to disk or parsed in memory, depending on the content's type. */
+				/** A unique identifier for this blob. Used in logging and caching. */
+				identifier: string
+
+				/** The chunk this content will be deployed to. */
+				chunk: string
+
+				/** The content, in JS Blob form. This will be written to disk or parsed in memory, depending on the content's type. */
 				content: Blob
 
 				/** The type of the content. Should mirror the extension this content would have if it was from disk.
 				 * sfx.wem files are special; they are handled after all mods are deployed due to tool limitations. */
 				type: string
+
+				/** Special data used for filename-dependent filetypes, used in place of the filename. */
+				extraInformation: {
+					/** texture.tga */
+					textHash?: string
+
+					/** texture.tga */
+					texdHash?: string
+
+					/** texture.tga */
+					textureMeta?: Blob
+
+					/** sfx.wem */
+					wwevHash?: string
+
+					/** sfx.wem */
+					wwevElement?: number
+
+					/** Raw file */
+					runtimeID?: string
+				}
 		  }
 	)[]
 
@@ -244,6 +286,9 @@ export interface DeployInstruction {
 		| {
 				/** Whether the blob is from the disk (from a blobs folder) or from another source. */
 				source: "disk"
+
+				/** Will be locale compared and sorted to determine the order in which blobs are deployed. If nonexistent, will be computed from the blob's path. */
+				order?: string
 
 				/** The real file path of this blob. */
 				filePath: string
@@ -258,10 +303,16 @@ export interface DeployInstruction {
 				/** Whether the blob is from the disk (from a blobs folder) or from another source. */
 				source: "virtual"
 
-				/** The blob. This will be written to disk during deploy. */
+				/** Will be locale compared and sorted to determine the order in which blobs are deployed. If nonexistent, will be computed from the blob's path. */
+				order?: string
+
+				/** A unique identifier for this blob. Used in logging. */
+				identifier: string
+
+				/** The blob, in JS Blob form. This will be written to disk during deploy. */
 				content: Blob
 
-				/** The filetype of this blob. */
+				/** The filetype of this blob (jpg, png, json). */
 				filetype: string
 
 				/** The path of this blob in game. */
@@ -271,6 +322,21 @@ export interface DeployInstruction {
 				blobHash?: string
 		  }
 	)[]
+
+	rpkgTypes: {
+		[k: string]:
+			| {
+					/** Whether the RPKG is a new chunk (a base RPKG) or a patch. Use of new chunks is discouraged; the support is minimal and incompatibility issues will arise. */
+					type: "base"
+
+					/** The chunk meta for the base RPKG. Can be a string (the path to the chunk meta) or a JS Blob (the binary content of the chunk meta file). */
+					chunkMeta: string | Blob
+			  }
+			| {
+					/** Whether the RPKG is a new chunk (a base RPKG) or a patch. Use of new chunks is discouraged; the support is minimal and incompatibility issues will arise. */
+					type: "patch"
+			  }
+	}
 }
 
 export interface Config {

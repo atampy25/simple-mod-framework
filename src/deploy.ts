@@ -1,10 +1,10 @@
 import * as LosslessJSON from "lossless-json"
 import * as rfc6902 from "rfc6902"
 
+import type { DeployInstruction, Manifest, ManifestOptionData } from "./types"
 import { config, logger, rpkgInstance } from "./core-singleton"
 import { copyFromCache, copyToCache, extractOrCopyToTemp, getQuickEntityFromVersion, hexflip } from "./utils"
 
-import type { Manifest } from "./types"
 import Piscina from "piscina"
 import type { Transaction } from "@sentry/tracing"
 import child_process from "child_process"
@@ -35,31 +35,57 @@ const getRPKGOfHash = async function (hash: string) {
 
 export default async function deploy(
 	sentryTransaction: Transaction,
-	configureSentryScope: (transaction: any) => void,
+	configureSentryScope: (transaction: unknown) => void,
 	invalidatedData: {
 		filePath: string
 		data: { hash: string; dependencies: string[]; affected: string[] }
-	}[],
-	cachedData: {
-		filePath: string
-		data: { hash: string; dependencies: string[]; affected: string[] }
-	}[],
-	rpkgTypes: { [x: string]: string },
-	WWEVpatches: { [s: string]: any },
-	runtimePackages: any[],
-	packagedefinition: any[],
-	thumbs: any[],
-	localisation: any[],
-	localisationOverrides: { [x: string]: any }
+	}[]
 ) {
-	let sentryModsTransaction = sentryTransaction.startChild({
+	const allRPKGTypes: Record<string, "base" | "patch"> = {}
+
+	const WWEVpatches: Record<
+		string,
+		{
+			index: string
+			content: string | Blob
+			chunk: string
+		}[]
+	> = {}
+
+	const runtimePackages: {
+		chunk: number
+		path: string
+		mod: string
+	}[] = []
+
+	const packagedefinition: ManifestOptionData["packagedefinition"] = []
+	const thumbs: string[] = []
+
+	const localisation: {
+		language: keyof ManifestOptionData["localisation"]
+		locString: string
+		text: string
+	}[] = []
+
+	const localisationOverrides: Record<
+		string,
+		{
+			language: keyof ManifestOptionData["localisation"]
+			locString: string
+			text: string
+		}[]
+	> = {}
+
+	const deployInstructions: DeployInstruction[] = []
+
+	const sentryModsTransaction = sentryTransaction.startChild({
 		op: "stage",
 		description: "All mods"
 	})
 	configureSentryScope(sentryModsTransaction)
 
 	/* ---------------------------------------------------------------------------------------------- */
-	/*                                         Stage all mods                                         */
+	/*                                          Analyse mods                                          */
 	/* ---------------------------------------------------------------------------------------------- */
 	for (let mod of config.loadOrder) {
 		logger.verbose(`Resolving ${mod}`)
@@ -76,7 +102,7 @@ export default async function deploy(
 			)
 		) {
 			// Find mod with ID in Mods folder, set the current mod to that folder
-			let foundMod = fs
+			const foundMod = fs
 				.readdirSync(path.join(process.cwd(), "Mods"))
 				.find(
 					(a) => fs.existsSync(path.join(process.cwd(), "Mods", a, "manifest.json")) && json5.parse(String(fs.readFileSync(path.join(process.cwd(), "Mods", a, "manifest.json")))).id == mod
@@ -90,9 +116,8 @@ export default async function deploy(
 			mod = foundMod
 		} // Essentially, if the mod isn't an RPKG mod, it is referenced by its ID, so this finds the mod folder with the right ID
 
-		logger.verbose(`Beginning deploy of ${mod}`)
 		if (!fs.existsSync(path.join(process.cwd(), "Mods", mod, "manifest.json"))) {
-			let sentryModTransaction = sentryModsTransaction.startChild({
+			const sentryModTransaction = sentryModsTransaction.startChild({
 				op: "stage",
 				description: mod
 			})
@@ -100,14 +125,12 @@ export default async function deploy(
 
 			logger.info("Staging RPKG mod: " + mod)
 
-			for (let chunkFolder of fs.readdirSync(path.join(process.cwd(), "Mods", mod))) {
-				try {
-					fs.mkdirSync(path.join(process.cwd(), "staging", chunkFolder))
-				} catch {}
+			for (const chunkFolder of fs.readdirSync(path.join(process.cwd(), "Mods", mod))) {
+				fs.ensureDirSync(path.join(process.cwd(), "staging", chunkFolder))
 
 				fs.emptyDirSync(path.join(process.cwd(), "temp"))
 
-				for (let contentFile of fs.readdirSync(path.join(process.cwd(), "Mods", mod, chunkFolder))) {
+				for (const contentFile of fs.readdirSync(path.join(process.cwd(), "Mods", mod, chunkFolder))) {
 					if (
 						invalidatedData.some((a) => a.filePath == path.join(process.cwd(), "Mods", mod, chunkFolder, contentFile)) || // must redeploy, invalid cache
 						!(await copyFromCache(mod, path.join(chunkFolder, contentFile), path.join(process.cwd(), "temp"))) // cache is not available
@@ -117,9 +140,9 @@ export default async function deploy(
 					}
 				}
 
-				rpkgTypes[chunkFolder] = "patch"
+				allRPKGTypes[chunkFolder] = "patch"
 
-				let allFiles = klaw(path.join(process.cwd(), "temp"))
+				const allFiles = klaw(path.join(process.cwd(), "temp"))
 					.filter((a) => a.stats.isFile())
 					.map((a) => a.path)
 
@@ -130,20 +153,18 @@ export default async function deploy(
 
 			sentryModTransaction.finish()
 		} else {
-			let manifest: Manifest = json5.parse(String(fs.readFileSync(path.join(process.cwd(), "Mods", mod, "manifest.json"))))
+			const manifest: Manifest = json5.parse(String(fs.readFileSync(path.join(process.cwd(), "Mods", mod, "manifest.json"))))
 
-			logger.info("Staging mod: " + manifest.name)
-
-			let sentryModTransaction = sentryModsTransaction.startChild({
-				op: "stage",
+			const sentryModTransaction = sentryModsTransaction.startChild({
+				op: "analyse",
 				description: manifest.id
 			})
 			configureSentryScope(sentryModTransaction)
 
-			logger.verbose(`Resolving deploy information`)
+			logger.info("Analysing framework mod: " + manifest.name)
 
-			let contentFolders = []
-			let blobsFolders = []
+			const contentFolders = []
+			const blobsFolders = []
 
 			if (
 				manifest.contentFolder &&
@@ -164,9 +185,9 @@ export default async function deploy(
 			}
 
 			if (config.modOptions[manifest.id] && manifest.options && manifest.options.length) {
-				logger.verbose(`Merging mod options`)
+				logger.verbose("Merging mod options")
 
-				for (let option of manifest.options.filter(
+				for (const option of manifest.options.filter(
 					(a) =>
 						(a.type == "checkbox" && config.modOptions[manifest.id].includes(a.name)) ||
 						(a.type == "select" && config.modOptions[manifest.id].includes(a.group + ":" + a.name)) ||
@@ -190,7 +211,7 @@ export default async function deploy(
 						blobsFolders.push(option.blobsFolder)
 					}
 
-					manifest.localisation || (manifest.localisation = {})
+					manifest.localisation || (manifest.localisation = {} as ManifestOptionData["localisation"])
 					option.localisation && deepMerge(manifest.localisation, option.localisation)
 
 					manifest.localisationOverrides || (manifest.localisationOverrides = {})
@@ -219,92 +240,198 @@ export default async function deploy(
 				}
 			}
 
-			logger.verbose(`Content`)
+			const content: DeployInstruction["content"] = []
+			const blobs: DeployInstruction["blobs"] = []
+			const rpkgTypes: DeployInstruction["rpkgTypes"] = {}
 
-			/* ---------------------------------------------------------------------------------------------- */
-			/*                                             Content                                            */
-			/* ---------------------------------------------------------------------------------------------- */
-			let entityPatches: any = []
-
-			let sentryContentTransaction = sentryModTransaction.startChild({
-				op: "stage",
-				description: "Content"
-			})
-			configureSentryScope(sentryContentTransaction)
-
-			for (let contentFolder of contentFolders) {
-				for (let chunkFolder of fs.readdirSync(path.join(process.cwd(), "Mods", mod, contentFolder))) {
-					try {
-						fs.mkdirSync(path.join(process.cwd(), "staging", chunkFolder))
-					} catch {}
-
-					let contractsORESChunk,
-						contractsORESContent = {} as { [k: string]: Record<string, any> },
-						contractsORESMetaContent = { hash_reference_data: [] as Record<string, any>[] }
-
-					try {
-						contractsORESChunk = await getRPKGOfHash("002B07020D21D727")
-					} catch {
-						logger.error("Couldn't find the contracts ORES in the game files! Make sure you've installed the framework in the right place.")
-						return
-					}
-
-					logger.verbose(`Check contracts ORES necessary`)
-
-					if (
-						klaw(path.join(process.cwd(), "Mods", mod, contentFolder, chunkFolder))
-							.filter((a) => a.stats.isFile())
-							.some((a) => a.path.endsWith("contract.json")) &&
-						(invalidatedData.some((a) => a.data.affected.includes("002B07020D21D727")) || !(await copyFromCache(mod, "contractsORES", path.join(process.cwd(), "temp2"))))
-					) {
-						// we need to re-deploy contracts OR contracts data couldn't be copied from cache
-						// There are contracts, extract the contracts ORES and copy it to the temp2 directory
-
-						fs.emptyDirSync(path.join(process.cwd(), "temp2"))
-
-						if (!fs.existsSync(path.join(process.cwd(), "staging", "chunk0", "002B07020D21D727.ORES"))) {
-							await callRPKGFunction(`-extract_from_rpkg "${path.join(config.runtimePath, contractsORESChunk + ".rpkg")}" -filter "002B07020D21D727" -output_path temp2`) // Extract the contracts ORES
-						} else {
-							fs.ensureDirSync(path.join(process.cwd(), "temp2", contractsORESChunk, "ORES"))
-							fs.copyFileSync(
-								path.join(process.cwd(), "staging", "chunk0", "002B07020D21D727.ORES"),
-								path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES")
-							) // Use the staging one (for mod compat - one mod can extract, patch and build, then the next can patch that one instead)
-							fs.copyFileSync(
-								path.join(process.cwd(), "staging", "chunk0", "002B07020D21D727.ORES.meta"),
-								path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES.meta")
-							)
-						}
-
-						execCommand(`"Third-Party\\OREStool.exe" "${path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES")}"`)
-						contractsORESContent = JSON.parse(String(fs.readFileSync(path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES.JSON"))))
-
-						await callRPKGFunction(`-hash_meta_to_json "${path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES.meta")}"`)
-						contractsORESMetaContent = JSON.parse(String(fs.readFileSync(path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES.meta.JSON"))))
-					}
-
-					for (let contentFilePath of klaw(path.join(process.cwd(), "Mods", mod, contentFolder, chunkFolder))
+			for (const contentFolder of contentFolders) {
+				for (const chunkFolder of fs.readdirSync(path.join(process.cwd(), "Mods", mod, contentFolder))) {
+					for (const contentFilePath of klaw(path.join(process.cwd(), "Mods", mod, contentFolder, chunkFolder))
 						.filter((a) => a.stats.isFile())
 						.map((a) => a.path)) {
-						let contentType = path.basename(contentFilePath).split(".").slice(1).join(".")
+						const contentType = path.basename(contentFilePath).split(".").slice(1).join(".")
 
-						let entityContent: any
+						logger.verbose(`Registering ${contentType} file ${contentFilePath}`)
 
-						let sentryContentFileTransaction = [
-							"entity.json",
-							"entity.patch.json",
-							"unlockables.json",
-							"repository.json",
-							"contract.json",
-							"JSON.patch.json",
-							"texture.tga",
-							"sfx.wem"
-						].includes(contentType)
-							? sentryContentTransaction.startChild({
-									op: "stageContentFile",
-									description: "Stage " + contentType
-							  })
-							: {
+						content.push({
+							source: "disk",
+							chunk: chunkFolder,
+							path: contentFilePath,
+							type: contentType
+						})
+					}
+
+					/* ------------------------------ Copy chunk meta to staging folder ----------------------------- */
+					if (fs.existsSync(path.join(process.cwd(), "Mods", mod, contentFolder, chunkFolder, chunkFolder + ".meta"))) {
+						rpkgTypes[chunkFolder] = {
+							type: "base",
+							chunkMeta: path.join(process.cwd(), "Mods", mod, contentFolder, chunkFolder, chunkFolder + ".meta")
+						}
+					} else {
+						rpkgTypes[chunkFolder] = {
+							type: "patch"
+						}
+					}
+				}
+			}
+
+			for (const blobsFolder of blobsFolders) {
+				for (const blob of klaw(path.join(process.cwd(), "Mods", mod, blobsFolder))
+					.filter((a) => a.stats.isFile())
+					.map((a) => a.path)) {
+					const blobPath = blob.replace(path.join(process.cwd(), "Mods", mod, blobsFolder), "").slice(1).split(path.sep).join("/").toLowerCase()
+
+					let blobHash: string
+					if (path.extname(blob).startsWith(".jp") || path.extname(blob) == ".png") {
+						blobHash = "00" + md5(`[assembly:/_pro/online/default/cloudstorage/resources/${blobPath}].pc_gfx`.toLowerCase()).slice(2, 16).toUpperCase()
+					} else if (path.extname(blob) == ".json") {
+						blobHash = "00" + md5(`[assembly:/_pro/online/default/cloudstorage/resources/${blobPath}].pc_json`.toLowerCase()).slice(2, 16).toUpperCase()
+					} else {
+						blobHash =
+							"00" +
+							md5(`[assembly:/_pro/online/default/cloudstorage/resources/${blobPath}].pc_${path.extname(blob).slice(1)}`.toLowerCase())
+								.slice(2, 16)
+								.toUpperCase()
+					}
+
+					blobs.push({
+						source: "disk",
+						filePath: blob,
+						blobPath,
+						blobHash
+					})
+				}
+			}
+
+			deployInstructions.push({
+				id: manifest.id,
+				cacheFolder: mod,
+				manifestSources: {
+					localisation: manifest.localisation,
+					localisationOverrides: manifest.localisationOverrides,
+					localisedLines: manifest.localisedLines,
+					runtimePackages: manifest.runtimePackages,
+					dependencies: manifest.dependencies,
+					requirements: manifest.requirements,
+					supportedPlatforms: manifest.supportedPlatforms,
+					packagedefinition: manifest.packagedefinition,
+					thumbs: manifest.thumbs
+				},
+				content,
+				blobs,
+				rpkgTypes
+			})
+
+			sentryModTransaction.finish()
+		}
+	}
+
+	/* ---------------------------------------------------------------------------------------------- */
+	/*                                      Execute instructions                                      */
+	/* ---------------------------------------------------------------------------------------------- */
+	for (const instruction of deployInstructions) {
+		const sentryModTransaction = sentryModsTransaction.startChild({
+			op: "stage",
+			description: instruction.id
+		})
+		configureSentryScope(sentryModTransaction)
+
+		logger.verbose("Content")
+
+		const entityPatches: {
+			tempHash: string
+			tempRPKG: string
+			tbluHash: string
+			tbluRPKG: string
+			chunkFolder: string
+			patches: unknown[]
+			mod: string
+		}[] = []
+
+		/* ---------------------------------------------------------------------------------------------- */
+		/*                                             Content                                            */
+		/* ---------------------------------------------------------------------------------------------- */
+		const sentryContentTransaction = sentryModTransaction.startChild({
+			op: "stage",
+			description: "Content"
+		})
+		configureSentryScope(sentryContentTransaction)
+
+		instruction.content.sort((a, b) =>
+			(a.order || (a.source == "disk" ? a.chunk + a.path : a.chunk + a.identifier)).localeCompare(b.order || (b.source == "disk" ? b.chunk + b.path : b.chunk + b.identifier), "en-AU", {
+				numeric: true
+			})
+		)
+
+		instruction.blobs.sort((a, b) =>
+			(a.order || a.blobPath).localeCompare(b.order || b.blobPath, "en-AU", {
+				numeric: true
+			})
+		)
+
+		let contractsCacheInvalid = false
+
+		let contractsORESChunk,
+			contractsORESContent = {} as Record<string, Record<string, unknown>>,
+			contractsORESMetaContent = { hash_reference_data: [] as Record<string, unknown>[] }
+
+		logger.verbose("Check contracts ORES necessary")
+
+		if (instruction.content.some((a) => a.type == "contract.json")) {
+			try {
+				contractsORESChunk = await getRPKGOfHash("002B07020D21D727")
+			} catch {
+				logger.error("Couldn't find the contracts ORES in the game files! Make sure you've installed the framework in the right place.")
+				return
+			}
+
+			if (invalidatedData.some((a) => a.data.affected.includes("002B07020D21D727")) || !(await copyFromCache(instruction.cacheFolder, "contractsORES", path.join(process.cwd(), "temp2")))) {
+				contractsCacheInvalid = true
+
+				// we need to re-deploy the contracts ORES OR the contracts ORES couldn't be copied from cache
+				// extract the contracts ORES and copy it to the temp2 directory
+
+				fs.emptyDirSync(path.join(process.cwd(), "temp2"))
+
+				if (!fs.existsSync(path.join(process.cwd(), "staging", "chunk0", "002B07020D21D727.ORES"))) {
+					await callRPKGFunction(`-extract_from_rpkg "${path.join(config.runtimePath, contractsORESChunk + ".rpkg")}" -filter "002B07020D21D727" -output_path temp2`) // Extract the contracts ORES
+				} else {
+					fs.ensureDirSync(path.join(process.cwd(), "temp2", contractsORESChunk, "ORES"))
+					fs.copyFileSync(path.join(process.cwd(), "staging", "chunk0", "002B07020D21D727.ORES"), path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES")) // Use the staging one (for mod compat - one mod can extract, patch and build, then the next can patch that one instead)
+					fs.copyFileSync(
+						path.join(process.cwd(), "staging", "chunk0", "002B07020D21D727.ORES.meta"),
+						path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES.meta")
+					)
+				}
+
+				execCommand(`"Third-Party\\OREStool.exe" "${path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES")}"`)
+				contractsORESContent = JSON.parse(String(fs.readFileSync(path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES.JSON"))))
+
+				await callRPKGFunction(`-hash_meta_to_json "${path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES.meta")}"`)
+				contractsORESMetaContent = JSON.parse(String(fs.readFileSync(path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES.meta.JSON"))))
+			}
+		}
+
+		for (const content of instruction.content) {
+			const contentIdentifier = content.source == "disk" ? content.path : content.identifier
+
+			fs.ensureDirSync(path.join(process.cwd(), "staging", content.chunk))
+
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			let entityContent: any
+
+			const sentryContentFileTransaction = ["entity.json", "entity.patch.json", "unlockables.json", "repository.json", "contract.json", "JSON.patch.json", "texture.tga", "sfx.wem"].includes(
+				content.type
+			)
+				? sentryContentTransaction.startChild({
+					op: "stageContentFile",
+					description: "Stage " + content.type
+				  })
+				: {
+					startChild() {
+						return {
+							startChild() {
+								return {
 									startChild() {
 										return {
 											startChild() {
@@ -315,16 +442,6 @@ export default async function deploy(
 																return {
 																	startChild() {
 																		return {
-																			startChild() {
-																				return {
-																					startChild() {
-																						return {
-																							finish() {}
-																						}
-																					},
-																					finish() {}
-																				}
-																			},
 																			finish() {}
 																		}
 																	},
@@ -341,722 +458,887 @@ export default async function deploy(
 										}
 									},
 									finish() {}
-							  } // Don't track raw files, only special file types
-						configureSentryScope(sentryContentFileTransaction)
-
-						logger.verbose(`Staging ${contentType} file ${contentFilePath}`)
-
-						switch (contentType) {
-							case "entity.json":
-								entityContent = LosslessJSON.parse(String(fs.readFileSync(contentFilePath)))
-
-								logger.debug("Converting entity " + contentFilePath)
-
-								try {
-									if (!getQuickEntityFromVersion(entityContent.quickEntityVersion.value)) {
-										logger.error("Could not find matching QuickEntity version for " + Number(entityContent.quickEntityVersion.value) + "!")
-									}
-								} catch {
-									logger.error("Improper QuickEntity JSON; couldn't find the version!")
 								}
-
-								logger.verbose(`Cache check`)
-								if (
-									invalidatedData.some((a) => a.filePath == path.join(process.cwd(), "Mods", mod, chunkFolder, path.basename(contentFilePath))) || // must redeploy, invalid cache
-									!(await copyFromCache(mod, path.join(chunkFolder, await xxhash3(contentFilePath)), path.join(process.cwd(), "staging", chunkFolder))) // cache is not available
-								) {
-									try {
-										logger.verbose(`QN generate`)
-
-										await getQuickEntityFromVersion(entityContent.quickEntityVersion.value).generate(
-											"HM3",
-											contentFilePath,
-											path.join(process.cwd(), "temp", "temp.TEMP.json"),
-											path.join(process.cwd(), "temp", entityContent.tempHash + ".TEMP.meta.json"),
-											path.join(process.cwd(), "temp", "temp.TBLU.json"),
-											path.join(process.cwd(), "temp", entityContent.tbluHash + ".TBLU.meta.json")
-										)
-									} catch {
-										logger.error(`Could not generate entity ${contentFilePath}!`)
-									}
-									// Generate the RT source from the QN json
-
-									execCommand(
-										'"Third-Party\\ResourceTool.exe" HM3 generate TEMP "' +
-											path.join(process.cwd(), "temp", "temp.TEMP.json") +
-											'" "' +
-											path.join(process.cwd(), "temp", entityContent.tempHash + ".TEMP") +
-											'" --simple'
-									)
-									execCommand(
-										'"Third-Party\\ResourceTool.exe" HM3 generate TBLU "' +
-											path.join(process.cwd(), "temp", "temp.TBLU.json") +
-											'" "' +
-											path.join(process.cwd(), "temp", entityContent.tbluHash + ".TBLU") +
-											'" --simple'
-									)
-
-									await callRPKGFunction(`-json_to_hash_meta "${path.join(process.cwd(), "temp", entityContent.tempHash + ".TEMP.meta.json")}"`)
-									await callRPKGFunction(`-json_to_hash_meta "${path.join(process.cwd(), "temp", entityContent.tbluHash + ".TBLU.meta.json")}"`)
-									// Generate the binary files from the RT json
-
-									fs.copyFileSync(
-										path.join(process.cwd(), "temp", entityContent.tempHash + ".TEMP"),
-										path.join(process.cwd(), "staging", chunkFolder, entityContent.tempHash + ".TEMP")
-									)
-									fs.copyFileSync(
-										path.join(process.cwd(), "temp", entityContent.tempHash + ".TEMP.meta"),
-										path.join(process.cwd(), "staging", chunkFolder, entityContent.tempHash + ".TEMP.meta")
-									)
-									fs.copyFileSync(
-										path.join(process.cwd(), "temp", entityContent.tbluHash + ".TBLU"),
-										path.join(process.cwd(), "staging", chunkFolder, entityContent.tbluHash + ".TBLU")
-									)
-									fs.copyFileSync(
-										path.join(process.cwd(), "temp", entityContent.tbluHash + ".TBLU.meta"),
-										path.join(process.cwd(), "staging", chunkFolder, entityContent.tbluHash + ".TBLU.meta")
-									)
-									// Copy the binary files to the staging directory
-
-									await copyToCache(mod, path.join(process.cwd(), "temp"), path.join(chunkFolder, await xxhash3(contentFilePath)))
-									// Copy the binary files to the cache
-								}
-
-								break
-							case "entity.patch.json":
-								entityContent = LosslessJSON.parse(String(fs.readFileSync(contentFilePath)))
-								entityContent.path = contentFilePath
-
-								logger.debug("Preparing to apply patch " + contentFilePath)
-
-								if (entityPatches.some((a) => a.tempHash == entityContent.tempHash)) {
-									entityPatches.find((a) => a.tempHash == entityContent.tempHash).patches.push(entityContent)
-								} else {
-									try {
-										entityPatches.push({
-											tempHash: entityContent.tempHash,
-											tempRPKG: await getRPKGOfHash(entityContent.tempHash),
-											tbluHash: entityContent.tbluHash,
-											tbluRPKG: await getRPKGOfHash(entityContent.tbluHash),
-											chunkFolder,
-											patches: [entityContent],
-											mod
-										})
-									} catch {
-										logger.error("Couldn't find the entity to patch in the game files! Make sure you've installed the framework in the right place.")
-									}
-								}
-								break
-							case "unlockables.json":
-								entityContent = JSON.parse(String(fs.readFileSync(contentFilePath)))
-
-								let oresChunk
-								try {
-									oresChunk = await getRPKGOfHash("0057C2C3941115CA")
-								} catch {
-									logger.error("Couldn't find the unlockables ORES in the game files! Make sure you've installed the framework in the right place.")
-									return
-								}
-
-								logger.debug("Applying unlockable patch " + contentFilePath)
-
-								if (
-									invalidatedData.some((a) => a.filePath == path.join(process.cwd(), "Mods", mod, chunkFolder, path.basename(contentFilePath))) || // must redeploy, invalid cache
-									!(await copyFromCache(mod, path.join(chunkFolder, await xxhash3(contentFilePath)), path.join(process.cwd(), "temp", oresChunk))) // cache is not available
-								) {
-									await extractOrCopyToTemp(oresChunk, "0057C2C3941115CA", "ORES") // Extract the ORES to temp
-
-									execCommand(`"Third-Party\\OREStool.exe" "${path.join(process.cwd(), "temp", oresChunk, "ORES", "0057C2C3941115CA.ORES")}"`)
-									let oresContent = JSON.parse(String(fs.readFileSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "0057C2C3941115CA.ORES.JSON"))))
-
-									logger.verbose(`Deep merge`)
-									let oresToPatch = Object.fromEntries(oresContent.map((a: { Id: any }) => [a.Id, a]))
-									deepMerge(oresToPatch, entityContent)
-									let oresToWrite = Object.values(oresToPatch)
-
-									fs.writeFileSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "0057C2C3941115CA.ORES.JSON"), JSON.stringify(oresToWrite))
-									fs.rmSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "0057C2C3941115CA.ORES"))
-									execCommand(`"Third-Party\\OREStool.exe" "${path.join(process.cwd(), "temp", oresChunk, "ORES", "0057C2C3941115CA.ORES.json")}"`)
-
-									await copyToCache(mod, path.join(process.cwd(), "temp", oresChunk), path.join(chunkFolder, await xxhash3(contentFilePath)))
-								}
-
-								fs.copyFileSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "0057C2C3941115CA.ORES"), path.join(process.cwd(), "staging", "chunk0", "0057C2C3941115CA.ORES"))
-								fs.copyFileSync(
-									path.join(process.cwd(), "temp", oresChunk, "ORES", "0057C2C3941115CA.ORES.meta"),
-									path.join(process.cwd(), "staging", "chunk0", "0057C2C3941115CA.ORES.meta")
-								)
-								break
-							case "repository.json":
-								entityContent = JSON.parse(String(fs.readFileSync(contentFilePath)))
-
-								let repoRPKG
-								try {
-									repoRPKG = await getRPKGOfHash("00204D1AFD76AB13")
-								} catch {
-									logger.error("Couldn't find the repository in the game files! Make sure you've installed the framework in the right place.")
-									return
-								}
-
-								logger.debug("Applying repository patch " + contentFilePath)
-
-								if (
-									invalidatedData.some((a) => a.filePath == path.join(process.cwd(), "Mods", mod, chunkFolder, path.basename(contentFilePath))) || // must redeploy, invalid cache
-									!(await copyFromCache(mod, path.join(chunkFolder, await xxhash3(contentFilePath)), path.join(process.cwd(), "temp", repoRPKG))) // cache is not available
-								) {
-									await extractOrCopyToTemp(repoRPKG, "00204D1AFD76AB13", "REPO") // Extract the REPO to temp
-
-									let repoContent = JSON.parse(String(fs.readFileSync(path.join(process.cwd(), "temp", repoRPKG, "REPO", "00204D1AFD76AB13.REPO"))))
-
-									let repoToPatch = Object.fromEntries(repoContent.map((a: { [x: string]: any }) => [a["ID_"], a]))
-									deepMerge(repoToPatch, entityContent)
-									let repoToWrite = Object.values(repoToPatch)
-
-									let editedItems = new Set(Object.keys(entityContent))
-
-									await callRPKGFunction(`-hash_meta_to_json "${path.join(process.cwd(), "temp", repoRPKG, "REPO", "00204D1AFD76AB13.REPO.meta")}"`)
-									let metaContent = JSON.parse(String(fs.readFileSync(path.join(process.cwd(), "temp", repoRPKG, "REPO", "00204D1AFD76AB13.REPO.meta.JSON"))))
-									for (let repoItem of repoToWrite) {
-										if (editedItems.has(repoItem.ID_)) {
-											if (repoItem.Runtime) {
-												if (!metaContent["hash_reference_data"].find((a: { hash: string }) => a.hash == parseInt(repoItem.Runtime).toString(16).toUpperCase())) {
-													metaContent["hash_reference_data"].push({
-														hash: parseInt(repoItem.Runtime).toString(16).toUpperCase(),
-														flag: "9F"
-													}) // Add Runtime of any items to REPO depends if not already there
-												}
-											}
-
-											if (repoItem.Image) {
-												if (
-													!metaContent["hash_reference_data"].find(
-														(a: { hash: string }) =>
-															a.hash ==
-															"00" + md5(`[assembly:/_pro/online/default/cloudstorage/resources/${repoItem.Image}].pc_gfx`.toLowerCase()).slice(2, 16).toUpperCase()
-													)
-												) {
-													metaContent["hash_reference_data"].push({
-														hash: "00" + md5(`[assembly:/_pro/online/default/cloudstorage/resources/${repoItem.Image}].pc_gfx`.toLowerCase()).slice(2, 16).toUpperCase(),
-														flag: "9F"
-													}) // Add Image of any items to REPO depends if not already there
-												}
-											}
-										}
-									}
-									fs.writeFileSync(path.join(process.cwd(), "temp", repoRPKG, "REPO", "00204D1AFD76AB13.REPO.meta.JSON"), JSON.stringify(metaContent))
-									fs.rmSync(path.join(process.cwd(), "temp", repoRPKG, "REPO", "00204D1AFD76AB13.REPO.meta"))
-									await callRPKGFunction(`-json_to_hash_meta "${path.join(process.cwd(), "temp", repoRPKG, "REPO", "00204D1AFD76AB13.REPO.meta.JSON")}"`) // Add all runtimes to REPO depends
-
-									fs.writeFileSync(path.join(process.cwd(), "temp", repoRPKG, "REPO", "00204D1AFD76AB13.REPO"), JSON.stringify(repoToWrite))
-
-									await copyToCache(mod, path.join(process.cwd(), "temp", repoRPKG), path.join(chunkFolder, await xxhash3(contentFilePath)))
-								}
-
-								fs.copyFileSync(path.join(process.cwd(), "temp", repoRPKG, "REPO", "00204D1AFD76AB13.REPO"), path.join(process.cwd(), "staging", "chunk0", "00204D1AFD76AB13.REPO"))
-								fs.copyFileSync(
-									path.join(process.cwd(), "temp", repoRPKG, "REPO", "00204D1AFD76AB13.REPO.meta"),
-									path.join(process.cwd(), "staging", "chunk0", "00204D1AFD76AB13.REPO.meta")
-								)
-								break
-							case "contract.json":
-								entityContent = LosslessJSON.parse(String(fs.readFileSync(contentFilePath)))
-
-								let contractHash =
-									"00" +
-									md5(("smfContract" + entityContent.Metadata.Id).toLowerCase())
-										.slice(2, 16)
-										.toUpperCase()
-
-								logger.debug("Adding contract " + contentFilePath)
-
-								contractsORESContent[contractHash] = entityContent.Metadata.Id // Add the contract to the ORES; this will be a no-op if the cache is used later
-
-								contractsORESMetaContent["hash_reference_data"].push({
-									hash: contractHash,
-									flag: "9F"
-								})
-
-								fs.writeFileSync(path.join(process.cwd(), "staging", "chunk0", contractHash + ".JSON"), LosslessJSON.stringify(entityContent)) // Write the actual contract to the staging directory
-								break
-							case "JSON.patch.json":
-								entityContent = JSON.parse(String(fs.readFileSync(contentFilePath)))
-
-								let rpkgOfFile
-								try {
-									rpkgOfFile = await getRPKGOfHash(entityContent.file)
-								} catch {
-									logger.error("Couldn't find the file to patch in the game files! Make sure you've installed the framework in the right place.")
-									return
-								}
-
-								let fileType = entityContent.type || "JSON"
-
-								logger.debug("Applying JSON patch " + contentFilePath)
-
-								if (
-									invalidatedData.some((a) => a.filePath == path.join(process.cwd(), "Mods", mod, chunkFolder, path.basename(contentFilePath))) || // must redeploy, invalid cache
-									!(await copyFromCache(mod, path.join(chunkFolder, await xxhash3(contentFilePath)), path.join(process.cwd(), "temp", rpkgOfFile))) // cache is not available
-								) {
-									await extractOrCopyToTemp(rpkgOfFile, entityContent.file, fileType, chunkFolder) // Extract the JSON to temp
-
-									if (entityContent.type == "ORES") {
-										execCommand(`"Third-Party\\OREStool.exe" "${path.join(process.cwd(), "temp", rpkgOfFile, fileType, entityContent.file + "." + fileType)}"`)
-										fs.rmSync(path.join(process.cwd(), "temp", rpkgOfFile, fileType, entityContent.file + "." + fileType))
-										fs.renameSync(
-											path.join(process.cwd(), "temp", rpkgOfFile, fileType, entityContent.file + "." + fileType + ".json"),
-											path.join(process.cwd(), "temp", rpkgOfFile, fileType, entityContent.file + "." + fileType)
-										)
-									}
-
-									let fileContent = JSON.parse(String(fs.readFileSync(path.join(process.cwd(), "temp", rpkgOfFile, fileType, entityContent.file + "." + fileType))))
-
-									if (entityContent.type == "ORES" && Array.isArray(fileContent)) {
-										fileContent = Object.fromEntries(fileContent.map((a) => [a.Id, a])) // Change unlockables ORES to be an object
-									} else if (entityContent.type == "REPO") {
-										fileContent = Object.fromEntries(fileContent.map((a: { [x: string]: any }) => [a["ID_"], a])) // Change REPO to be an object
-									}
-
-									rfc6902.applyPatch(fileContent, entityContent.patch) // Apply the JSON patch
-
-									if ((entityContent.type == "ORES" && Object.prototype.toString.call(fileContent) == "[object Object]") || entityContent.type == "REPO") {
-										fileContent = Object.values(fileContent) // Change back to an array
-									}
-
-									if (entityContent.type == "ORES") {
-										fs.renameSync(
-											path.join(process.cwd(), "temp", rpkgOfFile, fileType, entityContent.file + "." + fileType),
-											path.join(process.cwd(), "temp", rpkgOfFile, fileType, entityContent.file + "." + fileType + ".json")
-										)
-										fs.writeFileSync(path.join(process.cwd(), "temp", rpkgOfFile, fileType, entityContent.file + "." + fileType + ".json"), JSON.stringify(fileContent))
-										execCommand(`"Third-Party\\OREStool.exe" "${path.join(process.cwd(), "temp", rpkgOfFile, fileType, entityContent.file + "." + fileType + ".json")}"`)
-									} else {
-										fs.writeFileSync(path.join(process.cwd(), "temp", rpkgOfFile, fileType, entityContent.file + "." + fileType), JSON.stringify(fileContent))
-									}
-
-									await copyToCache(mod, path.join(process.cwd(), "temp", rpkgOfFile), path.join(chunkFolder, await xxhash3(contentFilePath)))
-								}
-
-								fs.copyFileSync(
-									path.join(process.cwd(), "temp", rpkgOfFile, fileType, entityContent.file + "." + fileType),
-									path.join(process.cwd(), "staging", chunkFolder, entityContent.file + "." + fileType)
-								)
-								fs.copyFileSync(
-									path.join(process.cwd(), "temp", rpkgOfFile, fileType, entityContent.file + "." + fileType + ".meta"),
-									path.join(process.cwd(), "staging", chunkFolder, entityContent.file + "." + fileType + ".meta")
-								)
-								break
-							case "texture.tga":
-								logger.debug("Converting texture " + contentFilePath)
-
-								if (
-									invalidatedData.some((a) => a.filePath == path.join(process.cwd(), "Mods", mod, chunkFolder, path.basename(contentFilePath))) || // must redeploy, invalid cache
-									!(await copyFromCache(mod, path.join(chunkFolder, await xxhash3(contentFilePath)), path.join(process.cwd(), "temp", chunkFolder))) // cache is not available
-								) {
-									fs.ensureDirSync(path.join(process.cwd(), "temp", chunkFolder))
-
-									if (path.basename(contentFilePath).split(".")[0].split("~").length > 1) {
-										execCommand(
-											`"Third-Party\\HMTextureTools" rebuild H3 "${contentFilePath}" --metapath "${contentFilePath + ".meta"}" "${path.join(
-												process.cwd(),
-												"temp",
-												chunkFolder,
-												path.basename(contentFilePath).split(".")[0].split("~")[0] + ".TEXT"
-											)}" --rebuildboth --texdoutput "${path.join(process.cwd(), "temp", chunkFolder, path.basename(contentFilePath).split(".")[0].split("~")[1] + ".TEXD")}"`
-										) // Rebuild texture to TEXT/TEXD
-
-										fs.writeFileSync(
-											path.join(process.cwd(), "temp", chunkFolder, path.basename(contentFilePath).split(".")[0].split("~")[0] + ".TEXT.meta.JSON"),
-											JSON.stringify({
-												hash_value: path.basename(contentFilePath).split(".")[0].split("~")[0],
-												hash_offset: 21488715,
-												hash_size: 2147483648,
-												hash_resource_type: "TEXT",
-												hash_reference_table_size: 13,
-												hash_reference_table_dummy: 0,
-												hash_size_final: 6054,
-												hash_size_in_memory: 4294967295,
-												hash_size_in_video_memory: 688128,
-												hash_reference_data: [
-													{
-														hash: path.basename(contentFilePath).split(".")[0].split("~")[1],
-														flag: "9F"
-													}
-												]
-											})
-										)
-										fs.writeFileSync(
-											path.join(process.cwd(), "temp", chunkFolder, path.basename(contentFilePath).split(".")[0].split("~")[1] + ".TEXD.meta.JSON"),
-											JSON.stringify({
-												hash_value: path.basename(contentFilePath).split(".")[0].split("~")[1],
-												hash_offset: 233821026,
-												hash_size: 0,
-												hash_resource_type: "TEXD",
-												hash_reference_table_size: 0,
-												hash_reference_table_dummy: 0,
-												hash_size_final: 120811,
-												hash_size_in_memory: 4294967295,
-												hash_size_in_video_memory: 688128,
-												hash_reference_data: []
-											})
-										)
-										await callRPKGFunction(
-											`-json_to_hash_meta "${path.join(process.cwd(), "temp", chunkFolder, path.basename(contentFilePath).split(".")[0].split("~")[0] + ".TEXT.meta.JSON")}"`
-										) // Rebuild the TEXT meta
-										await callRPKGFunction(
-											`-json_to_hash_meta "${path.join(process.cwd(), "temp", chunkFolder, path.basename(contentFilePath).split(".")[0].split("~")[1] + ".TEXD.meta.JSON")}"`
-										) // Rebuild the TEXD meta
-									} else {
-										// TEXT only
-										execCommand(
-											`"Third-Party\\HMTextureTools" rebuild H3 "${contentFilePath}" --metapath "${contentFilePath + ".meta"}" "${path.join(
-												process.cwd(),
-												"temp",
-												chunkFolder,
-												path.basename(contentFilePath).split(".")[0] + ".TEXT"
-											)}"`
-										) // Rebuild texture to TEXT only
-
-										fs.writeFileSync(
-											path.join(process.cwd(), "temp", chunkFolder, path.basename(contentFilePath).split(".")[0] + ".TEXT.meta.json"),
-											JSON.stringify({
-												hash_value: path.basename(contentFilePath).split(".")[0].split("~")[0],
-												hash_offset: 21488715,
-												hash_size: 2147483648,
-												hash_resource_type: "TEXT",
-												hash_reference_table_size: 13,
-												hash_reference_table_dummy: 0,
-												hash_size_final: 6054,
-												hash_size_in_memory: 4294967295,
-												hash_size_in_video_memory: 688128,
-												hash_reference_data: []
-											})
-										)
-										await callRPKGFunction(
-											`-json_to_hash_meta "${path.join(process.cwd(), "temp", chunkFolder, path.basename(contentFilePath).split(".")[0] + ".TEXT.meta.json")}"`
-										) // Rebuild the meta
-									}
-
-									await copyToCache(mod, path.join(process.cwd(), "temp", chunkFolder), path.join(chunkFolder, await xxhash3(contentFilePath)))
-								}
-
-								fs.ensureDirSync(path.join(process.cwd(), "staging", chunkFolder))
-								try {
-									fs.copyFileSync(
-										path.join(process.cwd(), "temp", chunkFolder, path.basename(contentFilePath).split(".")[0] + ".TEXT"),
-										path.join(process.cwd(), "staging", chunkFolder, path.basename(contentFilePath).split(".")[0] + ".TEXT")
-									)
-									fs.copyFileSync(
-										path.join(process.cwd(), "temp", chunkFolder, path.basename(contentFilePath).split(".")[1] + ".TEXD"),
-										path.join(process.cwd(), "staging", chunkFolder, path.basename(contentFilePath).split(".")[1] + ".TEXD")
-									)
-									fs.copyFileSync(
-										path.join(process.cwd(), "temp", chunkFolder, path.basename(contentFilePath).split(".")[0] + ".TEXT.meta"),
-										path.join(process.cwd(), "staging", chunkFolder, path.basename(contentFilePath).split(".")[0] + ".TEXT.meta")
-									)
-									fs.copyFileSync(
-										path.join(process.cwd(), "temp", chunkFolder, path.basename(contentFilePath).split(".")[1] + ".TEXD.meta"),
-										path.join(process.cwd(), "staging", chunkFolder, path.basename(contentFilePath).split(".")[1] + ".TEXD.meta")
-									)
-								} catch {}
-								break
-							case "sfx.wem":
-								if (!WWEVpatches[path.basename(contentFilePath).split(".")[0].split("~")[0]]) {
-									WWEVpatches[path.basename(contentFilePath).split(".")[0].split("~")[0]] = []
-								}
-
-								// Add the WWEV patch; this will be a no-op if the cache is used later
-								WWEVpatches[path.basename(contentFilePath).split(".")[0].split("~")[0]].push({
-									index: path.basename(contentFilePath).split(".")[0].split("~")[1],
-									filepath: contentFilePath,
-									chunk: chunkFolder
-								})
-								break
-							default:
-								fs.copyFileSync(contentFilePath, path.join(process.cwd(), "staging", chunkFolder, path.basename(contentFilePath))) // Copy the file to the staging directory; we don't cache these for obvious reasons
-								break
+							},
+							finish() {}
 						}
+					},
+					finish() {}
+				  } // Don't track raw files, only special file types
+			configureSentryScope(sentryContentFileTransaction)
 
-						sentryContentFileTransaction.finish()
+			content.source == "disk" && logger.verbose(`Staging ${content.type} file ${content.path}`)
+			content.source == "virtual" && logger.verbose(`Staging virtual ${content.type} file ${content.identifier}`)
 
-						fs.emptyDirSync(path.join(process.cwd(), "temp"))
+			switch (content.type) {
+				case "entity.json": {
+					entityContent = LosslessJSON.parse(String(content.source == "disk" ? fs.readFileSync(content.path) : await content.content.text()))
+
+					logger.debug("Converting entity " + contentIdentifier)
+
+					try {
+						if (!getQuickEntityFromVersion(entityContent.quickEntityVersion.value)) {
+							logger.error("Could not find matching QuickEntity version for " + Number(entityContent.quickEntityVersion.value) + "!")
+						}
+					} catch {
+						logger.error("Improper QuickEntity JSON; couldn't find the version!")
 					}
 
-					/* --------- There are contracts, repackage the contracts ORES from the temp2 directory --------- */
+					logger.verbose("Cache check")
 					if (
-						klaw(path.join(process.cwd(), "Mods", mod, contentFolder, chunkFolder))
-							.filter((a) => a.stats.isFile())
-							.some((a) => a.path.endsWith("contract.json"))
+						invalidatedData.some((a) => a.filePath == contentIdentifier) || // must redeploy, invalid cache
+						!(await copyFromCache(instruction.cacheFolder, path.join(content.chunk, await xxhash3(contentIdentifier)), path.join(process.cwd(), "staging", content.chunk))) // cache is not available
 					) {
-						if (invalidatedData.some((a) => a.data.affected.includes("002B07020D21D727")) || !(await copyFromCache(mod, "contractsORES", path.join(process.cwd(), "temp2")))) {
-							// we need to re-deploy contracts OR contracts data couldn't be copied from cache
+						let contentPath
 
-							fs.writeFileSync(path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES.meta.JSON"), JSON.stringify(contractsORESMetaContent))
-							fs.rmSync(path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES.meta"))
-							await callRPKGFunction(`-json_to_hash_meta "${path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES.meta.JSON")}"`) // Rebuild the ORES meta
-
-							fs.writeFileSync(path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES.JSON"), JSON.stringify(contractsORESContent))
-							fs.rmSync(path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES"))
-							execCommand(`"Third-Party\\OREStool.exe" "${path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES.json")}"`) // Rebuild the ORES
-
-							await copyToCache(mod, path.join(process.cwd(), "temp2"), "contractsORES")
-						}
-
-						fs.copyFileSync(path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES"), path.join(process.cwd(), "staging", "chunk0", "002B07020D21D727.ORES"))
-						fs.copyFileSync(
-							path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES.meta"),
-							path.join(process.cwd(), "staging", "chunk0", "002B07020D21D727.ORES.meta")
-						) // Copy the ORES to the staging directory
-
-						fs.removeSync(path.join(process.cwd(), "temp2"))
-					}
-
-					/* ------------------------------ Copy chunk meta to staging folder ----------------------------- */
-					if (fs.existsSync(path.join(process.cwd(), "Mods", mod, contentFolder, chunkFolder, chunkFolder + ".meta"))) {
-						fs.copyFileSync(
-							path.join(process.cwd(), "Mods", mod, contentFolder, chunkFolder, chunkFolder + ".meta"),
-							path.join(process.cwd(), "staging", chunkFolder, chunkFolder + ".meta")
-						)
-						rpkgTypes[chunkFolder] = "base"
-					} else {
-						rpkgTypes[chunkFolder] = "patch"
-					}
-				}
-			}
-
-			sentryContentTransaction.finish()
-
-			/* ------------------------------------- Multithreaded patching ------------------------------------ */
-			let index = 0
-
-			let workerPool = new Piscina({
-				filename: "patchWorker.js",
-				maxThreads: os.cpus().length / 4 // For an 8-core CPU with 16 logical processors there are 4 max threads
-			})
-
-			// @ts-expect-error Assigning stuff on global is probably bad practice
-			global.currentWorkerPool = workerPool
-
-			let sentryPatchTransaction = sentryModTransaction.startChild({
-				op: "stage",
-				description: "Patches"
-			})
-			configureSentryScope(sentryPatchTransaction)
-
-			await Promise.all(
-				entityPatches.map(({ tempHash, tempRPKG, tbluHash, tbluRPKG, chunkFolder, patches }) => {
-					index++
-					return workerPool.run({
-						tempHash,
-						tempRPKG,
-						tbluHash,
-						tbluRPKG,
-						chunkFolder,
-						patches,
-						assignedTemporaryDirectory: "patchWorker" + index,
-						invalidatedData,
-						mod
-					})
-				})
-			) // Run each patch in the worker queue and wait for all of them to finish
-
-			// @ts-expect-error Assigning stuff on global is probably bad practice
-			global.currentWorkerPool = {
-				destroy: () => {}
-			}
-
-			sentryPatchTransaction.finish()
-
-			/* ---------------------------------------------------------------------------------------------- */
-			/*                                              Blobs                                             */
-			/* ---------------------------------------------------------------------------------------------- */
-			if (blobsFolders.length) {
-				let sentryBlobsTransaction = sentryModTransaction.startChild({
-					op: "stage",
-					description: "Blobs"
-				})
-				configureSentryScope(sentryBlobsTransaction)
-
-				fs.emptyDirSync(path.join(process.cwd(), "temp"))
-
-				fs.ensureDirSync(path.join(process.cwd(), "staging", "chunk0"))
-
-				let oresChunk
-				try {
-					oresChunk = await getRPKGOfHash("00858D45F5F9E3CA")
-				} catch {
-					logger.error("Couldn't find the blobs ORES in the game files! Make sure you've installed the framework in the right place.")
-					return
-				}
-
-				await extractOrCopyToTemp(oresChunk, "00858D45F5F9E3CA", "ORES") // Extract the ORES to temp
-
-				execCommand(`"Third-Party\\OREStool.exe" "${path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES")}"`)
-				let oresContent = JSON.parse(String(fs.readFileSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES.JSON"))))
-
-				await callRPKGFunction(`-hash_meta_to_json "${path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES.meta")}"`)
-				let metaContent = JSON.parse(String(fs.readFileSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES.meta.JSON"))))
-
-				for (let blobsFolder of blobsFolders) {
-					for (let blob of klaw(path.join(process.cwd(), "Mods", mod, blobsFolder))
-						.filter((a) => a.stats.isFile())
-						.map((a) => a.path)) {
-						let blobPath = blob.replace(path.join(process.cwd(), "Mods", mod, blobsFolder), "").slice(1).split(path.sep).join("/").toLowerCase()
-
-						let blobHash
-						if (path.extname(blob).startsWith(".jp") || path.extname(blob) == ".png") {
-							blobHash = "00" + md5(`[assembly:/_pro/online/default/cloudstorage/resources/${blobPath}].pc_gfx`.toLowerCase()).slice(2, 16).toUpperCase()
-						} else if (path.extname(blob) == ".json") {
-							blobHash = "00" + md5(`[assembly:/_pro/online/default/cloudstorage/resources/${blobPath}].pc_json`.toLowerCase()).slice(2, 16).toUpperCase()
+						if (content.source == "disk") {
+							contentPath = content.path
 						} else {
-							blobHash =
-								"00" +
-								md5(`[assembly:/_pro/online/default/cloudstorage/resources/${blobPath}].pc_${path.extname(blob).slice(1)}`.toLowerCase())
-									.slice(2, 16)
-									.toUpperCase()
+							fs.ensureDirSync(path.join(process.cwd(), "virtual"))
+							fs.writeFileSync(path.join(process.cwd(), "virtual", "entity.json"), Buffer.from(await content.content.arrayBuffer()))
+							contentPath = path.join(process.cwd(), "virtual", "entity.json")
 						}
 
-						oresContent[blobHash] = blobPath // Add the blob to the ORES
+						try {
+							logger.verbose("QN generate")
 
-						if (!metaContent["hash_reference_data"].find((a: { hash: any }) => a.hash == blobHash)) {
-							metaContent["hash_reference_data"].push({
-								hash: blobHash,
-								flag: "9F"
-							})
+							await getQuickEntityFromVersion(entityContent.quickEntityVersion.value).generate(
+								"HM3",
+								contentPath,
+								path.join(process.cwd(), "temp", "temp.TEMP.json"),
+								path.join(process.cwd(), "temp", entityContent.tempHash + ".TEMP.meta.json"),
+								path.join(process.cwd(), "temp", "temp.TBLU.json"),
+								path.join(process.cwd(), "temp", entityContent.tbluHash + ".TBLU.meta.json")
+							)
+						} catch {
+							logger.error(`Could not generate entity ${contentIdentifier}!`)
 						}
 
+						fs.removeSync(path.join(process.cwd(), "virtual"))
+
+						// Generate the RT source from the QN json
+						execCommand(
+							"\"Third-Party\\ResourceTool.exe\" HM3 generate TEMP \"" +
+								path.join(process.cwd(), "temp", "temp.TEMP.json") +
+								"\" \"" +
+								path.join(process.cwd(), "temp", entityContent.tempHash + ".TEMP") +
+								"\" --simple"
+						)
+						execCommand(
+							"\"Third-Party\\ResourceTool.exe\" HM3 generate TBLU \"" +
+								path.join(process.cwd(), "temp", "temp.TBLU.json") +
+								"\" \"" +
+								path.join(process.cwd(), "temp", entityContent.tbluHash + ".TBLU") +
+								"\" --simple"
+						)
+
+						await callRPKGFunction(`-json_to_hash_meta "${path.join(process.cwd(), "temp", entityContent.tempHash + ".TEMP.meta.json")}"`)
+						await callRPKGFunction(`-json_to_hash_meta "${path.join(process.cwd(), "temp", entityContent.tbluHash + ".TBLU.meta.json")}"`)
+						// Generate the binary files from the RT json
+
+						fs.copyFileSync(path.join(process.cwd(), "temp", entityContent.tempHash + ".TEMP"), path.join(process.cwd(), "staging", content.chunk, entityContent.tempHash + ".TEMP"))
 						fs.copyFileSync(
-							blob,
+							path.join(process.cwd(), "temp", entityContent.tempHash + ".TEMP.meta"),
+							path.join(process.cwd(), "staging", content.chunk, entityContent.tempHash + ".TEMP.meta")
+						)
+						fs.copyFileSync(path.join(process.cwd(), "temp", entityContent.tbluHash + ".TBLU"), path.join(process.cwd(), "staging", content.chunk, entityContent.tbluHash + ".TBLU"))
+						fs.copyFileSync(
+							path.join(process.cwd(), "temp", entityContent.tbluHash + ".TBLU.meta"),
+							path.join(process.cwd(), "staging", content.chunk, entityContent.tbluHash + ".TBLU.meta")
+						)
+						// Copy the binary files to the staging directory
+
+						await copyToCache(instruction.cacheFolder, path.join(process.cwd(), "temp"), path.join(content.chunk, await xxhash3(contentIdentifier)))
+						// Copy the binary files to the cache
+					}
+
+					break
+				}
+				case "entity.patch.json": {
+					entityContent = content.source == "disk" ? LosslessJSON.parse(String(fs.readFileSync(content.path))) : LosslessJSON.parse(await content.content.text())
+					entityContent.path = contentIdentifier
+
+					logger.debug("Preparing to apply patch " + contentIdentifier)
+
+					if (entityPatches.some((a) => a.tempHash == entityContent.tempHash)) {
+						entityPatches.find((a) => a.tempHash == entityContent.tempHash)!.patches.push(entityContent)
+					} else {
+						try {
+							entityPatches.push({
+								tempHash: entityContent.tempHash,
+								tempRPKG: await getRPKGOfHash(entityContent.tempHash),
+								tbluHash: entityContent.tbluHash,
+								tbluRPKG: await getRPKGOfHash(entityContent.tbluHash),
+								chunkFolder: content.chunk,
+								patches: [entityContent],
+								mod: instruction.cacheFolder
+							})
+						} catch {
+							logger.error("Couldn't find the entity to patch in the game files! Make sure you've installed the framework in the right place.")
+							return
+						}
+					}
+					break
+				}
+				case "unlockables.json": {
+					entityContent = content.source == "disk" ? JSON.parse(String(fs.readFileSync(content.path))) : JSON.parse(await content.content.text())
+
+					let oresChunk: string
+					try {
+						oresChunk = await getRPKGOfHash("0057C2C3941115CA")
+					} catch {
+						logger.error("Couldn't find the unlockables ORES in the game files! Make sure you've installed the framework in the right place.")
+						return
+					}
+
+					logger.debug("Applying unlockable patch " + contentIdentifier)
+
+					if (
+						invalidatedData.some((a) => a.filePath == contentIdentifier) || // must redeploy, invalid cache
+						!(await copyFromCache(instruction.cacheFolder, path.join(content.chunk, await xxhash3(contentIdentifier)), path.join(process.cwd(), "temp", oresChunk))) // cache is not available
+					) {
+						await extractOrCopyToTemp(oresChunk, "0057C2C3941115CA", "ORES") // Extract the ORES to temp
+
+						execCommand(`"Third-Party\\OREStool.exe" "${path.join(process.cwd(), "temp", oresChunk, "ORES", "0057C2C3941115CA.ORES")}"`)
+						const oresContent = JSON.parse(String(fs.readFileSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "0057C2C3941115CA.ORES.JSON"))))
+
+						logger.verbose("Deep merge")
+						const oresToPatch = Object.fromEntries(oresContent.map((a: { Id: string }) => [a.Id, a]))
+						deepMerge(oresToPatch, entityContent)
+						const oresToWrite = Object.values(oresToPatch)
+
+						fs.writeFileSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "0057C2C3941115CA.ORES.JSON"), JSON.stringify(oresToWrite))
+						fs.rmSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "0057C2C3941115CA.ORES"))
+						execCommand(`"Third-Party\\OREStool.exe" "${path.join(process.cwd(), "temp", oresChunk, "ORES", "0057C2C3941115CA.ORES.json")}"`)
+
+						await copyToCache(instruction.cacheFolder, path.join(process.cwd(), "temp", oresChunk), path.join(content.chunk, await xxhash3(contentIdentifier)))
+					}
+
+					fs.copyFileSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "0057C2C3941115CA.ORES"), path.join(process.cwd(), "staging", "chunk0", "0057C2C3941115CA.ORES"))
+					fs.copyFileSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "0057C2C3941115CA.ORES.meta"), path.join(process.cwd(), "staging", "chunk0", "0057C2C3941115CA.ORES.meta"))
+					break
+				}
+				case "repository.json": {
+					entityContent = content.source == "disk" ? JSON.parse(String(fs.readFileSync(content.path))) : JSON.parse(await content.content.text())
+
+					let repoRPKG: string
+					try {
+						repoRPKG = await getRPKGOfHash("00204D1AFD76AB13")
+					} catch {
+						logger.error("Couldn't find the repository in the game files! Make sure you've installed the framework in the right place.")
+						return
+					}
+
+					logger.debug("Applying repository patch " + contentIdentifier)
+
+					if (
+						invalidatedData.some((a) => a.filePath == contentIdentifier) || // must redeploy, invalid cache
+						!(await copyFromCache(instruction.cacheFolder, path.join(content.chunk, await xxhash3(contentIdentifier)), path.join(process.cwd(), "temp", repoRPKG))) // cache is not available
+					) {
+						await extractOrCopyToTemp(repoRPKG, "00204D1AFD76AB13", "REPO") // Extract the REPO to temp
+
+						const repoContent = JSON.parse(String(fs.readFileSync(path.join(process.cwd(), "temp", repoRPKG, "REPO", "00204D1AFD76AB13.REPO"))))
+
+						const repoToPatch = Object.fromEntries(repoContent.map((a: { [x: string]: unknown }) => [a["ID_"], a]))
+						deepMerge(repoToPatch, entityContent)
+						const repoToWrite = Object.values(repoToPatch)
+
+						const editedItems = new Set(Object.keys(entityContent))
+
+						await callRPKGFunction(`-hash_meta_to_json "${path.join(process.cwd(), "temp", repoRPKG, "REPO", "00204D1AFD76AB13.REPO.meta")}"`)
+						const metaContent = JSON.parse(String(fs.readFileSync(path.join(process.cwd(), "temp", repoRPKG, "REPO", "00204D1AFD76AB13.REPO.meta.JSON"))))
+						for (const repoItem of repoToWrite) {
+							if (editedItems.has(repoItem.ID_)) {
+								if (repoItem.Runtime) {
+									if (!metaContent["hash_reference_data"].find((a: { hash: string }) => a.hash == parseInt(repoItem.Runtime).toString(16).toUpperCase())) {
+										metaContent["hash_reference_data"].push({
+											hash: parseInt(repoItem.Runtime).toString(16).toUpperCase(),
+											flag: "9F"
+										}) // Add Runtime of any items to REPO depends if not already there
+									}
+								}
+
+								if (repoItem.Image) {
+									if (
+										!metaContent["hash_reference_data"].find(
+											(a: { hash: string }) =>
+												a.hash == "00" + md5(`[assembly:/_pro/online/default/cloudstorage/resources/${repoItem.Image}].pc_gfx`.toLowerCase()).slice(2, 16).toUpperCase()
+										)
+									) {
+										metaContent["hash_reference_data"].push({
+											hash: "00" + md5(`[assembly:/_pro/online/default/cloudstorage/resources/${repoItem.Image}].pc_gfx`.toLowerCase()).slice(2, 16).toUpperCase(),
+											flag: "9F"
+										}) // Add Image of any items to REPO depends if not already there
+									}
+								}
+							}
+						}
+						fs.writeFileSync(path.join(process.cwd(), "temp", repoRPKG, "REPO", "00204D1AFD76AB13.REPO.meta.JSON"), JSON.stringify(metaContent))
+						fs.rmSync(path.join(process.cwd(), "temp", repoRPKG, "REPO", "00204D1AFD76AB13.REPO.meta"))
+						await callRPKGFunction(`-json_to_hash_meta "${path.join(process.cwd(), "temp", repoRPKG, "REPO", "00204D1AFD76AB13.REPO.meta.JSON")}"`) // Add all runtimes to REPO depends
+
+						fs.writeFileSync(path.join(process.cwd(), "temp", repoRPKG, "REPO", "00204D1AFD76AB13.REPO"), JSON.stringify(repoToWrite))
+
+						await copyToCache(instruction.cacheFolder, path.join(process.cwd(), "temp", repoRPKG), path.join(content.chunk, await xxhash3(contentIdentifier)))
+					}
+
+					fs.copyFileSync(path.join(process.cwd(), "temp", repoRPKG, "REPO", "00204D1AFD76AB13.REPO"), path.join(process.cwd(), "staging", "chunk0", "00204D1AFD76AB13.REPO"))
+					fs.copyFileSync(path.join(process.cwd(), "temp", repoRPKG, "REPO", "00204D1AFD76AB13.REPO.meta"), path.join(process.cwd(), "staging", "chunk0", "00204D1AFD76AB13.REPO.meta"))
+					break
+				}
+				case "contract.json": {
+					entityContent = content.source == "disk" ? LosslessJSON.parse(String(fs.readFileSync(content.path))) : LosslessJSON.parse(await content.content.text())
+
+					const contractHash =
+						"00" +
+						md5(("smfContract" + entityContent.Metadata.Id).toLowerCase())
+							.slice(2, 16)
+							.toUpperCase()
+
+					logger.debug("Adding contract " + contentIdentifier)
+
+					contractsORESContent[contractHash] = entityContent.Metadata.Id // Add the contract to the ORES; this will be a no-op if the cache is used later
+
+					contractsORESMetaContent["hash_reference_data"].push({
+						hash: contractHash,
+						flag: "9F"
+					})
+
+					fs.writeFileSync(path.join(process.cwd(), "staging", "chunk0", contractHash + ".JSON"), LosslessJSON.stringify(entityContent)) // Write the actual contract to the staging directory
+					break
+				}
+				case "JSON.patch.json": {
+					entityContent = content.source == "disk" ? JSON.parse(String(fs.readFileSync(content.path))) : JSON.parse(await content.content.text())
+
+					let rpkgOfFile
+					try {
+						rpkgOfFile = await getRPKGOfHash(entityContent.file)
+					} catch {
+						logger.error("Couldn't find the file to patch in the game files! Make sure you've installed the framework in the right place.")
+						return
+					}
+
+					const fileType = entityContent.type || "JSON"
+
+					logger.debug("Applying JSON patch " + contentIdentifier)
+
+					if (
+						invalidatedData.some((a) => a.filePath == contentIdentifier) || // must redeploy, invalid cache
+						!(await copyFromCache(instruction.cacheFolder, path.join(content.chunk, await xxhash3(contentIdentifier)), path.join(process.cwd(), "temp", rpkgOfFile))) // cache is not available
+					) {
+						await extractOrCopyToTemp(rpkgOfFile, entityContent.file, fileType, content.chunk) // Extract the JSON to temp
+
+						if (entityContent.type == "ORES") {
+							execCommand(`"Third-Party\\OREStool.exe" "${path.join(process.cwd(), "temp", rpkgOfFile, fileType, entityContent.file + "." + fileType)}"`)
+							fs.rmSync(path.join(process.cwd(), "temp", rpkgOfFile, fileType, entityContent.file + "." + fileType))
+							fs.renameSync(
+								path.join(process.cwd(), "temp", rpkgOfFile, fileType, entityContent.file + "." + fileType + ".json"),
+								path.join(process.cwd(), "temp", rpkgOfFile, fileType, entityContent.file + "." + fileType)
+							)
+						}
+
+						let fileContent = JSON.parse(String(fs.readFileSync(path.join(process.cwd(), "temp", rpkgOfFile, fileType, entityContent.file + "." + fileType))))
+
+						if (entityContent.type == "ORES" && Array.isArray(fileContent)) {
+							fileContent = Object.fromEntries(fileContent.map((a) => [a.Id, a])) // Change unlockables ORES to be an object
+						} else if (entityContent.type == "REPO") {
+							fileContent = Object.fromEntries(fileContent.map((a: { [x: string]: unknown }) => [a["ID_"], a])) // Change REPO to be an object
+						}
+
+						rfc6902.applyPatch(fileContent, entityContent.patch) // Apply the JSON patch
+
+						if ((entityContent.type == "ORES" && Object.prototype.toString.call(fileContent) == "[object Object]") || entityContent.type == "REPO") {
+							fileContent = Object.values(fileContent) // Change back to an array
+						}
+
+						if (entityContent.type == "ORES") {
+							fs.renameSync(
+								path.join(process.cwd(), "temp", rpkgOfFile, fileType, entityContent.file + "." + fileType),
+								path.join(process.cwd(), "temp", rpkgOfFile, fileType, entityContent.file + "." + fileType + ".json")
+							)
+							fs.writeFileSync(path.join(process.cwd(), "temp", rpkgOfFile, fileType, entityContent.file + "." + fileType + ".json"), JSON.stringify(fileContent))
+							execCommand(`"Third-Party\\OREStool.exe" "${path.join(process.cwd(), "temp", rpkgOfFile, fileType, entityContent.file + "." + fileType + ".json")}"`)
+						} else {
+							fs.writeFileSync(path.join(process.cwd(), "temp", rpkgOfFile, fileType, entityContent.file + "." + fileType), JSON.stringify(fileContent))
+						}
+
+						await copyToCache(instruction.cacheFolder, path.join(process.cwd(), "temp", rpkgOfFile), path.join(content.chunk, await xxhash3(contentIdentifier)))
+					}
+
+					fs.copyFileSync(
+						path.join(process.cwd(), "temp", rpkgOfFile, fileType, entityContent.file + "." + fileType),
+						path.join(process.cwd(), "staging", content.chunk, entityContent.file + "." + fileType)
+					)
+					fs.copyFileSync(
+						path.join(process.cwd(), "temp", rpkgOfFile, fileType, entityContent.file + "." + fileType + ".meta"),
+						path.join(process.cwd(), "staging", content.chunk, entityContent.file + "." + fileType + ".meta")
+					)
+					break
+				}
+				case "texture.tga": {
+					logger.debug("Converting texture " + contentIdentifier)
+
+					if (
+						invalidatedData.some((a) => a.filePath == contentIdentifier) || // must redeploy, invalid cache
+						!(await copyFromCache(instruction.cacheFolder, path.join(content.chunk, await xxhash3(contentIdentifier)), path.join(process.cwd(), "temp", content.chunk))) // cache is not available
+					) {
+						fs.ensureDirSync(path.join(process.cwd(), "temp", content.chunk))
+
+						if ((content.source == "disk" && path.basename(content.path).split(".")[0].split("~").length > 1) || (content.source == "virtual" && content.extraInformation.texdHash)) {
+							// TEXT and TEXD
+
+							let contentFilePath
+							if (content.source == "disk") {
+								contentFilePath = content.path
+							} else {
+								fs.ensureDirSync(path.join(process.cwd(), "virtual"))
+								fs.writeFileSync(path.join(process.cwd(), "virtual", "texture.tga"), Buffer.from(await content.content.arrayBuffer()))
+								fs.writeFileSync(path.join(process.cwd(), "virtual", "texture.tga.meta"), Buffer.from(await content.extraInformation.textureMeta!.arrayBuffer()))
+								contentFilePath = path.join(process.cwd(), "virtual", "texture.tga")
+							}
+
+							execCommand(
+								`"Third-Party\\HMTextureTools" rebuild H3 "${contentFilePath}" --metapath "${contentFilePath + ".meta"}" "${path.join(
+									process.cwd(),
+									"temp",
+									content.chunk,
+									(content.source == "disk" ? path.basename(content.path).split(".")[0].split("~")[0] : content.extraInformation.textHash) + ".TEXT"
+								)}" --rebuildboth --texdoutput "${path.join(
+									process.cwd(),
+									"temp",
+									content.chunk,
+									(content.source == "disk" ? path.basename(content.path).split(".")[0].split("~")[1] : content.extraInformation.texdHash) + ".TEXT"
+								)}"`
+							) // Rebuild texture to TEXT/TEXD
+
+							fs.writeFileSync(
+								path.join(
+									process.cwd(),
+									"temp",
+									content.chunk,
+									(content.source == "disk" ? path.basename(content.path).split(".")[0].split("~")[0] : content.extraInformation.textHash) + ".TEXT.meta.JSON"
+								),
+								JSON.stringify({
+									hash_value: content.source == "disk" ? path.basename(content.path).split(".")[0].split("~")[0] : content.extraInformation.textHash,
+									hash_offset: 21488715,
+									hash_size: 2147483648,
+									hash_resource_type: "TEXT",
+									hash_reference_table_size: 13,
+									hash_reference_table_dummy: 0,
+									hash_size_final: 6054,
+									hash_size_in_memory: 4294967295,
+									hash_size_in_video_memory: 688128,
+									hash_reference_data: [
+										{
+											hash: content.source == "disk" ? path.basename(content.path).split(".")[0].split("~")[1] : content.extraInformation.texdHash,
+											flag: "9F"
+										}
+									]
+								})
+							)
+
+							fs.writeFileSync(
+								path.join(
+									process.cwd(),
+									"temp",
+									content.chunk,
+									(content.source == "disk" ? path.basename(content.path).split(".")[0].split("~")[1] : content.extraInformation.texdHash) + ".TEXD.meta.JSON"
+								),
+								JSON.stringify({
+									hash_value: content.source == "disk" ? path.basename(content.path).split(".")[0].split("~")[1] : content.extraInformation.texdHash,
+									hash_offset: 233821026,
+									hash_size: 0,
+									hash_resource_type: "TEXD",
+									hash_reference_table_size: 0,
+									hash_reference_table_dummy: 0,
+									hash_size_final: 120811,
+									hash_size_in_memory: 4294967295,
+									hash_size_in_video_memory: 688128,
+									hash_reference_data: []
+								})
+							)
+
+							await callRPKGFunction(
+								`-json_to_hash_meta "${path.join(
+									process.cwd(),
+									"temp",
+									content.chunk,
+									(content.source == "disk" ? path.basename(content.path).split(".")[0].split("~")[0] : content.extraInformation.textHash) + ".TEXT.meta.JSON"
+								)}"`
+							) // Rebuild the TEXT meta
+
+							await callRPKGFunction(
+								`-json_to_hash_meta "${path.join(
+									process.cwd(),
+									"temp",
+									content.chunk,
+									(content.source == "disk" ? path.basename(content.path).split(".")[0].split("~")[1] : content.extraInformation.texdHash) + ".TEXD.meta.JSON"
+								)}"`
+							) // Rebuild the TEXD meta
+
+							fs.removeSync(path.join(process.cwd(), "virtual"))
+						} else {
+							// TEXT only
+
+							let contentFilePath
+							if (content.source == "disk") {
+								contentFilePath = content.path
+							} else {
+								fs.ensureDirSync(path.join(process.cwd(), "virtual"))
+								fs.writeFileSync(path.join(process.cwd(), "virtual", "texture.tga"), Buffer.from(await content.content.arrayBuffer()))
+								fs.writeFileSync(path.join(process.cwd(), "virtual", "texture.tga.meta"), Buffer.from(await content.extraInformation.textureMeta!.arrayBuffer()))
+								contentFilePath = path.join(process.cwd(), "virtual", "texture.tga")
+							}
+
+							execCommand(
+								`"Third-Party\\HMTextureTools" rebuild H3 "${contentFilePath}" --metapath "${contentFilePath + ".meta"}" "${path.join(
+									process.cwd(),
+									"temp",
+									content.chunk,
+									path.basename(contentFilePath).split(".")[0] + ".TEXT"
+								)}"`
+							) // Rebuild texture to TEXT only
+
+							fs.writeFileSync(
+								path.join(
+									process.cwd(),
+									"temp",
+									content.chunk,
+									(content.source == "disk" ? path.basename(content.path).split(".")[0].split("~")[0] : content.extraInformation.textHash) + ".TEXT.meta.json"
+								),
+								JSON.stringify({
+									hash_value: content.source == "disk" ? path.basename(content.path).split(".")[0].split("~")[0] : content.extraInformation.textHash,
+									hash_offset: 21488715,
+									hash_size: 2147483648,
+									hash_resource_type: "TEXT",
+									hash_reference_table_size: 13,
+									hash_reference_table_dummy: 0,
+									hash_size_final: 6054,
+									hash_size_in_memory: 4294967295,
+									hash_size_in_video_memory: 688128,
+									hash_reference_data: []
+								})
+							)
+
+							await callRPKGFunction(
+								`-json_to_hash_meta "${path.join(
+									process.cwd(),
+									"temp",
+									content.chunk,
+									(content.source == "disk" ? path.basename(content.path).split(".")[0].split("~")[0] : content.extraInformation.textHash) + ".TEXT.meta.json"
+								)}"`
+							) // Rebuild the meta
+
+							fs.removeSync(path.join(process.cwd(), "virtual"))
+						}
+
+						await copyToCache(instruction.cacheFolder, path.join(process.cwd(), "temp", content.chunk), path.join(content.chunk, await xxhash3(contentIdentifier)))
+					}
+
+					fs.ensureDirSync(path.join(process.cwd(), "staging", content.chunk))
+					try {
+						fs.copyFileSync(
+							path.join(
+								process.cwd(),
+								"temp",
+								content.chunk,
+								(content.source == "disk" ? path.basename(content.path).split(".")[0].split("~")[0] : content.extraInformation.textHash) + ".TEXT"
+							),
 							path.join(
 								process.cwd(),
 								"staging",
-								"chunk0",
-								blobHash +
-									"." +
-									(path.extname(blob) == ".json" ? "JSON" : path.extname(blob).startsWith(".jp") || path.extname(blob) == ".png" ? "GFXI" : path.extname(blob).slice(1).toUpperCase())
+								content.chunk,
+								(content.source == "disk" ? path.basename(content.path).split(".")[0].split("~")[0] : content.extraInformation.textHash) + ".TEXT"
 							)
-						) // Copy the actual blob to the staging directory
+						)
+						fs.copyFileSync(
+							path.join(
+								process.cwd(),
+								"temp",
+								content.chunk,
+								(content.source == "disk" ? path.basename(content.path).split(".")[0].split("~")[0] : content.extraInformation.textHash) + ".TEXT.meta"
+							),
+							path.join(
+								process.cwd(),
+								"staging",
+								content.chunk,
+								(content.source == "disk" ? path.basename(content.path).split(".")[0].split("~")[0] : content.extraInformation.textHash) + ".TEXT.meta"
+							)
+						)
+						fs.copyFileSync(
+							path.join(
+								process.cwd(),
+								"temp",
+								content.chunk,
+								(content.source == "disk" ? path.basename(content.path).split(".")[0].split("~")[1] : content.extraInformation.texdHash) + ".TEXD"
+							),
+							path.join(
+								process.cwd(),
+								"staging",
+								content.chunk,
+								(content.source == "disk" ? path.basename(content.path).split(".")[0].split("~")[1] : content.extraInformation.texdHash) + ".TEXD"
+							)
+						)
+						fs.copyFileSync(
+							path.join(
+								process.cwd(),
+								"temp",
+								content.chunk,
+								(content.source == "disk" ? path.basename(content.path).split(".")[0].split("~")[1] : content.extraInformation.texdHash) + ".TEXD.meta"
+							),
+							path.join(
+								process.cwd(),
+								"staging",
+								content.chunk,
+								(content.source == "disk" ? path.basename(content.path).split(".")[0].split("~")[1] : content.extraInformation.texdHash) + ".TEXD.meta"
+							)
+						)
+					} catch {}
+					break
+				}
+				case "sfx.wem": {
+					if (!WWEVpatches[content.source == "disk" ? path.basename(content.path).split(".")[0].split("~")[0] : content.extraInformation.wwevHash!]) {
+						WWEVpatches[content.source == "disk" ? path.basename(content.path).split(".")[0].split("~")[0] : content.extraInformation.wwevHash!] = []
 					}
+
+					// Add the WWEV patch; this will be a no-op if the cache is used later
+					WWEVpatches[content.source == "disk" ? path.basename(content.path).split(".")[0].split("~")[0] : String(content.extraInformation.wwevHash)].push({
+						index: content.source == "disk" ? path.basename(content.path).split(".")[0].split("~")[1] : String(content.extraInformation.wwevElement),
+						content: content.source == "disk" ? content.path : content.content,
+						chunk: content.chunk
+					})
+					break
+				}
+				default: // Copy the file to the staging directory; we don't cache these for obvious reasons
+					fs.writeFileSync(
+						content.source == "disk"
+							? path.join(process.cwd(), "staging", content.chunk, path.basename(content.path))
+							: path.join(process.cwd(), "staging", content.chunk, path.basename(content.extraInformation.runtimeID!)),
+						content.source == "disk" ? fs.readFileSync(content.path) : Buffer.from(await content.content.arrayBuffer())
+					)
+					break
+			}
+
+			sentryContentFileTransaction.finish()
+
+			fs.emptyDirSync(path.join(process.cwd(), "temp"))
+		}
+
+		if (instruction.content.some((a) => a.type == "contract.json")) {
+			contractsORESChunk = contractsORESChunk as string
+
+			if (contractsCacheInvalid) {
+				// we need to re-deploy the contracts ORES OR the contracts ORES couldn't be copied from cache
+
+				fs.writeFileSync(path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES.meta.JSON"), JSON.stringify(contractsORESMetaContent))
+				fs.rmSync(path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES.meta"))
+				await callRPKGFunction(`-json_to_hash_meta "${path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES.meta.JSON")}"`) // Rebuild the ORES meta
+
+				fs.writeFileSync(path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES.JSON"), JSON.stringify(contractsORESContent))
+				fs.rmSync(path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES"))
+				execCommand(`"Third-Party\\OREStool.exe" "${path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES.json")}"`) // Rebuild the ORES
+
+				await copyToCache(instruction.cacheFolder, path.join(process.cwd(), "temp2"), "contractsORES")
+			}
+
+			fs.copyFileSync(path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES"), path.join(process.cwd(), "staging", "chunk0", "002B07020D21D727.ORES"))
+			fs.copyFileSync(path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES.meta"), path.join(process.cwd(), "staging", "chunk0", "002B07020D21D727.ORES.meta")) // Copy the ORES to the staging directory
+
+			fs.removeSync(path.join(process.cwd(), "temp2"))
+		}
+
+		/* ------------------------------ Copy chunk meta to staging folder ----------------------------- */
+		for (const [rpkg, data] of Object.entries(instruction.rpkgTypes)) {
+			if (data.type == "base") {
+				fs.ensureDirSync(path.join(process.cwd(), "staging", rpkg))
+
+				if (typeof data.chunkMeta == "string") {
+					fs.copyFileSync(data.chunkMeta, path.join(process.cwd(), "staging", rpkg, rpkg + ".meta"))
+				} else if (data.chunkMeta instanceof Blob) {
+					fs.writeFileSync(path.join(process.cwd(), "staging", rpkg, rpkg + ".meta"), Buffer.from(await data.chunkMeta.arrayBuffer()))
+				}
+			}
+
+			allRPKGTypes[rpkg] = data.type
+		}
+
+		sentryContentTransaction.finish()
+
+		/* ------------------------------------- Multithreaded patching ------------------------------------ */
+		let index = 0
+
+		const workerPool = new Piscina({
+			filename: "patchWorker.js",
+			maxThreads: os.cpus().length / 4 // For an 8-core CPU with 16 logical processors there are 4 max threads
+		})
+
+		// @ts-expect-error Assigning stuff on global is probably bad practice
+		global.currentWorkerPool = workerPool
+
+		const sentryPatchTransaction = sentryModTransaction.startChild({
+			op: "stage",
+			description: "Patches"
+		})
+		configureSentryScope(sentryPatchTransaction)
+
+		await Promise.all(
+			entityPatches.map(({ tempHash, tempRPKG, tbluHash, tbluRPKG, chunkFolder, patches }) => {
+				index++
+				return workerPool.run({
+					tempHash,
+					tempRPKG,
+					tbluHash,
+					tbluRPKG,
+					chunkFolder,
+					patches,
+					assignedTemporaryDirectory: "patchWorker" + index,
+					invalidatedData,
+					cacheFolder: instruction.cacheFolder
+				})
+			})
+		) // Run each patch in the worker queue and wait for all of them to finish
+
+		// @ts-expect-error Assigning stuff on global is probably bad practice
+		global.currentWorkerPool = {
+			destroy: () => {}
+		}
+
+		sentryPatchTransaction.finish()
+
+		/* ---------------------------------------------------------------------------------------------- */
+		/*                                              Blobs                                             */
+		/* ---------------------------------------------------------------------------------------------- */
+		if (instruction.blobs.length) {
+			const sentryBlobsTransaction = sentryModTransaction.startChild({
+				op: "stage",
+				description: "Blobs"
+			})
+			configureSentryScope(sentryBlobsTransaction)
+
+			fs.emptyDirSync(path.join(process.cwd(), "temp"))
+
+			fs.ensureDirSync(path.join(process.cwd(), "staging", "chunk0"))
+
+			let oresChunk
+			try {
+				oresChunk = await getRPKGOfHash("00858D45F5F9E3CA")
+			} catch {
+				logger.error("Couldn't find the blobs ORES in the game files! Make sure you've installed the framework in the right place.")
+				return
+			}
+
+			await extractOrCopyToTemp(oresChunk, "00858D45F5F9E3CA", "ORES") // Extract the ORES to temp
+
+			execCommand(`"Third-Party\\OREStool.exe" "${path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES")}"`)
+			const oresContent = JSON.parse(String(fs.readFileSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES.JSON"))))
+
+			await callRPKGFunction(`-hash_meta_to_json "${path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES.meta")}"`)
+			const metaContent = JSON.parse(String(fs.readFileSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES.meta.JSON"))))
+
+			for (const blob of instruction.blobs) {
+				let blobHash: string
+
+				if (!blob.blobHash) {
+					if (
+						(blob.source == "disk" ? path.extname(blob.filePath).slice(1) : blob.filetype).startsWith("jp") ||
+						(blob.source == "disk" ? path.extname(blob.filePath).slice(1) : blob.filetype) == "png"
+					) {
+						blobHash = "00" + md5(`[assembly:/_pro/online/default/cloudstorage/resources/${blob.blobPath}].pc_gfx`.toLowerCase()).slice(2, 16).toUpperCase()
+					} else if ((blob.source == "disk" ? path.extname(blob.filePath).slice(1) : blob.filetype) == "json") {
+						blobHash = "00" + md5(`[assembly:/_pro/online/default/cloudstorage/resources/${blob.blobPath}].pc_json`.toLowerCase()).slice(2, 16).toUpperCase()
+					} else {
+						blobHash =
+							"00" +
+							md5(
+								`[assembly:/_pro/online/default/cloudstorage/resources/${blob.blobPath}].pc_${
+									blob.source == "disk" ? path.extname(blob.filePath).slice(1) : blob.filetype
+								}`.toLowerCase()
+							)
+								.slice(2, 16)
+								.toUpperCase()
+					}
+				} else {
+					blobHash = blob.blobHash
 				}
 
-				fs.writeFileSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES.meta.JSON"), JSON.stringify(metaContent))
-				fs.rmSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES.meta"))
-				await callRPKGFunction(`-json_to_hash_meta "${path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES.meta.JSON")}"`) // Rebuild the meta
+				oresContent[blobHash] = blob.blobPath // Add the blob to the ORES
 
-				fs.writeFileSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES.JSON"), JSON.stringify(oresContent))
-				fs.rmSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES"))
-				execCommand(`"Third-Party\\OREStool.exe" "${path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES.json")}"`) // Rebuild the ORES
-
-				fs.copyFileSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES"), path.join(process.cwd(), "staging", "chunk0", "00858D45F5F9E3CA.ORES"))
-				fs.copyFileSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES.meta"), path.join(process.cwd(), "staging", "chunk0", "00858D45F5F9E3CA.ORES.meta")) // Copy the ORES to the staging directory
-
-				fs.emptyDirSync(path.join(process.cwd(), "temp"))
-
-				sentryBlobsTransaction.finish()
-			}
-
-			/* -------------------------------------- Runtime packages -------------------------------------- */
-			if (manifest.runtimePackages) {
-				runtimePackages.push(
-					...manifest.runtimePackages.map((a: { chunk: any; path: any }) => {
-						return {
-							chunk: a.chunk,
-							path: a.path,
-							mod: mod
-						}
+				if (!metaContent["hash_reference_data"].find((a: { hash: unknown }) => a.hash == blobHash)) {
+					metaContent["hash_reference_data"].push({
+						hash: blobHash,
+						flag: "9F"
 					})
-				)
+				}
+
+				if (blob.source == "disk") {
+					fs.copyFileSync(
+						blob.filePath,
+						path.join(
+							process.cwd(),
+							"staging",
+							"chunk0",
+							blobHash +
+								"." +
+								(path.extname(blob.filePath).slice(1) == "json"
+									? "JSON"
+									: path.extname(blob.filePath).slice(1).startsWith("jp") || path.extname(blob.filePath).slice(1) == "png"
+										? "GFXI"
+										: path.extname(blob.filePath).slice(1).toUpperCase())
+						)
+					)
+				} else {
+					fs.writeFileSync(
+						path.join(
+							process.cwd(),
+							"staging",
+							"chunk0",
+							blobHash + "." + (blob.filetype == "json" ? "JSON" : blob.filetype.startsWith("jp") || blob.filetype == "png" ? "GFXI" : blob.filetype.toUpperCase())
+						),
+						Buffer.from(await blob.content.arrayBuffer())
+					)
+				} // Copy the actual blob to the staging directory
 			}
 
-			/* ---------------------------------------- Dependencies ---------------------------------------- */
-			if (manifest.dependencies) {
-				let sentryDependencyTransaction = sentryModTransaction.startChild({
-					op: "stage",
-					description: "Dependencies"
+			// Rebuild the meta
+			fs.writeFileSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES.meta.JSON"), JSON.stringify(metaContent))
+			fs.rmSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES.meta"))
+			await callRPKGFunction(`-json_to_hash_meta "${path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES.meta.JSON")}"`)
+
+			// Rebuild the ORES
+			fs.writeFileSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES.JSON"), JSON.stringify(oresContent))
+			fs.rmSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES"))
+			execCommand(`"Third-Party\\OREStool.exe" "${path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES.json")}"`)
+
+			// Copy the ORES to the staging directory
+			fs.copyFileSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES"), path.join(process.cwd(), "staging", "chunk0", "00858D45F5F9E3CA.ORES"))
+			fs.copyFileSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES.meta"), path.join(process.cwd(), "staging", "chunk0", "00858D45F5F9E3CA.ORES.meta"))
+
+			fs.emptyDirSync(path.join(process.cwd(), "temp"))
+
+			sentryBlobsTransaction.finish()
+		}
+
+		/* -------------------------------------- Runtime packages -------------------------------------- */
+		if (instruction.manifestSources.runtimePackages && Object.entries(instruction.manifestSources.runtimePackages).length > 0) {
+			runtimePackages.push(
+				...instruction.manifestSources.runtimePackages.map((a: { chunk: number; path: string }) => {
+					return {
+						chunk: a.chunk,
+						path: a.path,
+						mod: instruction.cacheFolder
+					}
 				})
-				configureSentryScope(sentryDependencyTransaction)
+			)
+		}
 
-				let doneHashes = []
-				for (let dependency of manifest.dependencies) {
+		/* ---------------------------------------- Dependencies ---------------------------------------- */
+		if (instruction.manifestSources.dependencies) {
+			const sentryDependencyTransaction = sentryModTransaction.startChild({
+				op: "stage",
+				description: "Dependencies"
+			})
+			configureSentryScope(sentryDependencyTransaction)
+
+			const doneHashes: {
+				id: string
+				chunk: string
+			}[] = []
+			for (const dependency of instruction.manifestSources.dependencies) {
+				if (
+					!doneHashes.some((a) => a.id == (typeof dependency == "string" ? dependency : dependency.runtimeID) && a.chunk == (typeof dependency == "string" ? "chunk0" : dependency.toChunk))
+				) {
+					logger.debug("Extracting dependency " + (typeof dependency == "string" ? dependency : dependency.runtimeID))
+
+					doneHashes.push({
+						id: typeof dependency == "string" ? dependency : dependency.runtimeID,
+						chunk: typeof dependency == "string" ? "chunk0" : dependency.toChunk
+					})
+
 					if (
-						!doneHashes.some(
-							(a) => a.id == (typeof dependency == "string" ? dependency : dependency.runtimeID) && a.chunk == (typeof dependency == "string" ? "chunk0" : dependency.toChunk)
-						)
+						!(await copyFromCache(instruction.cacheFolder, path.join("dependencies", typeof dependency == "string" ? dependency : dependency.runtimeID), path.join(process.cwd(), "temp")))
 					) {
-						logger.debug("Extracting dependency " + (typeof dependency == "string" ? dependency : dependency.runtimeID))
-
-						doneHashes.push({
-							id: typeof dependency == "string" ? dependency : dependency.runtimeID,
-							chunk: typeof dependency == "string" ? "chunk0" : dependency.toChunk
-						})
-
-						if (!(await copyFromCache(mod, path.join("dependencies", typeof dependency == "string" ? dependency : dependency.runtimeID), path.join(process.cwd(), "temp")))) {
-							// the dependency files couldn't be copied from the cache
-
-							fs.emptyDirSync(path.join(process.cwd(), "temp"))
-
-							await callRPKGFunction(
-								`-extract_non_base_hash_depends_from "${path.join(config.runtimePath)}" -filter "${
-									typeof dependency == "string" ? dependency : dependency.runtimeID
-								}" -output_path temp`
-							)
-
-							await copyToCache(mod, path.join(process.cwd(), "temp"), path.join("dependencies", typeof dependency == "string" ? dependency : dependency.runtimeID))
-						}
-
-						let allFiles = klaw(path.join(process.cwd(), "temp"))
-							.filter((a) => a.stats.isFile())
-							.map((a) => a.path)
-							.map((a) => {
-								return {
-									rpkg: /00[0-9A-F]*\..*?\\(chunk[0-9]*(?:patch[0-9]*)?)\\/gi.exec(a)[1],
-									path: a
-								}
-							})
-							.sort((a, b) =>
-								b.rpkg.localeCompare(a.rpkg, undefined, {
-									numeric: true,
-									sensitivity: "base"
-								})
-							) // Sort files by RPKG name in descending order
-
-						let allFilesSuperseded = []
-						allFiles.forEach((a) => {
-							if (!allFilesSuperseded.some((b) => path.basename(b) == path.basename(a.path))) {
-								allFilesSuperseded.push(a.path)
-							}
-						}) // Add files without duplicates (since the list is in desc order patches are first which means that superseded files are added correctly)
-
-						allFilesSuperseded = allFilesSuperseded.filter((a) => !/chunk[0-9]*(?:patch[0-9]*)?\.meta/gi.exec(path.basename(a))) // Remove RPKG metas
-
-						fs.ensureDirSync(path.join(process.cwd(), "staging", typeof dependency == "string" ? "chunk0" : dependency.toChunk))
-						allFilesSuperseded.forEach((file) => {
-							fs.copySync(file, path.join(process.cwd(), "staging", typeof dependency == "string" ? "chunk0" : dependency.toChunk, path.basename(file)), {
-								overwrite: false
-							}) // Stage the files, but don't overwrite if they already exist (such as if another mod has edited them)
-						})
+						// the dependency files couldn't be copied from the cache
 
 						fs.emptyDirSync(path.join(process.cwd(), "temp"))
+
+						await callRPKGFunction(
+							`-extract_non_base_hash_depends_from "${path.join(config.runtimePath)}" -filter "${typeof dependency == "string" ? dependency : dependency.runtimeID}" -output_path temp`
+						)
+
+						await copyToCache(instruction.cacheFolder, path.join(process.cwd(), "temp"), path.join("dependencies", typeof dependency == "string" ? dependency : dependency.runtimeID))
 					}
+
+					const allFiles = klaw(path.join(process.cwd(), "temp"))
+						.filter((a) => a.stats.isFile())
+						.map((a) => a.path)
+						.map((a) => {
+							return {
+								rpkg: /00[0-9A-F]*\..*?\\(chunk[0-9]*(?:patch[0-9]*)?)\\/gi.exec(a)![1],
+								path: a
+							}
+						})
+						.sort((a, b) =>
+							b.rpkg.localeCompare(a.rpkg, undefined, {
+								numeric: true,
+								sensitivity: "base"
+							})
+						) // Sort files by RPKG name in descending order
+
+					let allFilesSuperseded: string[] = []
+					allFiles.forEach((a) => {
+						if (!allFilesSuperseded.some((b) => path.basename(b) == path.basename(a.path))) {
+							allFilesSuperseded.push(a.path)
+						}
+					}) // Add files without duplicates (since the list is in desc order patches are first which means that superseded files are added correctly)
+
+					allFilesSuperseded = allFilesSuperseded.filter((a) => !/chunk[0-9]*(?:patch[0-9]*)?\.meta/gi.exec(path.basename(a))) // Remove RPKG metas
+
+					fs.ensureDirSync(path.join(process.cwd(), "staging", typeof dependency == "string" ? "chunk0" : dependency.toChunk))
+					allFilesSuperseded.forEach((file) => {
+						fs.copySync(file, path.join(process.cwd(), "staging", typeof dependency == "string" ? "chunk0" : dependency.toChunk, path.basename(file)), {
+							overwrite: false
+						}) // Stage the files, but don't overwrite if they already exist (such as if another mod has edited them)
+					})
+
+					fs.emptyDirSync(path.join(process.cwd(), "temp"))
+				}
+			}
+
+			sentryDependencyTransaction.finish()
+		}
+
+		/* ------------------------------------- Package definition ------------------------------------- */
+		if (instruction.manifestSources.packagedefinition) {
+			packagedefinition.push(...instruction.manifestSources.packagedefinition)
+		}
+
+		/* ------------------------------------------- Thumbs ------------------------------------------- */
+		if (instruction.manifestSources.thumbs) {
+			thumbs.push(...instruction.manifestSources.thumbs)
+		}
+
+		/* ---------------------------------------- Localisation ---------------------------------------- */
+		if (instruction.manifestSources.localisation) {
+			for (const language of Object.keys(instruction.manifestSources.localisation) as (keyof ManifestOptionData["localisation"])[]) {
+				for (const string of Object.entries(instruction.manifestSources.localisation[language])) {
+					localisation.push({
+						language: language,
+						locString: string[0],
+						text: string[1]
+					})
+				}
+			}
+		}
+
+		if (instruction.manifestSources.localisationOverrides) {
+			for (const locrHash of Object.keys(instruction.manifestSources.localisationOverrides)) {
+				if (!localisationOverrides[locrHash]) {
+					localisationOverrides[locrHash] = []
 				}
 
-				sentryDependencyTransaction.finish()
-			}
-
-			/* ------------------------------------- Package definition ------------------------------------- */
-			if (manifest.packagedefinition) {
-				packagedefinition.push(...manifest.packagedefinition)
-			}
-
-			/* ------------------------------------------- Thumbs ------------------------------------------- */
-			if (manifest.thumbs) {
-				thumbs.push(...manifest.thumbs)
-			}
-
-			/* ---------------------------------------- Localisation ---------------------------------------- */
-			if (manifest.localisation) {
-				for (let language of Object.keys(manifest.localisation)) {
-					for (let string of Object.entries(manifest.localisation[language])) {
-						localisation.push({
+				for (const language of Object.keys(instruction.manifestSources.localisationOverrides[locrHash]) as (keyof ManifestOptionData["localisation"])[]) {
+					for (const string of Object.entries(instruction.manifestSources.localisationOverrides[locrHash][language])) {
+						localisationOverrides[locrHash].push({
 							language: language,
 							locString: string[0],
 							text: string[1]
@@ -1064,77 +1346,62 @@ export default async function deploy(
 					}
 				}
 			}
-
-			if (manifest.localisationOverrides) {
-				for (let locrHash of Object.keys(manifest.localisationOverrides)) {
-					if (!localisationOverrides[locrHash]) {
-						localisationOverrides[locrHash] = []
-					}
-
-					for (let language of Object.keys(manifest.localisationOverrides[locrHash])) {
-						for (let string of Object.entries(manifest.localisationOverrides[locrHash][language])) {
-							localisationOverrides[locrHash].push({
-								language: language,
-								locString: string[0],
-								text: string[1]
-							})
-						}
-					}
-				}
-			}
-
-			if (manifest.localisedLines) {
-				let sentryLocalisedLinesTransaction = sentryModTransaction.startChild({
-					op: "stage",
-					description: "Localised lines"
-				})
-				configureSentryScope(sentryLocalisedLinesTransaction)
-
-				for (let lineHash of Object.keys(manifest.localisedLines)) {
-					fs.emptyDirSync(path.join(process.cwd(), "temp", "chunk0"))
-					fs.ensureDirSync(path.join(process.cwd(), "staging", "chunk0"))
-
-					if (invalidatedData.some((a) => a.data.affected.includes(lineHash)) || !(await copyFromCache(mod, path.join("localisedLines", lineHash), path.join(process.cwd(), "temp")))) {
-						fs.writeFileSync(
-							path.join(process.cwd(), "temp", "chunk0", lineHash + ".LINE"),
-							Buffer.from(hexflip(crc32(manifest.localisedLines[lineHash].toUpperCase()).toString(16)) + "00", "hex")
-						) // Create the LINE file
-
-						fs.writeFileSync(
-							path.join(process.cwd(), "temp", "chunk0", lineHash + ".LINE.meta.JSON"),
-							JSON.stringify({
-								hash_value: lineHash,
-								hash_offset: 163430439,
-								hash_size: 2147483648,
-								hash_resource_type: "LINE",
-								hash_reference_table_size: 13,
-								hash_reference_table_dummy: 0,
-								hash_size_final: 5,
-								hash_size_in_memory: 4294967295,
-								hash_size_in_video_memory: 4294967295,
-								hash_reference_data: [
-									{
-										hash: "00F5817876E691F1",
-										flag: "1F"
-									}
-								]
-							})
-						)
-
-						await callRPKGFunction(`-json_to_hash_meta "${path.join(process.cwd(), "temp", "chunk0", lineHash + ".LINE.meta.JSON")}"`) // Rebuild the meta
-
-						await copyToCache(mod, path.join(process.cwd(), "temp"), path.join("localisedLines", lineHash))
-					}
-
-					fs.copySync(path.join(process.cwd(), "temp"), path.join(process.cwd(), "staging"))
-					fs.emptyDirSync(path.join(process.cwd(), "temp"))
-				}
-
-				sentryLocalisedLinesTransaction.finish()
-			}
-
-			sentryModTransaction.finish()
 		}
+
+		if (instruction.manifestSources.localisedLines) {
+			const sentryLocalisedLinesTransaction = sentryModTransaction.startChild({
+				op: "stage",
+				description: "Localised lines"
+			})
+			configureSentryScope(sentryLocalisedLinesTransaction)
+
+			for (const lineHash of Object.keys(instruction.manifestSources.localisedLines)) {
+				fs.emptyDirSync(path.join(process.cwd(), "temp", "chunk0"))
+				fs.ensureDirSync(path.join(process.cwd(), "staging", "chunk0"))
+
+				if (
+					invalidatedData.some((a) => a.data.affected.includes(lineHash)) ||
+					!(await copyFromCache(instruction.cacheFolder, path.join("localisedLines", lineHash), path.join(process.cwd(), "temp")))
+				) {
+					fs.writeFileSync(
+						path.join(process.cwd(), "temp", "chunk0", lineHash + ".LINE"),
+						Buffer.from(hexflip(crc32(instruction.manifestSources.localisedLines[lineHash].toUpperCase()).toString(16)) + "00", "hex")
+					) // Create the LINE file
+
+					fs.writeFileSync(
+						path.join(process.cwd(), "temp", "chunk0", lineHash + ".LINE.meta.JSON"),
+						JSON.stringify({
+							hash_value: lineHash,
+							hash_offset: 163430439,
+							hash_size: 2147483648,
+							hash_resource_type: "LINE",
+							hash_reference_table_size: 13,
+							hash_reference_table_dummy: 0,
+							hash_size_final: 5,
+							hash_size_in_memory: 4294967295,
+							hash_size_in_video_memory: 4294967295,
+							hash_reference_data: [
+								{
+									hash: "00F5817876E691F1",
+									flag: "1F"
+								}
+							]
+						})
+					)
+
+					await callRPKGFunction(`-json_to_hash_meta "${path.join(process.cwd(), "temp", "chunk0", lineHash + ".LINE.meta.JSON")}"`) // Rebuild the meta
+
+					await copyToCache(instruction.cacheFolder, path.join(process.cwd(), "temp"), path.join("localisedLines", lineHash))
+				}
+
+				fs.copySync(path.join(process.cwd(), "temp"), path.join(process.cwd(), "staging"))
+				fs.emptyDirSync(path.join(process.cwd(), "temp"))
+			}
+
+			sentryLocalisedLinesTransaction.finish()
+		}
+
+		sentryModTransaction.finish()
 	}
 
 	sentryModsTransaction.finish()
@@ -1146,18 +1413,18 @@ export default async function deploy(
 	/* ---------------------------------------------------------------------------------------------- */
 	/*                                          WWEV patches                                          */
 	/* ---------------------------------------------------------------------------------------------- */
-	let sentryWWEVTransaction = sentryTransaction.startChild({
+	const sentryWWEVTransaction = sentryTransaction.startChild({
 		op: "stage",
 		description: "sfx.wem files"
 	})
 	configureSentryScope(sentryWWEVTransaction)
 
-	for (let entry of Object.entries(WWEVpatches)) {
+	for (const entry of Object.entries(WWEVpatches)) {
 		logger.debug("Patching WWEV " + entry[0])
 
 		fs.emptyDirSync(path.join(process.cwd(), "temp"))
 
-		let WWEVhash = entry[0]
+		const WWEVhash = entry[0]
 
 		let rpkgOfWWEV
 		try {
@@ -1171,10 +1438,14 @@ export default async function deploy(
 
 			await callRPKGFunction(`-extract_wwev_to_ogg_from "${path.join(config.runtimePath)}" -filter "${WWEVhash}" -output_path temp`) // Extract the WWEV
 
-			let workingPath = path.join(process.cwd(), "temp", "WWEV", rpkgOfWWEV + ".rpkg", fs.readdirSync(path.join(process.cwd(), "temp", "WWEV", rpkgOfWWEV + ".rpkg"))[0])
+			const workingPath = path.join(process.cwd(), "temp", "WWEV", rpkgOfWWEV + ".rpkg", fs.readdirSync(path.join(process.cwd(), "temp", "WWEV", rpkgOfWWEV + ".rpkg"))[0])
 
-			for (let patch of entry[1]) {
-				fs.copyFileSync(patch.filepath, path.join(workingPath, "wem", patch.index + ".wem")) // Copy the wem
+			for (const patch of entry[1]) {
+				if (typeof patch.content == "string") {
+					fs.copyFileSync(patch.content, path.join(workingPath, "wem", patch.index + ".wem")) // Copy the wem
+				} else if (patch.content instanceof Blob) {
+					fs.writeFileSync(path.join(workingPath, "wem", patch.index + ".wem"), Buffer.from(await patch.content.arrayBuffer())) // Copy the wem
+				}
 			}
 
 			await callRPKGFunction(`-rebuild_wwev_in "${path.resolve(path.join(workingPath, ".."))}"`) // Rebuild the WWEV
@@ -1182,7 +1453,7 @@ export default async function deploy(
 			await copyToCache("global", path.join(process.cwd(), "temp"), path.join("WWEV", WWEVhash))
 		}
 
-		let workingPath = path.join(process.cwd(), "temp", "WWEV", rpkgOfWWEV + ".rpkg", fs.readdirSync(path.join(process.cwd(), "temp", "WWEV", rpkgOfWWEV + ".rpkg"))[0])
+		const workingPath = path.join(process.cwd(), "temp", "WWEV", rpkgOfWWEV + ".rpkg", fs.readdirSync(path.join(process.cwd(), "temp", "WWEV", rpkgOfWWEV + ".rpkg"))[0])
 
 		fs.ensureDirSync(path.join(process.cwd(), "staging", entry[1][0].chunk))
 
@@ -1198,7 +1469,7 @@ export default async function deploy(
 	logger.info("Copying runtime packages")
 
 	let runtimePatchNumber = 201
-	for (let runtimeFile of runtimePackages) {
+	for (const runtimeFile of runtimePackages) {
 		fs.copyFileSync(
 			path.join(process.cwd(), "Mods", runtimeFile.mod, runtimeFile.path),
 			config.outputToSeparateDirectory
@@ -1218,13 +1489,13 @@ export default async function deploy(
 	logger.info("Localising text")
 
 	if (localisation.length) {
-		let sentryLocalisationTransaction = sentryTransaction.startChild({
+		const sentryLocalisationTransaction = sentryTransaction.startChild({
 			op: "stage",
 			description: "Localisation"
 		})
 		configureSentryScope(sentryLocalisationTransaction)
 
-		let languages = {
+		const languages = {
 			english: "en",
 			french: "fr",
 			italian: "it",
@@ -1243,6 +1514,7 @@ export default async function deploy(
 			localisationFileRPKG = await getRPKGOfHash("00F5817876E691F1")
 		} catch {
 			logger.error("Couldn't find the localisation file in the game files! Make sure you've installed the framework in the right place.")
+			return
 		}
 
 		if (invalidatedData.some((a) => a.data.affected.includes("00F5817876E691F1")) || !(await copyFromCache("global", path.join("LOCR", "manifest"), path.join(process.cwd(), "temp")))) {
@@ -1252,18 +1524,18 @@ export default async function deploy(
 
 			fs.ensureDirSync(path.join(process.cwd(), "staging", "chunk0"))
 
-			let locrFileContent = JSON.parse(String(fs.readFileSync(path.join(process.cwd(), "temp", "LOCR", localisationFileRPKG + ".rpkg", "00F5817876E691F1.LOCR.JSON"))))
-			let locrContent = {}
+			const locrFileContent = JSON.parse(String(fs.readFileSync(path.join(process.cwd(), "temp", "LOCR", localisationFileRPKG + ".rpkg", "00F5817876E691F1.LOCR.JSON"))))
+			const locrContent: Record<string, Record<string, string>> = {}
 
-			for (let localisationLanguage of locrFileContent) {
+			for (const localisationLanguage of locrFileContent) {
 				locrContent[localisationLanguage[0].Language] = {}
-				for (let localisationItem of localisationLanguage.slice(1)) {
+				for (const localisationItem of localisationLanguage.slice(1)) {
 					locrContent[localisationLanguage[0].Language]["abc" + localisationItem.StringHash] = localisationItem.String
 				}
 			}
 
-			for (let item of localisation) {
-				let toMerge = {}
+			for (const item of localisation) {
+				const toMerge: Record<string, string> = {}
 				toMerge["abc" + crc32(item.locString.toUpperCase())] = item.text
 
 				deepMerge(locrContent[languages[item.language]], toMerge)
@@ -1273,16 +1545,16 @@ export default async function deploy(
 				}
 			}
 
-			let locrToWrite: Array<Array<{ Language: string } | { StringHash: number; String: string }>> = []
+			const locrToWrite: Array<Array<{ Language: string } | { StringHash: number; String: string }>> = []
 
-			for (let language of Object.keys(locrContent)) {
+			for (const language of Object.keys(locrContent)) {
 				locrToWrite.push([
 					{
 						Language: language
 					}
 				])
 
-				for (let string of Object.keys(locrContent[language])) {
+				for (const string of Object.keys(locrContent[language])) {
 					locrToWrite[locrToWrite.length - 1].push({
 						StringHash: parseInt(string.slice(3)),
 						String: locrContent[language][string]
@@ -1307,13 +1579,13 @@ export default async function deploy(
 	}
 
 	if (Object.keys(localisationOverrides).length) {
-		let sentryLocalisationOverridesTransaction = sentryTransaction.startChild({
+		const sentryLocalisationOverridesTransaction = sentryTransaction.startChild({
 			op: "stage",
 			description: "Localisation overrides"
 		})
 		configureSentryScope(sentryLocalisationOverridesTransaction)
 
-		let languages = {
+		const languages = {
 			english: "en",
 			french: "fr",
 			italian: "it",
@@ -1327,12 +1599,13 @@ export default async function deploy(
 
 		fs.emptyDirSync(path.join(process.cwd(), "temp"))
 
-		for (let locrHash of Object.keys(localisationOverrides)) {
+		for (const locrHash of Object.keys(localisationOverrides)) {
 			let localisationFileRPKG
 			try {
 				localisationFileRPKG = await getRPKGOfHash(locrHash)
 			} catch {
 				logger.error("Couldn't find the localisation file in the game files! Make sure you've installed the framework in the right place.")
+				return
 			}
 
 			if (invalidatedData.some((a) => a.data.affected.includes(locrHash)) || !(await copyFromCache("global", path.join("LOCR", locrHash), path.join(process.cwd(), "temp")))) {
@@ -1342,24 +1615,19 @@ export default async function deploy(
 
 				fs.ensureDirSync(path.join(process.cwd(), "staging", "chunk0"))
 
-				let locrFileContent = JSON.parse(String(fs.readFileSync(path.join(process.cwd(), "temp", "LOCR", localisationFileRPKG + ".rpkg", locrHash + ".LOCR.JSON"))))
-				let locrContent = {} as {
-					[k: string]: {
-						[k: string]: string
-					}
-				}
+				const locrFileContent = JSON.parse(String(fs.readFileSync(path.join(process.cwd(), "temp", "LOCR", localisationFileRPKG + ".rpkg", locrHash + ".LOCR.JSON"))))
+				const locrContent = {} as Record<string, Record<string, string>>
 
-				for (let localisationLanguage of locrFileContent) {
+				for (const localisationLanguage of locrFileContent) {
 					locrContent[localisationLanguage[0].Language] = {}
-					for (let localisationItem of localisationLanguage.slice(1)) {
+					for (const localisationItem of localisationLanguage.slice(1)) {
 						locrContent[localisationLanguage[0].Language]["abc" + localisationItem.StringHash] = localisationItem.String
 					}
 				}
 
-				for (let item of localisationOverrides[locrHash]) {
-					let toMerge = {} as {
-						[k: string]: string
-					}
+				for (const item of localisationOverrides[locrHash]) {
+					const toMerge = {} as Record<string, string>
+
 					toMerge["abc" + item.locString] = item.text
 
 					deepMerge(locrContent[languages[item.language]], toMerge)
@@ -1369,16 +1637,16 @@ export default async function deploy(
 					}
 				}
 
-				let locrToWrite: Array<Array<{ Language: string } | { StringHash: number; String: string }>> = []
+				const locrToWrite: Array<Array<{ Language: string } | { StringHash: number; String: string }>> = []
 
-				for (let language of Object.keys(locrContent)) {
+				for (const language of Object.keys(locrContent)) {
 					locrToWrite.push([
 						{
 							Language: language
 						}
 					])
 
-					for (let string of Object.keys(locrContent[language])) {
+					for (const string of Object.keys(locrContent[language])) {
 						locrToWrite[locrToWrite.length - 1].push({
 							StringHash: parseInt(string.slice(3)),
 							String: locrContent[language][string]
@@ -1409,7 +1677,7 @@ export default async function deploy(
 	if (config.skipIntro || thumbs.length) {
 		logger.info("Patching thumbs")
 
-		let sentryThumbsPatchingTransaction = sentryTransaction.startChild({
+		const sentryThumbsPatchingTransaction = sentryTransaction.startChild({
 			op: "stage",
 			description: "Thumbs patching"
 		})
@@ -1430,7 +1698,7 @@ export default async function deploy(
 			thumbsContent = thumbsContent.replace("Boot.entity", "MainMenu.entity")
 		}
 
-		for (let patch of thumbs) {
+		for (const patch of thumbs) {
 			// Manifest patches
 			thumbsContent.replace(/\[Hitman5\]\n/gi, "[Hitman5]\n" + patch + "\n")
 		}
@@ -1450,7 +1718,7 @@ export default async function deploy(
 	/* ---------------------------------------------------------------------------------------------- */
 	logger.info("Patching packagedefinition")
 
-	let sentryPackagedefPatchingTransaction = sentryTransaction.startChild({
+	const sentryPackagedefPatchingTransaction = sentryTransaction.startChild({
 		op: "stage",
 		description: "packagedefinition patching"
 	})
@@ -1475,7 +1743,7 @@ export default async function deploy(
 		.join("\r\n")
 		.replace(/patchlevel=[0-9]*/g, "patchlevel=10001") // Patch levels
 
-	for (let brick of packagedefinition) {
+	for (const brick of packagedefinition) {
 		// Apply all PD changes
 		switch (brick.type) {
 			case "partition":
@@ -1514,21 +1782,21 @@ export default async function deploy(
 	/* ---------------------------------------------------------------------------------------------- */
 	logger.info("Generating RPKGs")
 
-	let sentryRPKGGenerationTransaction = sentryTransaction.startChild({
+	const sentryRPKGGenerationTransaction = sentryTransaction.startChild({
 		op: "stage",
 		description: "RPKG generation"
 	})
 	configureSentryScope(sentryRPKGGenerationTransaction)
 
-	for (let stagingChunkFolder of fs.readdirSync(path.join(process.cwd(), "staging"))) {
+	for (const stagingChunkFolder of fs.readdirSync(path.join(process.cwd(), "staging"))) {
 		await callRPKGFunction(`-generate_rpkg_quickly_from "${path.join(process.cwd(), "staging", stagingChunkFolder)}" -output_path "${path.join(process.cwd(), "staging")}"`)
 
 		try {
 			fs.copyFileSync(
 				path.join(process.cwd(), "staging", stagingChunkFolder + ".rpkg"),
 				config.outputToSeparateDirectory
-					? path.join(process.cwd(), "Output", rpkgTypes[stagingChunkFolder] == "base" ? stagingChunkFolder + ".rpkg" : stagingChunkFolder + "patch300.rpkg")
-					: path.join(config.runtimePath, rpkgTypes[stagingChunkFolder] == "base" ? stagingChunkFolder + ".rpkg" : stagingChunkFolder + "patch300.rpkg")
+					? path.join(process.cwd(), "Output", allRPKGTypes[stagingChunkFolder] == "base" ? stagingChunkFolder + ".rpkg" : stagingChunkFolder + "patch300.rpkg")
+					: path.join(config.runtimePath, allRPKGTypes[stagingChunkFolder] == "base" ? stagingChunkFolder + ".rpkg" : stagingChunkFolder + "patch300.rpkg")
 			)
 		} catch {
 			logger.error("Couldn't copy the RPKG files! Make sure the game isn't running when you deploy your mods.")
