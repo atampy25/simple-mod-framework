@@ -85,7 +85,7 @@ export async function copyToCache(mod: string, originalPath: string, cachePath: 
 	if (fs.existsSync(originalPath) && (await freeSpace()) > 5) {
 		logger.verbose(`Copy to cache: ${mod} ${originalPath} ${cachePath}`)
 
-		fs.ensureDirSync(path.join(process.cwd(), "cache", winPathEscape(mod), cachePath))
+		fs.emptyDirSync(path.join(process.cwd(), "cache", winPathEscape(mod), cachePath))
 		fs.copySync(originalPath, path.join(process.cwd(), "cache", winPathEscape(mod), cachePath))
 		return true
 	}
@@ -103,7 +103,7 @@ export function winPathEscape(str: string) {
 		.replace(/"/gi, "")
 		.replace(/\//gi, "")
 		.replace(/\\/gi, "")
-		.replace(/\"/gi, "")
+		.replace(/"/gi, "")
 		.replace(/\|/gi, "")
 		.replace(/\?/gi, "")
 		.replace(/\*/gi, "")

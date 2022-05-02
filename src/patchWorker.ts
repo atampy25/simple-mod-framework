@@ -6,7 +6,7 @@ import * as LosslessJSON from "lossless-json"
 import { config, logger } from "./core-singleton"
 import { copyFromCache, copyToCache, getQuickEntityFromPatchVersion } from "./utils"
 
-import RPKG from "./rpkg"
+import RPKGInstance from "./rpkg"
 import child_process from "child_process"
 import fs from "fs-extra"
 import path from "path"
@@ -49,7 +49,7 @@ export = async ({
 		!patches.every((patch) => !invalidatedData.some((a) => a.filePath == patch.path)) || // must redeploy, invalid cache
 		!(await copyFromCache(cacheFolder, path.join(chunkFolder, await xxhash3(patches[patches.length - 1].path)), path.join(process.cwd(), assignedTemporaryDirectory))) // cache is not available
 	) {
-		const rpkgInstance = new RPKG.RPKGInstance()
+		const rpkgInstance = new RPKGInstance()
 
 		await rpkgInstance.waitForInitialised()
 

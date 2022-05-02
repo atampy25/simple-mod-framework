@@ -1,9 +1,11 @@
 import * as LosslessJSON from "lossless-json"
 import * as rfc6902 from "rfc6902"
+import * as ts from "./typescript"
 
-import type { DeployInstruction, Manifest, ManifestOptionData } from "./types"
+import type { DeployInstruction, Manifest, ManifestOptionData, ModScript } from "./types"
+import { ModuleKind, ScriptTarget } from "typescript"
 import { config, logger, rpkgInstance } from "./core-singleton"
-import { copyFromCache, copyToCache, extractOrCopyToTemp, getQuickEntityFromVersion, hexflip } from "./utils"
+import { copyFromCache, copyToCache, extractOrCopyToTemp, getQuickEntityFromPatchVersion, getQuickEntityFromVersion, hexflip } from "./utils"
 
 import Piscina from "piscina"
 import type { Transaction } from "@sentry/tracing"
@@ -163,8 +165,16 @@ export default async function deploy(
 
 			logger.info("Analysing framework mod: " + manifest.name)
 
-			const contentFolders = []
-			const blobsFolders = []
+			const sentryDiskAnalysisTransaction = sentryModTransaction.startChild({
+				op: "analyse",
+				description: "Disk analysis"
+			})
+			configureSentryScope(sentryDiskAnalysisTransaction)
+
+			const contentFolders: string[] = []
+			const blobsFolders: string[] = []
+
+			const scripts: string[][] = []
 
 			if (
 				manifest.contentFolder &&
@@ -183,6 +193,8 @@ export default async function deploy(
 			) {
 				blobsFolders.push(manifest.blobsFolder)
 			}
+
+			manifest.scripts && scripts.push(manifest.scripts)
 
 			if (config.modOptions[manifest.id] && manifest.options && manifest.options.length) {
 				logger.verbose("Merging mod options")
@@ -237,6 +249,8 @@ export default async function deploy(
 
 					manifest.thumbs || (manifest.thumbs = [])
 					option.thumbs && manifest.thumbs.push(...option.thumbs)
+
+					option.scripts && scripts.push(option.scripts)
 				}
 			}
 
@@ -303,7 +317,7 @@ export default async function deploy(
 				}
 			}
 
-			deployInstructions.push({
+			const deployInstruction = {
 				id: manifest.id,
 				cacheFolder: mod,
 				manifestSources: {
@@ -315,12 +329,85 @@ export default async function deploy(
 					requirements: manifest.requirements,
 					supportedPlatforms: manifest.supportedPlatforms,
 					packagedefinition: manifest.packagedefinition,
-					thumbs: manifest.thumbs
+					thumbs: manifest.thumbs,
+					scripts: scripts
 				},
 				content,
 				blobs,
 				rpkgTypes
-			})
+			}
+
+			sentryDiskAnalysisTransaction.finish()
+
+			if (deployInstruction.manifestSources.scripts.length) {
+				const sentryScriptsTransaction = sentryModTransaction.startChild({
+					op: "analyse",
+					description: "analysis scripts"
+				})
+				configureSentryScope(sentryScriptsTransaction)
+
+				for (const files of deployInstruction.manifestSources.scripts) {
+					ts.compile(
+						files.map((a) => path.join(process.cwd(), "Mods", mod, a)),
+						{
+							esModuleInterop: true,
+							allowJs: true,
+							target: ScriptTarget.ES2019,
+							module: ModuleKind.CommonJS,
+							resolveJsonModule: true
+						},
+						path.join(process.cwd(), "Mods", mod)
+					)
+
+					// eslint-disable-next-line @typescript-eslint/no-var-requires
+					const modScript = (await require(path.join(
+						process.cwd(),
+						"compiled",
+						path.relative(path.join(process.cwd(), "Mods", mod), path.join(process.cwd(), "Mods", mod, files[0].replace(".ts", ".js")))
+					))) as ModScript
+
+					fs.ensureDirSync(path.join(process.cwd(), "scriptTempFolder"))
+
+					await modScript.analysis(
+						{
+							config,
+							deployInstruction,
+							modRoot: path.join(process.cwd(), "Mods", mod),
+							tempFolder: path.join(process.cwd(), "scriptTempFolder")
+						},
+						{
+							rpkg: {
+								callRPKGFunction,
+								getRPKGOfHash,
+								async extractFileFromRPKG(hash: string, rpkg: string) {
+									logger.verbose(`Extracting ${hash} from ${rpkg}`)
+									await rpkgInstance.callFunction(
+										`-extract_from_rpkg "${path.join(config.runtimePath, rpkg + ".rpkg")}" -filter "${hash}" -output_path ${path.join(process.cwd(), "scriptTempFolder")}`
+									)
+								}
+							},
+							utils: {
+								execCommand,
+								copyFromCache,
+								copyToCache,
+								extractOrCopyToTemp,
+								getQuickEntityFromVersion,
+								getQuickEntityFromPatchVersion,
+								hexflip
+							},
+							logger
+						}
+					)
+
+					fs.removeSync(path.join(process.cwd(), "scriptTempFolder"))
+
+					fs.removeSync(path.join(process.cwd(), "compiled"))
+				}
+
+				sentryScriptsTransaction.finish()
+			}
+
+			deployInstructions.push(deployInstruction)
 
 			sentryModTransaction.finish()
 		}
@@ -335,6 +422,78 @@ export default async function deploy(
 			description: instruction.id
 		})
 		configureSentryScope(sentryModTransaction)
+
+		if (instruction.manifestSources.scripts.length) {
+			logger.verbose("beforeDeploy scripts")
+
+			const sentryScriptsTransaction = sentryModTransaction.startChild({
+				op: "stage",
+				description: "beforeDeploy scripts"
+			})
+			configureSentryScope(sentryScriptsTransaction)
+
+			for (const files of instruction.manifestSources.scripts) {
+				logger.verbose(`Executing script: ${files[0]}`)
+
+				ts.compile(
+					files.map((a) => path.join(process.cwd(), "Mods", instruction.cacheFolder, a)),
+					{
+						esModuleInterop: true,
+						allowJs: true,
+						target: ScriptTarget.ES2019,
+						module: ModuleKind.CommonJS,
+						resolveJsonModule: true
+					},
+					path.join(process.cwd(), "Mods", instruction.cacheFolder)
+				)
+
+				// eslint-disable-next-line @typescript-eslint/no-var-requires
+				const modScript = (await require(path.join(
+					process.cwd(),
+					"compiled",
+					path.relative(path.join(process.cwd(), "Mods", instruction.cacheFolder), path.join(process.cwd(), "Mods", instruction.cacheFolder, files[0].replace(".ts", ".js")))
+				))) as ModScript
+
+				fs.ensureDirSync(path.join(process.cwd(), "scriptTempFolder"))
+
+				await modScript.beforeDeploy(
+					{
+						config,
+						deployInstruction: instruction,
+						modRoot: path.join(process.cwd(), "Mods", instruction.cacheFolder),
+						tempFolder: path.join(process.cwd(), "scriptTempFolder")
+					},
+					{
+						rpkg: {
+							callRPKGFunction,
+							getRPKGOfHash,
+							async extractFileFromRPKG(hash: string, rpkg: string) {
+								logger.verbose(`Extracting ${hash} from ${rpkg}`)
+								await rpkgInstance.callFunction(
+									`-extract_from_rpkg "${path.join(config.runtimePath, rpkg + ".rpkg")}" -filter "${hash}" -output_path ${path.join(process.cwd(), "scriptTempFolder")}`
+								)
+							}
+						},
+						utils: {
+							execCommand,
+							copyFromCache,
+							copyToCache,
+							extractOrCopyToTemp,
+							getQuickEntityFromVersion,
+							getQuickEntityFromPatchVersion,
+							hexflip
+						},
+						logger
+					}
+				)
+
+				fs.removeSync(path.join(process.cwd(), "scriptTempFolder"))
+
+				fs.removeSync(path.join(process.cwd(), "compiled"))
+			}
+
+			sentryScriptsTransaction.finish()
+		}
 
 		logger.verbose("Content")
 
@@ -1324,7 +1483,7 @@ export default async function deploy(
 					localisation.push({
 						language: language,
 						locString: string[0],
-						text: string[1]
+						text: string[1] as string
 					})
 				}
 			}
@@ -1341,7 +1500,7 @@ export default async function deploy(
 						localisationOverrides[locrHash].push({
 							language: language,
 							locString: string[0],
-							text: string[1]
+							text: string[1] as string
 						})
 					}
 				}
@@ -1399,6 +1558,78 @@ export default async function deploy(
 			}
 
 			sentryLocalisedLinesTransaction.finish()
+		}
+
+		if (instruction.manifestSources.scripts.length) {
+			logger.verbose("afterDeploy scripts")
+
+			const sentryScriptsTransaction = sentryModTransaction.startChild({
+				op: "stage",
+				description: "afterDeploy scripts"
+			})
+			configureSentryScope(sentryScriptsTransaction)
+
+			for (const files of instruction.manifestSources.scripts) {
+				logger.verbose(`Executing script: ${files[0]}`)
+
+				ts.compile(
+					files.map((a) => path.join(process.cwd(), "Mods", instruction.cacheFolder, a)),
+					{
+						esModuleInterop: true,
+						allowJs: true,
+						target: ScriptTarget.ES2019,
+						module: ModuleKind.CommonJS,
+						resolveJsonModule: true
+					},
+					path.join(process.cwd(), "Mods", instruction.cacheFolder)
+				)
+
+				// eslint-disable-next-line @typescript-eslint/no-var-requires
+				const modScript = (await require(path.join(
+					process.cwd(),
+					"compiled",
+					path.relative(path.join(process.cwd(), "Mods", instruction.cacheFolder), path.join(process.cwd(), "Mods", instruction.cacheFolder, files[0].replace(".ts", ".js")))
+				))) as ModScript
+
+				fs.ensureDirSync(path.join(process.cwd(), "scriptTempFolder"))
+
+				await modScript.afterDeploy(
+					{
+						config,
+						deployInstruction: instruction,
+						modRoot: path.join(process.cwd(), "Mods", instruction.cacheFolder),
+						tempFolder: path.join(process.cwd(), "scriptTempFolder")
+					},
+					{
+						rpkg: {
+							callRPKGFunction,
+							getRPKGOfHash,
+							async extractFileFromRPKG(hash: string, rpkg: string) {
+								logger.verbose(`Extracting ${hash} from ${rpkg}`)
+								await rpkgInstance.callFunction(
+									`-extract_from_rpkg "${path.join(config.runtimePath, rpkg + ".rpkg")}" -filter "${hash}" -output_path ${path.join(process.cwd(), "scriptTempFolder")}`
+								)
+							}
+						},
+						utils: {
+							execCommand,
+							copyFromCache,
+							copyToCache,
+							extractOrCopyToTemp,
+							getQuickEntityFromVersion,
+							getQuickEntityFromPatchVersion,
+							hexflip
+						},
+						logger
+					}
+				)
+
+				fs.removeSync(path.join(process.cwd(), "scriptTempFolder"))
+
+				fs.removeSync(path.join(process.cwd(), "compiled"))
+			}
+
+			sentryScriptsTransaction.finish()
 		}
 
 		sentryModTransaction.finish()

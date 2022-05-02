@@ -1,3 +1,5 @@
+import type RPKGInstance from "./rpkg"
+
 type RuntimeID = string
 type LocalisationID = string
 type ModID = string
@@ -13,9 +15,9 @@ export type Manifest = {
 
 	version: string
 	frameworkVersion: string
-	updateCheck: string
+	updateCheck?: string
 
-	options: ((
+	options?: ((
 		| {
 				name: string
 				type: "checkbox"
@@ -46,13 +48,13 @@ export type Manifest = {
 
 export interface ManifestOptionData {
 	/** A folder with content files that will be crawled and automatically deployed. */
-	contentFolder: string
+	contentFolder?: string
 
 	/** A folder with blobs that will be crawled and automatically deployed. */
-	blobsFolder: string
+	blobsFolder?: string
 
 	/** Localisation for each supported language. */
-	localisation: {
+	localisation?: {
 		english: {
 			[k: LocalisationID]: string
 		}
@@ -83,7 +85,7 @@ export interface ManifestOptionData {
 	}
 
 	/** Overridden localisation from the game files. */
-	localisationOverrides: {
+	localisationOverrides?: {
 		[k: RuntimeID]: {
 			english: {
 				[k: string]: string
@@ -116,13 +118,13 @@ export interface ManifestOptionData {
 	}
 
 	/** LINE files to create from localisation IDs. */
-	localisedLines: {
+	localisedLines?: {
 		[k: RuntimeID]: LocalisationID
 	}
 
 	/** Partitions and paths to add to packagedefinition.
 	 * Custom chunks (partitions) are supported but discouraged; their support is very minimal and will cause compatibility problems */
-	packagedefinition: (
+	packagedefinition?: (
 		| {
 				type: "partition"
 				name: string
@@ -137,17 +139,17 @@ export interface ManifestOptionData {
 	)[]
 
 	/** Commands to add to thumbs.dat after [Hitman5]. */
-	thumbs: string[]
+	thumbs?: string[]
 
 	/** RPKG files to add to Runtime before the framework patch.
 	 * Use of this is discouraged. */
-	runtimePackages: {
+	runtimePackages?: {
 		chunk: number
 		path: string
 	}[]
 
 	/** RuntimeIDs that will be ported to chunk0 or to a provided chunk. */
-	dependencies: (
+	dependencies?: (
 		| string
 		| {
 				runtimeID: string
@@ -158,19 +160,24 @@ export interface ManifestOptionData {
 	/** Platforms that this mod supports.
 	 * All other platforms will be prevented from using this mod.
 	 * Only use this when a mod uses features that only one platform supports, such as Ghost Mode and Steam. */
-	supportedPlatforms: Platform[]
+	supportedPlatforms?: Platform[]
 
 	/** Mod IDs that this mod depends on to function.
 	 * Clients without these mods enabled will be prevented from using this mod. */
-	requirements: ModID[]
+	requirements?: ModID[]
 
-	/** Mods this mod should load before.
+	/** Mod IDs this mod should load before.
 	 * Used in automatic sorting by the Mod Manager GUI. */
-	loadBefore: ModID[]
+	loadBefore?: ModID[]
 
-	/** Mods this mod should load after.
+	/** Mod IDs this mod should load after.
 	 * Used in automatic sorting by the Mod Manager GUI. */
-	loadAfter: ModID[]
+	loadAfter?: ModID[]
+
+	/** Paths to TypeScript files that can alter deployment of the mod.
+	 * The first item is considered to be the entry point; it must export the necessary functions.
+	 * Any additional files are transpiled but not used directly; they can be imported from the entry point. */
+	scripts?: string[]
 }
 
 export interface DeployInstruction {
@@ -214,6 +221,11 @@ export interface DeployInstruction {
 		/** Mod IDs that this mod depends on to function.
 		 * Clients without these mods enabled will be prevented from using this mod. */
 		requirements: ManifestOptionData["requirements"]
+
+		/** Paths to TypeScript files that can alter deployment of the mod.
+		 * The first item is considered to be the entry point; it must export the necessary functions.
+		 * Any additional files are transpiled but not used directly; they can be imported from the entry point. */
+		scripts: string[][]
 	}
 
 	content: (
@@ -357,4 +369,90 @@ export interface Config {
 	}
 
 	platform: Platform
+}
+
+export interface ModScript extends NodeModule {
+	/** A function to run immediately after mod analysis - alter the deploy instruction to modify how the framework deploys the mod. */
+	analysis(context: ModContext, modAPI: ModAPI): Promise<void>
+
+	/** A function that runs immediately before the mod deploy begins - a staging folder is created but the mod has not had anything deployed. */
+	beforeDeploy(context: ModContext, modAPI: ModAPI): Promise<void>
+
+	/** A function that runs immediately after the mod deploy ends - the deploy instruction has been processed. */
+	afterDeploy(context: ModContext, modAPI: ModAPI): Promise<void>
+}
+
+export interface ModContext {
+	/** The effective config the framework is using.
+	 * Note that "effective" means this is often not identical to the contents of config.json - paths are resolved to absolute paths and backwards compatibility changes are applied. */
+	config: Config
+
+	/** The current deploy instruction of the mod, created automatically via analysis.
+	 * Alter this to modify the result of the framework's deploy.
+	 * If you plan to add content or blobs, it's recommended to use the virtual source and pass JS Blobs to the framework. */
+	deployInstruction: DeployInstruction
+
+	/** The root folder of the mod. You *must* use this if you want to modify files in the mod folder - process.cwd() or "." will resolve to the framework's folder, not the mod folder! */
+	modRoot: string
+
+	/** The assigned temporary folder for this script. Do anything requiring filesystem working here - the folder will be cleared after the script is done executing. */
+	tempFolder: string
+}
+
+export interface ModAPI {
+	/** Wrappers for the RPKG tool. */
+	rpkg: {
+		/** Call an RPKG tool function and return its output. */
+		callRPKGFunction(func: string): Promise<string>
+	
+		/** Get the RPKG a given hash resides in, in "chunkXpatchY" format. */
+		getRPKGOfHash(hash: string): Promise<string>
+
+		/** Extract a file from an RPKG to the assigned temporary folder of the script. */
+		extractFileFromRPKG(hash: string, rpkg: string): Promise<void>
+	}
+
+	/** Utility functions. */
+	utils: {
+		/** Execute a shell command. */
+		execCommand(command: string): void
+
+		/** Copy a folder from the cache. mod should be instruction.cacheFolder; cachePath and outputPath can be anything, but should match the associated copyToCache. */
+		copyFromCache(mod: string, cachePath: string, outputPath: string): Promise<boolean>
+	
+		/** Copy a folder to the cache. mod should be instruction.cacheFolder; originalPath and cachePath can be anything, but should match the associated copyFromCache. */
+		copyToCache(mod: string, originalPath: string, cachePath: string): Promise<boolean>
+	
+		/** Get the QuickEntity module for a given QuickEntity version. */
+		getQuickEntityFromVersion(version: string): any
+	
+		/** Get the QuickEntity module for a given QuickEntity patch version. */
+		getQuickEntityFromPatchVersion(version: string): any
+	
+		/** Copy a file to temp if it has already been staged by a mod, or extract it if it has not. stagingChunk defaults to chunk0. */
+		extractOrCopyToTemp(rpkgOfFile: string, file: string, type: string, stagingChunk: string | undefined): void
+	
+		/** Flip the hexadecimal bytes of a string. */
+		hexflip(input: string): string
+	}
+
+	/** Functions for logging to the console. */
+	logger: {
+		/** Print a message at the verbose log level. This is not shown by default to a user, but is useful for debugging. */
+		verbose(message: string): void
+
+		/** Print a message at the debug log level. */
+		debug(message: string): void
+
+		/** Print a message at the info log level. */
+		info(message: string): void
+
+		/** Print a message at the warn log level. */
+		warn(message: string): void
+
+		/** Print a message at the error log level.
+		 * This will by default exit the program. It is recommended to leave exitAfter on unless you plan to exit yourself.
+		 * If there is an error that is not critical (not deserving of exiting the program), use warn instead. */
+		error(message: string, exitAfter: boolean): void
+	}
 }

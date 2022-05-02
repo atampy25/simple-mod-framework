@@ -4,7 +4,7 @@ const isDevBuild = false
 import * as Sentry from "@sentry/node"
 
 import type { Config } from "./types"
-import RPKG from "./rpkg"
+import RPKGInstance from "./rpkg"
 import arg from "arg"
 import chalk from "chalk"
 import child_process from "child_process"
@@ -22,7 +22,7 @@ if (!args["--logLevel"] || !args["--logLevel"].length) {
 	args["--logLevel"] = ["debug", "info", "warn", "error"]
 }
 
-const rpkgInstance = new RPKG.RPKGInstance()
+const rpkgInstance = new RPKGInstance()
 
 const config: Config = json5.parse(String(fs.readFileSync(path.join(process.cwd(), "config.json"))))
 

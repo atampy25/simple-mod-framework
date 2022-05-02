@@ -88,6 +88,4 @@ function waitForReady(resolve: (result: string) => unknown) {
 	}
 }
 
-export default {
-	RPKGInstance
-}
+export default RPKGInstance

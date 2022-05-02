@@ -12,7 +12,9 @@
         "inlineSources": true,
         "sourceRoot": "/",
         "noEmitHelpers": true,
-        "importHelpers": true
+        "importHelpers": true,
+        "declaration": true,
+        "resolveJsonModule": true
     },
     "include": [
         "./src/**/*"
