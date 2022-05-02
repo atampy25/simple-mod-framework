@@ -41,7 +41,7 @@
     "jquery": "^3.6.0",
     "json5": "^2.2.1",
     "klaw-sync": "^6.0.0",
-    "marked": "^4.0.14",
+    "marked": "^4.0.15",
     "run-async": "^2.4.1",
     "sanitize-html": "^2.7.0",
     "semver": "^7.3.7",
