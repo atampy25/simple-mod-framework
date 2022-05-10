@@ -21,7 +21,7 @@
     "lodash.isequal": "^4.5.0",
     "lodash.merge": "^4.6.2",
     "lossless-json": "^1.0.5",
-    "luxon": "^2.3.2",
+    "luxon": "^2.4.0",
     "md5": "^2.3.0",
     "md5-file": "^5.0.0",
     "minimist": "^1.2.6",
