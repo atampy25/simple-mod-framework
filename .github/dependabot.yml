@@ -13,7 +13,7 @@ updates:
       prefix: "chore(depends):"
  
   - package-ecosystem: "npm" # See documentation for possible values
-    directory: "/Load Order Manager/" # Location of package manifests
+    directory: "/Mod Manager/" # Location of package manifests
     schedule:
       interval: "daily"
     commit-message:

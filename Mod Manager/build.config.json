@@ -1,0 +1,16 @@
+{
+	"appId": "com.atampy26.simple-mod-framework.mod-manager",
+	"productName": "Mod Manager",
+	"directories": {
+		"output": "dist",
+		"buildResources": "buildResources"
+	},
+	"files": [
+		"src/electron.cjs",
+		"src/preload.cjs",
+		{
+			"from": "build",
+			"to": ""
+		}
+	]
+}

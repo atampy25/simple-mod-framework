@@ -26,8 +26,8 @@ jobs:
         id: cache2
         uses: actions/cache@v2.1.6
         with:
-          path: Load Order Manager/node_modules
-          key: buildCache2v10
+          path: Mod Manager/node_modules
+          key: buildCache2v11
 
       - name: Install dependencies
         if: steps.cache.outputs.cache-hit != 'true'
@@ -64,14 +64,14 @@ jobs:
       - name: Install GUI dependencies
         if: steps.cache2.outputs.cache-hit != 'true'
         run: |
-          cd "Load Order Manager"
+          cd "Mod Manager"
           npm install
           cd ../
 
       - name: Build GUI
         run: |
-          cd "Load Order Manager"
-          npm run make
+          cd "Mod Manager"
+          npm run build
           cd ../
 
       - name: Ready for zip
@@ -80,14 +80,14 @@ jobs:
           New-Item -ItemType Directory dist/Third-Party
           New-Item -ItemType Directory dist/Info
           New-Item -ItemType Directory dist/API
-          New-Item -ItemType Directory "dist/Load Order Manager"
+          New-Item -ItemType Directory "dist/Mod Manager"
           robocopy ./Third-Party ./dist/Third-Party /COPYALL /E; if ($lastexitcode -lt 8) { $global:LASTEXITCODE = $null }
           robocopy "./For Build" ./dist /COPYALL /E; if ($lastexitcode -lt 8) { $global:LASTEXITCODE = $null }
           robocopy ./docs ./dist/Info /COPYALL /E; if ($lastexitcode -lt 8) { $global:LASTEXITCODE = $null }
           robocopy ./compiled ./dist/API /COPYALL /E *.d.ts; if ($lastexitcode -lt 8) { $global:LASTEXITCODE = $null }
-          robocopy ".\Load Order Manager\out\Load Order Manager-win32-x64" "./dist/Load Order Manager" /COPYALL /E; if ($lastexitcode -lt 8) { $global:LASTEXITCODE = $null }
+          robocopy ".\Mod Manager\dist\win-unpacked" "./dist/Mod Manager" /COPYALL /E; if ($lastexitcode -lt 8) { $global:LASTEXITCODE = $null }
           copy Deploy.exe dist
-          New-Item -Path dist -Name "Mod Manager.cmd" -ItemType "file" -Value "@echo off`ncd `"Load Order Manager`"`nstart `"`" `"Load Order Manager.exe`""
+          New-Item -Path dist -Name "Mod Manager.cmd" -ItemType "file" -Value "@echo off`ncd `"Mod Manager`"`nstart `"`" `"Mod Manager.exe`""
 
       - uses: actions/upload-artifact@v2
         with:
