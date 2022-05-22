@@ -221,6 +221,21 @@ export function sortMods() {
 	}
 }
 
+export function alterModManifest(modID: string, data: Partial<Manifest>) {
+	const manifest = getManifestFromModID(modID)
+	merge(manifest, data,
+		(orig, src) => {
+			if (Array.isArray(orig)) {
+				return src
+			}
+		})
+	setModManifest(modID, manifest)
+}
+
+export function setModManifest(modID: string, manifest: Manifest) {
+	window.fs.writeFileSync(window.path.join(getModFolder(modID), "manifest.json"), JSON.stringify(manifest, undefined, "\t"))
+}
+
 export const getModFolder = memoize(function (id: string) {
 	const folder = modIsFramework(id)
 		? window.fs
@@ -253,7 +268,7 @@ export const modIsFramework = memoize(function (id: string) {
 	)
 })
 
-export const getManifestFromModID = memoize(function (id: string): Manifest {
+export const getManifestFromModID = memoize(function (id: string, dummy = 1): Manifest {
 	if (modIsFramework(id)) {
 		return json5.parse(String(window.fs.readFileSync(window.path.join(getModFolder(id), "manifest.json"), "utf8")))
 	} else {

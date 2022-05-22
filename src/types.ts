@@ -1,10 +1,20 @@
-import type RPKGInstance from "./rpkg"
-
 type RuntimeID = string
 type LocalisationID = string
 type ModID = string
 
 type Platform = "steam" | "epic" | "microsoft"
+
+export enum Language {
+	english = "english",
+	french = "french",
+	italian = "italian",
+	german = "german",
+	spanish = "spanish",
+	russian = "russian",
+	chineseSimplified = "chineseSimplified",
+	chineseTraditional = "chineseTraditional",
+	japanese = "japanese",
+}
 
 export type Manifest = {
 	id: ModID
@@ -55,31 +65,7 @@ export interface ManifestOptionData {
 
 	/** Localisation for each supported language. */
 	localisation?: {
-		english: {
-			[k: LocalisationID]: string
-		}
-		french: {
-			[k: LocalisationID]: string
-		}
-		italian: {
-			[k: LocalisationID]: string
-		}
-		german: {
-			[k: LocalisationID]: string
-		}
-		spanish: {
-			[k: LocalisationID]: string
-		}
-		russian: {
-			[k: LocalisationID]: string
-		}
-		chineseSimplified: {
-			[k: LocalisationID]: string
-		}
-		chineseTraditional: {
-			[k: LocalisationID]: string
-		}
-		japanese: {
+		[key in Language]: {
 			[k: LocalisationID]: string
 		}
 	}
@@ -87,31 +73,7 @@ export interface ManifestOptionData {
 	/** Overridden localisation from the game files. */
 	localisationOverrides?: {
 		[k: RuntimeID]: {
-			english: {
-				[k: string]: string
-			}
-			french: {
-				[k: string]: string
-			}
-			italian: {
-				[k: string]: string
-			}
-			german: {
-				[k: string]: string
-			}
-			spanish: {
-				[k: string]: string
-			}
-			russian: {
-				[k: string]: string
-			}
-			chineseSimplified: {
-				[k: string]: string
-			}
-			chineseTraditional: {
-				[k: string]: string
-			}
-			japanese: {
+			[key in Language]: {
 				[k: string]: string
 			}
 		}
@@ -430,7 +392,7 @@ export interface ModAPI {
 		getQuickEntityFromPatchVersion(version: string): any
 	
 		/** Copy a file to temp if it has already been staged by a mod, or extract it if it has not. stagingChunk defaults to chunk0. */
-		extractOrCopyToTemp(rpkgOfFile: string, file: string, type: string, stagingChunk: string | undefined): void
+		extractOrCopyToTemp(rpkgOfFile: string, file: string, type: string, stagingChunk: string | undefined): Promise<void>
 	
 		/** Flip the hexadecimal bytes of a string. */
 		hexflip(input: string): string

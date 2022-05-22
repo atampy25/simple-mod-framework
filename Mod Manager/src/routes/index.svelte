@@ -299,41 +299,40 @@
 					</div>
 				</div>
 			{:then updates}
-				{#each updates as [modID, update] (modID)}
-					{#if semver.lt(getManifestFromModID(modID).version, update.version)}
-						<div class="my-4">
-							<div class="flex items-center">
-								<h3 class="flex-grow">
-									{getManifestFromModID(modID).name}
-								</h3>
-								<p>{getManifestFromModID(modID).version} → {update.version}</p>
-							</div>
-							<hr class="bg-gray-500 border-none h-px" />
-							<div class="mt-2">
-								{update.changelog}
-							</div>
-							<br />
-							<Button
-								kind="primary"
-								icon={Download}
-								on:click={() => {
-									updatingMod = {
-										id: modID,
-										...update
-									}
-
-									startModUpdate()
-								}}
-							>
-								Update
-							</Button>
-						</div>
-					{:else}
+				{#each updates.filter(([modID, update]) => !semver.lt(getManifestFromModID(modID).version, update.version)) as [modID, update] (modID)}
+					<div class="flex items-center">
+						<p class="flex-grow">{getManifestFromModID(modID).name} is up to date</p>
+						<Checkmark />
+					</div>
+				{/each}
+				{#each updates.filter(([modID, update]) => semver.lt(getManifestFromModID(modID).version, update.version)) as [modID, update] (modID)}
+					<div class="my-4">
 						<div class="flex items-center">
-							<p class="flex-grow">{getManifestFromModID(modID).name} is up to date</p>
-							<Checkmark />
+							<h3 class="flex-grow">
+								{getManifestFromModID(modID).name}
+							</h3>
+							<p>{getManifestFromModID(modID).version} → {update.version}</p>
 						</div>
-					{/if}
+						<hr class="bg-gray-500 border-none h-px" />
+						<div class="mt-2">
+							{update.changelog}
+						</div>
+						<br />
+						<Button
+							kind="primary"
+							icon={Download}
+							on:click={() => {
+								updatingMod = {
+									id: modID,
+									...update
+								}
+
+								startModUpdate()
+							}}
+						>
+							Update
+						</Button>
+					</div>
 				{/each}
 			{:catch error}
 				<div class="flex items-center">

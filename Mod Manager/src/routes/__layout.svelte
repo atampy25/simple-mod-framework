@@ -4,7 +4,7 @@
 	import { onMount } from "svelte"
 
 	import Icon from "svelte-fa"
-	import { faCog, faHome, faInfoCircle, faList } from "@fortawesome/free-solid-svg-icons"
+	import { faCog, faEdit, faHome, faInfoCircle, faList } from "@fortawesome/free-solid-svg-icons"
 
 	let ready: boolean = false
 	onMount(() => (ready = true))
@@ -21,6 +21,9 @@
 			</a>
 			<a href="/settings" sveltekit:prefetch class="text-white">
 				<Icon icon={faCog} />
+			</a>
+			<a href="/authoring" sveltekit:prefetch class="text-white">
+				<Icon icon={faEdit} />
 			</a>
 			<a href="/info" sveltekit:prefetch class="text-white">
 				<Icon icon={faInfoCircle} />
