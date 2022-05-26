@@ -20,10 +20,9 @@ require("clarify")
 
 const gameHashes = {
 	// prettier-ignore
-	"f8bff5b368f88845af690c61fbf34619": "epic",
-	"1ab6a5e004d6c3ff4f330a9a8aa0e3bf": "epic",
-	"006b544ef4547fa9926c6db33ab1d6b3": "steam",
-	"0ccb00174e1cca55deb6b07d37d75f53": "microsoft"
+	"fbc21d6cb9c46894f4c07e3ece8c6432": "epic",
+	"7ac366ddce7d7412acfeaf7539ceb3a8": "steam",
+	"e7c9eedc5481372f75e85c880fc03173": "microsoft"
 	// Gamepass/store protects the EXE from reading so we can't hash it, instead we hash the game config
 } as {
 	[k: string]: "epic" | "steam" | "microsoft"
