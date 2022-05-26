@@ -1,5 +1,6 @@
 {
 	"appId": "com.atampy26.simple-mod-framework.mod-manager",
+	"compression": "maximum",
 	"productName": "Mod Manager",
 	"directories": {
 		"output": "dist",
