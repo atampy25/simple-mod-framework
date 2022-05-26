@@ -966,7 +966,7 @@ export default async function deploy(
 									process.cwd(),
 									"temp",
 									content.chunk,
-									(content.source == "disk" ? path.basename(content.path).split(".")[0].split("~")[1] : content.extraInformation.texdHash) + ".TEXT"
+									(content.source == "disk" ? path.basename(content.path).split(".")[0].split("~")[1] : content.extraInformation.texdHash) + ".TEXD"
 								)}"`
 							) // Rebuild texture to TEXT/TEXD
 
@@ -1095,35 +1095,39 @@ export default async function deploy(
 					}
 
 					fs.ensureDirSync(path.join(process.cwd(), "staging", content.chunk))
-					try {
-						fs.copyFileSync(
-							path.join(
-								process.cwd(),
-								"temp",
-								content.chunk,
-								(content.source == "disk" ? path.basename(content.path).split(".")[0].split("~")[0] : content.extraInformation.textHash) + ".TEXT"
-							),
-							path.join(
-								process.cwd(),
-								"staging",
-								content.chunk,
-								(content.source == "disk" ? path.basename(content.path).split(".")[0].split("~")[0] : content.extraInformation.textHash) + ".TEXT"
-							)
+
+					// Copy TEXT stuff
+					fs.copyFileSync(
+						path.join(
+							process.cwd(),
+							"temp",
+							content.chunk,
+							(content.source == "disk" ? path.basename(content.path).split(".")[0].split("~")[0] : content.extraInformation.textHash) + ".TEXT"
+						),
+						path.join(
+							process.cwd(),
+							"staging",
+							content.chunk,
+							(content.source == "disk" ? path.basename(content.path).split(".")[0].split("~")[0] : content.extraInformation.textHash) + ".TEXT"
 						)
-						fs.copyFileSync(
-							path.join(
-								process.cwd(),
-								"temp",
-								content.chunk,
-								(content.source == "disk" ? path.basename(content.path).split(".")[0].split("~")[0] : content.extraInformation.textHash) + ".TEXT.meta"
-							),
-							path.join(
-								process.cwd(),
-								"staging",
-								content.chunk,
-								(content.source == "disk" ? path.basename(content.path).split(".")[0].split("~")[0] : content.extraInformation.textHash) + ".TEXT.meta"
-							)
+					)
+					fs.copyFileSync(
+						path.join(
+							process.cwd(),
+							"temp",
+							content.chunk,
+							(content.source == "disk" ? path.basename(content.path).split(".")[0].split("~")[0] : content.extraInformation.textHash) + ".TEXT.meta"
+						),
+						path.join(
+							process.cwd(),
+							"staging",
+							content.chunk,
+							(content.source == "disk" ? path.basename(content.path).split(".")[0].split("~")[0] : content.extraInformation.textHash) + ".TEXT.meta"
 						)
+					)
+					
+					// Copy TEXD stuff if necessary
+					if ((content.source == "disk" && path.basename(content.path).split(".")[0].split("~").length > 1) || (content.source == "virtual" && content.extraInformation.texdHash)) {
 						fs.copyFileSync(
 							path.join(
 								process.cwd(),
@@ -1152,7 +1156,7 @@ export default async function deploy(
 								(content.source == "disk" ? path.basename(content.path).split(".")[0].split("~")[1] : content.extraInformation.texdHash) + ".TEXD.meta"
 							)
 						)
-					} catch {}
+					}
 					break
 				}
 				case "sfx.wem": {
