@@ -62,7 +62,7 @@
 		"@sveltejs/adapter-static": "^1.0.0-next.29",
 		"@sveltejs/kit": "next",
 		"@types/adm-zip": "^0.5.0",
-		"@types/electron-window-state": "^2.0.34",
+		"@types/electron-window-state": "^5.0.0",
 		"@types/lodash.isequal": "^4.5.6",
 		"@types/lodash.memoize": "^4.1.7",
 		"@types/lodash.mergewith": "^4.6.7",
