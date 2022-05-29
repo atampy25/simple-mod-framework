@@ -1,4 +1,3 @@
-# Command Line Arguments
 `Deploy.exe` accepts three command line arguments:
 ```powershell
 .\Deploy --useConsoleLogging # Whether to use Node.js console logging instead of the default fancy logging

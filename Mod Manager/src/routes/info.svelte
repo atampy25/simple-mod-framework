@@ -12,7 +12,14 @@
 <div class="w-full h-full flex items-center justify-center">
 	<div>
 		<h1 in:fade>Information</h1>
-		<p in:fade={{ delay: 400 }}>This GUI is powered by Svelte, and the CLI is powered by Node.js. You're on version {FrameworkVersion}.</p>
+		<p in:fade={{ delay: 400 }}>
+			This GUI is powered by Svelte, and the CLI is powered by Node.js. Syntax highlighting in documentation files is courtesy of <a
+				on:click={() => window.openExternalLink("https://torchlight.dev")}
+			>
+				Torchlight
+			</a>
+			. You're on framework version {FrameworkVersion}.
+		</p>
 		<br />
 		<p in:fade={{ delay: 800 }}>Thanks to the Hitman modding community for making this possible, and thanks to IO Interactive for making the game this is for.</p>
 		<br />

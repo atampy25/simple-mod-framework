@@ -1,4 +1,3 @@
-# Mod Updates
 You can optionally supply a link in your mod manifest to a static JSON that will be checked for updates every time the GUI is launched. Update manifests have the following format:
 ```jsonc
 {

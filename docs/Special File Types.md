@@ -1,5 +1,3 @@
-# Special File Types
-
 ## entity.json
 A QuickEntity JSON. Will be automatically built and converted to TEMP/TBLU/TEMP.meta/TBLU.meta, then placed in the staging folder (which is eventually built into a patch).
 

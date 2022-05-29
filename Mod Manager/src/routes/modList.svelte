@@ -44,13 +44,13 @@
 	let deployFinished = false
 
 	async function startDeploy() {
-		window.electron.send("deploy")
+		window.ipc.send("deploy")
 
-		window.electron.receive("frameworkDeployModalOpen", () => {
+		window.ipc.receive("frameworkDeployModalOpen", () => {
 			frameworkDeployModalOpen = true
 		})
 
-		window.electron.receive("frameworkDeployOutput", (output: string) => {
+		window.ipc.receive("frameworkDeployOutput", (output: string) => {
 			deployOutput = output
 			setTimeout(() => {
 				document.getElementById("deployOutputCodeElement")?.scrollIntoView({
@@ -60,7 +60,7 @@
 			}, 100)
 		})
 
-		window.electron.receive("frameworkDeployFinished", () => {
+		window.ipc.receive("frameworkDeployFinished", () => {
 			deployFinished = true
 		})
 	}
@@ -82,9 +82,9 @@
 	let rpkgModChunk: string
 
 	async function addMod() {
-		window.electron.send("modFileOpenDialog")
+		window.ipc.send("modFileOpenDialog")
 
-		window.electron.receive("modFileOpenDialogResult", (modFilePopupResult: string[] | undefined) => {
+		window.ipc.receive("modFileOpenDialogResult", (modFilePopupResult: string[] | undefined) => {
 			if (!modFilePopupResult) {
 				return
 			}

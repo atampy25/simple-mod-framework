@@ -6,15 +6,15 @@
 	import { getAllMods, getConfig, getManifestFromModID, modIsFramework, getModFolder, mergeConfig, FrameworkVersion } from "$lib/utils"
 
 	import { v4 } from "uuid"
+	import { marked } from "marked"
+
+	import semver from "semver"
 
 	import List from "carbon-icons-svelte/lib/List.svelte"
 	import Settings from "carbon-icons-svelte/lib/Settings.svelte"
 	import Info from "carbon-icons-svelte/lib/Information.svelte"
 	import Checkmark from "carbon-icons-svelte/lib/Checkmark.svelte"
 	import Download from "carbon-icons-svelte/lib/Download.svelte"
-
-	import semver from "semver"
-	import { marked } from "marked"
 
 	let cannotFindConfig = false
 	let cannotFindRuntime = false
@@ -73,18 +73,23 @@
 
 	let latestGithubRelease = checkForUpdates()
 
+	let githubReleaseMarkdownBody = ""
+
 	async function checkForUpdates(): Promise<any> {
-		return await (
+		const release = await (
 			await fetch("https://api.github.com/repos/hitman-resources/simple-mod-framework/releases/latest", {
 				headers: {
 					Accept: "application/vnd.github.v3+json"
 				}
 			})
 		).json()
+
+		githubReleaseMarkdownBody = marked(release.body, { gfm: true }).replaceAll("Bugfixes", "Bug Fixes")
+
+		return release
 	}
 
 	let updatingFramework = false
-	let frameworkUpdateBody = ""
 	let frameworkDownloadProgress = 0
 	let frameworkDownloadSize = 0
 	let frameworkExtracting = false
@@ -228,13 +233,13 @@
 		<h1 in:fade>Welcome to the Simple Mod Framework</h1>
 		<br />
 		<div class="inline" in:fade={{ delay: 400 }}>
-			<Button kind="primary" icon={List} href="/modList" sveltekit:prefetch>Enable/disable mods</Button>
+			<Button kind="primary" icon={List} href="/modList">Enable/disable mods</Button>
 		</div>
 		<div class="inline" in:fade={{ delay: 800 }}>
-			<Button kind="primary" icon={Settings} href="/settings" sveltekit:prefetch>Configure mods</Button>
+			<Button kind="primary" icon={Settings} href="/settings">Configure mods</Button>
 		</div>
 		<div class="inline" in:fade={{ delay: 1200 }}>
-			<Button kind="primary" icon={Info} href="/info" sveltekit:prefetch>More information</Button>
+			<Button kind="primary" icon={Info} href="/info">More information</Button>
 		</div>
 		<p class="mt-4" in:fade={{ delay: 1600 }}>Need help using mods? Consult the pinned post on the Nexus Mods page.</p>
 		<p class="mt-2" in:fade={{ delay: 2000 }}>Need help making mods? There's extensive documentation available in the Info folder.</p>
@@ -258,9 +263,7 @@
 					</div>
 					<hr class="bg-gray-500 border-none h-px" />
 					<div class="mt-2">
-						{@html marked(release.body, {
-							gfm: true
-						}).replaceAll("Bugfixes", "Bug Fixes")}
+						{@html githubReleaseMarkdownBody}
 					</div>
 					<br />
 					<Button
@@ -268,7 +271,6 @@
 						icon={Download}
 						on:click={() => {
 							updatingFramework = true
-							frameworkUpdateBody = release.body
 
 							startFrameworkUpdate()
 						}}
@@ -400,9 +402,7 @@
 
 <Modal passiveModal open={updatingFramework} modalHeading="Updating the framework" preventCloseOnClickOutside>
 	<div class="mb-2">
-		{@html marked(frameworkUpdateBody, {
-			gfm: true
-		}).replaceAll("Bugfixes", "Bug Fixes")}
+		{@html githubReleaseMarkdownBody}
 	</div>
 	<br />
 	{#if !frameworkExtracting}

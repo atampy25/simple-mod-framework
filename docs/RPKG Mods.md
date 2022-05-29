@@ -1,4 +1,3 @@
-# RPKG Mods
 RPKG mods can be used with the framework easily, even if they lack some of the compatibility and user experience features the framework offers, like patching and manifest metadata.
 
 The folder structure for importing an RPKG mod looks like this:

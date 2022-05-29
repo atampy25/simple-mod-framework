@@ -7,9 +7,14 @@
 	import { goto } from "$app/navigation"
 </script>
 
-<h1 class="text-center" transition:scale>Mod Authoring</h1>
+<div class="flex items-center justify-center">
+	<h1 transition:scale>Mod Authoring</h1>
+</div>
+<div class="mt-2 flex items-center justify-center">
+	<a href="/docs/Index.md" transition:scale>View the documentation</a>
+</div>
 <br />
-<div class="flex flex-wrap gap-4 mb-[100vh]">
+<div class="mt-4 flex flex-wrap gap-4 mb-[100vh]">
 	{#each getAllMods()
 		.filter((a) => modIsFramework(a))
 		.map((a) => getManifestFromModID(a)) as manifest (manifest.id)}

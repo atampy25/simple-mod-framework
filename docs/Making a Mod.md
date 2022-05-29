@@ -1,5 +1,3 @@
-# Making a Framework Mod
-
 Creating a mod with the framework is very simple - just add a manifest file and put your mod files in a folder. More advanced framework features that can make modding much easier can be found in the various other documentation files.
 
 ## Setting up
@@ -22,7 +20,7 @@ Then, put a file called `manifest.json` in it. Paste the following into it:
 
 Most of those fields are self-explanatory. There are other optional fields documented in, as well as more explanation of these ones in, [Manifest](Manifest.md).
 
-Notice how `contentFolder` has been set to `content`. This is the name of the folder where most of your mod's files will be. Create a folder called `content` (or change `contentFolder` to whatever you want and name a new folder that).
+Notice how `contentFolder` has been set to `content`. This is the name of the folder where most of your mod's files will be. Create a folder called `content` (or change the value of `contentFolder` to whatever you want and name a new folder that).
 
 ## Adding some content
 

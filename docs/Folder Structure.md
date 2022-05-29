@@ -1,4 +1,3 @@
-# Folder Structure
 The folder structure for a mod looks like this:
 ```
 MyAmazingMod/

@@ -13,19 +13,19 @@
 {#if ready}
 	<div class="flex flex-row h-screen w-screen">
 		<div class="bg-neutral-900 w-16 h-full flex flex-col gap-16 items-center justify-center">
-			<a href="/" sveltekit:prefetch class="text-white">
+			<a href="/" sveltekit:reload class="text-white">
 				<Icon icon={faHome} />
 			</a>
-			<a href="/modList" sveltekit:prefetch class="text-white">
+			<a href="/modList" sveltekit:reload class="text-white">
 				<Icon icon={faList} />
 			</a>
-			<a href="/settings" sveltekit:prefetch class="text-white">
+			<a href="/settings" sveltekit:reload class="text-white">
 				<Icon icon={faCog} />
 			</a>
-			<a href="/authoring" sveltekit:prefetch class="text-white">
+			<a href="/authoring" sveltekit:reload class="text-white">
 				<Icon icon={faEdit} />
 			</a>
-			<a href="/info" sveltekit:prefetch class="text-white">
+			<a href="/info" sveltekit:reload class="text-white">
 				<Icon icon={faInfoCircle} />
 			</a>
 		</div>

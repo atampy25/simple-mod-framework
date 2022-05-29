@@ -1,8 +1,7 @@
-# Mod Manager
-The framework comes with a mod manager GUI. It is capable of managing load orders and importing RPKG and framework.zip mods.
+The framework comes with a GUI mod manager - you're looking at it. It is capable of managing load orders, importing RPKG and framework.zip mods and helping in the creation of your own mods.
 
-## framework.zip
-A framework.zip file is extracted directly to the `Mods` folder. For example, if you are packaging `MyAmazingMod`:
+## Framework ZIP files
+A framework zip file is extracted directly to the `Mods` folder. For example, if you are packaging `MyAmazingMod`:
 ```
 MyAmazingMod/
 ├─ manifest.json
@@ -26,15 +25,4 @@ MyAmazingMod.framework.zip
 │  ├─ ...
 ```
 
-In essence, **zip the folder, not its contents**. This means that for more complex mods with more than one module, you can distribute multiple mod folders like so:
-```
-MyModularMod.framework.zip
-├─ MyModularMod AI Realism/
-│  ├─ manifest.json
-│  ├─ ...
-├─ MyModularMod Mission Improvements/
-│  ├─ manifest.json
-│  ├─ ...
-```
-
-If you have lots of settings or want a better experience you should use mod options (see Manifest).
+In essence, **zip the folder, not its contents**. Bundling multiple modules through multiple folders isn't recommended - you should use mod options (see [Manifest](Manifest.md)).

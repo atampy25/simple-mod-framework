@@ -1,6 +1,5 @@
-# Config
 The config.json file looks like this:
-```json
+```jsonc
 {
     "runtimePath": "..\\Runtime",
     "retailPath": "..\\Retail",
@@ -19,6 +18,7 @@ Load order is top-first - a mod lower in the load order will load later and thus
 The `skipIntro` key will automatically patch the game to skip the intro and load directly into the "Press ENTER" screen.
 
 The `runtimePath` key must be configured to the location of your Runtime folder (it defaults to `..\Runtime`, so the framework is placed in `HITMAN3\any folder`). This is automatically set to `..\Retail\Runtime` on the Microsoft platform. Use double backslashes (`\\`).
+
 The `retailPath` key must be configured to the location of your Retail folder (it defaults to `..\Retail`, so the framework is placed in `HITMAN3\any folder`). Use double backslashes (`\\`).
 
 The `modOptions` key configures enabled mod options.
