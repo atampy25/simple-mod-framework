@@ -9,6 +9,7 @@
 	"files": [
 		"src/electron.cjs",
 		"src/preload.cjs",
+		"src/torchlight/**/*",
 		{
 			"from": "build",
 			"to": ""

@@ -1,4 +1,4 @@
-The framework comes with a GUI mod manager - you're looking at it. It is capable of managing load orders, importing RPKG and framework.zip mods and helping in the creation of your own mods.
+The framework comes with a GUI mod manager - you're looking at it. It is capable of managing deploy order, importing RPKG and framework.zip mods and helping in the creation of your own mods.
 
 ## Framework ZIP files
 A framework zip file is extracted directly to the `Mods` folder. For example, if you are packaging `MyAmazingMod`:
