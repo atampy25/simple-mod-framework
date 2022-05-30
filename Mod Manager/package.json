@@ -33,7 +33,7 @@
 		"carbon-components-svelte": "^0.64.1",
 		"carbon-icons-svelte": "^11.0.1",
 		"chalk": "^4.1.2",
-		"electron-context-menu": "^2.5.2",
+		"electron-context-menu": "^3.1.2",
 		"electron-reloader": "^1.2.3",
 		"electron-serve": "^1.1.0",
 		"electron-window-state": "^5.0.3",
