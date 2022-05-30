@@ -1,5 +1,5 @@
 const MemoryCache =  require('./cache/memory');
-const axios =  require('axios');
+const axios =  require('axios').default;
 const chunk =  require('lodash.chunk');
 const get =  require('lodash.get');
 const md5 =  require('md5');
