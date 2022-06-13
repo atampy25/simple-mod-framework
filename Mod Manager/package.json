@@ -79,7 +79,7 @@
 		"cross-env": "^7.0.3",
 		"dotenv": "^8.6.0",
 		"electron": "^18.1.0",
-		"electron-builder": "^22.14.13",
+		"electron-builder": "^23.0.3",
 		"electron-connect": "^0.6.3",
 		"electron-packager": "^15.4.0",
 		"electron-updater": "^4.6.5",
