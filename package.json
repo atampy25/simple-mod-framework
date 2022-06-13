@@ -39,7 +39,7 @@
     "@types/luxon": "^2.3.2",
     "@types/md5": "^2.3.2",
     "@types/semver": "^7.3.9",
-    "@typescript-eslint/eslint-plugin": "^5.26.0",
+    "@typescript-eslint/eslint-plugin": "^5.27.1",
     "@typescript-eslint/parser": "^5.27.1",
     "eslint": "^8.17.0",
     "prettier": "^2.6.2",
