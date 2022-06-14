@@ -74,7 +74,7 @@
 		"@types/marked": "^4.0.3",
 		"@types/uuid": "^8.3.4",
 		"@typescript-eslint/eslint-plugin": "^5.26.0",
-		"@typescript-eslint/parser": "^5.27.1",
+		"@typescript-eslint/parser": "^5.28.0",
 		"concurrently": "^7.2.1",
 		"cross-env": "^7.0.3",
 		"dotenv": "^8.6.0",
