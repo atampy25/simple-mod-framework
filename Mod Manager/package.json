@@ -64,7 +64,7 @@
 		"uuid": "^8.3.2"
 	},
 	"devDependencies": {
-		"@sveltejs/adapter-static": "^1.0.0-next.29",
+		"@sveltejs/adapter-static": "^1.0.0-next.34",
 		"@sveltejs/kit": "next",
 		"@types/adm-zip": "^0.5.0",
 		"@types/electron-window-state": "^2.0.34",
