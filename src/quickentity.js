@@ -155,7 +155,7 @@ function convertReferenceToQuickEntity(reference, TEMP, TBLU, TEMPmeta) {
  * @param {{}} findEntityCache
  */
 function convertReferenceToRT(reference, TEMP, TEMPmeta, findEntityCache) {
-	return reference && reference.hasOwnProperty("ref") ? {
+	return reference && Object.prototype.hasOwnProperty.call(reference, 'ref') ? {
 		"entityID": reference.externalScene ? new LosslessJSON.LosslessNumber(new Decimal("0x" + reference.ref).toFixed()) : new LosslessJSON.LosslessNumber("18446744073709551615"),
 		"externalSceneIndex": reference.externalScene ? TEMP.externalSceneTypeIndicesInResourceHeader.findIndex(a => TEMPmeta.hash_reference_data[a].hash == reference.externalScene) : new LosslessJSON.LosslessNumber("-1"),
 		"entityIndex": reference.externalScene ? new LosslessJSON.LosslessNumber("-2") : findEntity(findEntityCache, reference.ref),
@@ -790,7 +790,7 @@ fs.writeFileSync(automateQNPath ? automateQNPath : electron.remote.dialog.showSa
 }
 
 function findEntity(cache, ref) {
-	return ref === null ? -1 : cache.hasOwnProperty(ref) ? cache[ref] : -1
+	return ref === null ? -1 : Object.prototype.hasOwnProperty.call(cache, ref) ? cache[ref] : -1
 }
 
 async function generate(automateGame = false, automateQNPath = false, automateTempPath = false, automateTempMetaPath = false, automateTbluPath = false, automateTbluMetaPath = false) {
