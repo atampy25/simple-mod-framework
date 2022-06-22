@@ -791,7 +791,7 @@ fs.writeFileSync(automateQNPath ? automateQNPath : electron.remote.dialog.showSa
 }
 
 function findEntity(cache, ref) {
-	return ref == "SPECIAL: None" ? -1 : ref == "SPECIAL: Use EntityID" ? -2 : cache.hasOwnProperty(ref) ? cache[ref] : -1
+	return ref == "SPECIAL: None" ? -1 : ref == "SPECIAL: Use EntityID" ? -2 : Object.prototype.hasOwnProperty.call(cache, ref) ? cache[ref] : -1
 }
 
 async function generate(automateGame = false, automateQNPath = false, automateTempPath = false, automateTempMetaPath = false, automateTbluPath = false, automateTbluMetaPath = false) {
