@@ -32,7 +32,7 @@
 		"axios": "^0.27.2",
 		"carbon-components-svelte": "^0.65.2",
 		"carbon-icons-svelte": "^11.1.0",
-		"chalk": "^4.1.2",
+		"chalk": "^5.0.1",
 		"electron-context-menu": "^2.5.2",
 		"electron-reloader": "^1.2.3",
 		"electron-serve": "^1.1.0",
