@@ -38,7 +38,7 @@
     "@types/lossless-json": "^1.0.1",
     "@types/luxon": "^2.3.2",
     "@types/md5": "^2.3.2",
-    "@types/semver": "^7.3.9",
+    "@types/semver": "^7.3.10",
     "@typescript-eslint/eslint-plugin": "^5.28.0",
     "@typescript-eslint/parser": "^5.28.0",
     "eslint": "^8.17.0",
