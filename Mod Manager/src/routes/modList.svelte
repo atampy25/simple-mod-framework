@@ -43,27 +43,23 @@
 	let deployOutput = ""
 	let deployFinished = false
 
-	async function startDeploy() {
-		window.ipc.send("deploy")
+	window.ipc.receive("frameworkDeployModalOpen", () => {
+		frameworkDeployModalOpen = true
+	})
 
-		window.ipc.receive("frameworkDeployModalOpen", () => {
-			frameworkDeployModalOpen = true
-		})
+	window.ipc.receive("frameworkDeployOutput", (output: string) => {
+		deployOutput = output
+		setTimeout(() => {
+			document.getElementById("deployOutputCodeElement")?.scrollIntoView({
+				behavior: "smooth",
+				block: "end"
+			})
+		}, 100)
+	})
 
-		window.ipc.receive("frameworkDeployOutput", (output: string) => {
-			deployOutput = output
-			setTimeout(() => {
-				document.getElementById("deployOutputCodeElement")?.scrollIntoView({
-					behavior: "smooth",
-					block: "end"
-				})
-			}, 100)
-		})
-
-		window.ipc.receive("frameworkDeployFinished", () => {
-			deployFinished = true
-		})
-	}
+	window.ipc.receive("frameworkDeployFinished", () => {
+		deployFinished = true
+	})
 
 	let modNameInputModal
 	let modNameInputModalOpen = false
@@ -200,7 +196,7 @@
 				icon={Rocket}
 				on:click={() => {
 					if (sortMods()) {
-						startDeploy()
+						window.ipc.sendSync("deploy")
 					} else {
 						dependencyCycleModalOpen = true
 					}
