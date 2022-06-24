@@ -163,7 +163,7 @@ export default async function deploy(
 			})
 			configureSentryScope(sentryModTransaction)
 
-			logger.info("Analysing framework mod: " + manifest.name)
+			logger.info(`Analysing framework mod: ${manifest.name}`)
 
 			const sentryDiskAnalysisTransaction = sentryModTransaction.startChild({
 				op: "analyse",
@@ -423,6 +423,8 @@ export default async function deploy(
 		})
 		configureSentryScope(sentryModTransaction)
 
+		logger.info(`Deploying ${instruction.id}`)
+
 		if (instruction.manifestSources.scripts.length) {
 			logger.verbose("beforeDeploy scripts")
 
@@ -583,46 +585,46 @@ export default async function deploy(
 				content.type
 			)
 				? sentryContentTransaction.startChild({
-					op: "stageContentFile",
-					description: "Stage " + content.type
+						op: "stageContentFile",
+						description: "Stage " + content.type
 				  })
 				: {
-					startChild() {
-						return {
-							startChild() {
-								return {
-									startChild() {
-										return {
-											startChild() {
-												return {
-													startChild() {
-														return {
-															startChild() {
-																return {
-																	startChild() {
-																		return {
-																			finish() {}
-																		}
-																	},
-																	finish() {}
-																}
-															},
-															finish() {}
-														}
-													},
-													finish() {}
-												}
-											},
-											finish() {}
-										}
-									},
-									finish() {}
-								}
-							},
-							finish() {}
-						}
-					},
-					finish() {}
+						startChild() {
+							return {
+								startChild() {
+									return {
+										startChild() {
+											return {
+												startChild() {
+													return {
+														startChild() {
+															return {
+																startChild() {
+																	return {
+																		startChild() {
+																			return {
+																				finish() {}
+																			}
+																		},
+																		finish() {}
+																	}
+																},
+																finish() {}
+															}
+														},
+														finish() {}
+													}
+												},
+												finish() {}
+											}
+										},
+										finish() {}
+									}
+								},
+								finish() {}
+							}
+						},
+						finish() {}
 				  } // Don't track raw files, only special file types
 			configureSentryScope(sentryContentFileTransaction)
 
@@ -677,18 +679,18 @@ export default async function deploy(
 
 						// Generate the RT source from the QN json
 						execCommand(
-							"\"Third-Party\\ResourceTool.exe\" HM3 generate TEMP \"" +
+							'"Third-Party\\ResourceTool.exe" HM3 generate TEMP "' +
 								path.join(process.cwd(), "temp", "temp.TEMP.json") +
-								"\" \"" +
+								'" "' +
 								path.join(process.cwd(), "temp", entityContent.tempHash + ".TEMP") +
-								"\" --simple"
+								'" --simple'
 						)
 						execCommand(
-							"\"Third-Party\\ResourceTool.exe\" HM3 generate TBLU \"" +
+							'"Third-Party\\ResourceTool.exe" HM3 generate TBLU "' +
 								path.join(process.cwd(), "temp", "temp.TBLU.json") +
-								"\" \"" +
+								'" "' +
 								path.join(process.cwd(), "temp", entityContent.tbluHash + ".TBLU") +
-								"\" --simple"
+								'" --simple'
 						)
 
 						await callRPKGFunction(`-json_to_hash_meta "${path.join(process.cwd(), "temp", entityContent.tempHash + ".TEMP.meta.json")}"`)
@@ -1125,7 +1127,7 @@ export default async function deploy(
 							(content.source == "disk" ? path.basename(content.path).split(".")[0].split("~")[0] : content.extraInformation.textHash) + ".TEXT.meta"
 						)
 					)
-					
+
 					// Copy TEXD stuff if necessary
 					if ((content.source == "disk" && path.basename(content.path).split(".")[0].split("~").length > 1) || (content.source == "virtual" && content.extraInformation.texdHash)) {
 						fs.copyFileSync(
@@ -1345,8 +1347,8 @@ export default async function deploy(
 								(path.extname(blob.filePath).slice(1) == "json"
 									? "JSON"
 									: path.extname(blob.filePath).slice(1).startsWith("jp") || path.extname(blob.filePath).slice(1) == "png"
-										? "GFXI"
-										: path.extname(blob.filePath).slice(1).toUpperCase())
+									? "GFXI"
+									: path.extname(blob.filePath).slice(1).toUpperCase())
 						)
 					)
 				} else {
