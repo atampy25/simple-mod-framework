@@ -92,12 +92,6 @@ jobs:
           filename: Release.zip
           directory: dist
 
-      - name: Remove artifacts
-        uses: c-hive/gha-remove-artifacts@v1.2.0
-        with:
-          age: '30 minutes'
-          skip-tags: true
-
       - uses: actions/upload-artifact@v2
         with:
           name: Output
