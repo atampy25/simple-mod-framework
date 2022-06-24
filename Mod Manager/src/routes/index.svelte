@@ -77,7 +77,7 @@
 
 	async function checkForUpdates(): Promise<any> {
 		const release = await (
-			await fetch("https://api.github.com/repos/hitman-resources/simple-mod-framework/releases/latest", {
+			await fetch("https://api.github.com/repos/atampy25/simple-mod-framework/releases/latest", {
 				headers: {
 					Accept: "application/vnd.github.v3+json"
 				}
@@ -95,7 +95,7 @@
 	let frameworkExtracting = false
 
 	async function startFrameworkUpdate() {
-		const response = await fetch("https://github.com/hitman-resources/simple-mod-framework/releases/latest/download/Release.zip")
+		const response = await fetch("https://github.com/atampy25/simple-mod-framework/releases/latest/download/Release.zip")
 		const reader = response.body!.getReader()
 
 		frameworkDownloadSize = +response.headers.get("Content-Length")!

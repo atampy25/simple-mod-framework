@@ -61,10 +61,10 @@
 		deployFinished = true
 	})
 
-	let modNameInputModal
+	let modNameInputModal: TextInputModal
 	let modNameInputModalOpen = false
 
-	let modChunkInputModal
+	let modChunkInputModal: TextInputModal
 	let modChunkInputModalOpen = false
 
 	let rpkgModExtractionInProgress = false
