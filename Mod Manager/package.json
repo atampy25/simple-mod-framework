@@ -30,7 +30,7 @@
 		"adm-zip": "^0.5.9",
 		"autoprefixer": "^10.4.7",
 		"axios": "^0.27.2",
-		"carbon-components-svelte": "^0.65.2",
+		"carbon-components-svelte": "^0.66.1",
 		"carbon-icons-svelte": "^11.1.0",
 		"chalk": "^4.1.2",
 		"electron-context-menu": "^2.5.2",
@@ -94,6 +94,6 @@
 		"svelte-check": "^2.7.2",
 		"svelte-preprocess": "^4.10.7",
 		"typescript": "^4.7.4",
-		"vite": "^2.9.12"
+		"vite": "^2.9.13"
 	}
 }
