@@ -581,50 +581,58 @@ export default async function deploy(
 			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 			let entityContent: any
 
-			const sentryContentFileTransaction = ["entity.json", "entity.patch.json", "unlockables.json", "repository.json", "contract.json", "JSON.patch.json", "texture.tga", "sfx.wem"].includes(
-				content.type
-			)
+			const sentryContentFileTransaction = [
+				"entity.json",
+				"entity.patch.json",
+				"unlockables.json",
+				"repository.json",
+				"contract.json",
+				"JSON.patch.json",
+				"texture.tga",
+				"sfx.wem",
+				"delta"
+			].includes(content.type)
 				? sentryContentTransaction.startChild({
-						op: "stageContentFile",
-						description: "Stage " + content.type
+					op: "stageContentFile",
+					description: "Stage " + content.type
 				  })
 				: {
-						startChild() {
-							return {
-								startChild() {
-									return {
-										startChild() {
-											return {
-												startChild() {
-													return {
-														startChild() {
-															return {
-																startChild() {
-																	return {
-																		startChild() {
-																			return {
-																				finish() {}
-																			}
-																		},
-																		finish() {}
-																	}
-																},
-																finish() {}
-															}
-														},
-														finish() {}
-													}
-												},
-												finish() {}
-											}
-										},
-										finish() {}
-									}
-								},
-								finish() {}
-							}
-						},
-						finish() {}
+					startChild() {
+						return {
+							startChild() {
+								return {
+									startChild() {
+										return {
+											startChild() {
+												return {
+													startChild() {
+														return {
+															startChild() {
+																return {
+																	startChild() {
+																		return {
+																			finish() {}
+																		}
+																	},
+																	finish() {}
+																}
+															},
+															finish() {}
+														}
+													},
+													finish() {}
+												}
+											},
+											finish() {}
+										}
+									},
+									finish() {}
+								}
+							},
+							finish() {}
+						}
+					},
+					finish() {}
 				  } // Don't track raw files, only special file types
 			configureSentryScope(sentryContentFileTransaction)
 
@@ -633,9 +641,9 @@ export default async function deploy(
 
 			switch (content.type) {
 				case "entity.json": {
-					entityContent = LosslessJSON.parse(String(content.source == "disk" ? fs.readFileSync(content.path) : await content.content.text()))
-
 					logger.debug("Converting entity " + contentIdentifier)
+
+					entityContent = LosslessJSON.parse(String(content.source == "disk" ? fs.readFileSync(content.path) : await content.content.text()))
 
 					try {
 						if (!getQuickEntityFromVersion(entityContent.quickEntityVersion.value)) {
@@ -679,18 +687,18 @@ export default async function deploy(
 
 						// Generate the RT source from the QN json
 						execCommand(
-							'"Third-Party\\ResourceTool.exe" HM3 generate TEMP "' +
+							"\"Third-Party\\ResourceTool.exe\" HM3 generate TEMP \"" +
 								path.join(process.cwd(), "temp", "temp.TEMP.json") +
-								'" "' +
+								"\" \"" +
 								path.join(process.cwd(), "temp", entityContent.tempHash + ".TEMP") +
-								'" --simple'
+								"\" --simple"
 						)
 						execCommand(
-							'"Third-Party\\ResourceTool.exe" HM3 generate TBLU "' +
+							"\"Third-Party\\ResourceTool.exe\" HM3 generate TBLU \"" +
 								path.join(process.cwd(), "temp", "temp.TBLU.json") +
-								'" "' +
+								"\" \"" +
 								path.join(process.cwd(), "temp", entityContent.tbluHash + ".TBLU") +
-								'" --simple'
+								"\" --simple"
 						)
 
 						await callRPKGFunction(`-json_to_hash_meta "${path.join(process.cwd(), "temp", entityContent.tempHash + ".TEMP.meta.json")}"`)
@@ -716,10 +724,10 @@ export default async function deploy(
 					break
 				}
 				case "entity.patch.json": {
+					logger.debug("Preparing to apply patch " + contentIdentifier)
+
 					entityContent = content.source == "disk" ? LosslessJSON.parse(String(fs.readFileSync(content.path))) : LosslessJSON.parse(await content.content.text())
 					entityContent.path = contentIdentifier
-
-					logger.debug("Preparing to apply patch " + contentIdentifier)
 
 					if (entityPatches.some((a) => a.tempHash == entityContent.tempHash)) {
 						entityPatches.find((a) => a.tempHash == entityContent.tempHash)!.patches.push(entityContent)
@@ -742,6 +750,8 @@ export default async function deploy(
 					break
 				}
 				case "unlockables.json": {
+					logger.debug("Applying unlockable patch " + contentIdentifier)
+
 					entityContent = content.source == "disk" ? JSON.parse(String(fs.readFileSync(content.path))) : JSON.parse(await content.content.text())
 
 					let oresChunk: string
@@ -751,8 +761,6 @@ export default async function deploy(
 						logger.error("Couldn't find the unlockables ORES in the game files! Make sure you've installed the framework in the right place.")
 						return
 					}
-
-					logger.debug("Applying unlockable patch " + contentIdentifier)
 
 					if (
 						invalidatedData.some((a) => a.filePath == contentIdentifier) || // must redeploy, invalid cache
@@ -780,6 +788,8 @@ export default async function deploy(
 					break
 				}
 				case "repository.json": {
+					logger.debug("Applying repository patch " + contentIdentifier)
+
 					entityContent = content.source == "disk" ? JSON.parse(String(fs.readFileSync(content.path))) : JSON.parse(await content.content.text())
 
 					let repoRPKG: string
@@ -789,8 +799,6 @@ export default async function deploy(
 						logger.error("Couldn't find the repository in the game files! Make sure you've installed the framework in the right place.")
 						return
 					}
-
-					logger.debug("Applying repository patch " + contentIdentifier)
 
 					if (
 						invalidatedData.some((a) => a.filePath == contentIdentifier) || // must redeploy, invalid cache
@@ -848,6 +856,8 @@ export default async function deploy(
 					break
 				}
 				case "contract.json": {
+					logger.debug("Adding contract " + contentIdentifier)
+
 					entityContent = content.source == "disk" ? LosslessJSON.parse(String(fs.readFileSync(content.path))) : LosslessJSON.parse(await content.content.text())
 
 					const contractHash =
@@ -855,8 +865,6 @@ export default async function deploy(
 						md5(("smfContract" + entityContent.Metadata.Id).toLowerCase())
 							.slice(2, 16)
 							.toUpperCase()
-
-					logger.debug("Adding contract " + contentIdentifier)
 
 					contractsORESContent[contractHash] = entityContent.Metadata.Id // Add the contract to the ORES; this will be a no-op if the cache is used later
 
@@ -869,6 +877,8 @@ export default async function deploy(
 					break
 				}
 				case "JSON.patch.json": {
+					logger.debug("Applying JSON patch " + contentIdentifier)
+
 					entityContent = content.source == "disk" ? JSON.parse(String(fs.readFileSync(content.path))) : JSON.parse(await content.content.text())
 
 					let rpkgOfFile
@@ -880,8 +890,6 @@ export default async function deploy(
 					}
 
 					const fileType = entityContent.type || "JSON"
-
-					logger.debug("Applying JSON patch " + contentIdentifier)
 
 					if (
 						invalidatedData.some((a) => a.filePath == contentIdentifier) || // must redeploy, invalid cache
@@ -1174,11 +1182,62 @@ export default async function deploy(
 					})
 					break
 				}
+				case "delta": {
+					logger.debug("Patching delta " + contentIdentifier)
+
+					const runtimeID = content.source == "disk" ? path.basename(content.path).split(".")[0].split("~")[0] : content.extraInformation.runtimeID!
+					const fileType = content.source == "disk" ? path.basename(content.path).split(".")[0].split("~")[1] : content.extraInformation.fileType!
+
+					if (
+						invalidatedData.some((a) => a.filePath == contentIdentifier) || // must redeploy, invalid cache
+						!(await copyFromCache(instruction.cacheFolder, path.join(content.chunk, await xxhash3(contentIdentifier)), path.join(process.cwd(), "temp", content.chunk))) // cache is not available
+					) {
+						fs.ensureDirSync(path.join(process.cwd(), "temp", content.chunk))
+
+						let rpkgOfFile
+						try {
+							rpkgOfFile = await getRPKGOfHash(runtimeID)
+						} catch {
+							logger.error("Couldn't find the file to patch in the game files! Make sure you've installed the framework in the right place.")
+							return
+						}
+
+						await extractOrCopyToTemp(rpkgOfFile, runtimeID, fileType, content.chunk) // Extract the file to temp // Extract the file to temp // Extract the file to temp // Extract the file to temp
+
+						let contentFilePath
+						if (content.source == "disk") {
+							contentFilePath = content.path
+						} else {
+							fs.ensureDirSync(path.join(process.cwd(), "virtual"))
+							fs.writeFileSync(path.join(process.cwd(), "virtual", "patch.delta"), Buffer.from(await content.content.arrayBuffer()))
+							contentFilePath = path.join(process.cwd(), "virtual", "patch.delta")
+						}
+
+						execCommand(
+							`"Third-Party\\xdelta3" -d -s "${path.join(process.cwd(), "temp", rpkgOfFile, fileType, runtimeID + "." + fileType)}" "${contentFilePath}" "${path.join(
+								process.cwd(),
+								"temp",
+								content.chunk,
+								runtimeID + "." + fileType
+							)}"`
+						) // Patch file with delta
+
+						fs.removeSync(path.join(process.cwd(), "virtual"))
+
+						await copyToCache(instruction.cacheFolder, path.join(process.cwd(), "temp", content.chunk), path.join(content.chunk, await xxhash3(contentIdentifier)))
+					}
+
+					fs.ensureDirSync(path.join(process.cwd(), "staging", content.chunk))
+
+					// Copy patched file to staging
+					fs.copyFileSync(path.join(process.cwd(), "temp", content.chunk, runtimeID + "." + fileType), path.join(process.cwd(), "staging", content.chunk, runtimeID + "." + fileType))
+					break
+				}
 				default: // Copy the file to the staging directory; we don't cache these for obvious reasons
 					fs.writeFileSync(
 						content.source == "disk"
 							? path.join(process.cwd(), "staging", content.chunk, path.basename(content.path))
-							: path.join(process.cwd(), "staging", content.chunk, path.basename(content.extraInformation.runtimeID!)),
+							: path.join(process.cwd(), "staging", content.chunk, content.extraInformation.runtimeID! + "." + content.extraInformation.fileType!),
 						content.source == "disk" ? fs.readFileSync(content.path) : Buffer.from(await content.content.arrayBuffer())
 					)
 					break
@@ -1347,8 +1406,8 @@ export default async function deploy(
 								(path.extname(blob.filePath).slice(1) == "json"
 									? "JSON"
 									: path.extname(blob.filePath).slice(1).startsWith("jp") || path.extname(blob.filePath).slice(1) == "png"
-									? "GFXI"
-									: path.extname(blob.filePath).slice(1).toUpperCase())
+										? "GFXI"
+										: path.extname(blob.filePath).slice(1).toUpperCase())
 						)
 					)
 				} else {

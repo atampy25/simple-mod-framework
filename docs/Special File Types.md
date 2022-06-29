@@ -114,6 +114,13 @@ The framework will automatically convert the TGA to the specified texture files 
 ## sfx.wem
 **Note:** The filename matters for this special type.
 
-Patches a WWEV file with the given Wwise file. Named in the format `WWEVhash~wemIndex.sfx.wem`. For example, to patch `1.wem` in `play_sfx_bbq_hamburger_flip_01` (`00539F7F65CB89E8.WWEV`), the file should be called `00539F7F65CB89E8~1.sfx.wem`.
+Patches a WWEV file with the given Wwise file. Named in the format `WWEVhash~wemIndex.sfx.wem`. For example, to patch `1.wem` in `play_sfx_bbq_hamburger_flip_01` (`00539F7F65CB89E8.WWEV`), the file should be named `00539F7F65CB89E8~1.sfx.wem`.
 
 The framework will automatically extract the WWEV and copy the wem to it, then rebuild the WWEV and place it in the staging folder.
+
+## delta
+**Note:** The filename matters for this special type.
+
+Patches a given file with a VCDiff delta using xdelta3. Named in the format `hash~filetype.delta`. For example, to patch `004A314BA75429D7.GFXF`, the file should be named `004A314BA75429D7~GFXF.delta`.
+
+The framework will automatically extract the file and patch it, then place it in the staging folder. You may want to include a meta file for the hash as well, or the RPKG tool will assume the default metadata.

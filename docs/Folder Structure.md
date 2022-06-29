@@ -31,6 +31,7 @@ The content folder contains chunk folders, which contain files (and folders, the
 | `JSON.patch.json`     | An RFC6902 JSON patch that will be applied to the hash the file specifies    |
 | `texture.tga`         | A TGA to rebuild into a game texture (TEXT only or TEXT and TEXD)            |
 | `sfx.wem`             | A Wwise sound effect to patch a WWEV file with                               |
+| `delta`               | A VCDiff delta file to patch the hash the file specifies with                |
 
 The names of special files do not matter - it is their extensions that do, **except for texture.tga and sfx.wem files**. Raw files, which any non-special file is, are placed directly into the built RPKG and so must be named like usual.
 

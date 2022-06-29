@@ -13,7 +13,7 @@ export enum Language {
 	russian = "russian",
 	chineseSimplified = "chineseSimplified",
 	chineseTraditional = "chineseTraditional",
-	japanese = "japanese",
+	japanese = "japanese"
 }
 
 export type Manifest = {
@@ -250,8 +250,11 @@ export interface DeployInstruction {
 					/** sfx.wem */
 					wwevElement?: number
 
-					/** Raw file */
+					/** Raw file or delta patch */
 					runtimeID?: string
+
+					/** Raw file or delta patch */
+					fileType?: string
 				}
 		  }
 	)[]
@@ -366,7 +369,7 @@ export interface ModAPI {
 	rpkg: {
 		/** Call an RPKG tool function and return its output. */
 		callRPKGFunction(func: string): Promise<string>
-	
+
 		/** Get the RPKG a given hash resides in, in "chunkXpatchY" format. */
 		getRPKGOfHash(hash: string): Promise<string>
 
@@ -381,19 +384,19 @@ export interface ModAPI {
 
 		/** Copy a folder from the cache. mod should be instruction.cacheFolder; cachePath and outputPath can be anything, but should match the associated copyToCache. */
 		copyFromCache(mod: string, cachePath: string, outputPath: string): Promise<boolean>
-	
+
 		/** Copy a folder to the cache. mod should be instruction.cacheFolder; originalPath and cachePath can be anything, but should match the associated copyFromCache. */
 		copyToCache(mod: string, originalPath: string, cachePath: string): Promise<boolean>
-	
+
 		/** Get the QuickEntity module for a given QuickEntity version. */
 		getQuickEntityFromVersion(version: string): any
-	
+
 		/** Get the QuickEntity module for a given QuickEntity patch version. */
 		getQuickEntityFromPatchVersion(version: string): any
-	
+
 		/** Copy a file to temp if it has already been staged by a mod, or extract it if it has not. stagingChunk defaults to chunk0. */
 		extractOrCopyToTemp(rpkgOfFile: string, file: string, type: string, stagingChunk: string | undefined): Promise<void>
-	
+
 		/** Flip the hexadecimal bytes of a string. */
 		hexflip(input: string): string
 	}

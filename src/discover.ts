@@ -252,6 +252,10 @@ export default async function discover(): Promise<{ [x: string]: { hash: string;
 								dependencies.push(path.basename(contentFilePath).split(".")[0].split("~")[0])
 								affected.push(path.basename(contentFilePath).split(".")[0].split("~")[0])
 								break
+							case "delta": // Depends on and edits the patched file
+								dependencies.push(path.basename(contentFilePath).split(".")[0].split("~")[0])
+								affected.push(path.basename(contentFilePath).split(".")[0].split("~")[0])
+								break
 							default:
 								// Replaces a file with a raw file
 								affected.push(path.basename(contentFilePath).split(".")[0])
