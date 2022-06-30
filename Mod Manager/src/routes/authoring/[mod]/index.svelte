@@ -204,7 +204,7 @@
 
 <br />
 
-<div class="h-[70vh] overflow-y-auto overflow-x-hidden pr-4">
+<div class="{window.screen.height <= 1080 ? 'h-[68vh]' : 'h-[70vh]'} overflow-y-auto overflow-x-hidden pr-4">
 	<ModManifestInterface
 		source={manifest}
 		modRoot={getModFolder(manifest.id)}
