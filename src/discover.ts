@@ -2,7 +2,7 @@ import * as LosslessJSON from "lossless-json"
 
 import { FrameworkVersion, config, interoperability, logger, rpkgInstance } from "./core-singleton"
 
-import type { Manifest } from "./types"
+import { type Manifest, OptionType } from "./types"
 import deepMerge from "lodash.merge"
 import fs from "fs-extra"
 import json5 from "json5"
@@ -120,9 +120,9 @@ export default async function discover(): Promise<{ [x: string]: { hash: string;
 
 				for (const option of manifest.options.filter(
 					(a) =>
-						config.modOptions[manifest.id].includes(a.name) ||
-						config.modOptions[manifest.id].includes(a.group + ":" + a.name) ||
-						(a.type == "requirement" && a.mods.every((b) => config.loadOrder.includes(b)))
+						(a.type == OptionType.checkbox && config.modOptions[manifest.id].includes(a.name)) ||
+						(a.type == OptionType.select && config.modOptions[manifest.id].includes(a.group + ":" + a.name)) ||
+						(a.type == OptionType.requirement && a.mods.every((b) => config.loadOrder.includes(b)))
 				)) {
 					if (
 						option.contentFolder &&

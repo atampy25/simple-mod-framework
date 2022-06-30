@@ -20,6 +20,12 @@ export enum Language {
 	japanese = "japanese"
 }
 
+export enum OptionType {
+	checkbox = "checkbox",
+	select = "select",
+	requirement = "requirement"
+}
+
 export type Manifest = {
 	id: ModID
 
@@ -34,7 +40,7 @@ export type Manifest = {
 	options?: ((
 		| {
 				name: string
-				type: "checkbox"
+				type: OptionType.checkbox
 
 				enabledByDefault?: boolean
 
@@ -43,7 +49,7 @@ export type Manifest = {
 		  }
 		| {
 				name: string
-				type: "select"
+				type: OptionType.select
 
 				group: string
 				enabledByDefault?: boolean
@@ -53,7 +59,7 @@ export type Manifest = {
 		  }
 		| {
 				name: string
-				type: "requirement"
+				type: OptionType.requirement
 				mods: string[]
 		  }
 	) &

@@ -133,3 +133,15 @@ ipcMain.on("runtimePackageOpenDialog", () => {
 		})
 	)
 })
+
+ipcMain.on("imageOpenDialog", () => {
+	mainWindow.webContents.send(
+		"imageOpenDialogResult",
+		dialog.showOpenDialogSync({
+			title: "Select an image",
+			buttonLabel: "Select",
+			filters: [{ name: "Image Files", extensions: ["png", "jpg", "apng", "gif", "webp", "svg", "jpeg", "jfif"] }],
+			properties: ["openFile", "dontAddToRecent"]
+		})
+	)
+})

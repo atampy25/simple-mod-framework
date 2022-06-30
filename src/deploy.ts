@@ -7,6 +7,7 @@ import { ModuleKind, ScriptTarget } from "typescript"
 import { config, logger, rpkgInstance } from "./core-singleton"
 import { copyFromCache, copyToCache, extractOrCopyToTemp, getQuickEntityFromPatchVersion, getQuickEntityFromVersion, hexflip } from "./utils"
 
+import { OptionType } from "./types"
 import Piscina from "piscina"
 import type { Transaction } from "@sentry/tracing"
 import child_process from "child_process"
@@ -201,9 +202,9 @@ export default async function deploy(
 
 				for (const option of manifest.options.filter(
 					(a) =>
-						(a.type == "checkbox" && config.modOptions[manifest.id].includes(a.name)) ||
-						(a.type == "select" && config.modOptions[manifest.id].includes(a.group + ":" + a.name)) ||
-						(a.type == "requirement" && a.mods.every((b) => config.loadOrder.includes(b)))
+						(a.type == OptionType.checkbox && config.modOptions[manifest.id].includes(a.name)) ||
+						(a.type == OptionType.select && config.modOptions[manifest.id].includes(a.group + ":" + a.name)) ||
+						(a.type == OptionType.requirement && a.mods.every((b) => config.loadOrder.includes(b)))
 				)) {
 					if (
 						option.contentFolder &&

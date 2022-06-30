@@ -1,5 +1,5 @@
 import adapter from "@sveltejs/adapter-static"
-import { builtinModules } from 'module'
+import { builtinModules } from "module"
 import preprocess from "svelte-preprocess"
 
 /** @type {import("@sveltejs/kit").Config} */
