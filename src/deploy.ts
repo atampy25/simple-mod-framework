@@ -1465,17 +1465,15 @@ export default async function deploy(
 
 			const doneHashes: {
 				id: string
-				chunk: string
+				chunk: number
 			}[] = []
 			for (const dependency of instruction.manifestSources.dependencies) {
-				if (
-					!doneHashes.some((a) => a.id == (typeof dependency == "string" ? dependency : dependency.runtimeID) && a.chunk == (typeof dependency == "string" ? "chunk0" : dependency.toChunk))
-				) {
+				if (!doneHashes.some((a) => a.id == (typeof dependency == "string" ? dependency : dependency.runtimeID) && a.chunk == (typeof dependency == "string" ? 0 : dependency.toChunk))) {
 					logger.debug("Extracting dependency " + (typeof dependency == "string" ? dependency : dependency.runtimeID))
 
 					doneHashes.push({
 						id: typeof dependency == "string" ? dependency : dependency.runtimeID,
-						chunk: typeof dependency == "string" ? "chunk0" : dependency.toChunk
+						chunk: typeof dependency == "string" ? 0 : dependency.toChunk
 					})
 
 					if (
@@ -1517,9 +1515,9 @@ export default async function deploy(
 
 					allFilesSuperseded = allFilesSuperseded.filter((a) => !/chunk[0-9]*(?:patch[0-9]*)?\.meta/gi.exec(path.basename(a))) // Remove RPKG metas
 
-					fs.ensureDirSync(path.join(process.cwd(), "staging", typeof dependency == "string" ? "chunk0" : dependency.toChunk))
+					fs.ensureDirSync(path.join(process.cwd(), "staging", `chunk${typeof dependency == "string" ? 0 : dependency.toChunk}`))
 					allFilesSuperseded.forEach((file) => {
-						fs.copySync(file, path.join(process.cwd(), "staging", typeof dependency == "string" ? "chunk0" : dependency.toChunk, path.basename(file)), {
+						fs.copySync(file, path.join(process.cwd(), "staging", `chunk${typeof dependency == "string" ? 0 : dependency.toChunk}`, path.basename(file)), {
 							overwrite: false
 						}) // Stage the files, but don't overwrite if they already exist (such as if another mod has edited them)
 					})

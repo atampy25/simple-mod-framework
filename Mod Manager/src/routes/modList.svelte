@@ -196,7 +196,7 @@
 				icon={Rocket}
 				on:click={() => {
 					if (sortMods()) {
-						window.ipc.sendSync("deploy")
+						window.ipc.send("deploy")
 					} else {
 						dependencyCycleModalOpen = true
 					}

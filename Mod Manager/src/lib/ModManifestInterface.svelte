@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Button, TextInput } from "carbon-components-svelte"
+	import { Button, Checkbox, TextInput } from "carbon-components-svelte"
 	import { slide } from "svelte/transition"
 	import Icon from "svelte-fa"
 
@@ -10,15 +10,17 @@
 
 	import { createEventDispatcher } from "svelte"
 
-	import type { ManifestOptionData } from "../../../src/types"
+	import { Platform, type ManifestOptionData } from "../../../src/types"
 
 	import LocalisationEditor from "$lib/LocalisationEditor.svelte"
 	import TextInputModal from "$lib/TextInputModal.svelte"
 	import KeyValueEditor from "$lib/KeyValueEditor.svelte"
+	import ListEditor from "$lib/ListEditor.svelte"
 
 	const dispatch = createEventDispatcher()
 
 	export let source: ManifestOptionData
+	export let modRoot: string
 
 	let contentAndBlobs = true // section
 
@@ -44,6 +46,41 @@
 	let pdefValueToEditPlaceholder = ""
 	let pdefEditModal: TextInputModal
 	let pdefEditModalOpen = false
+
+	let runtimePackages = true // section
+
+	let runtimePackagesValueToEdit = {} as { chunk: number; path: string }
+	let runtimePackagesValueToEditPlaceholder = 0
+	let runtimePackagesEditChunkModalOpen = false
+	let runtimePackagesEditChunkModal: TextInputModal
+
+	window.ipc.receive("runtimePackageOpenDialogResult", (runtimePackagePopupResult: string[] | undefined) => {
+		if (!runtimePackagePopupResult) {
+			return
+		}
+
+		dispatch("runtimePackage-define", {
+			type: "definePath",
+			origChunk: runtimePackagesValueToEdit.chunk,
+			origPath: runtimePackagesValueToEdit.path,
+			newPath: window.path.relative(modRoot, runtimePackagePopupResult[0])
+		})
+	})
+
+	let dependencies = true // section
+
+	let dependenciesValueToEdit = {} as { runtimeID: string; toChunk: number; valueToEdit: string }
+	let dependenciesValueToEditPlaceholder = ""
+	let dependenciesEditModalOpen = false
+	let dependenciesEditModal: TextInputModal
+
+	let thumbs = true // section
+
+	let compatibility = true // section
+	let supportedPlatforms = true // section
+	let requirements = true // section
+	let loadBefore = true // section
+	let loadAfter = true // section
 </script>
 
 <div class="flex flex-row items-center cursor-pointer" on:click={() => (contentAndBlobs = !contentAndBlobs)}>
@@ -404,6 +441,286 @@
 				</Button>
 			</div>
 		{/if}
+		<br />
+		<br />
+		<div class="flex flex-row items-center cursor-pointer" on:click={() => (runtimePackages = !runtimePackages)}>
+			<h4 class="flex-grow">Runtime packages</h4>
+			<div class:spin={runtimePackages} class:spinBack={!runtimePackages}>
+				<Icon icon={faChevronDown} />
+			</div>
+		</div>
+		{#if runtimePackages}
+			<div transition:slide>
+				<br />
+				<table class="table-auto border-collapse bg-slate-200">
+					<thead class="bg-neutral-900">
+						<tr>
+							<th class="font-medium p-4 pl-8 pb-3 text-slate-200 text-left">Chunk</th>
+							<th class="font-medium p-4 px-8 pb-3 text-slate-200 text-left">Path</th>
+						</tr>
+					</thead>
+					<tbody>
+						{#each source.runtimePackages || [] as { chunk, path }, index (chunk + path)}
+							<tr class:border-b={index != (source.runtimePackages || []).length - 1} class="border-solid border-b-black">
+								<td class="p-4 px-8 text-slate-800">
+									<div class="flex flex-row gap-4 items-center">
+										<code class="flex-grow">{path}</code>
+										<Button
+											kind="ghost"
+											size="small"
+											icon={Edit}
+											iconDescription="Edit value"
+											on:click={() => {
+												runtimePackagesValueToEdit = { chunk, path }
+												window.ipc.send("runtimePackageOpenDialog")
+											}}
+										/>
+									</div>
+								</td>
+								<td class="p-4 pl-8 text-slate-800">
+									<div class="flex flex-row gap-4 items-center">
+										<code class="flex-grow">{chunk}</code>
+										<Button
+											kind="ghost"
+											size="small"
+											icon={Edit}
+											iconDescription="Edit value"
+											on:click={() => {
+												runtimePackagesValueToEdit = { chunk, path }
+												runtimePackagesValueToEditPlaceholder = chunk
+												runtimePackagesEditChunkModalOpen = true
+											}}
+										/>
+										<Button
+											kind="ghost"
+											size="small"
+											icon={CloseOutline}
+											iconDescription="Remove runtime package"
+											on:click={() => {
+												dispatch("runtimePackage-undefine", { chunk, path })
+											}}
+										/>
+									</div>
+								</td>
+							</tr>
+						{/each}
+					</tbody>
+				</table>
+				<br />
+				<Button
+					kind="primary"
+					icon={Edit}
+					on:click={() => {
+						runtimePackagesValueToEdit = { chunk: 0, path: "Placeholder value" }
+						window.ipc.send("runtimePackageOpenDialog")
+					}}
+				>
+					Add a runtime package
+				</Button>
+			</div>
+		{/if}
+		<br />
+		<br />
+		<div class="flex flex-row items-center cursor-pointer" on:click={() => (dependencies = !dependencies)}>
+			<h4 class="flex-grow">Dependencies</h4>
+			<div class:spin={dependencies} class:spinBack={!dependencies}>
+				<Icon icon={faChevronDown} />
+			</div>
+		</div>
+		{#if dependencies}
+			<div transition:slide>
+				<br />
+				<table class="table-auto border-collapse bg-slate-200">
+					<thead class="bg-neutral-900">
+						<tr>
+							<th class="font-medium p-4 pl-8 pb-3 text-slate-200 text-left">RuntimeID</th>
+							<th class="font-medium p-4 px-8 pb-3 text-slate-200 text-left">Extract to chunk</th>
+						</tr>
+					</thead>
+					<tbody>
+						{#each (source.dependencies || []).map((a) => {
+							return typeof a == "string" ? { runtimeID: a, toChunk: 0 } : a
+						}) as { runtimeID, toChunk }, index (runtimeID + toChunk)}
+							<tr class:border-b={index != (source.dependencies || []).length - 1} class="border-solid border-b-black">
+								<td class="p-4 pl-8 text-slate-800">
+									<div class="flex flex-row gap-4 items-center">
+										<code class="flex-grow">{runtimeID}</code>
+										<Button
+											kind="ghost"
+											size="small"
+											icon={Edit}
+											iconDescription="Edit value"
+											on:click={() => {
+												dependenciesValueToEdit = { runtimeID, toChunk, valueToEdit: "runtimeID" }
+												dependenciesValueToEditPlaceholder = runtimeID
+												dependenciesEditModalOpen = true
+											}}
+										/>
+									</div>
+								</td>
+								<td class="p-4 px-8 text-slate-800">
+									<div class="flex flex-row gap-4 items-center">
+										<code class="flex-grow">{toChunk}</code>
+										<Button
+											kind="ghost"
+											size="small"
+											icon={Edit}
+											iconDescription="Edit value"
+											on:click={() => {
+												dependenciesValueToEdit = { runtimeID, toChunk, valueToEdit: "toChunk" }
+												dependenciesValueToEditPlaceholder = String(toChunk)
+												dependenciesEditModalOpen = true
+											}}
+										/>
+										<Button
+											kind="ghost"
+											size="small"
+											icon={CloseOutline}
+											iconDescription="Remove runtime package"
+											on:click={() => {
+												dispatch("dependency-undefine", { runtimeID, toChunk })
+											}}
+										/>
+									</div>
+								</td>
+							</tr>
+						{/each}
+					</tbody>
+				</table>
+				<br />
+				<Button
+					kind="primary"
+					icon={Edit}
+					on:click={() => {
+						dependenciesValueToEdit = { runtimeID: "00123456789ABCDE", toChunk: 0, valueToEdit: "runtimeID" }
+						dependenciesValueToEditPlaceholder = "00123456789ABCDE"
+						dependenciesEditModalOpen = true
+					}}
+				>
+					Add a runtime package
+				</Button>
+			</div>
+		{/if}
+		<br />
+		<br />
+		<div class="flex flex-row items-center cursor-pointer" on:click={() => (thumbs = !thumbs)}>
+			<h4 class="flex-grow">Thumbs</h4>
+			<div class:spin={thumbs} class:spinBack={!thumbs}>
+				<Icon icon={faChevronDown} />
+			</div>
+		</div>
+		{#if thumbs}
+			<div transition:slide>
+				<ListEditor
+					data={source.thumbs || []}
+					on:define={({ detail }) => {
+						dispatch("thumbs-define", detail)
+					}}
+					on:undefine={({ detail }) => {
+						dispatch("thumbs-undefine", detail)
+					}}
+				/>
+			</div>
+		{/if}
+	</div>
+{/if}
+
+<br />
+
+<div class="flex flex-row items-center cursor-pointer" on:click={() => (compatibility = !compatibility)}>
+	<h2 class="flex-grow">Compatibility</h2>
+	<div class:spin={compatibility} class:spinBack={!compatibility}>
+		<Icon icon={faChevronDown} />
+	</div>
+</div>
+{#if compatibility}
+	<div transition:slide>
+		<br />
+		<div class="flex flex-row items-center cursor-pointer" on:click={() => (supportedPlatforms = !supportedPlatforms)}>
+			<h4 class="flex-grow">Supported platforms</h4>
+			<div class:spin={supportedPlatforms} class:spinBack={!supportedPlatforms}>
+				<Icon icon={faChevronDown} />
+			</div>
+		</div>
+		{#if supportedPlatforms}
+			<div transition:slide>
+				{#each Object.keys(Platform).filter((a) => typeof a == "string") as platform (platform)}
+					<Checkbox
+						checked={(source.supportedPlatforms || []).length == 0 || (source.supportedPlatforms || []).includes(platform)}
+						labelText={platform.slice(0, 1).toUpperCase() + platform.slice(1)}
+						on:change={({ target: { checked } }) => {
+							dispatch("supportedPlatforms-alter", {
+								platform,
+								value: checked
+							})
+						}}
+					/>
+				{/each}
+			</div>
+		{/if}
+		<br />
+		<br />
+		<div class="flex flex-row items-center cursor-pointer" on:click={() => (requirements = !requirements)}>
+			<h4 class="flex-grow">Requirements</h4>
+			<div class:spin={requirements} class:spinBack={!requirements}>
+				<Icon icon={faChevronDown} />
+			</div>
+		</div>
+		{#if requirements}
+			<div transition:slide>
+				<ListEditor
+					data={source.requirements || []}
+					on:define={({ detail }) => {
+						dispatch("requirements-define", detail)
+					}}
+					on:undefine={({ detail }) => {
+						dispatch("requirements-undefine", detail)
+					}}
+				/>
+			</div>
+		{/if}
+		<br />
+		<br />
+		<div class="flex flex-row items-center cursor-pointer" on:click={() => (loadBefore = !loadBefore)}>
+			<h4 class="flex-grow">Load before</h4>
+			<div class:spin={loadBefore} class:spinBack={!loadBefore}>
+				<Icon icon={faChevronDown} />
+			</div>
+		</div>
+		{#if loadBefore}
+			<div transition:slide>
+				<ListEditor
+					data={source.loadBefore || []}
+					on:define={({ detail }) => {
+						dispatch("loadBefore-define", detail)
+					}}
+					on:undefine={({ detail }) => {
+						dispatch("loadBefore-undefine", detail)
+					}}
+				/>
+			</div>
+		{/if}
+		<br />
+		<br />
+		<div class="flex flex-row items-center cursor-pointer" on:click={() => (loadAfter = !loadAfter)}>
+			<h4 class="flex-grow">Load after</h4>
+			<div class:spin={loadAfter} class:spinBack={!loadAfter}>
+				<Icon icon={faChevronDown} />
+			</div>
+		</div>
+		{#if loadAfter}
+			<div transition:slide>
+				<ListEditor
+					data={source.loadAfter || []}
+					on:define={({ detail }) => {
+						dispatch("loadAfter-define", detail)
+					}}
+					on:undefine={({ detail }) => {
+						dispatch("loadAfter-undefine", detail)
+					}}
+				/>
+			</div>
+		{/if}
 	</div>
 {/if}
 
@@ -444,6 +761,51 @@
 					partition: pdefValueToEdit.split("$:$")[0],
 					key: pdefValueToEdit.split("$:$")[1],
 					value: pdefEditModal.value
+				})
+			}
+		}
+	}}
+/>
+
+<TextInputModal
+	bind:this={runtimePackagesEditChunkModal}
+	bind:showingModal={runtimePackagesEditChunkModalOpen}
+	modalText="Edit chunk{runtimePackagesValueToEdit.chunk} package"
+	modalPlaceholder={String(runtimePackagesValueToEditPlaceholder)}
+	modalInitialText={String(runtimePackagesValueToEditPlaceholder)}
+	on:close={() => {
+		if (runtimePackagesEditChunkModal.value && runtimePackagesEditChunkModal.value.length) {
+			dispatch("runtimePackage-define", {
+				type: "defineChunk",
+				origChunk: runtimePackagesValueToEdit.chunk,
+				origPath: runtimePackagesValueToEdit.path,
+				newChunk: Number(runtimePackagesEditChunkModal.value)
+			})
+		}
+	}}
+/>
+
+<TextInputModal
+	bind:this={dependenciesEditModal}
+	bind:showingModal={dependenciesEditModalOpen}
+	modalText="Edit {dependenciesValueToEdit.runtimeID} {{ runtimeID: 'RuntimeID', toChunk: 'chunk' }[dependenciesValueToEdit.valueToEdit]}"
+	modalPlaceholder={String(dependenciesValueToEditPlaceholder)}
+	modalInitialText={String(dependenciesValueToEditPlaceholder)}
+	on:close={() => {
+		if (dependenciesEditModal.value && dependenciesEditModal.value.length) {
+			if (dependenciesValueToEdit.valueToEdit == "runtimeID") {
+				dispatch("dependency-define", {
+					type: "defineRuntimeID",
+					origToChunk: dependenciesValueToEdit.toChunk,
+					origRuntimeID: dependenciesValueToEdit.runtimeID,
+					newRuntimeID: dependenciesEditModal.value
+				})
+			} else if (dependenciesValueToEdit.valueToEdit == "toChunk") {
+				dispatch("dependency-define", {
+					type: "defineToChunk",
+					origToChunk: dependenciesValueToEdit.toChunk,
+					origRuntimeID: dependenciesValueToEdit.runtimeID,
+					newToChunk: Number(dependenciesEditModal.value)
 				})
 			}
 		}

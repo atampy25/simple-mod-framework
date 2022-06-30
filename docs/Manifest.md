@@ -81,7 +81,7 @@ Each mod contains a manifest. Manifests have the following format:
 		"00123456789ABCDE",
 		{
 			"runtimeID": "00AAAAAAAAAAAAAA",
-			"toChunk": "chunk1"
+			"toChunk": 1
 		}
 	],
 	"supportedPlatforms": [

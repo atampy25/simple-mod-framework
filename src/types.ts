@@ -2,7 +2,11 @@ type RuntimeID = string
 type LocalisationID = string
 type ModID = string
 
-type Platform = "steam" | "epic" | "microsoft"
+export enum Platform {
+	steam = "steam",
+	epic = "epic",
+	microsoft = "microsoft"
+}
 
 export enum Language {
 	english = "english",
@@ -115,7 +119,7 @@ export interface ManifestOptionData {
 		| string
 		| {
 				runtimeID: string
-				toChunk: string
+				toChunk: number
 		  }
 	)[]
 
@@ -416,7 +420,7 @@ export interface ModAPI {
 		warn(message: string): void
 
 		/** Print a message at the error log level.
-		 * This will by default exit the program. It is recommended to leave exitAfter on unless you plan to exit yourself.
+		 * This will by default exit the program. It is recommended to leave exitAfter on; exitAfter is only used internally for certain errors.
 		 * If there is an error that is not critical (not deserving of exiting the program), use warn instead. */
 		error(message: string, exitAfter: boolean): void
 	}
