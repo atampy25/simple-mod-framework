@@ -272,20 +272,50 @@
 						</div>
 					</div>
 				{:then warnings}
-					{#each warnings[manifest.id] as { title, subtitle, trace }}
-						<InlineNotification hideCloseButton lowContrast kind="warning">
-							<div slot="title" class="text-lg">
-								{title}
-							</div>
-							<div slot="subtitle">
-								{@html subtitle}
-								<br />
-								<br />
-								This warning originated from the file at:
-								<br />
-								<code class=".code-inline">{window.path.resolve(getModFolder(manifest.id), trace)}</code>
-							</div>
-						</InlineNotification>
+					{#each warnings[manifest.id] as { title, subtitle, trace, type }}
+						{#if type == "error"}
+							<InlineNotification hideCloseButton lowContrast kind="error">
+								<div slot="title" class="text-lg">
+									{title}
+								</div>
+								<div slot="subtitle">
+									{@html subtitle}
+									<br />
+									<br />
+									This error originated from the file at:
+									<br />
+									<code class=".code-inline">{window.path.resolve(getModFolder(manifest.id), trace)}</code>
+								</div>
+							</InlineNotification>
+						{:else if type == "warning"}
+							<InlineNotification hideCloseButton lowContrast kind="warning">
+								<div slot="title" class="text-lg">
+									{title}
+								</div>
+								<div slot="subtitle">
+									{@html subtitle}
+									<br />
+									<br />
+									This warning originated from the file at:
+									<br />
+									<code class=".code-inline">{window.path.resolve(getModFolder(manifest.id), trace)}</code>
+								</div>
+							</InlineNotification>
+						{:else if type == "info"}
+							<InlineNotification hideCloseButton lowContrast kind="info">
+								<div slot="title" class="text-lg">
+									{title}
+								</div>
+								<div slot="subtitle">
+									{@html subtitle}
+									<br />
+									<br />
+									This message originated from the file at:
+									<br />
+									<code class=".code-inline">{window.path.resolve(getModFolder(manifest.id), trace)}</code>
+								</div>
+							</InlineNotification>
+						{/if}
 					{/each}
 				{:catch}
 					<div class="flex items-center">

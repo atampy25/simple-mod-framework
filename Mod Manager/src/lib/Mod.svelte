@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { Tile } from "carbon-components-svelte"
 	import WarningAlt from "carbon-icons-svelte/lib/WarningAlt.svelte"
+	import Error from "carbon-icons-svelte/lib/Error.svelte"
 
 	import type { Manifest } from "../../../src/types"
 	import { getAllModWarnings } from "./utils"
@@ -33,7 +34,16 @@
 		<div class="flex-shrink-0">
 			{#if isFrameworkMod && modWarnings}
 				{#await modWarnings then warnings}
-					{#if warnings[manifest.id].length}
+					{#if warnings[manifest.id].some((a) => a.type == "error")}
+						<div
+							tabindex="0"
+							aria-pressed="false"
+							class="bx--btn bx--btn--ghost btn-error bx--btn--icon-only bx--tooltip__trigger bx--tooltip--a11y bx--btn--icon-only--bottom bx--tooltip--align-center"
+						>
+							<span class="bx--assistive-text">This mod will likely cause issues; contact the mod developer</span>
+							<Error color="black" />
+						</div>
+					{:else if warnings[manifest.id].some((a) => a.type == "warning")}
 						<div
 							tabindex="0"
 							aria-pressed="false"
@@ -54,6 +64,11 @@
 	.bx--btn--ghost {
 		background-color: rgb(255, 196, 0);
 	}
+
+	.btn-error {
+		background-color: rgb(255, 60, 0);
+	}
+
 	.bx--btn.bx--btn--icon-only.bx--tooltip__trigger {
 		cursor: default;
 	}

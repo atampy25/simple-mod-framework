@@ -290,7 +290,39 @@ const modWarnings: {
 	title: string
 	subtitle: string
 	check: (filesToCheck: string[], hashList: { hash: string; path: string }[], baseGameHashes: Set<string>) => Promise<string[]>
+	type: "error" | "warning" | "info"
 }[] = [
+	{
+		title: "Invalid JSON file",
+		subtitle: `
+			There is an invalid JSON file of a framework filetype present in the mod.<br><br>
+			You should resolve this - this <b>will</b> cause issues.
+		`,
+		check: async (filesToCheck, hashList, baseGameHashes) => {
+			const violations = []
+
+			filesToCheck = filesToCheck.filter(
+				(a) =>
+					a.endsWith("entity.json") ||
+					a.endsWith("entity.patch.json") ||
+					a.endsWith("repository.json") ||
+					a.endsWith("unlockables.json") ||
+					a.endsWith("JSON.patch.json") ||
+					a.endsWith("contract.json")
+			)
+
+			for (const file of filesToCheck) {
+				try {
+					if (!(await window.fs.readJSON(file))) violations.push(file)
+				} catch {
+					violations.push(file)
+				}
+			}
+
+			return violations
+		},
+		type: "error"
+	},
 	{
 		title: "Runtime package used",
 		subtitle: `
@@ -299,25 +331,8 @@ const modWarnings: {
 		`,
 		check: async (filesToCheck, hashList, baseGameHashes) => {
 			return filesToCheck.filter((a) => a.endsWith(".rpkg"))
-		}
-	},
-	{
-		title: "Blob is included as raw file",
-		subtitle: `
-			There is a blob included as a raw content file in the mod. This can make things harder to view and edit for users and yourself.<br><br>
-			You can resolve this by using a <code>blobsFolder</code> and moving the blob to it. Remember, blobs folders can both add and edit blobs, so there's no reason to prefer a content folder for blobs.
-		`,
-		check: async (filesToCheck, hashList, baseGameHashes) => {
-			const violations = []
-
-			filesToCheck = filesToCheck.filter((a) => a.endsWith(".JSON") || a.endsWith(".GFXI"))
-
-			for (const file of filesToCheck) {
-				if (hashList.some((a) => a.path.startsWith("[assembly:/_pro/online/default/cloudstorage") && a.hash + "." + a.path == window.path.basename(file))) violations.push(file)
-			}
-
-			return violations
-		}
+		},
+		type: "warning"
 	},
 	{
 		title: "Base game repository is outright replaced",
@@ -339,29 +354,8 @@ const modWarnings: {
 			}
 
 			return violations
-		}
-	},
-	{
-		title: "Base game unlockables file is outright replaced",
-		subtitle: `
-			The entire unlockables file is being outright replaced by a raw file. This is likely to cause compatibility issues, as well as making things harder to view and edit for users and yourself.<br><br>
-			You should resolve this.<br><br>
-			Using a <code>unlockables.json</code> file is a simple fix that will ensure compatibility.
-			It may make the mod slightly slower to deploy, but that's the whole idea of the framework
-			- it's best to use framework features whenever possible, as this future-proofs your mod and allows you to take advantage of any improvements immediately,
-			without you needing to make changes. You should never avoid a framework feature purely for speed reasons.
-		`,
-		check: async (filesToCheck, hashList, baseGameHashes) => {
-			const violations = []
-
-			filesToCheck = filesToCheck.filter((a) => a.endsWith("0057C2C3941115CA.ORES"))
-
-			for (const file of filesToCheck) {
-				if (baseGameHashes.has(window.path.basename(file, ".ORES"))) violations.push(file)
-			}
-
-			return violations
-		}
+		},
+		type: "warning"
 	},
 	{
 		title: "Base game entity is outright replaced",
@@ -383,7 +377,8 @@ const modWarnings: {
 			}
 
 			return violations
-		}
+		},
+		type: "warning"
 	},
 	{
 		title: "Base game entity is outright replaced",
@@ -406,14 +401,38 @@ const modWarnings: {
 			}
 
 			return violations
-		}
+		},
+		type: "warning"
+	},
+	{
+		title: "Base game unlockables file is outright replaced",
+		subtitle: `
+			The entire unlockables file is being outright replaced by a raw file. This is likely to cause compatibility issues, as well as making things harder to view and edit for users and yourself.<br><br>
+			You should resolve this.<br><br>
+			Using a <code>unlockables.json</code> file is a simple fix that will ensure compatibility.
+			It may make the mod slightly slower to deploy, but that's the whole idea of the framework
+			- it's best to use framework features whenever possible, as this future-proofs your mod and allows you to take advantage of any improvements immediately,
+			without you needing to make changes. You should never avoid a framework feature purely for speed reasons.
+		`,
+		check: async (filesToCheck, hashList, baseGameHashes) => {
+			const violations = []
+
+			filesToCheck = filesToCheck.filter((a) => a.endsWith("0057C2C3941115CA.ORES"))
+
+			for (const file of filesToCheck) {
+				if (baseGameHashes.has(window.path.basename(file, ".ORES"))) violations.push(file)
+			}
+
+			return violations
+		},
+		type: "warning"
 	},
 	{
 		title: "Base game sound is outright replaced",
 		subtitle: `
 			A vanilla sound is being outright replaced by a raw file. This can cause compatibility issues, as well as making things harder to view and edit for users and yourself.<br><br>
 			You should review this, even if you think no other mods will edit that file.<br><br>
-			Using an <code>sfx.wem</code> file is a simple fix that will ensure compatibility.
+			Using <code>sfx.wem</code> files to replace only the sounds that need replacing is a simple fix that will ensure compatibility.
 			It may make the mod slightly slower to deploy, but that's the whole idea of the framework
 			- it's best to use framework features whenever possible, as this future-proofs your mod and allows you to take advantage of any improvements immediately,
 			without you needing to make changes. You should never avoid a framework feature purely for speed reasons.
@@ -428,29 +447,39 @@ const modWarnings: {
 			}
 
 			return violations
-		}
+		},
+		type: "info"
 	},
 	{
-		title: "Base game texture is outright replaced",
+		title: "Blob is included as raw file",
 		subtitle: `
-			A vanilla texture is being outright replaced by a raw file. This can cause compatibility issues, as well as making things harder to view and edit for users and yourself.<br><br>
-			You should review this, even if you think no other mods will edit that file.<br><br>
-			Using a <code>texture.tga</code> file is a simple fix that will ensure compatibility.
-			It may make the mod slightly slower to deploy, but that's the whole idea of the framework
-			- it's best to use framework features whenever possible, as this future-proofs your mod and allows you to take advantage of any improvements immediately,
-			without you needing to make changes. You should never avoid a framework feature purely for speed reasons.
+			There is a blob included as a raw content file in the mod. This can make things harder to view and edit for users and yourself.<br><br>
+			You can resolve this by using a <code>blobsFolder</code> and moving the blob to it. Remember, blobs folders can both add and edit blobs, so there's no reason to prefer a content folder for blobs.
 		`,
 		check: async (filesToCheck, hashList, baseGameHashes) => {
 			const violations = []
 
-			filesToCheck = filesToCheck.filter((a) => a.endsWith(".TEXT") || a.endsWith(".TEXD"))
+			filesToCheck = filesToCheck.filter((a) => a.endsWith(".JSON") || a.endsWith(".GFXI"))
 
 			for (const file of filesToCheck) {
-				if (baseGameHashes.has(window.path.basename(file, ".TEXT")) || baseGameHashes.has(window.path.basename(file, ".TEXD"))) violations.push(file)
+				if (hashList.some((a) => a.path.startsWith("[assembly:/_pro/online/default/cloudstorage") && a.hash + "." + a.path == window.path.basename(file))) violations.push(file)
 			}
 
 			return violations
-		}
+		},
+		type: "info"
+	},
+	{
+		title: "Texture included as raw file",
+		subtitle: `
+			A texture is included as a raw file. This makes things harder to view and edit for users and yourself.<br><br>
+			Using a <code>texture.tga</code> file lets you make changes far more easily, and lets you see the contents of the texture at a glance.
+			There's not much of a speed difference, too - you can convert your textures to <code>texture.tga</code> files without any real downsides.
+		`,
+		check: async (filesToCheck, hashList, baseGameHashes) => {
+			return filesToCheck.filter((a) => a.endsWith(".TEXT") || a.endsWith(".TEXD"))
+		},
+		type: "info"
 	}
 ]
 
