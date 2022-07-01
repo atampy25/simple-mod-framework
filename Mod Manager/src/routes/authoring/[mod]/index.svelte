@@ -2,12 +2,11 @@
 	import { scale } from "svelte/transition"
 	import { onMount } from "svelte"
 
-	import { Button, ClickableTile, TextInput } from "carbon-components-svelte"
+	import { Button, ClickableTile, InlineLoading, InlineNotification, TextInput } from "carbon-components-svelte"
 	import { page } from "$app/stores"
 
-	import { alterModManifest, FrameworkVersion, getManifestFromModID, getModFolder, setModManifest } from "$lib/utils"
+	import { alterModManifest, FrameworkVersion, getAllModWarnings, getManifestFromModID, getModFolder, setModManifest } from "$lib/utils"
 	import TextInputModal from "$lib/TextInputModal.svelte"
-	import ModManifestInterface from "$lib/ModManifestInterface.svelte"
 
 	import Edit from "carbon-icons-svelte/lib/Edit.svelte"
 	import CloseOutline from "carbon-icons-svelte/lib/CloseOutline.svelte"
@@ -60,6 +59,9 @@
 	let versionInputChanged = false
 	let frameworkVersionInputChanged = false
 	let updateURLInputChanged = false
+
+	let modWarningsPromise: Promise<Record<string, { title: string; subtitle: string; trace: string }[]>> = null!
+	$: $page.params.mod ? setTimeout(() => (modWarningsPromise = getAllModWarnings()), 500) : []
 </script>
 
 <div class="flex gap-4 items-center justify-center">
@@ -198,50 +200,111 @@
 					updateURLInput.value = ""
 					dummyForceUpdate = Math.random()
 				}}
-			>
-				Save
-			</Button>
+			/>
+			Save
 		{/if}
 	</div>
 </div>
 
 <br />
 
-<div class="flex flex-row gap-8 justify-center items-center mt-12">
-	<div transition:scale>
-		<ClickableTile href="/authoring/{$page.params.mod}/manifest" style="width: 10vw; height: 8vw">
-			<div class="w-full h-full flex justify-center items-center text-xl font-light">
-				<div>
-					<div class="flex justify-center mb-2">
-						<Code size={64} />
-					</div>
-					<div class="flex justify-center">Manifest</div>
-				</div>
-			</div>
-		</ClickableTile>
-	</div>
-	{#each manifest.options || [] as option (option.group + option.name)}
+<div class="flex flex-row justify-center items-center mt-8">
+	<div class="flex flex-row gap-8 items-center mt-8 pb-4 max-w-[80vw] overflow-x-auto">
 		<div transition:scale>
-			<ClickableTile href="/authoring/{$page.params.mod}/options/{(option.group || '-') + '$|$' + option.name}" style="width: 10vw; height: 8vw">
+			<ClickableTile href="/authoring/{$page.params.mod}/manifest" style="width: 10vw; height: 8vw">
 				<div class="w-full h-full flex justify-center items-center text-xl font-light">
 					<div>
 						<div class="flex justify-center mb-2">
-							{#if option.type == "checkbox"}
-								<CheckboxChecked size={64} />
-							{:else if option.type == "select"}
-								<RadioButtonChecked size={64} />
-							{:else if option.type == "requirement"}
-								<Asterisk size={64} />
-							{/if}
+							<Code size={64} />
 						</div>
-						<div class="flex justify-center">
-							{option.name}
-						</div>
+						<div class="flex justify-center">Manifest</div>
 					</div>
 				</div>
 			</ClickableTile>
 		</div>
-	{/each}
+		{#each manifest.options || [] as option (option.group + option.name)}
+			<div transition:scale>
+				<ClickableTile href="/authoring/{$page.params.mod}/options/{(option.group || '-') + '$|$' + option.name}" style="width: 10vw; height: 8vw">
+					<div class="w-full h-full flex justify-center items-center text-xl font-light">
+						<div>
+							<div class="flex justify-center mb-2">
+								{#if option.type == "checkbox"}
+									<CheckboxChecked size={64} />
+								{:else if option.type == "select"}
+									<RadioButtonChecked size={64} />
+								{:else if option.type == "requirement"}
+									<Asterisk size={64} />
+								{/if}
+							</div>
+							<div class="flex justify-center">
+								<div class="text-center">
+									{#if option.type == "group"}
+										{option.group} →
+									{/if}
+									{option.name}
+								</div>
+							</div>
+						</div>
+					</div>
+				</ClickableTile>
+			</div>
+		{/each}
+	</div>
+</div>
+
+<br />
+
+<div class="flex items-center justify-center w-full mt-8">
+	<div>
+		<div class="flex gap-4 items-center justify-center">
+			<h1 class="text-center" transition:scale>Tips and Warnings</h1>
+		</div>
+
+		<br />
+
+		<div class="{window.screen.height <= 1080 ? 'max-h-[42vh]' : 'max-h-[45vh]'} pr-4 overflow-y-auto">
+			{#if modWarningsPromise}
+				{#await modWarningsPromise}
+					<div class="flex items-center">
+						<p class="flex-grow">Checking the mod...</p>
+						<div>
+							<InlineLoading />
+						</div>
+					</div>
+				{:then warnings}
+					{#each warnings[manifest.id] as { title, subtitle, trace }}
+						<InlineNotification hideCloseButton lowContrast kind="warning">
+							<div slot="title" class="text-lg">
+								{title}
+							</div>
+							<div slot="subtitle">
+								{@html subtitle}
+								<br />
+								<br />
+								This warning originated from the file at:
+								<br />
+								<code class=".code-inline">{window.path.resolve(getModFolder(manifest.id), trace)}</code>
+							</div>
+						</InlineNotification>
+					{/each}
+				{:catch}
+					<div class="flex items-center">
+						<p class="flex-grow">Couldn't get mod warnings</p>
+						<div>
+							<InlineLoading status="error" />
+						</div>
+					</div>
+				{/await}
+			{:else}
+				<div class="flex items-center">
+					<p class="flex-grow">Checking the mod...</p>
+					<div>
+						<InlineLoading />
+					</div>
+				</div>
+			{/if}
+		</div>
+	</div>
 </div>
 
 <div class="mb-[100vh]" />
@@ -296,5 +359,27 @@
 
 	:global(.bx--btn--ghost:hover, .bx--btn--ghost:active) {
 		color: inherit;
+	}
+
+	:global(.bx--inline-notification) {
+		width: 70vh;
+	}
+
+	:global(.bx--inline-notification__text-wrapper) {
+		display: block;
+	}
+
+	:global(.bx--inline-notification__icon) {
+		margin-top: 1.2rem;
+	}
+
+	:global(.bx--inline-notification__subtitle) {
+		line-height: 1.5;
+	}
+
+	:global(code.code-inline) {
+		@apply bg-neutral-800 text-orange-200 rounded-sm text-sm;
+		font-family: "Fira Code", "IBM Plex Mono", "Menlo", "DejaVu Sans Mono", "Bitstream Vera Sans Mono", Courier, monospace !important;
+		padding: 0.1rem 0.2rem !important;
 	}
 </style>

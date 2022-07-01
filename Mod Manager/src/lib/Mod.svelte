@@ -1,11 +1,17 @@
 <script lang="ts">
 	import { Tile } from "carbon-components-svelte"
+	import WarningAlt from "carbon-icons-svelte/lib/WarningAlt.svelte"
+
 	import type { Manifest } from "../../../src/types"
+	import { getAllModWarnings } from "./utils"
 
 	export let isFrameworkMod: boolean
 
 	export let manifest: Manifest = {} as Manifest
 	export let rpkgModName: string = ""
+
+	let modWarnings: Promise<{ title: string; subtitle: string; trace: string }[]>
+	setTimeout(() => (modWarnings = getAllModWarnings()), 100)
 </script>
 
 <Tile>
@@ -25,7 +31,30 @@
 			{/if}
 		</div>
 		<div class="flex-shrink-0">
+			{#if isFrameworkMod && modWarnings}
+				{#await modWarnings then warnings}
+					{#if warnings[manifest.id].length}
+						<div
+							tabindex="0"
+							aria-pressed="false"
+							class="bx--btn bx--btn--ghost bx--btn--icon-only bx--tooltip__trigger bx--tooltip--a11y bx--btn--icon-only--bottom bx--tooltip--align-center"
+						>
+							<span class="bx--assistive-text">This mod may cause issues; contact the mod developer</span>
+							<WarningAlt color="black" />
+						</div>
+					{/if}
+				{/await}
+			{/if}
 			<slot />
 		</div>
 	</div>
 </Tile>
+
+<style>
+	.bx--btn--ghost {
+		background-color: rgb(255, 196, 0);
+	}
+	.bx--btn.bx--btn--icon-only.bx--tooltip__trigger {
+		cursor: default;
+	}
+</style>

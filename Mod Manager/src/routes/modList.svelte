@@ -3,7 +3,7 @@
 	import { flip } from "svelte/animate"
 
 	import SortableList from "svelte-sortable-list"
-	import { Button, CodeSnippet, Modal } from "carbon-components-svelte"
+	import { Button, Modal } from "carbon-components-svelte"
 
 	import { getAllMods, getConfig, mergeConfig, getManifestFromModID, modIsFramework, getModFolder, sortMods } from "$lib/utils"
 	import Mod from "$lib/Mod.svelte"

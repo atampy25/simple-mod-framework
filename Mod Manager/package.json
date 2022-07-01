@@ -1,6 +1,7 @@
 {
 	"name": "ModManager",
 	"version": "1.0.0",
+	"author": "Atampy26",
 	"private": true,
 	"description": "Mod manager for the Simple Mod Framework.",
 	"main": "src/electron.cjs",

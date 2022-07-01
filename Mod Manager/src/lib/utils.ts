@@ -155,8 +155,8 @@ export function sortMods() {
 							.filter(
 								(a) =>
 									config.modOptions[modManifest.id].includes(a.name) ||
-												config.modOptions[modManifest.id].includes(a.group + ":" + a.name) ||
-												(a.type == "requirement" && a.mods.every((b) => config.loadOrder.includes(b)))
+									config.modOptions[modManifest.id].includes(a.group + ":" + a.name) ||
+									(a.type == "requirement" && a.mods.every((b) => config.loadOrder.includes(b)))
 							)
 							.map((a) => a.loadBefore)
 							.filter((a) => a)
@@ -169,8 +169,8 @@ export function sortMods() {
 							.filter(
 								(a) =>
 									config.modOptions[modManifest.id].includes(a.name) ||
-												config.modOptions[modManifest.id].includes(a.group + ":" + a.name) ||
-												(a.type == "requirement" && a.mods.every((b) => config.loadOrder.includes(b)))
+									config.modOptions[modManifest.id].includes(a.group + ":" + a.name) ||
+									(a.type == "requirement" && a.mods.every((b) => config.loadOrder.includes(b)))
 							)
 							.map((a) => a.loadAfter)
 							.filter((a) => a)
@@ -223,12 +223,11 @@ export function sortMods() {
 
 export function alterModManifest(modID: string, data: Partial<Manifest>) {
 	const manifest = getManifestFromModID(modID)
-	merge(manifest, data,
-		(orig, src) => {
-			if (Array.isArray(orig)) {
-				return src
-			}
-		})
+	merge(manifest, data, (orig, src) => {
+		if (Array.isArray(orig)) {
+			return src
+		}
+	})
 	setModManifest(modID, manifest)
 }
 
@@ -239,12 +238,12 @@ export function setModManifest(modID: string, manifest: Manifest) {
 export const getModFolder = memoize(function (id: string) {
 	const folder = modIsFramework(id)
 		? window.fs
-			.readdirSync(window.path.join("..", "Mods"))
-			.find(
-				(a) =>
-					window.fs.existsSync(window.path.join("..", "Mods", a, "manifest.json")) &&
+				.readdirSync(window.path.join("..", "Mods"))
+				.find(
+					(a) =>
+						window.fs.existsSync(window.path.join("..", "Mods", a, "manifest.json")) &&
 						json5.parse(String(window.fs.readFileSync(window.path.join("..", "Mods", a, "manifest.json"), "utf8"))).id == id
-			) // Find mod by ID
+				) // Find mod by ID
 		: window.path.join("..", "Mods", id) // Mod is an RPKG mod, use folder name
 
 	if (!folder) {
@@ -286,3 +285,229 @@ export const getAllMods = memoize(function () {
 				: a.split(window.path.sep).pop()!
 		)
 })
+
+const modWarnings: {
+	title: string
+	subtitle: string
+	check: (filesToCheck: string[], hashList: { hash: string; path: string }[], baseGameHashes: Set<string>) => Promise<string[]>
+}[] = [
+	{
+		title: "Runtime package used",
+		subtitle: `
+			The <code>runtimePackages</code> manifest feature is generally not recommended for use, as it can cause compatibility issues and is deprecated.<br><br>
+			You should place the files of runtime packages in a content folder instead, and make use of any relevant framework features.
+		`,
+		check: async (filesToCheck, hashList, baseGameHashes) => {
+			return filesToCheck.filter((a) => a.endsWith(".rpkg"))
+		}
+	},
+	{
+		title: "Blob is included as raw file",
+		subtitle: `
+			There is a blob included as a raw content file in the mod. This can make things harder to view and edit for users and yourself.<br><br>
+			You can resolve this by using a <code>blobsFolder</code> and moving the blob to it. Remember, blobs folders can both add and edit blobs, so there's no reason to prefer a content folder for blobs.
+		`,
+		check: async (filesToCheck, hashList, baseGameHashes) => {
+			const violations = []
+
+			filesToCheck = filesToCheck.filter((a) => a.endsWith(".JSON") || a.endsWith(".GFXI"))
+
+			for (const file of filesToCheck) {
+				if (hashList.some((a) => a.path.startsWith("[assembly:/_pro/online/default/cloudstorage") && a.hash + "." + a.path == window.path.basename(file))) violations.push(file)
+			}
+
+			return violations
+		}
+	},
+	{
+		title: "Base game repository is outright replaced",
+		subtitle: `
+			The entire repository is being outright replaced by a raw file. This is very likely to cause compatibility issues, as well as making things harder to view and edit for users and yourself.<br><br>
+			You should resolve this.<br><br>
+			Using a <code>repository.json</code> file is a simple fix that will ensure compatibility.
+			It may make the mod slightly slower to deploy, but that's the whole idea of the framework
+			- it's best to use framework features whenever possible, as this future-proofs your mod and allows you to take advantage of any improvements immediately,
+			without you needing to make changes. You should never avoid a framework feature purely for speed reasons.
+		`,
+		check: async (filesToCheck, hashList, baseGameHashes) => {
+			const violations = []
+
+			filesToCheck = filesToCheck.filter((a) => a.endsWith(".REPO"))
+
+			for (const file of filesToCheck) {
+				if (baseGameHashes.has(window.path.basename(file, ".REPO"))) violations.push(file)
+			}
+
+			return violations
+		}
+	},
+	{
+		title: "Base game unlockables file is outright replaced",
+		subtitle: `
+			The entire unlockables file is being outright replaced by a raw file. This is likely to cause compatibility issues, as well as making things harder to view and edit for users and yourself.<br><br>
+			You should resolve this.<br><br>
+			Using a <code>unlockables.json</code> file is a simple fix that will ensure compatibility.
+			It may make the mod slightly slower to deploy, but that's the whole idea of the framework
+			- it's best to use framework features whenever possible, as this future-proofs your mod and allows you to take advantage of any improvements immediately,
+			without you needing to make changes. You should never avoid a framework feature purely for speed reasons.
+		`,
+		check: async (filesToCheck, hashList, baseGameHashes) => {
+			const violations = []
+
+			filesToCheck = filesToCheck.filter((a) => a.endsWith("0057C2C3941115CA.ORES"))
+
+			for (const file of filesToCheck) {
+				if (baseGameHashes.has(window.path.basename(file, ".ORES"))) violations.push(file)
+			}
+
+			return violations
+		}
+	},
+	{
+		title: "Base game entity is outright replaced",
+		subtitle: `
+			A vanilla entity is being outright replaced by a raw file. This can cause compatibility issues, as well as making things harder to view and edit for users and yourself.<br><br>
+			You should review this, even if you think no other mods will edit that file.<br><br>
+			Using an <code>entity.patch.json</code> file is a simple fix that will ensure compatibility.
+			It may make the mod slightly slower to deploy, but that's the whole idea of the framework
+			- it's best to use framework features whenever possible, as this future-proofs your mod and allows you to take advantage of any improvements immediately,
+			without you needing to make changes. You should never avoid a framework feature purely for speed reasons.
+		`,
+		check: async (filesToCheck, hashList, baseGameHashes) => {
+			const violations = []
+
+			filesToCheck = filesToCheck.filter((a) => a.endsWith(".TEMP") || a.endsWith(".TBLU"))
+
+			for (const file of filesToCheck) {
+				if (baseGameHashes.has(window.path.basename(file, ".TEMP")) || baseGameHashes.has(window.path.basename(file, ".TBLU"))) violations.push(file)
+			}
+
+			return violations
+		}
+	},
+	{
+		title: "Base game entity is outright replaced",
+		subtitle: `
+			A vanilla entity is being outright replaced by an <code>entity.json</code> file. This can cause compatibility issues.<br><br>
+			You should review this, even if you think no other mods will edit that file.<br><br>
+			Using an <code>entity.patch.json</code> file is a simple fix that will ensure compatibility.
+			It may make the mod slightly slower to deploy, but that's the whole idea of the framework
+			- it's best to use framework features whenever possible, as this future-proofs your mod and allows you to take advantage of any improvements immediately,
+			without you needing to make changes. You should never avoid a framework feature purely for speed reasons.
+		`,
+		check: async (filesToCheck, hashList, baseGameHashes) => {
+			const violations = []
+
+			filesToCheck = filesToCheck.filter((a) => a.endsWith("entity.json"))
+
+			for (const file of filesToCheck) {
+				const fileContents = await window.fs.readJSON(file)
+				if (baseGameHashes.has(fileContents.tempHash) || baseGameHashes.has(fileContents.tbluHash)) violations.push(file)
+			}
+
+			return violations
+		}
+	},
+	{
+		title: "Base game sound is outright replaced",
+		subtitle: `
+			A vanilla sound is being outright replaced by a raw file. This can cause compatibility issues, as well as making things harder to view and edit for users and yourself.<br><br>
+			You should review this, even if you think no other mods will edit that file.<br><br>
+			Using an <code>sfx.wem</code> file is a simple fix that will ensure compatibility.
+			It may make the mod slightly slower to deploy, but that's the whole idea of the framework
+			- it's best to use framework features whenever possible, as this future-proofs your mod and allows you to take advantage of any improvements immediately,
+			without you needing to make changes. You should never avoid a framework feature purely for speed reasons.
+		`,
+		check: async (filesToCheck, hashList, baseGameHashes) => {
+			const violations = []
+
+			filesToCheck = filesToCheck.filter((a) => a.endsWith(".WWEV"))
+
+			for (const file of filesToCheck) {
+				if (baseGameHashes.has(window.path.basename(file, ".WWEV"))) violations.push(file)
+			}
+
+			return violations
+		}
+	},
+	{
+		title: "Base game texture is outright replaced",
+		subtitle: `
+			A vanilla texture is being outright replaced by a raw file. This can cause compatibility issues, as well as making things harder to view and edit for users and yourself.<br><br>
+			You should review this, even if you think no other mods will edit that file.<br><br>
+			Using a <code>texture.tga</code> file is a simple fix that will ensure compatibility.
+			It may make the mod slightly slower to deploy, but that's the whole idea of the framework
+			- it's best to use framework features whenever possible, as this future-proofs your mod and allows you to take advantage of any improvements immediately,
+			without you needing to make changes. You should never avoid a framework feature purely for speed reasons.
+		`,
+		check: async (filesToCheck, hashList, baseGameHashes) => {
+			const violations = []
+
+			filesToCheck = filesToCheck.filter((a) => a.endsWith(".TEXT") || a.endsWith(".TEXD"))
+
+			for (const file of filesToCheck) {
+				if (baseGameHashes.has(window.path.basename(file, ".TEXT")) || baseGameHashes.has(window.path.basename(file, ".TEXD"))) violations.push(file)
+			}
+
+			return violations
+		}
+	}
+]
+
+export async function getModWarnings(modID: string, allModFiles: string[], hashList: { hash: string; type: string; path: string }[]) {
+	const warnings: { title: string; subtitle: string; trace: string }[] = []
+	const baseGameHashes = new Set(hashList.map((a) => a.hash))
+
+	for (const warning of modWarnings) {
+		;(await warning.check(allModFiles, hashList, baseGameHashes)).forEach((trace) =>
+			warnings.push({
+				title: warning.title,
+				subtitle: warning.subtitle,
+				trace
+			})
+		)
+	}
+
+	return [modID, warnings]
+}
+
+const hashList = window.fs
+	.readFileSync(window.path.join("..", "Third-Party", "hash_list.txt"), "utf-8")
+	.split("\n")
+	.filter((a) => !a.startsWith("#") && a.trim() != "")
+	.map((a) => {
+		return {
+			hash: a.trim().split(",")[0].split(".")[0],
+			type: a.trim().split(",")[0].split(".")[1],
+			path: a.trim().split(",").slice(1).join(",")
+		}
+	})
+
+let startedGettingModWarnings = false
+
+export async function getAllModWarnings() {
+	if (!startedGettingModWarnings && !window.fs.existsSync("./warnings.json")) {
+		startedGettingModWarnings = true
+
+		const allWarnings = []
+
+		for (const mod of getAllMods().filter((a) => modIsFramework(a))) {
+			allWarnings.push(
+				getModWarnings(
+					mod,
+					window
+						.klaw(getModFolder(mod))
+						.filter((a) => a.stats.size > 0)
+						.map((a) => a.path),
+					hashList
+				)
+			)
+		}
+
+		await window.fs.writeJSON("./warnings.json", Object.fromEntries(await Promise.all(allWarnings)))
+	} else if (startedGettingModWarnings) {
+		while (!window.fs.existsSync("./warnings.json")) await new Promise((r) => setTimeout(r, 1000))
+	}
+
+	return window.fs.readJSONSync("./warnings.json")
+}

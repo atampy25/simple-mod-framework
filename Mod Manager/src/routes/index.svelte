@@ -3,7 +3,7 @@
 
 	import { Button, InlineLoading, Modal, ProgressBar } from "carbon-components-svelte"
 
-	import { getAllMods, getConfig, getManifestFromModID, modIsFramework, getModFolder, mergeConfig, FrameworkVersion } from "$lib/utils"
+	import { getAllMods, getConfig, getManifestFromModID, modIsFramework, getModFolder, mergeConfig, FrameworkVersion, getAllModWarnings } from "$lib/utils"
 
 	import { v4 } from "uuid"
 	import { marked } from "marked"
@@ -22,6 +22,8 @@
 	let cannotFindGameConfig = false
 	let cannotFindHITMAN3 = false
 	let errorReportingPrompt = false
+
+	window.fs.removeSync("./warnings.json")
 
 	try {
 		getConfig()
@@ -76,6 +78,8 @@
 	let githubReleaseMarkdownBody = ""
 
 	async function checkForUpdates(): Promise<any> {
+		setTimeout(() => getAllModWarnings(), 1000) // cache mod warnings
+
 		const release = await (
 			await fetch("https://api.github.com/repos/atampy25/simple-mod-framework/releases/latest", {
 				headers: {
