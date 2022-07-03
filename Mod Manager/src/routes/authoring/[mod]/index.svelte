@@ -284,7 +284,7 @@
 									<br />
 									This error originated from the file at:
 									<br />
-									<code class=".code-inline">{window.path.resolve(getModFolder(manifest.id), trace)}</code>
+									<code class="h">{window.path.resolve(getModFolder(manifest.id), trace)}</code>
 								</div>
 							</InlineNotification>
 						{:else if type == "warning"}
@@ -298,7 +298,7 @@
 									<br />
 									This warning originated from the file at:
 									<br />
-									<code class=".code-inline">{window.path.resolve(getModFolder(manifest.id), trace)}</code>
+									<code class="h">{window.path.resolve(getModFolder(manifest.id), trace)}</code>
 								</div>
 							</InlineNotification>
 						{:else if type == "info"}
@@ -312,7 +312,7 @@
 									<br />
 									This message originated from the file at:
 									<br />
-									<code class=".code-inline">{window.path.resolve(getModFolder(manifest.id), trace)}</code>
+									<code class="h">{window.path.resolve(getModFolder(manifest.id), trace)}</code>
 								</div>
 							</InlineNotification>
 						{/if}
@@ -405,11 +405,5 @@
 
 	:global(.bx--inline-notification__subtitle) {
 		line-height: 1.5;
-	}
-
-	:global(code.code-inline) {
-		@apply bg-neutral-800 text-orange-200 rounded-sm text-sm;
-		font-family: "Fira Code", "IBM Plex Mono", "Menlo", "DejaVu Sans Mono", "Bitstream Vera Sans Mono", Courier, monospace !important;
-		padding: 0.1rem 0.2rem !important;
 	}
 </style>

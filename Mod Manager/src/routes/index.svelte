@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { fade } from "svelte/transition"
+	import { page } from "$app/stores"
 
 	import { Button, InlineLoading, Modal, ProgressBar } from "carbon-components-svelte"
 
@@ -15,6 +16,7 @@
 	import Info from "carbon-icons-svelte/lib/Information.svelte"
 	import Checkmark from "carbon-icons-svelte/lib/Checkmark.svelte"
 	import Download from "carbon-icons-svelte/lib/Download.svelte"
+	import Edit from "carbon-icons-svelte/lib/Edit.svelte"
 
 	let cannotFindConfig = false
 	let cannotFindRuntime = false
@@ -22,8 +24,6 @@
 	let cannotFindGameConfig = false
 	let cannotFindHITMAN3 = false
 	let errorReportingPrompt = false
-
-	window.fs.removeSync("./warnings.json")
 
 	try {
 		getConfig()
@@ -78,8 +78,6 @@
 	let githubReleaseMarkdownBody = ""
 
 	async function checkForUpdates(): Promise<any> {
-		setTimeout(() => getAllModWarnings(), 1000) // cache mod warnings
-
 		const release = await (
 			await fetch("https://api.github.com/repos/atampy25/simple-mod-framework/releases/latest", {
 				headers: {
@@ -230,20 +228,39 @@
 
 		window.location.reload()
 	}
+
+	let modDiagnosticsComplete = false
+	let removeModDiagnosticsElemYet = false
+
+	if (!$page.url.searchParams.get("doNotRunDiagnostics")) {
+		setTimeout(async () => {
+			window.fs.removeSync("./warnings.json")
+
+			await getAllModWarnings()
+			modDiagnosticsComplete = true
+			setTimeout(() => (removeModDiagnosticsElemYet = true), 1000)
+		}, 1000)
+	} else {
+		modDiagnosticsComplete = true
+		removeModDiagnosticsElemYet = true
+	}
 </script>
 
-<div class="w-full h-full overflow-y-auto flex items-center justify-center">
+<div class="w-full h-full overflow-y-auto flex items-center justify-center gap-96">
 	<div>
 		<h1 in:fade>Welcome to the Simple Mod Framework</h1>
 		<br />
 		<div class="inline" in:fade={{ delay: 400 }}>
-			<Button kind="primary" icon={List} href="/modList">Enable/disable mods</Button>
+			<Button kind="primary" icon={List} href="/modList" sveltekit:reload>Enable/disable mods</Button>
 		</div>
 		<div class="inline" in:fade={{ delay: 800 }}>
-			<Button kind="primary" icon={Settings} href="/settings">Configure mods</Button>
+			<Button kind="primary" icon={Settings} href="/settings" sveltekit:reload>Configure mods</Button>
+		</div>
+		<div class="inline" in:fade={{ delay: 800 }}>
+			<Button kind="primary" icon={Edit} href="/authoring" sveltekit:reload>Author mods</Button>
 		</div>
 		<div class="inline" in:fade={{ delay: 1200 }}>
-			<Button kind="primary" icon={Info} href="/info">More information</Button>
+			<Button kind="primary" icon={Info} href="/info" sveltekit:reload>More information</Button>
 		</div>
 		<p class="mt-4" in:fade={{ delay: 1600 }}>Need help using mods? Consult the pinned post on the Nexus Mods page.</p>
 		<p class="mt-2" in:fade={{ delay: 2000 }}>Need help making mods? There's extensive documentation available in the Info folder.</p>
@@ -350,6 +367,21 @@
 			{/await}
 		</div>
 	</div>
+	{#if !removeModDiagnosticsElemYet}
+		<div in:fade out:fade={{ duration: 1000 }}>
+			<div class="flex items-center gap-16">
+				<h1 class="flex-grow">Running mod diagnostics...</h1>
+				<div>
+					{#if !modDiagnosticsComplete}
+						<InlineLoading />
+					{:else}
+						<InlineLoading status="finished" />
+					{/if}
+				</div>
+			</div>
+			<p>We're checking all the mods you have installed for possible issues. This shouldn't take too long - don't leave this page.</p>
+		</div>
+	{/if}
 </div>
 
 <Modal alert bind:open={cannotFindConfig} modalHeading="Can't find config.json" primaryButtonText="OK" on:submit={() => (cannotFindConfig = false)}>

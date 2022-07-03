@@ -1,3 +1,9 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+code.h {
+    @apply bg-neutral-800 text-orange-200 rounded-sm text-sm;
+    font-family: "Fira Code", "IBM Plex Mono", "Menlo", "DejaVu Sans Mono", "Bitstream Vera Sans Mono", Courier, monospace !important;
+    padding: 0.1rem 0.2rem !important;
+}

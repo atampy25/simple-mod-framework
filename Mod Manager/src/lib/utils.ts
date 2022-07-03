@@ -289,7 +289,7 @@ export const getAllMods = memoize(function () {
 const modWarnings: {
 	title: string
 	subtitle: string
-	check: (filesToCheck: string[], hashList: { hash: string; path: string }[], baseGameHashes: Set<string>) => Promise<string[]>
+	check: (fileToCheck: string, hashList: { hash: string; path: string }[], baseGameHashes: Set<string>) => Promise<boolean>
 	type: "error" | "warning" | "info"
 }[] = [
 	{
@@ -298,39 +298,34 @@ const modWarnings: {
 			There is an invalid JSON file of a framework filetype present in the mod.<br><br>
 			You should resolve this - this <b>will</b> cause issues.
 		`,
-		check: async (filesToCheck, hashList, baseGameHashes) => {
-			const violations = []
-
-			filesToCheck = filesToCheck.filter(
-				(a) =>
-					a.endsWith("entity.json") ||
-					a.endsWith("entity.patch.json") ||
-					a.endsWith("repository.json") ||
-					a.endsWith("unlockables.json") ||
-					a.endsWith("JSON.patch.json") ||
-					a.endsWith("contract.json")
-			)
-
-			for (const file of filesToCheck) {
+		check: async (fileToCheck, hashList, baseGameHashes) => {
+			if (
+				fileToCheck.endsWith("entity.json") ||
+				fileToCheck.endsWith("entity.patch.json") ||
+				fileToCheck.endsWith("repository.json") ||
+				fileToCheck.endsWith("unlockables.json") ||
+				fileToCheck.endsWith("JSON.patch.json") ||
+				fileToCheck.endsWith("contract.json")
+			) {
 				try {
-					if (!(await window.fs.readJSON(file))) violations.push(file)
+					if (!(await window.fs.readJSON(fileToCheck))) return true
 				} catch {
-					violations.push(file)
+					return true
 				}
 			}
 
-			return violations
+			return false
 		},
 		type: "error"
 	},
 	{
 		title: "Runtime package used",
 		subtitle: `
-			The <code>runtimePackages</code> manifest feature is generally not recommended for use, as it can cause compatibility issues and is deprecated.<br><br>
+			The <code class="h">runtimePackages</code> manifest feature is generally not recommended for use, as it can cause compatibility issues and is deprecated.<br><br>
 			You should place the files of runtime packages in a content folder instead, and make use of any relevant framework features.
 		`,
-		check: async (filesToCheck, hashList, baseGameHashes) => {
-			return filesToCheck.filter((a) => a.endsWith(".rpkg"))
+		check: async (fileToCheck, hashList, baseGameHashes) => {
+			return fileToCheck.endsWith(".rpkg")
 		},
 		type: "warning"
 	},
@@ -339,21 +334,15 @@ const modWarnings: {
 		subtitle: `
 			The entire repository is being outright replaced by a raw file. This is very likely to cause compatibility issues, as well as making things harder to view and edit for users and yourself.<br><br>
 			You should resolve this.<br><br>
-			Using a <code>repository.json</code> file is a simple fix that will ensure compatibility.
+			Using a <code class="h">repository.json</code> file is a simple fix that will ensure compatibility.
 			It may make the mod slightly slower to deploy, but that's the whole idea of the framework
 			- it's best to use framework features whenever possible, as this future-proofs your mod and allows you to take advantage of any improvements immediately,
 			without you needing to make changes. You should never avoid a framework feature purely for speed reasons.
 		`,
-		check: async (filesToCheck, hashList, baseGameHashes) => {
-			const violations = []
+		check: async (fileToCheck, hashList, baseGameHashes) => {
+			if (fileToCheck.endsWith(".REPO") && baseGameHashes.has(window.path.basename(fileToCheck, ".REPO"))) return true
 
-			filesToCheck = filesToCheck.filter((a) => a.endsWith(".REPO"))
-
-			for (const file of filesToCheck) {
-				if (baseGameHashes.has(window.path.basename(file, ".REPO"))) violations.push(file)
-			}
-
-			return violations
+			return false
 		},
 		type: "warning"
 	},
@@ -362,45 +351,40 @@ const modWarnings: {
 		subtitle: `
 			A vanilla entity is being outright replaced by a raw file. This can cause compatibility issues, as well as making things harder to view and edit for users and yourself.<br><br>
 			You should review this, even if you think no other mods will edit that file.<br><br>
-			Using an <code>entity.patch.json</code> file is a simple fix that will ensure compatibility.
+			Using an <code class="h">entity.patch.json</code> file is a simple fix that will ensure compatibility.
 			It may make the mod slightly slower to deploy, but that's the whole idea of the framework
 			- it's best to use framework features whenever possible, as this future-proofs your mod and allows you to take advantage of any improvements immediately,
 			without you needing to make changes. You should never avoid a framework feature purely for speed reasons.
 		`,
-		check: async (filesToCheck, hashList, baseGameHashes) => {
-			const violations = []
-
-			filesToCheck = filesToCheck.filter((a) => a.endsWith(".TEMP") || a.endsWith(".TBLU"))
-
-			for (const file of filesToCheck) {
-				if (baseGameHashes.has(window.path.basename(file, ".TEMP")) || baseGameHashes.has(window.path.basename(file, ".TBLU"))) violations.push(file)
+		check: async (fileToCheck, hashList, baseGameHashes) => {
+			if (
+				(fileToCheck.endsWith(".TEMP") || fileToCheck.endsWith(".TBLU")) &&
+				(baseGameHashes.has(window.path.basename(fileToCheck, ".TEMP")) || baseGameHashes.has(window.path.basename(fileToCheck, ".TBLU")))
+			) {
+				return true
 			}
 
-			return violations
+			return false
 		},
 		type: "warning"
 	},
 	{
 		title: "Base game entity is outright replaced",
 		subtitle: `
-			A vanilla entity is being outright replaced by an <code>entity.json</code> file. This can cause compatibility issues.<br><br>
+			A vanilla entity is being outright replaced by an <code class="h">entity.json</code> file. This can cause compatibility issues.<br><br>
 			You should review this, even if you think no other mods will edit that file.<br><br>
-			Using an <code>entity.patch.json</code> file is a simple fix that will ensure compatibility.
+			Using an <code class="h">entity.patch.json</code> file is a simple fix that will ensure compatibility.
 			It may make the mod slightly slower to deploy, but that's the whole idea of the framework
 			- it's best to use framework features whenever possible, as this future-proofs your mod and allows you to take advantage of any improvements immediately,
 			without you needing to make changes. You should never avoid a framework feature purely for speed reasons.
 		`,
-		check: async (filesToCheck, hashList, baseGameHashes) => {
-			const violations = []
-
-			filesToCheck = filesToCheck.filter((a) => a.endsWith("entity.json"))
-
-			for (const file of filesToCheck) {
-				const fileContents = await window.fs.readJSON(file)
-				if (baseGameHashes.has(fileContents.tempHash) || baseGameHashes.has(fileContents.tbluHash)) violations.push(file)
+		check: async (fileToCheck, hashList, baseGameHashes) => {
+			if (fileToCheck.endsWith("entity.json")) {
+				const fileContents = await window.fs.readJSON(fileToCheck)
+				if (baseGameHashes.has(fileContents.tempHash) || baseGameHashes.has(fileContents.tbluHash)) return true
 			}
 
-			return violations
+			return false
 		},
 		type: "warning"
 	},
@@ -409,21 +393,15 @@ const modWarnings: {
 		subtitle: `
 			The entire unlockables file is being outright replaced by a raw file. This is likely to cause compatibility issues, as well as making things harder to view and edit for users and yourself.<br><br>
 			You should resolve this.<br><br>
-			Using a <code>unlockables.json</code> file is a simple fix that will ensure compatibility.
+			Using a <code class="h">unlockables.json</code> file is a simple fix that will ensure compatibility.
 			It may make the mod slightly slower to deploy, but that's the whole idea of the framework
 			- it's best to use framework features whenever possible, as this future-proofs your mod and allows you to take advantage of any improvements immediately,
 			without you needing to make changes. You should never avoid a framework feature purely for speed reasons.
 		`,
-		check: async (filesToCheck, hashList, baseGameHashes) => {
-			const violations = []
+		check: async (fileToCheck, hashList, baseGameHashes) => {
+			if (fileToCheck.endsWith("0057C2C3941115CA.ORES") && baseGameHashes.has(window.path.basename(fileToCheck, ".ORES"))) return true
 
-			filesToCheck = filesToCheck.filter((a) => a.endsWith("0057C2C3941115CA.ORES"))
-
-			for (const file of filesToCheck) {
-				if (baseGameHashes.has(window.path.basename(file, ".ORES"))) violations.push(file)
-			}
-
-			return violations
+			return false
 		},
 		type: "warning"
 	},
@@ -432,21 +410,15 @@ const modWarnings: {
 		subtitle: `
 			A vanilla sound is being outright replaced by a raw file. This can cause compatibility issues, as well as making things harder to view and edit for users and yourself.<br><br>
 			You should review this, even if you think no other mods will edit that file.<br><br>
-			Using <code>sfx.wem</code> files to replace only the sounds that need replacing is a simple fix that will ensure compatibility.
+			Using <code class="h">sfx.wem</code> files to replace only the sounds that need replacing is a simple fix that will ensure compatibility.
 			It may make the mod slightly slower to deploy, but that's the whole idea of the framework
 			- it's best to use framework features whenever possible, as this future-proofs your mod and allows you to take advantage of any improvements immediately,
 			without you needing to make changes. You should never avoid a framework feature purely for speed reasons.
 		`,
-		check: async (filesToCheck, hashList, baseGameHashes) => {
-			const violations = []
+		check: async (fileToCheck, hashList, baseGameHashes) => {
+			if (fileToCheck.endsWith(".WWEV") && baseGameHashes.has(window.path.basename(fileToCheck, ".WWEV"))) return true
 
-			filesToCheck = filesToCheck.filter((a) => a.endsWith(".WWEV"))
-
-			for (const file of filesToCheck) {
-				if (baseGameHashes.has(window.path.basename(file, ".WWEV"))) violations.push(file)
-			}
-
-			return violations
+			return false
 		},
 		type: "info"
 	},
@@ -454,18 +426,17 @@ const modWarnings: {
 		title: "Blob is included as raw file",
 		subtitle: `
 			There is a blob included as a raw content file in the mod. This can make things harder to view and edit for users and yourself.<br><br>
-			You can resolve this by using a <code>blobsFolder</code> and moving the blob to it. Remember, blobs folders can both add and edit blobs, so there's no reason to prefer a content folder for blobs.
+			You can resolve this by using a <code class="h">blobsFolder</code> and moving the blob to it. Remember, blobs folders can both add and edit blobs, so there's no reason to prefer a content folder for blobs.
 		`,
-		check: async (filesToCheck, hashList, baseGameHashes) => {
-			const violations = []
-
-			filesToCheck = filesToCheck.filter((a) => a.endsWith(".JSON") || a.endsWith(".GFXI"))
-
-			for (const file of filesToCheck) {
-				if (hashList.some((a) => a.path.startsWith("[assembly:/_pro/online/default/cloudstorage") && a.hash + "." + a.path == window.path.basename(file))) violations.push(file)
+		check: async (fileToCheck, hashList, baseGameHashes) => {
+			if (
+				(fileToCheck.endsWith(".JSON") || fileToCheck.endsWith(".GFXI")) &&
+				hashList.some((a) => a.path.startsWith("[assembly:/_pro/online/default/cloudstorage") && a.hash + "." + a.path == window.path.basename(fileToCheck))
+			) {
+				return true
 			}
 
-			return violations
+			return false
 		},
 		type: "info"
 	},
@@ -473,50 +444,52 @@ const modWarnings: {
 		title: "Texture included as raw file",
 		subtitle: `
 			A texture is included as a raw file. This makes things harder to view and edit for users and yourself.<br><br>
-			Using a <code>texture.tga</code> file lets you make changes far more easily, and lets you see the contents of the texture at a glance.
-			There's not much of a speed difference, too - you can convert your textures to <code>texture.tga</code> files without any real downsides.
+			Using a <code class="h">texture.tga</code> file lets you make changes far more easily, and lets you see the contents of the texture at a glance.
+			There's not much of a speed difference, too - you can convert your textures to <code class="h">texture.tga</code> files without any real downsides.
 		`,
-		check: async (filesToCheck, hashList, baseGameHashes) => {
-			return filesToCheck.filter((a) => a.endsWith(".TEXT") || a.endsWith(".TEXD"))
+		check: async (fileToCheck, hashList, baseGameHashes) => {
+			return fileToCheck.endsWith(".TEXT") || fileToCheck.endsWith(".TEXD")
 		},
 		type: "info"
 	}
 ]
 
-export async function getModWarnings(modID: string, allModFiles: string[], hashList: { hash: string; type: string; path: string }[]) {
-	const warnings: { title: string; subtitle: string; trace: string }[] = []
-	const baseGameHashes = new Set(hashList.map((a) => a.hash))
+export async function getModWarnings(modID: string, allModFiles: string[], hashList: { hash: string; type: string; path: string }[], baseGameHashes: Set<string>) {
+	const warnings: { title: string; subtitle: string; trace: string; type: "error" | "warning" | "info" }[] = []
 
-	for (const warning of modWarnings) {
-		;(await warning.check(allModFiles, hashList, baseGameHashes)).forEach((trace) =>
-			warnings.push({
-				title: warning.title,
-				subtitle: warning.subtitle,
-				trace
-			})
-		)
-	}
+	for (const file of allModFiles)
+		for (const warning of modWarnings) {
+			if (await warning.check(file, hashList, baseGameHashes))
+				warnings.push({
+					title: warning.title,
+					subtitle: warning.subtitle,
+					trace: file,
+					type: warning.type
+				})
+		}
 
 	return [modID, warnings]
 }
-
-const hashList = window.fs
-	.readFileSync(window.path.join("..", "Third-Party", "hash_list.txt"), "utf-8")
-	.split("\n")
-	.filter((a) => !a.startsWith("#") && a.trim() != "")
-	.map((a) => {
-		return {
-			hash: a.trim().split(",")[0].split(".")[0],
-			type: a.trim().split(",")[0].split(".")[1],
-			path: a.trim().split(",").slice(1).join(",")
-		}
-	})
 
 let startedGettingModWarnings = false
 
 export async function getAllModWarnings() {
 	if (!startedGettingModWarnings && !window.fs.existsSync("./warnings.json")) {
 		startedGettingModWarnings = true
+
+		const hashList = window.fs
+			.readFileSync(window.path.join("..", "Third-Party", "hash_list.txt"), "utf-8")
+			.split("\n")
+			.filter((a) => !a.startsWith("#") && a.trim() != "")
+			.map((a) => {
+				return {
+					hash: a.trim().split(",")[0].split(".")[0],
+					type: a.trim().split(",")[0].split(".")[1],
+					path: a.trim().split(",").slice(1).join(",")
+				}
+			})
+
+		const baseGameHashes = new Set(hashList.map((a) => a.hash))
 
 		const allWarnings = []
 
@@ -528,7 +501,8 @@ export async function getAllModWarnings() {
 						.klaw(getModFolder(mod))
 						.filter((a) => a.stats.size > 0)
 						.map((a) => a.path),
-					hashList
+					hashList,
+					baseGameHashes
 				)
 			)
 		}
