@@ -67,7 +67,7 @@ if (fs.existsSync(path.join(core.config.retailPath, "Runtime", "chunk0.rpkg"))) 
 	try {
 		fs.accessSync(path.join(core.config.retailPath, "thumbs.dat"), fs.constants.R_OK | fs.constants.W_OK)
 	} catch {
-		core.logger.error("thumbs.dat couldn't be accessed; try running Load Order Manager.exe in the similarly named folder as administrator!")
+		core.logger.error("thumbs.dat couldn't be accessed; try running Mod Manager.exe in the similarly named folder as administrator!")
 	}
 }
 
