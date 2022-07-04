@@ -126,7 +126,7 @@
 
 <div class="flex gap-8 items-center">
 	<h4 class="text-center" transition:scale>
-		<a href="/authoring/{$page.params.mod}" sveltekit:reload>← Back</a>
+		<a href="/authoring/{$page.params.mod}">← Back</a>
 	</h4>
 
 	<div>
