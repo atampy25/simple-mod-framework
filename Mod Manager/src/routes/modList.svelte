@@ -189,13 +189,15 @@
 	</div>
 	<div class="w-full">
 		<div class="flex gap-4 items-center justify-center" transition:scale>
-			<h1 class="flex-grow">{changed ? "To Be Applied" : "Enabled Mods"}</h1>
+			<h1 class="flex-grow">{changed && !deployFinished ? "To Be Applied" : "Enabled Mods"}</h1>
 			<Button
 				kind="primary"
-				style={changed ? "background-color: green" : ""}
+				style={changed && !deployFinished ? "background-color: green" : ""}
 				icon={Rocket}
 				on:click={() => {
 					if (sortMods()) {
+						deployOutput = ""
+						deployFinished = false
 						window.ipc.send("deploy")
 					} else {
 						dependencyCycleModalOpen = true
@@ -285,7 +287,7 @@
 	Your mods are being deployed. This may take a while - grab a coffee or something.
 	<br />
 	<pre class="mt-2 h-[10vh] overflow-y-auto whitespace-pre-wrap">
-		<code id="deployOutputCodeElement">{deployOutput}</code>
+		<code class="block -mt-4" id="deployOutputCodeElement">{deployOutput}</code>
 	</pre>
 
 	{#if deployFinished}
