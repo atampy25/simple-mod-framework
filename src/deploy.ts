@@ -1294,7 +1294,7 @@ export default async function deploy(
 
 		const workerPool = new Piscina({
 			filename: "patchWorker.js",
-			maxThreads: os.cpus().length / 4 // For an 8-core CPU with 16 logical processors there are 4 max threads
+			maxThreads: Math.max(Math.ceil(os.cpus().length / 4), 2) // For an 8-core CPU with 16 logical processors there are 4 max threads
 		})
 
 		// @ts-expect-error Assigning stuff on global is probably bad practice
