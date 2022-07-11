@@ -108,9 +108,9 @@ export = async ({
 				"HM3",
 				"ids",
 				path.join(process.cwd(), assignedTemporaryDirectory, tempRPKG, "TEMP", tempHash + ".TEMP.json"),
-				path.join(process.cwd(), assignedTemporaryDirectory, tempRPKG, "TEMP", tempHash + ".TEMP.meta.json"),
+				path.join(process.cwd(), assignedTemporaryDirectory, tempRPKG, "TEMP", tempHash + ".TEMP.meta.JSON"),
 				path.join(process.cwd(), assignedTemporaryDirectory, tbluRPKG, "TBLU", tbluHash + ".TBLU.json"),
-				path.join(process.cwd(), assignedTemporaryDirectory, tbluRPKG, "TBLU", tbluHash + ".TBLU.meta.json"),
+				path.join(process.cwd(), assignedTemporaryDirectory, tbluRPKG, "TBLU", tbluHash + ".TBLU.meta.JSON"),
 				// @ts-expect-error Two different versions of the same function; TypeScript doesn't have a way of overloading a "type-only" function
 				path.join(process.cwd(), assignedTemporaryDirectory, "QuickEntityJSON.json")
 			) // Generate the QN json from the RT files
@@ -118,9 +118,9 @@ export = async ({
 			await getQuickEntityFromPatchVersion(patches[0].patchVersion.value).convert(
 				"HM3",
 				path.join(process.cwd(), assignedTemporaryDirectory, tempRPKG, "TEMP", tempHash + ".TEMP.json"),
-				path.join(process.cwd(), assignedTemporaryDirectory, tempRPKG, "TEMP", tempHash + ".TEMP.meta.json"),
+				path.join(process.cwd(), assignedTemporaryDirectory, tempRPKG, "TEMP", tempHash + ".TEMP.meta.JSON"),
 				path.join(process.cwd(), assignedTemporaryDirectory, tbluRPKG, "TBLU", tbluHash + ".TBLU.json"),
-				path.join(process.cwd(), assignedTemporaryDirectory, tbluRPKG, "TBLU", tbluHash + ".TBLU.meta.json"),
+				path.join(process.cwd(), assignedTemporaryDirectory, tbluRPKG, "TBLU", tbluHash + ".TBLU.meta.JSON"),
 				path.join(process.cwd(), assignedTemporaryDirectory, "QuickEntityJSON.json")
 			) // Generate the QN json from the RT files
 		}
@@ -152,9 +152,9 @@ export = async ({
 			"HM3",
 			path.join(process.cwd(), assignedTemporaryDirectory, "QuickEntityJSON.json"),
 			path.join(process.cwd(), assignedTemporaryDirectory, "temp.TEMP.json"),
-			path.join(process.cwd(), assignedTemporaryDirectory, tempHash + ".TEMP.meta.json"),
+			path.join(process.cwd(), assignedTemporaryDirectory, tempHash + ".TEMP.meta.JSON"),
 			path.join(process.cwd(), assignedTemporaryDirectory, "temp.TBLU.json"),
-			path.join(process.cwd(), assignedTemporaryDirectory, tbluHash + ".TBLU.meta.json")
+			path.join(process.cwd(), assignedTemporaryDirectory, tbluHash + ".TBLU.meta.JSON")
 		) // Generate the RT files from the QN json
 
 		/* -------------------------------------- Convert to binary ------------------------------------- */
@@ -176,14 +176,14 @@ export = async ({
 				path.join(process.cwd(), assignedTemporaryDirectory, tbluHash + ".TBLU") +
 				"\" --simple"
 		)
-		await callRPKGFunction(`-json_to_hash_meta "${path.join(process.cwd(), assignedTemporaryDirectory, tempHash + ".TEMP.meta.json")}"`)
-		await callRPKGFunction(`-json_to_hash_meta "${path.join(process.cwd(), assignedTemporaryDirectory, tbluHash + ".TBLU.meta.json")}"`) // Generate the binary files from the RT json
+		await callRPKGFunction(`-json_to_hash_meta "${path.join(process.cwd(), assignedTemporaryDirectory, tempHash + ".TEMP.meta.JSON")}"`)
+		await callRPKGFunction(`-json_to_hash_meta "${path.join(process.cwd(), assignedTemporaryDirectory, tbluHash + ".TBLU.meta.JSON")}"`) // Generate the binary files from the RT json
 
 		fs.rmSync(path.join(process.cwd(), assignedTemporaryDirectory, "QuickEntityJSON.json"))
 		fs.rmSync(path.join(process.cwd(), assignedTemporaryDirectory, "temp.TEMP.json"))
-		fs.rmSync(path.join(process.cwd(), assignedTemporaryDirectory, tempHash + ".TEMP.meta.json"))
+		fs.rmSync(path.join(process.cwd(), assignedTemporaryDirectory, tempHash + ".TEMP.meta.JSON"))
 		fs.rmSync(path.join(process.cwd(), assignedTemporaryDirectory, "temp.TBLU.json"))
-		fs.rmSync(path.join(process.cwd(), assignedTemporaryDirectory, tbluHash + ".TBLU.meta.json"))
+		fs.rmSync(path.join(process.cwd(), assignedTemporaryDirectory, tbluHash + ".TBLU.meta.JSON"))
 
 		rpkgInstance.exit()
 
