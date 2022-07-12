@@ -260,7 +260,7 @@ export const modIsFramework = memoize(function (id: string) {
 			!window.fs.existsSync(window.path.join("..", "Mods", id, "manifest.json")) && // mod has no manifest
 			window
 				.klaw(window.path.join("..", "Mods", id))
-				.filter((a) => a.stats.size > 0)
+				.filter((a) => a.stats.isFile())
 				.map((a) => a.path)
 				.some((a) => a.endsWith(".rpkg"))
 		) // mod contains RPKG files
@@ -499,7 +499,7 @@ export async function getAllModWarnings() {
 					mod,
 					window
 						.klaw(getModFolder(mod))
-						.filter((a) => a.stats.size > 0)
+						.filter((a) => a.stats.isFile())
 						.map((a) => a.path),
 					hashList,
 					baseGameHashes

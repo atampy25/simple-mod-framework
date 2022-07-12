@@ -102,7 +102,7 @@
 
 					frameworkModExtractionInProgress = true
 
-					if (window.klaw("./staging", { depthLimit: 0 }).some((a) => a.stats.size)) {
+					if (window.klaw("./staging", { depthLimit: 0, nodir: true }).length) {
 						frameworkModExtractionInProgress = false
 						invalidFrameworkZipModalOpen = true
 						return
