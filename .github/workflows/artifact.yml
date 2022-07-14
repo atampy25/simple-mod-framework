@@ -43,7 +43,7 @@ jobs:
           pkg package.json --targets node14-win-x64 --output Deploy.exe --compress Brotli
 
       - name: Download RPKG
-        uses: aochmann/actions-download-artifact@5709392f11b5937bd316e52687ad87f7deced5f5
+        uses: aochmann/actions-download-artifact@076f0f7dd036d87e8e04f5f00d614e790308961b
         with:
           repo: glacier-modding/RPKG-Tool
           name: rpkg
@@ -51,7 +51,7 @@ jobs:
           path: './Third-Party'
 
       - name: Download ResourceTool
-        uses: aochmann/actions-download-artifact@5709392f11b5937bd316e52687ad87f7deced5f5
+        uses: aochmann/actions-download-artifact@076f0f7dd036d87e8e04f5f00d614e790308961b
         with:
           repo: OrfeasZ/ZHMTools
           name: ResourceTool-win-x64
