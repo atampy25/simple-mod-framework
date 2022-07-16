@@ -12,14 +12,22 @@ import Piscina from "piscina"
 import type { Transaction } from "@sentry/tracing"
 import child_process from "child_process"
 import { crc32 } from "./crc32"
-import deepMerge from "lodash.merge"
 import fs from "fs-extra"
 import json5 from "json5"
 import klaw from "klaw-sync"
 import md5 from "md5"
+import mergeWith from "lodash.mergewith"
 import os from "os"
 import path from "path"
 import { xxhash3 } from "hash-wasm"
+
+const deepMerge = function (x, y) {
+	return mergeWith(x, y, (orig, src) => {
+		if (Array.isArray(orig)) {
+			return src
+		}
+	})
+}
 
 const execCommand = function (command: string) {
 	logger.verbose(`Executing command ${command}`)

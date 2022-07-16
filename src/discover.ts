@@ -3,7 +3,7 @@ import * as LosslessJSON from "lossless-json"
 import { FrameworkVersion, config, interoperability, logger, rpkgInstance } from "./core-singleton"
 
 import { type Manifest, OptionType } from "./types"
-import deepMerge from "lodash.merge"
+import mergeWith from "lodash.mergewith"
 import fs from "fs-extra"
 import json5 from "json5"
 import klaw from "klaw-sync"
@@ -11,6 +11,14 @@ import { md5 } from "hash-wasm"
 import path from "path"
 import semver from "semver"
 import { xxhash3 } from "hash-wasm"
+
+const deepMerge = function (x, y) {
+	return mergeWith(x, y, (orig, src) => {
+		if (Array.isArray(orig)) {
+			return src
+		}
+	})
+}
 
 export default async function discover(): Promise<{ [x: string]: { hash: string; dependencies: string[]; affected: string[] } }> {
 	logger.info("Discovering mod contents")
