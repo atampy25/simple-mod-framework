@@ -10,6 +10,7 @@
 	import { marked } from "marked"
 
 	import semver from "semver"
+	import json5 from "json5"
 
 	import List from "carbon-icons-svelte/lib/List.svelte"
 	import Settings from "carbon-icons-svelte/lib/Settings.svelte"
@@ -24,6 +25,9 @@
 	let cannotFindGameConfig = false
 	let cannotFindHITMAN3 = false
 	let errorReportingPrompt = false
+
+	let invalidModOpen = false
+	let invalidModText = ""
 
 	try {
 		getConfig()
@@ -71,6 +75,19 @@
 		if (typeof getConfig().reportErrors == "undefined") {
 			errorReportingPrompt = true
 		}
+	}
+
+	try {
+		getAllMods().map((a) => (modIsFramework(a) ? getManifestFromModID(a) : a))
+	} catch {
+		invalidModOpen = true
+		invalidModText =
+			window.fs
+				.readdirSync(window.path.join("..", "Mods"))
+				.map((a) => window.path.resolve(window.path.join("..", "Mods", a)))
+				.find((a) => window.fs.existsSync(window.path.join(a, "manifest.json")) && !json5.parse(String(window.fs.readFileSync(window.path.join(a, "manifest.json"), "utf8"))).id)
+				?.split(window.path.sep)
+				?.pop() || "<can't find which one>"
 	}
 
 	let latestGithubRelease = checkForUpdates()
@@ -402,6 +419,10 @@
 
 <Modal alert bind:open={cannotFindHITMAN3} modalHeading="Can't find HITMAN3.exe" primaryButtonText="OK" on:submit={() => (cannotFindHITMAN3 = false)}>
 	<p>The framework wasn't installed correctly. Please re-read the installation instructions.</p>
+</Modal>
+
+<Modal alert bind:open={invalidModOpen} modalHeading="Invalid mod" primaryButtonText="OK" on:submit={() => (invalidModOpen = false)}>
+	<p>The mod {invalidModText} is broken. Ensure it has all of the required keys in the manifest (see the documentation), and if that fails, contact Atampy26 on Hitman Forum.</p>
 </Modal>
 
 <Modal
