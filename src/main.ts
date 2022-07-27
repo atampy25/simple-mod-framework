@@ -206,7 +206,7 @@ async function doTheThing() {
 					// The mod framework manages patch files between 200 (inc) and 300 (inc), allowing mods to place runtime files in those ranges
 					fs.rmSync(path.join(core.config.runtimePath, chunkPatchFile))
 				}
-			} else if (parseInt(chunkPatchFile.split(".")[0].slice(5)) > 27) {
+			} else if (parseInt(chunkPatchFile.split(".")[0].slice(5)) > 28) {
 				fs.rmSync(path.join(core.config.runtimePath, chunkPatchFile))
 			}
 		} catch {}

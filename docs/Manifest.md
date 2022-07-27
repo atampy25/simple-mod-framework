@@ -55,17 +55,17 @@ Each mod contains a manifest. Manifests have the following format:
 	},
 	"packagedefinition": [
 		{
-			// For new chunks
+			// For new chunks; not recommended to use
 			"type": "partition",
-			"name": "myNewChunk28",
+			"name": "myNewChunk29",
 			"parent": "season3",
 			"partitionType": "standard"
 		},
 		{
 			// For new bricks/entities
 			"type": "entity",
-			"partition": "myNewChunk28",
-			"path": "[assembly:/_pro/myBricks/myNewChunk28Map.entity].entitytemplate"
+			"partition": "myNewChunk29",
+			"path": "[assembly:/_pro/myBricks/myNewChunk29Map.entity].entitytemplate"
 		}
 	],
 	"thumbs": ["ConsoleCmd AAAAAAAAAA"], // Thumbs.dat commands to place after [Hitman5]

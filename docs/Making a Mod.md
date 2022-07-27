@@ -24,7 +24,7 @@ Notice how `contentFolder` has been set to `content`. This is the name of the fo
 
 ## Adding some content
 
-The content folder contains other folders named after the game's chunks (chunk0, chunk1... chunk27). Create folders for whichever chunks your mod edits content in.
+The content folder contains other folders named after the game's chunks (chunk0, chunk1... chunk28). Create folders for whichever chunks your mod edits content in.
 
 Now, just place your mod's files in those chunk folders. Files in chunk0 for example will go in the `chunk0` folder. There are other types of files that the framework can automatically convert between as well, like textures and entities. Those are documented in [Special File Types](<Special File Types.md>).
 
