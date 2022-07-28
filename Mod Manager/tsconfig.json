@@ -35,7 +35,8 @@
 				".svelte/dev/runtime/app/*",
 				".svelte/build/runtime/app/*"
 			]
-		}
+		},
+		"resolveJsonModule": true
 	},
 	"include": [
 		"src/**/*.d.ts",

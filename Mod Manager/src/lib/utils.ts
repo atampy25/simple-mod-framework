@@ -1,10 +1,14 @@
 import type { Config, Manifest } from "../../../src/types"
 
+import Ajv from "ajv"
 import json5 from "json5"
+import manifestSchema from "$lib/manifest-schema.json"
 import memoize from "lodash.memoize"
 import merge from "lodash.mergewith"
 
 export const FrameworkVersion = "1.5.5"
+
+const validateManifest = new Ajv().compile(manifestSchema)
 
 export function getConfig() {
 	const config: Config = json5.parse(String(window.fs.readFileSync("../config.json", "utf8")))
@@ -292,6 +296,27 @@ const modWarnings: {
 	type: "error" | "warning" | "info"
 }[] = [
 	{
+		title: "Invalid manifest",
+		subtitle: `
+			The manifest of this mod is invalid.<br><br>
+			You should resolve this - this <b>will</b> cause issues.
+		`,
+		check: async (fileToCheck, hashList, baseGameHashes) => {
+			if (window.path.basename(fileToCheck) == "manifest.json") {
+				try {
+					const manifest = await window.fs.readJSON(fileToCheck)
+					if (!manifest) return true
+					if (!(await validateManifest(manifest))) return true
+				} catch {
+					return true
+				}
+			}
+
+			return false
+		},
+		type: "error"
+	},
+	{
 		title: "Invalid JSON file",
 		subtitle: `
 			There is an invalid JSON file of a framework filetype present in the mod.<br><br>
@@ -496,9 +521,7 @@ export async function getAllModWarnings() {
 			allWarnings.push(
 				getModWarnings(
 					mod,
-					window
-						.klaw(getModFolder(mod), { nodir: true })
-						.map((a) => a.path),
+					window.klaw(getModFolder(mod), { nodir: true }).map((a) => a.path),
 					hashList,
 					baseGameHashes
 				)

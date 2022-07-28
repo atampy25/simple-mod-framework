@@ -21,7 +21,7 @@ require("clarify")
 const gameHashes = {
 	// prettier-ignore
 	"ab468274783efcb142ee23420f525d1e": "epic",
-	"72e8e41de566d5834eb7a4196b048680 ": "epic", // with ansel unlock
+	"72e8e41de566d5834eb7a4196b048680": "epic", // with ansel unlock
 	"118e10ec071d3f05e8bbf8f7cd21890f": "steam",
 	"fe5dc60b7287bdbc5d95c304395b18b3": "microsoft"
 	// Gamepass/store protects the EXE from reading so we can't hash it, instead we hash the game config
