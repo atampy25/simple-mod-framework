@@ -8,7 +8,7 @@
     "@sentry/tracing": "^7.8.0",
     "arg": "^5.0.2",
     "chalk": "^4.1.2",
-    "check-disk-space": "^3.3.0",
+    "check-disk-space": "^3.3.1",
     "clarify": "^2.1.0",
     "decimal.js": "^10.3.1",
     "eventemitter-asyncresource": "^1.0.0",
