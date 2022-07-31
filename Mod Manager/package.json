@@ -29,7 +29,7 @@
 		"@fortawesome/free-regular-svg-icons": "^6.1.1",
 		"@fortawesome/free-solid-svg-icons": "^6.1.1",
 		"adm-zip": "^0.5.9",
-		"ajv": "^6.12.6",
+		"ajv": "^8.11.0",
 		"autoprefixer": "^10.4.7",
 		"axios": "^0.27.2",
 		"carbon-components-svelte": "^0.66.1",
