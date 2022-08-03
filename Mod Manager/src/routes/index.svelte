@@ -80,14 +80,14 @@
 	try {
 		getAllMods().map((a) => (modIsFramework(a) ? getManifestFromModID(a) : a))
 	} catch {
-		invalidModOpen = true
 		invalidModText =
 			window.fs
 				.readdirSync(window.path.join("..", "Mods"))
 				.map((a) => window.path.resolve(window.path.join("..", "Mods", a)))
-				.find((a) => window.fs.existsSync(window.path.join(a, "manifest.json")) && !json5.parse(String(window.fs.readFileSync(window.path.join(a, "manifest.json"), "utf8"))).id)
+				.find((a) => window.fs.existsSync(window.path.join(a, "manifest.json")) && !json5.parse(window.fs.readFileSync(window.path.join(a, "manifest.json"), "utf8")).id)
 				?.split(window.path.sep)
 				?.pop() || "<can't find which one>"
+		invalidModOpen = true
 	}
 
 	let latestGithubRelease = checkForUpdates()

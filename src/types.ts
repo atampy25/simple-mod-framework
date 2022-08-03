@@ -211,7 +211,7 @@ export interface DeployInstruction {
 				order?: string
 
 				/** The chunk this content will be deployed to. */
-				chunk: string
+				chunk: number
 
 				/** The path to the content. This will never be mutated; it is safe to pass the real path in Mods.
 				 * If you are going to create a file and pass it to the framework, you should instead use a virtual source and pass a JS Blob. */
@@ -234,7 +234,7 @@ export interface DeployInstruction {
 				identifier: string
 
 				/** The chunk this content will be deployed to. */
-				chunk: string
+				chunk: number
 
 				/** The content, in JS Blob form. This will be written to disk or parsed in memory, depending on the content's type. */
 				content: Blob
