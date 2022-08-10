@@ -49,7 +49,7 @@
 		"lodash.mergewith": "^4.6.2",
 		"marked": "^4.0.18",
 		"md5": "^2.3.0",
-		"postcss": "^8.4.14",
+		"postcss": "^8.4.16",
 		"rehype-stringify": "^9.0.3",
 		"semver": "^7.3.7",
 		"svelte-fa": "^2.4.0",
