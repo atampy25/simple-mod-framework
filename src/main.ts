@@ -15,18 +15,19 @@ import fs from "fs-extra"
 import json5 from "json5"
 import md5File from "md5-file"
 import path from "path"
+import { Platform } from "./types"
 
 require("clarify")
 
 const gameHashes = {
 	// prettier-ignore
-	"ab468274783efcb142ee23420f525d1e": "epic",
-	"72e8e41de566d5834eb7a4196b048680": "epic", // with ansel unlock
-	"118e10ec071d3f05e8bbf8f7cd21890f": "steam",
-	"fe5dc60b7287bdbc5d95c304395b18b3": "microsoft"
+	"ab468274783efcb142ee23420f525d1e": Platform.epic,
+	"72e8e41de566d5834eb7a4196b048680": Platform.epic, // with ansel unlock
+	"118e10ec071d3f05e8bbf8f7cd21890f": Platform.steam,
+	"fe5dc60b7287bdbc5d95c304395b18b3": Platform.microsoft
 	// Gamepass/store protects the EXE from reading so we can't hash it, instead we hash the game config
 } as {
-	[k: string]: "epic" | "steam" | "microsoft"
+	[k: string]: Platform
 }
 
 if (!core.config.reportErrors) {
