@@ -32,7 +32,7 @@
 		"ajv": "^8.11.0",
 		"autoprefixer": "^10.4.8",
 		"axios": "^0.27.2",
-		"carbon-components-svelte": "^0.67.8",
+		"carbon-components-svelte": "^0.70.5",
 		"carbon-icons-svelte": "^11.2.0",
 		"chalk": "^4.1.2",
 		"electron-context-menu": "^2.5.2",
