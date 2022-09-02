@@ -3,12 +3,9 @@ name: PR Build
 on:
   pull_request:
 
-  workflow_dispatch:
-
 jobs:
   build:
     runs-on: windows-latest
-    if: ${{ github.actor != 'dependabot[bot]' }}
 
     steps:
       - uses: actions/checkout@v2
