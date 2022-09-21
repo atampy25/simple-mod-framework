@@ -12,7 +12,7 @@ const QuickEntity = {
 	"2.1": require("./quickentity"),
 	"3.0": require("./quickentity-rs"),
 
-	"999.999": require("./quickentity")
+	"999.999": require("./quickentity-rs")
 } as {
 	[k: string]: {
 		convert: (game: string, TEMP: string, TEMPmeta: string, TBLU: string, TBLUmeta: string, output: string) => Promise<void>
@@ -27,7 +27,7 @@ const QuickEntityPatch = {
 	"4": require("./quickentity"),
 	"5": require("./quickentity-rs"),
 
-	"999": require("./quickentity")
+	"999": require("./quickentity-rs")
 } as {
 	[k: string]: {
 		convert: (game: string, TEMP: string, TEMPmeta: string, TBLU: string, TBLUmeta: string, output: string) => Promise<void>
