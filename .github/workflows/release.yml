@@ -114,7 +114,7 @@ jobs:
           name: ${{ steps.latestTag.outputs.tag }}
           body: ${{ steps.changelog.outputs.changes }}
           tag_name: ${{ steps.latestTag.outputs.tag }}
-          repository: hitman-resources/simple-mod-framework
+          repository: atampy25/simple-mod-framework
           files: dist/Release.zip
 
   sentry-release:
