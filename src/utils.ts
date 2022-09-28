@@ -38,11 +38,21 @@ const QuickEntityPatch = {
 
 export function getQuickEntityFromVersion(version: string) {
 	logger.verbose(`Getting QuickEntity version from entity version ${version}`)
+
+	if (+version < 3) {
+		logger.warn("QuickEntity versions prior to 3 are much slower; you can upgrade easily for a significant performance benefit!")
+	}
+
 	return QuickEntity[Object.keys(QuickEntity)[Object.keys(QuickEntity).findIndex((a) => parseFloat(a) > Number(version)) - 1]]
 }
 
 export function getQuickEntityFromPatchVersion(version: string) {
 	logger.verbose(`Getting QuickEntity version from patch version ${version}`)
+
+	if (+version < 5) {
+		logger.warn("QuickEntity versions prior to 3 (and patch versions prior to 5) are much slower; you can upgrade easily for a significant performance benefit!")
+	}
+
 	return QuickEntityPatch[Object.keys(QuickEntityPatch)[Object.keys(QuickEntityPatch).findIndex((a) => parseFloat(a) > Number(version)) - 1]]
 }
 
