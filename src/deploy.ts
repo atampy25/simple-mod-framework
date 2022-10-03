@@ -1609,7 +1609,7 @@ export default async function deploy(
 				) {
 					fs.writeFileSync(
 						path.join(process.cwd(), "temp", "chunk0", lineHash + ".LINE"),
-						Buffer.from(hexflip(crc32(instruction.manifestSources.localisedLines[lineHash].toUpperCase()).toString(16)) + "00", "hex")
+						Buffer.from(hexflip(crc32(instruction.manifestSources.localisedLines[lineHash].toUpperCase()).toString(16).padStart(8, "0")) + "00", "hex")
 					) // Create the LINE file
 
 					fs.writeFileSync(
