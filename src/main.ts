@@ -20,11 +20,11 @@ import { Platform } from "./types"
 require("clarify")
 
 const gameHashes = {
-	// prettier-ignore
-	"ab468274783efcb142ee23420f525d1e": Platform.epic,
-	"72e8e41de566d5834eb7a4196b048680": Platform.epic, // with ansel unlock
-	"118e10ec071d3f05e8bbf8f7cd21890f": Platform.steam,
-	"fe5dc60b7287bdbc5d95c304395b18b3": Platform.microsoft
+	"1bcc4b202eb8bc89b585afe65ae3fe0c": Platform.epic,
+	"f48ad3b8d29feea7a61a62325e3378f3": Platform.epic, // ansel unlock
+	"6a5ae2f65d207267c2300b2d3dd0c5ff": Platform.steam,
+	"cb394df8fc4776cfb5093126f23f55a6": Platform.steam, // ansel unlock
+	"651f40cc3c838d14aad5e452486c18f8": Platform.microsoft
 	// Gamepass/store protects the EXE from reading so we can't hash it, instead we hash the game config
 } as {
 	[k: string]: Platform
