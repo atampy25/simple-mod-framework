@@ -16,7 +16,9 @@ require("clarify")
 
 const execCommand = function (command: string) {
 	logger.verbose(`Executing command ${command}`)
-	child_process.execSync(command)
+	return new Promise((resolve, reject) => {
+		child_process.exec(command).on("close", resolve)
+	})
 }
 
 export = async ({
@@ -65,8 +67,10 @@ export = async ({
 			try {
 				fs.ensureDirSync(path.join(process.cwd(), assignedTemporaryDirectory, tempRPKG, "TEMP"))
 			} catch {}
-			fs.copyFileSync(path.join(process.cwd(), "staging", chunkFolder, tempHash + ".TEMP"), path.join(process.cwd(), assignedTemporaryDirectory, tempRPKG, "TEMP", tempHash + ".TEMP")) // Use the staging one (for mod compat - one mod can extract, patch and build, then the next can patch that one instead)
-			fs.copyFileSync(path.join(process.cwd(), "staging", chunkFolder, tempHash + ".TEMP.meta"), path.join(process.cwd(), assignedTemporaryDirectory, tempRPKG, "TEMP", tempHash + ".TEMP.meta"))
+			await Promise.all([
+				fs.copyFile(path.join(process.cwd(), "staging", chunkFolder, tempHash + ".TEMP"), path.join(process.cwd(), assignedTemporaryDirectory, tempRPKG, "TEMP", tempHash + ".TEMP")), // Use the staging one (for mod compat - one mod can extract, patch and build, then the next can patch that one instead)
+				fs.copyFile(path.join(process.cwd(), "staging", chunkFolder, tempHash + ".TEMP.meta"), path.join(process.cwd(), assignedTemporaryDirectory, tempRPKG, "TEMP", tempHash + ".TEMP.meta"))
+			])
 		}
 
 		/* ---------------------------------------- Extract TBLU ---------------------------------------- */
@@ -76,29 +80,33 @@ export = async ({
 			try {
 				fs.ensureDirSync(path.join(process.cwd(), assignedTemporaryDirectory, tbluRPKG, "TBLU"))
 			} catch {}
-			fs.copyFileSync(path.join(process.cwd(), "staging", chunkFolder, tbluHash + ".TBLU"), path.join(process.cwd(), assignedTemporaryDirectory, tbluRPKG, "TBLU", tbluHash + ".TBLU")) // Use the staging one (for mod compat - one mod can extract, patch and build, then the next can patch that one instead)
-			fs.copyFileSync(path.join(process.cwd(), "staging", chunkFolder, tbluHash + ".TBLU.meta"), path.join(process.cwd(), assignedTemporaryDirectory, tbluRPKG, "TBLU", tbluHash + ".TBLU.meta"))
+			await Promise.all([
+				fs.copyFile(path.join(process.cwd(), "staging", chunkFolder, tbluHash + ".TBLU"), path.join(process.cwd(), assignedTemporaryDirectory, tbluRPKG, "TBLU", tbluHash + ".TBLU")), // Use the staging one (for mod compat - one mod can extract, patch and build, then the next can patch that one instead)
+				fs.copyFile(path.join(process.cwd(), "staging", chunkFolder, tbluHash + ".TBLU.meta"), path.join(process.cwd(), assignedTemporaryDirectory, tbluRPKG, "TBLU", tbluHash + ".TBLU.meta"))
+			])
 		}
 
 		/* ------------------------------------ Convert to RT Source ------------------------------------ */
-		execCommand(
-			"\"" +
-				path.join(process.cwd(), "Third-Party", "ResourceTool.exe") +
-				"\" HM3 convert TEMP \"" +
-				path.join(process.cwd(), assignedTemporaryDirectory, tempRPKG, "TEMP", tempHash + ".TEMP") +
-				"\" \"" +
-				path.join(process.cwd(), assignedTemporaryDirectory, tempRPKG, "TEMP", tempHash + ".TEMP") +
-				".json\" --simple"
-		)
-		execCommand(
-			"\"" +
-				path.join(process.cwd(), "Third-Party", "ResourceTool.exe") +
-				"\" HM3 convert TBLU \"" +
-				path.join(process.cwd(), assignedTemporaryDirectory, tbluRPKG, "TBLU", tbluHash + ".TBLU") +
-				"\" \"" +
-				path.join(process.cwd(), assignedTemporaryDirectory, tbluRPKG, "TBLU", tbluHash + ".TBLU") +
-				".json\" --simple"
-		)
+		await Promise.all([
+			execCommand(
+				"\"" +
+					path.join(process.cwd(), "Third-Party", "ResourceTool.exe") +
+					"\" HM3 convert TEMP \"" +
+					path.join(process.cwd(), assignedTemporaryDirectory, tempRPKG, "TEMP", tempHash + ".TEMP") +
+					"\" \"" +
+					path.join(process.cwd(), assignedTemporaryDirectory, tempRPKG, "TEMP", tempHash + ".TEMP") +
+					".json\" --simple"
+			),
+			execCommand(
+				"\"" +
+					path.join(process.cwd(), "Third-Party", "ResourceTool.exe") +
+					"\" HM3 convert TBLU \"" +
+					path.join(process.cwd(), assignedTemporaryDirectory, tbluRPKG, "TBLU", tbluHash + ".TBLU") +
+					"\" \"" +
+					path.join(process.cwd(), assignedTemporaryDirectory, tbluRPKG, "TBLU", tbluHash + ".TBLU") +
+					".json\" --simple"
+			)
+		])
 		await callRPKGFunction(`-hash_meta_to_json "${path.join(process.cwd(), assignedTemporaryDirectory, tempRPKG, "TEMP", tempHash + ".TEMP.meta")}"`)
 		await callRPKGFunction(`-hash_meta_to_json "${path.join(process.cwd(), assignedTemporaryDirectory, tbluRPKG, "TBLU", tbluHash + ".TBLU.meta")}"`) // Generate the RT files from the binary files
 
@@ -143,8 +151,7 @@ export = async ({
 				path.join(process.cwd(), assignedTemporaryDirectory, "patch.json"),
 				path.join(process.cwd(), assignedTemporaryDirectory, "PatchedQuickEntityJSON.json")
 			) // Patch the QN json
-			fs.removeSync(path.join(process.cwd(), assignedTemporaryDirectory, "QuickEntityJSON.json"))
-			fs.renameSync(path.join(process.cwd(), assignedTemporaryDirectory, "PatchedQuickEntityJSON.json"), path.join(process.cwd(), assignedTemporaryDirectory, "QuickEntityJSON.json"))
+			fs.copySync(path.join(process.cwd(), assignedTemporaryDirectory, "PatchedQuickEntityJSON.json"), path.join(process.cwd(), assignedTemporaryDirectory, "QuickEntityJSON.json"))
 		}
 
 		/* ------------------------------------ Convert to RT Source ------------------------------------ */
@@ -158,32 +165,36 @@ export = async ({
 		) // Generate the RT files from the QN json
 
 		/* -------------------------------------- Convert to binary ------------------------------------- */
-		execCommand(
-			"\"" +
-				path.join(process.cwd(), "Third-Party", "ResourceTool.exe") +
-				"\" HM3 generate TEMP \"" +
-				path.join(process.cwd(), assignedTemporaryDirectory, "temp.TEMP.json") +
-				"\" \"" +
-				path.join(process.cwd(), assignedTemporaryDirectory, tempHash + ".TEMP") +
-				"\" --simple"
-		)
-		execCommand(
-			"\"" +
-				path.join(process.cwd(), "Third-Party", "ResourceTool.exe") +
-				"\" HM3 generate TBLU \"" +
-				path.join(process.cwd(), assignedTemporaryDirectory, "temp.TBLU.json") +
-				"\" \"" +
-				path.join(process.cwd(), assignedTemporaryDirectory, tbluHash + ".TBLU") +
-				"\" --simple"
-		)
+		await Promise.all([
+			execCommand(
+				"\"" +
+					path.join(process.cwd(), "Third-Party", "ResourceTool.exe") +
+					"\" HM3 generate TEMP \"" +
+					path.join(process.cwd(), assignedTemporaryDirectory, "temp.TEMP.json") +
+					"\" \"" +
+					path.join(process.cwd(), assignedTemporaryDirectory, tempHash + ".TEMP") +
+					"\" --simple"
+			),
+			execCommand(
+				"\"" +
+					path.join(process.cwd(), "Third-Party", "ResourceTool.exe") +
+					"\" HM3 generate TBLU \"" +
+					path.join(process.cwd(), assignedTemporaryDirectory, "temp.TBLU.json") +
+					"\" \"" +
+					path.join(process.cwd(), assignedTemporaryDirectory, tbluHash + ".TBLU") +
+					"\" --simple"
+			)
+		])
 		await callRPKGFunction(`-json_to_hash_meta "${path.join(process.cwd(), assignedTemporaryDirectory, tempHash + ".TEMP.meta.JSON")}"`)
 		await callRPKGFunction(`-json_to_hash_meta "${path.join(process.cwd(), assignedTemporaryDirectory, tbluHash + ".TBLU.meta.JSON")}"`) // Generate the binary files from the RT json
 
-		fs.rmSync(path.join(process.cwd(), assignedTemporaryDirectory, "QuickEntityJSON.json"))
-		fs.rmSync(path.join(process.cwd(), assignedTemporaryDirectory, "temp.TEMP.json"))
-		fs.rmSync(path.join(process.cwd(), assignedTemporaryDirectory, tempHash + ".TEMP.meta.JSON"))
-		fs.rmSync(path.join(process.cwd(), assignedTemporaryDirectory, "temp.TBLU.json"))
-		fs.rmSync(path.join(process.cwd(), assignedTemporaryDirectory, tbluHash + ".TBLU.meta.JSON"))
+		await Promise.all([
+			fs.rm(path.join(process.cwd(), assignedTemporaryDirectory, "QuickEntityJSON.json")),
+			fs.rm(path.join(process.cwd(), assignedTemporaryDirectory, "temp.TEMP.json")),
+			fs.rm(path.join(process.cwd(), assignedTemporaryDirectory, tempHash + ".TEMP.meta.JSON")),
+			fs.rm(path.join(process.cwd(), assignedTemporaryDirectory, "temp.TBLU.json")),
+			fs.rm(path.join(process.cwd(), assignedTemporaryDirectory, tbluHash + ".TBLU.meta.JSON"))
+		])
 
 		rpkgInstance.exit()
 
@@ -193,10 +204,12 @@ export = async ({
 	}
 
 	/* ------------------------------------- Stage binary files ------------------------------------- */
-	fs.copyFileSync(path.join(process.cwd(), assignedTemporaryDirectory, tempHash + ".TEMP"), path.join(process.cwd(), "staging", chunkFolder, tempHash + ".TEMP"))
-	fs.copyFileSync(path.join(process.cwd(), assignedTemporaryDirectory, tempHash + ".TEMP.meta"), path.join(process.cwd(), "staging", chunkFolder, tempHash + ".TEMP.meta"))
-	fs.copyFileSync(path.join(process.cwd(), assignedTemporaryDirectory, tbluHash + ".TBLU"), path.join(process.cwd(), "staging", chunkFolder, tbluHash + ".TBLU"))
-	fs.copyFileSync(path.join(process.cwd(), assignedTemporaryDirectory, tbluHash + ".TBLU.meta"), path.join(process.cwd(), "staging", chunkFolder, tbluHash + ".TBLU.meta")) // Copy the binary files to the staging directory
+	await Promise.all([
+		fs.copyFile(path.join(process.cwd(), assignedTemporaryDirectory, tempHash + ".TEMP"), path.join(process.cwd(), "staging", chunkFolder, tempHash + ".TEMP")),
+		fs.copyFile(path.join(process.cwd(), assignedTemporaryDirectory, tempHash + ".TEMP.meta"), path.join(process.cwd(), "staging", chunkFolder, tempHash + ".TEMP.meta")),
+		fs.copyFile(path.join(process.cwd(), assignedTemporaryDirectory, tbluHash + ".TBLU"), path.join(process.cwd(), "staging", chunkFolder, tbluHash + ".TBLU")),
+		fs.copyFile(path.join(process.cwd(), assignedTemporaryDirectory, tbluHash + ".TBLU.meta"), path.join(process.cwd(), "staging", chunkFolder, tbluHash + ".TBLU.meta")) // Copy the binary files to the staging directory
+	])
 
 	fs.removeSync(path.join(process.cwd(), assignedTemporaryDirectory))
 
