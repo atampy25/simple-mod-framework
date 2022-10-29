@@ -355,6 +355,14 @@ export interface ModScript extends NodeModule {
 
 	/** A function that runs immediately after the mod deploy ends - the deploy instruction has been processed. */
 	afterDeploy(context: ModContext, modAPI: ModAPI): Promise<void>
+
+	/** You must provide a caching policy for this script. It's used to ensure that changes in how your mod scripts function are properly accounted for when caching other files. Scripts themselves are never cached. */
+	cachingPolicy: CachePolicy
+}
+
+export interface CachePolicy {
+	/** A list of hashes that your script may affect, alter, create or write in any way. */
+	affected: string[]
 }
 
 export interface ModContext {
@@ -391,12 +399,6 @@ export interface ModAPI {
 	utils: {
 		/** Execute a shell command. */
 		execCommand(command: string): void
-
-		/** Copy a folder from the cache. mod should be instruction.cacheFolder; cachePath and outputPath can be anything, but should match the associated copyToCache. */
-		copyFromCache(mod: string, cachePath: string, outputPath: string): Promise<boolean>
-
-		/** Copy a folder to the cache. mod should be instruction.cacheFolder; originalPath and cachePath can be anything, but should match the associated copyFromCache. */
-		copyToCache(mod: string, originalPath: string, cachePath: string): Promise<boolean>
 
 		/** Get the QuickEntity module for a given QuickEntity version. */
 		getQuickEntityFromVersion(version: string): any

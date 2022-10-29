@@ -4,11 +4,14 @@
 	import { goto } from "$app/navigation"
 
 	import { marked } from "marked"
+	import * as shiki from "shiki"
 
 	import { Button, InlineLoading } from "carbon-components-svelte"
 
 	import ArrowLeft from "carbon-icons-svelte/lib/ArrowLeft.svelte"
 	import Home from "carbon-icons-svelte/lib/Home.svelte"
+
+	shiki.setCDN("/shiki/")
 
 	marked.setOptions({
 		renderer: new marked.Renderer(),
@@ -18,11 +21,10 @@
 					callback!(
 						null,
 						(
-							await window.torchlight.highlight({
-								language: language,
-								code: code
+							await shiki.getHighlighter({
+								theme: "one-dark-pro"
 							})
-						)[0].highlighted
+						).codeToHtml(code, { lang: language })
 					)
 				} catch {
 					callback!(null, code)
@@ -49,10 +51,14 @@
 
 		$page.params.page && dummyForceUpdate
 			? (async () =>
-					marked.parse(String(window.fs.readFileSync(window.path.join("..", "docs", $page.params.page), "utf-8")), undefined, (err, result) => {
-						pageContent = result
-						loading = false
-					}))()
+					marked.parse(
+						String(window.fs.readFileSync(window.path.join("..", window.fs.existsSync(window.path.join("..", "docs")) ? "docs" : "Info", $page.params.page), "utf-8")),
+						undefined,
+						(err, result) => {
+							pageContent = result
+							loading = false
+						}
+					))()
 			: (pageContent = "")
 	}
 
@@ -75,15 +81,12 @@
 </div>
 
 <style global>
-	pre {
-		margin-top: 0.5rem !important;
-		margin-bottom: 0.5rem !important;
-
-		@apply rounded-md bg-neutral-900;
+	.shiki {
+		@apply rounded-md p-4;
 	}
 
-	pre > code {
-		@apply p-4;
+	.line:not(:first-child) {
+		@apply block -mt-2;
 	}
 
 	:not(pre) > code {
@@ -93,14 +96,6 @@
 
 	code {
 		font-family: "Fira Code", "IBM Plex Mono", "Menlo", "DejaVu Sans Mono", "Bitstream Vera Sans Mono", Courier, monospace !important;
-	}
-
-	.line {
-		@apply ml-4 mt-1 pt-1;
-	}
-
-	.line-number {
-		@apply mr-4;
 	}
 
 	p {

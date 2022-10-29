@@ -52,6 +52,7 @@
 		"postcss": "^8.4.16",
 		"rehype-stringify": "^9.0.3",
 		"semver": "^7.3.7",
+		"shiki": "^0.11.1",
 		"svelte-fa": "^2.4.0",
 		"svelte-sortable-list": "^1.1.0",
 		"svelte-tippy": "^1.3.2",

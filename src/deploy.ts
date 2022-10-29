@@ -397,8 +397,6 @@ export default async function deploy(
 							},
 							utils: {
 								execCommand,
-								copyFromCache,
-								copyToCache,
 								extractOrCopyToTemp,
 								getQuickEntityFromVersion,
 								getQuickEntityFromPatchVersion,
@@ -487,8 +485,6 @@ export default async function deploy(
 						},
 						utils: {
 							execCommand,
-							copyFromCache,
-							copyToCache,
 							extractOrCopyToTemp,
 							getQuickEntityFromVersion,
 							getQuickEntityFromPatchVersion,
@@ -1698,8 +1694,6 @@ export default async function deploy(
 						},
 						utils: {
 							execCommand,
-							copyFromCache,
-							copyToCache,
 							extractOrCopyToTemp,
 							getQuickEntityFromVersion,
 							getQuickEntityFromPatchVersion,

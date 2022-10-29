@@ -4,8 +4,6 @@
 
 [Folder Structure](Folder%20Structure.md)
 
-[Index](Index.md)
-
 [Making a Mod](Making%20a%20Mod.md)
 
 [Manifest](Manifest.md)
@@ -17,3 +15,5 @@
 [RPKG Mods](RPKG%20Mods.md)
 
 [Special File Types](Special%20File%20Types.md)
+
+[Scripts](Scripts.md)

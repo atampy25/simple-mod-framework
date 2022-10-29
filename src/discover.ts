@@ -1,8 +1,9 @@
 import * as LosslessJSON from "lossless-json"
+import * as ts from "./typescript"
 
 import { FrameworkVersion, config, interoperability, logger, rpkgInstance } from "./core-singleton"
 
-import { type Manifest, OptionType } from "./types"
+import { type Manifest, OptionType, ModScript } from "./types"
 import mergeWith from "lodash.mergewith"
 import fs from "fs-extra"
 import json5 from "json5"
@@ -11,6 +12,7 @@ import { md5 } from "hash-wasm"
 import path from "path"
 import semver from "semver"
 import { xxhash3 } from "hash-wasm"
+import { ModuleKind, ScriptTarget } from "typescript"
 
 const deepMerge = function (x, y) {
 	return mergeWith(x, y, (orig, src) => {
@@ -105,6 +107,8 @@ export default async function discover(): Promise<{ [x: string]: { hash: string;
 			const contentFolders = []
 			const blobsFolders = []
 
+			const scripts: string[][] = []
+
 			if (
 				manifest.contentFolder &&
 				manifest.contentFolder.length &&
@@ -122,6 +126,8 @@ export default async function discover(): Promise<{ [x: string]: { hash: string;
 			) {
 				blobsFolders.push(manifest.blobsFolder)
 			}
+
+			manifest.scripts && scripts.push(manifest.scripts)
 
 			if (config.modOptions[manifest.id] && manifest.options && manifest.options.length) {
 				logger.verbose("Merging mod options")
@@ -176,6 +182,8 @@ export default async function discover(): Promise<{ [x: string]: { hash: string;
 
 					manifest.thumbs || (manifest.thumbs = [])
 					option.thumbs && manifest.thumbs.push(...option.thumbs)
+
+					option.scripts && scripts.push(option.scripts)
 				}
 			}
 
@@ -203,6 +211,38 @@ export default async function discover(): Promise<{ [x: string]: { hash: string;
 					interoperability.cleanExit()
 					return
 				}
+			}
+
+			logger.verbose("Discovering scripts")
+			for (const files of scripts) {
+				ts.compile(
+					files.map((a) => path.join(process.cwd(), "Mods", mod, a)),
+					{
+						esModuleInterop: true,
+						allowJs: true,
+						target: ScriptTarget.ES2019,
+						module: ModuleKind.CommonJS,
+						resolveJsonModule: true
+					},
+					path.join(process.cwd(), "Mods", mod)
+				)
+
+				// eslint-disable-next-line @typescript-eslint/no-var-requires
+				const modScript = (await require(path.join(
+					process.cwd(),
+					"compiled",
+					path.relative(path.join(process.cwd(), "Mods", mod), path.join(process.cwd(), "Mods", mod, files[0].replace(".ts", ".js")))
+				))) as ModScript
+
+				for (const file of files) {
+					fileMap[file] = {
+						hash: await xxhash3(fs.readFileSync(file)),
+						dependencies: [],
+						affected: modScript.cachingPolicy.affected
+					}
+				}
+
+				fs.removeSync(path.join(process.cwd(), "compiled"))
 			}
 
 			logger.verbose("Discovering content")

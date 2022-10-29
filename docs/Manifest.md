@@ -101,6 +101,7 @@ Each mod contains a manifest. Manifests have the following format:
 		"Atampy26.RequiredMod", // You'll generally want to load after a required mod
 		"Atampy26.OtherModThatThisModUses"
 	],
+	"scripts": ["mod.ts", "helpers.ts", "blabla.ts"], // Relative paths to TypeScript files that can alter deployment of the mod - see Scripts for more information
 
 	"options": [
 		// Settings for the mod that can be enabled/disabled in the GUI - Can be omitted if the mod doesn't need to provide settings
