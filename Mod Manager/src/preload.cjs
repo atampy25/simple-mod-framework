@@ -21,12 +21,3 @@ contextBridge.exposeInMainWorld("ipc", {
 	}
 })
 contextBridge.exposeInMainWorld("openExternalLink", shell.openExternal)
-
-// This key is literally just for a syntax highlighter. Don't steal it I guess?
-torchlight.init({ token: "torch_c4KdfS5KGTUrGoaD3O7akGyFSHyXU0HpGLHN5ReT", theme: "one-dark-pro" }, undefined)
-
-contextBridge.exposeInMainWorld("torchlight", {
-	highlight(data) {
-		return torchlight.highlight([new Block(data)])
-	}
-})

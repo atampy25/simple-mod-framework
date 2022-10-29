@@ -18,6 +18,5 @@ declare global {
 		AdmZip: typeof AdmZip
 		Buffer: typeof buffer["Buffer"]
 		openExternalLink: typeof electron["shell"]["openExternal"]
-		convertMarkdown: (markdown: string) => Promise<string>
 	}
 }
