@@ -593,17 +593,18 @@
 				})
 
 			const deps = (getOption(manifest.id).dependencies || []).map((a) => {
-				return typeof a == "string" ? { runtimeID: a, toChunk: 0 } : a
+				return typeof a == "string" ? { runtimeID: a, toChunk: 0, portFromChunk1: false } : a
 			})
 
-			const original = deps.some((a) => a.toChunk == detail.origToChunk && a.runtimeID == detail.origRuntimeID)
+			const original = deps.some((a) => a.toChunk == detail.origToChunk && a.runtimeID == detail.origRuntimeID && a.portFromChunk1 == detail.origPortFromChunk1)
 				? deps.splice(
-						deps.findIndex((a) => a.toChunk == detail.origToChunk && a.runtimeID == detail.origRuntimeID),
+						deps.findIndex((a) => a.toChunk == detail.origToChunk && a.runtimeID == detail.origRuntimeID && a.portFromChunk1 == detail.origPortFromChunk1),
 						1
 				  )[0]
 				: {
 						toChunk: detail.origToChunk,
-						runtimeID: detail.origRuntimeID
+						runtimeID: detail.origRuntimeID,
+						portFromChunk1: detail.origPortFromChunk1
 				  }
 
 			if (detail.type == "defineToChunk") {
@@ -616,11 +617,16 @@
 					...original,
 					runtimeID: detail.newRuntimeID
 				})
+			} else if (detail.type == "definePortFromChunk1") {
+				deps.push({
+					...original,
+					portFromChunk1: detail.newPortFromChunk1
+				})
 			}
 
 			alterOption(manifest.id, {
 				dependencies: deps.map((a) => {
-					return a.toChunk == 0 ? a.runtimeID : { runtimeID: a.runtimeID, toChunk: a.toChunk }
+					return a.toChunk == 0 && a.portFromChunk1 == false ? a.runtimeID : { runtimeID: a.runtimeID, toChunk: a.toChunk, portFromChunk1: a.portFromChunk1 }
 				})
 			})
 			dummyForceUpdate = Math.random()

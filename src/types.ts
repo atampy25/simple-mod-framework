@@ -118,7 +118,8 @@ export interface ManifestOptionData {
 		| string
 		| {
 				runtimeID: string
-				toChunk: number
+				toChunk?: number
+				portFromChunk1?: boolean
 		  }
 	)[]
 

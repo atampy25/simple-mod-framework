@@ -287,7 +287,7 @@
 									<code class="h">{window.path.resolve(getModFolder(manifest.id), trace)}</code>
 								</div>
 							</InlineNotification>
-						{:else if type == "warning"}
+						{:else if type == "warning" || type == "warning-suppressed"}
 							<InlineNotification hideCloseButton lowContrast kind="warning">
 								<div slot="title" class="text-lg">
 									{title}

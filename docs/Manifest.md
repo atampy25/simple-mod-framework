@@ -74,7 +74,8 @@ Each mod contains a manifest. Manifests have the following format:
 		"00123456789ABCDE",
 		{
 			"runtimeID": "00AAAAAAAAAAAAAA",
-			"toChunk": 1
+			"toChunk": 1, // Which chunk to place the dependencies in; optional, defaults to 0
+			"portFromChunk1": true // Whether to also port dependencies from chunk1 (which is usually not necessary); optional, defaults to false
 		}
 	],
 	"supportedPlatforms": [

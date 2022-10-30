@@ -300,7 +300,7 @@ const modWarnings: {
 	title: string
 	subtitle: string
 	check: (fileToCheck: string, hashList: { hash: string; path: string }[], baseGameHashes: Set<string>) => Promise<boolean>
-	type: "error" | "warning" | "info"
+	type: "error" | "warning" | "warning-suppressed" | "info"
 }[] = [
 	{
 		title: "Invalid manifest",
@@ -406,6 +406,26 @@ const modWarnings: {
 		type: "warning"
 	},
 	{
+		title: "Base game entity is outright replaced",
+		subtitle: `
+			A vanilla entity is being outright replaced by an <code class="h">entity.json</code> file. This can cause compatibility issues.<br><br>
+			You should review this, even if you think no other mods will edit that file.<br><br>
+			Using an <code class="h">entity.patch.json</code> file is a simple fix that will ensure compatibility.
+			It may make the mod slightly slower to deploy, but that's the whole idea of the framework
+			- it's best to use framework features whenever possible, as this future-proofs your mod and allows you to take advantage of any improvements immediately,
+			without you needing to make changes. You should never avoid a framework feature purely for speed reasons.
+		`,
+		check: async (fileToCheck, hashList, baseGameHashes) => {
+			if (fileToCheck.endsWith("entity.json")) {
+				const fileContents = await window.fs.readJSON(fileToCheck)
+				if (baseGameHashes.has(fileContents.tempHash) || baseGameHashes.has(fileContents.tbluHash)) return true
+			}
+
+			return false
+		},
+		type: "warning-suppressed"
+	},
+	{
 		title: "Base game sound is outright replaced",
 		subtitle: `
 			A vanilla sound is being outright replaced by a raw file. This can cause compatibility issues, as well as making things harder to view and edit for users and yourself.<br><br>
@@ -420,7 +440,7 @@ const modWarnings: {
 
 			return false
 		},
-		type: "info"
+		type: "warning-suppressed"
 	},
 	{
 		title: "Blob is included as raw file",
@@ -455,7 +475,7 @@ const modWarnings: {
 ]
 
 export async function getModWarnings(modID: string, allModFiles: string[], hashList: { hash: string; type: string; path: string }[], baseGameHashes: Set<string>) {
-	const warnings: { title: string; subtitle: string; trace: string; type: "error" | "warning" | "info" }[] = []
+	const warnings: { title: string; subtitle: string; trace: string; type: "error" | "warning" | "warning-suppressed" | "info" }[] = []
 
 	for (const file of allModFiles)
 		for (const warning of modWarnings) {

@@ -1488,14 +1488,20 @@ export default async function deploy(
 			const doneHashes: {
 				id: string
 				chunk: number
+				portChunk1: boolean
 			}[] = []
 			for (const dependency of instruction.manifestSources.dependencies) {
-				if (!doneHashes.some((a) => a.id == (typeof dependency == "string" ? dependency : dependency.runtimeID) && a.chunk == (typeof dependency == "string" ? 0 : dependency.toChunk))) {
+				if (
+					!doneHashes.some((a) => a.id == (typeof dependency == "string" ? dependency : dependency.runtimeID) && a.chunk == (dependency.toChunk || 0)) ||
+					(doneHashes.filter((a) => a.id == (typeof dependency == "string" ? dependency : dependency.runtimeID) && a.chunk == (dependency.toChunk || 0)).every((a) => !a.portChunk1) &&
+						dependency.portFromChunk1)
+				) {
 					logger.debug("Extracting dependency " + (typeof dependency == "string" ? dependency : dependency.runtimeID))
 
 					doneHashes.push({
 						id: typeof dependency == "string" ? dependency : dependency.runtimeID,
-						chunk: typeof dependency == "string" ? 0 : dependency.toChunk
+						chunk: dependency.toChunk || 0,
+						portChunk1: dependency.portFromChunk1 || false
 					})
 
 					if (
@@ -1506,7 +1512,9 @@ export default async function deploy(
 						fs.emptyDirSync(path.join(process.cwd(), "temp"))
 
 						await callRPKGFunction(
-							`-extract_non_base_hash_depends_from "${path.join(config.runtimePath)}" -filter "${typeof dependency == "string" ? dependency : dependency.runtimeID}" -output_path temp`
+							`-${dependency.portFromChunk1 || false ? "extract_non_chunk0_hash_depends_from" : "extract_non_base_hash_depends_from"} "${path.join(config.runtimePath)}" -filter "${
+								typeof dependency == "string" ? dependency : dependency.runtimeID
+							}" -output_path temp`
 						)
 
 						await copyToCache(instruction.cacheFolder, path.join(process.cwd(), "temp"), path.join("dependencies", typeof dependency == "string" ? dependency : dependency.runtimeID))
@@ -1537,9 +1545,9 @@ export default async function deploy(
 
 					allFilesSuperseded = allFilesSuperseded.filter((a) => !/chunk[0-9]*(?:patch[0-9]*)?\.meta/gi.exec(path.basename(a))) // Remove RPKG metas
 
-					fs.ensureDirSync(path.join(process.cwd(), "staging", `chunk${typeof dependency == "string" ? 0 : dependency.toChunk}`))
+					fs.ensureDirSync(path.join(process.cwd(), "staging", `chunk${dependency.toChunk || 0}`))
 					allFilesSuperseded.forEach((file) => {
-						fs.copySync(file, path.join(process.cwd(), "staging", `chunk${typeof dependency == "string" ? 0 : dependency.toChunk}`, path.basename(file)), {
+						fs.copySync(file, path.join(process.cwd(), "staging", `chunk${dependency.toChunk || 0}`, path.basename(file)), {
 							overwrite: false
 						}) // Stage the files, but don't overwrite if they already exist (such as if another mod has edited them)
 					})

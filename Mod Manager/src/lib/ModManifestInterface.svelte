@@ -69,7 +69,7 @@
 
 	let dependencies = true // section
 
-	let dependenciesValueToEdit = {} as { runtimeID: string; toChunk: number; valueToEdit: string }
+	let dependenciesValueToEdit = {} as { runtimeID: string; toChunk: number; portFromChunk1: boolean; valueToEdit: string }
 	let dependenciesValueToEditPlaceholder = ""
 	let dependenciesEditModalOpen = false
 	let dependenciesEditModal: TextInputModal
@@ -535,12 +535,13 @@
 						<tr>
 							<th class="font-medium p-4 pl-8 pb-3 text-slate-200 text-left">RuntimeID</th>
 							<th class="font-medium p-4 px-8 pb-3 text-slate-200 text-left">Extract to chunk</th>
+							<th class="font-medium p-4 px-8 pb-3 text-slate-200 text-left">Port from chunk1?</th>
 						</tr>
 					</thead>
 					<tbody>
 						{#each (source.dependencies || []).map((a) => {
-							return typeof a == "string" ? { runtimeID: a, toChunk: 0 } : a
-						}) as { runtimeID, toChunk }, index (runtimeID + toChunk)}
+							return typeof a == "string" ? { runtimeID: a, toChunk: 0, portFromChunk1: false } : a
+						}) as { runtimeID, toChunk, portFromChunk1 }, index (runtimeID + toChunk)}
 							<tr class:border-b={index != (source.dependencies || []).length - 1} class="border-solid border-b-black">
 								<td class="p-4 pl-8 text-slate-800">
 									<div class="flex flex-row gap-4 items-center">
@@ -551,8 +552,24 @@
 											icon={Edit}
 											iconDescription="Edit value"
 											on:click={() => {
-												dependenciesValueToEdit = { runtimeID, toChunk, valueToEdit: "runtimeID" }
+												dependenciesValueToEdit = { runtimeID, toChunk: (toChunk || 0), portFromChunk1: (portFromChunk1 || false), valueToEdit: "runtimeID" }
 												dependenciesValueToEditPlaceholder = runtimeID
+												dependenciesEditModalOpen = true
+											}}
+										/>
+									</div>
+								</td>
+								<td class="p-4 pl-8 text-slate-800">
+									<div class="flex flex-row gap-4 items-center">
+										<code class="flex-grow">{(toChunk || 0)}</code>
+										<Button
+											kind="ghost"
+											size="small"
+											icon={Edit}
+											iconDescription="Edit value"
+											on:click={() => {
+												dependenciesValueToEdit = { runtimeID, toChunk: (toChunk || 0), portFromChunk1: (portFromChunk1 || false), valueToEdit: "toChunk" }
+												dependenciesValueToEditPlaceholder = String((toChunk || 0))
 												dependenciesEditModalOpen = true
 											}}
 										/>
@@ -560,15 +577,15 @@
 								</td>
 								<td class="p-4 px-8 text-slate-800">
 									<div class="flex flex-row gap-4 items-center">
-										<code class="flex-grow">{toChunk}</code>
+										<code class="flex-grow">{(portFromChunk1 || false)}</code>
 										<Button
 											kind="ghost"
 											size="small"
 											icon={Edit}
 											iconDescription="Edit value"
 											on:click={() => {
-												dependenciesValueToEdit = { runtimeID, toChunk, valueToEdit: "toChunk" }
-												dependenciesValueToEditPlaceholder = String(toChunk)
+												dependenciesValueToEdit = { runtimeID, toChunk: (toChunk || 0), portFromChunk1: (portFromChunk1 || false), valueToEdit: "portFromChunk1" }
+												dependenciesValueToEditPlaceholder = String((portFromChunk1 || false))
 												dependenciesEditModalOpen = true
 											}}
 										/>
@@ -576,9 +593,9 @@
 											kind="ghost"
 											size="small"
 											icon={CloseOutline}
-											iconDescription="Remove runtime package"
+											iconDescription="Remove dependency"
 											on:click={() => {
-												dispatch("dependency-undefine", { runtimeID, toChunk })
+												dispatch("dependency-undefine", { runtimeID, toChunk, portFromChunk1 })
 											}}
 										/>
 									</div>
@@ -592,12 +609,12 @@
 					kind="primary"
 					icon={Edit}
 					on:click={() => {
-						dependenciesValueToEdit = { runtimeID: "00123456789ABCDE", toChunk: 0, valueToEdit: "runtimeID" }
+						dependenciesValueToEdit = { runtimeID: "00123456789ABCDE", toChunk: 0, portFromChunk1: false, valueToEdit: "runtimeID" }
 						dependenciesValueToEditPlaceholder = "00123456789ABCDE"
 						dependenciesEditModalOpen = true
 					}}
 				>
-					Add a runtime package
+					Add a dependency
 				</Button>
 			</div>
 		{/if}
@@ -788,7 +805,7 @@
 <TextInputModal
 	bind:this={dependenciesEditModal}
 	bind:showingModal={dependenciesEditModalOpen}
-	modalText="Edit {dependenciesValueToEdit.runtimeID} {{ runtimeID: 'RuntimeID', toChunk: 'chunk' }[dependenciesValueToEdit.valueToEdit]}"
+	modalText="Edit {dependenciesValueToEdit.runtimeID} {{ runtimeID: 'RuntimeID', toChunk: 'chunk', portFromChunk1: 'whether to port from chunk1' }[dependenciesValueToEdit.valueToEdit]}"
 	modalPlaceholder={String(dependenciesValueToEditPlaceholder)}
 	modalInitialText={String(dependenciesValueToEditPlaceholder)}
 	on:close={() => {
@@ -798,6 +815,7 @@
 					type: "defineRuntimeID",
 					origToChunk: dependenciesValueToEdit.toChunk,
 					origRuntimeID: dependenciesValueToEdit.runtimeID,
+					origPortFromChunk1: dependenciesValueToEdit.portFromChunk1,
 					newRuntimeID: dependenciesEditModal.value
 				})
 			} else if (dependenciesValueToEdit.valueToEdit == "toChunk") {
@@ -805,7 +823,16 @@
 					type: "defineToChunk",
 					origToChunk: dependenciesValueToEdit.toChunk,
 					origRuntimeID: dependenciesValueToEdit.runtimeID,
+					origPortFromChunk1: dependenciesValueToEdit.portFromChunk1,
 					newToChunk: Number(dependenciesEditModal.value)
+				})
+			} else if (dependenciesValueToEdit.valueToEdit == "portFromChunk1") {
+				dispatch("dependency-define", {
+					type: "definePortFromChunk1",
+					origToChunk: dependenciesValueToEdit.toChunk,
+					origRuntimeID: dependenciesValueToEdit.runtimeID,
+					origPortFromChunk1: dependenciesValueToEdit.portFromChunk1,
+					newPortFromChunk1: dependenciesEditModal.value == "true"
 				})
 			}
 		}
