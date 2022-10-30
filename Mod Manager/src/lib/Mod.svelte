@@ -4,7 +4,9 @@
 	import Error from "carbon-icons-svelte/lib/Error.svelte"
 
 	import type { Manifest } from "../../../src/types"
-	import { getAllModWarnings } from "./utils"
+	import { FrameworkVersion, getAllModWarnings } from "./utils"
+
+	import semver from "semver"
 
 	export let isFrameworkMod: boolean
 
@@ -32,7 +34,16 @@
 			{/if}
 		</div>
 		<div class="flex-shrink-0">
-			{#if isFrameworkMod && modWarnings}
+			{#if isFrameworkMod && semver.lt(manifest.frameworkVersion, FrameworkVersion) && semver.diff(manifest.frameworkVersion, FrameworkVersion) == "major"}
+				<div
+					tabindex="0"
+					aria-pressed="false"
+					class="bx--btn bx--btn--ghost btn-error bx--btn--icon-only bx--tooltip__trigger bx--tooltip--a11y bx--btn--icon-only--bottom bx--tooltip--align-center"
+				>
+					<span class="bx--assistive-text">This mod is designed for an earlier version of the framework; it must be updated to work with the new framework</span>
+					<Error color="black" />
+				</div>
+			{:else if isFrameworkMod && modWarnings}
 				{#await modWarnings then warnings}
 					{#if warnings[manifest.id].some((a) => a.type == "error")}
 						<div
