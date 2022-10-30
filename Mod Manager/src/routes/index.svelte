@@ -171,7 +171,7 @@
 
 		updatingFramework = false
 
-		window.location.reload()
+		window.location.href = "app://-/"
 	}
 
 	let modUpdates = checkForModUpdates()

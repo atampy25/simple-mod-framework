@@ -3,6 +3,7 @@
 	import { flip } from "svelte/animate"
 
 	import SortableList from "svelte-sortable-list"
+	import json5 from "json5"
 	import { Button, Modal } from "carbon-components-svelte"
 
 	import { getAllMods, getConfig, mergeConfig, getManifestFromModID, modIsFramework, getModFolder, sortMods } from "$lib/utils"
@@ -77,6 +78,8 @@
 	let rpkgModName: string
 	let rpkgModChunk: string
 
+	let frameworkModScriptsWarningOpen = false
+
 	async function addMod() {
 		window.ipc.send("modFileOpenDialog")
 
@@ -108,13 +111,27 @@
 						return
 					}
 
-					window.fs.copySync("./staging", "../Mods")
+					if (
+						window.fs
+							.readdirSync("./staging")
+							.some(
+								(a) =>
+									json5.parse(window.fs.readFileSync(window.path.join("./staging", a, "manifest.json"), "utf8")).scripts ||
+									json5.parse(window.fs.readFileSync(window.path.join("./staging", a, "manifest.json"), "utf8")).options?.some((b) => b.scripts)
+							)
+					) {
+						frameworkModExtractionInProgress = false
 
-					window.fs.removeSync("./staging")
+						frameworkModScriptsWarningOpen = true
+					} else {
+						window.fs.copySync("./staging", "../Mods")
 
-					window.location.reload()
+						window.fs.removeSync("./staging")
 
-					frameworkModExtractionInProgress = false
+						window.location.reload()
+
+						frameworkModExtractionInProgress = false
+					}
 				}
 			}
 		})
@@ -346,6 +363,28 @@
 
 <Modal alert bind:open={invalidFrameworkZipModalOpen} modalHeading="Invalid framework ZIP" primaryButtonText="OK" shouldSubmitOnEnter={false}>
 	<p>The framework ZIP file contains files in the root directory. Contact the mod author.</p>
+</Modal>
+
+<Modal
+	danger
+	bind:open={frameworkModScriptsWarningOpen}
+	modalHeading="Mod contains scripts"
+	primaryButtonText="I'm sure"
+	secondaryButtonText="Cancel"
+	shouldSubmitOnEnter={false}
+	on:click:button--secondary={() => (frameworkModScriptsWarningOpen = false)}
+	on:click:button--primary={() => {
+		window.fs.copySync("./staging", "../Mods")
+
+		window.fs.removeSync("./staging")
+
+		window.location.reload()
+	}}
+>
+	<p>
+		This mod contains scripts; that means it effectively has full control over your PC whenever you apply your mods. Scripts can do cool things and make a lot of mods possible, but they can also
+		do bad things like installing malware on your computer. Make sure you trust whoever developed this mod, and wherever you downloaded it from. Are you sure you want to add this mod?
+	</p>
 </Modal>
 
 <style>
