@@ -113,11 +113,17 @@
 		"ManifestOptionData": {
 			"type": "object",
 			"properties": {
-				"contentFolder": {
-					"type": "string"
+				"contentFolders": {
+					"type": "array",
+					"items": {
+						"type": "string"
+					}
 				},
-				"blobsFolder": {
-					"type": "string"
+				"blobsFolders": {
+					"type": "array",
+					"items": {
+						"type": "string"
+					}
 				},
 				"localisation": {
 					"type": "object",

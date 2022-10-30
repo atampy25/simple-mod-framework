@@ -95,15 +95,15 @@
 		<div class="grid grid-cols-2 gap-4">
 			<div>
 				<TextInput
-					labelText="Content folder"
-					placeholder={source.contentFolder || "Not defined"}
+					labelText="Content folders (folder1, folder2)"
+					placeholder={source.contentFolders?.join(", ") || "Not defined"}
 					bind:ref={contentFolderInput}
 					on:input={() => {
 						contentFolderInputChanged = !!contentFolderInput.value.length
 					}}
 				/>
 				<br />
-				{#if source.contentFolder}
+				{#if source.contentFolders}
 					<Button
 						kind="ghost"
 						icon={CloseOutline}
@@ -131,15 +131,15 @@
 			</div>
 			<div>
 				<TextInput
-					labelText="Blobs folder"
-					placeholder={source.blobsFolder || "Not defined"}
+					labelText="Blobs folder (folder1, folder2)"
+					placeholder={source.blobsFolders?.join(", ") || "Not defined"}
 					bind:ref={blobsFolderInput}
 					on:input={() => {
 						blobsFolderInputChanged = !!blobsFolderInput.value.length
 					}}
 				/>
 				<br />
-				{#if source.blobsFolder}
+				{#if source.blobsFolders}
 					<Button
 						kind="ghost"
 						icon={CloseOutline}
@@ -552,7 +552,7 @@
 											icon={Edit}
 											iconDescription="Edit value"
 											on:click={() => {
-												dependenciesValueToEdit = { runtimeID, toChunk: (toChunk || 0), portFromChunk1: (portFromChunk1 || false), valueToEdit: "runtimeID" }
+												dependenciesValueToEdit = { runtimeID, toChunk: toChunk || 0, portFromChunk1: portFromChunk1 || false, valueToEdit: "runtimeID" }
 												dependenciesValueToEditPlaceholder = runtimeID
 												dependenciesEditModalOpen = true
 											}}
@@ -561,15 +561,15 @@
 								</td>
 								<td class="p-4 pl-8 text-slate-800">
 									<div class="flex flex-row gap-4 items-center">
-										<code class="flex-grow">{(toChunk || 0)}</code>
+										<code class="flex-grow">{toChunk || 0}</code>
 										<Button
 											kind="ghost"
 											size="small"
 											icon={Edit}
 											iconDescription="Edit value"
 											on:click={() => {
-												dependenciesValueToEdit = { runtimeID, toChunk: (toChunk || 0), portFromChunk1: (portFromChunk1 || false), valueToEdit: "toChunk" }
-												dependenciesValueToEditPlaceholder = String((toChunk || 0))
+												dependenciesValueToEdit = { runtimeID, toChunk: toChunk || 0, portFromChunk1: portFromChunk1 || false, valueToEdit: "toChunk" }
+												dependenciesValueToEditPlaceholder = String(toChunk || 0)
 												dependenciesEditModalOpen = true
 											}}
 										/>
@@ -577,15 +577,15 @@
 								</td>
 								<td class="p-4 px-8 text-slate-800">
 									<div class="flex flex-row gap-4 items-center">
-										<code class="flex-grow">{(portFromChunk1 || false)}</code>
+										<code class="flex-grow">{portFromChunk1 || false}</code>
 										<Button
 											kind="ghost"
 											size="small"
 											icon={Edit}
 											iconDescription="Edit value"
 											on:click={() => {
-												dependenciesValueToEdit = { runtimeID, toChunk: (toChunk || 0), portFromChunk1: (portFromChunk1 || false), valueToEdit: "portFromChunk1" }
-												dependenciesValueToEditPlaceholder = String((portFromChunk1 || false))
+												dependenciesValueToEdit = { runtimeID, toChunk: toChunk || 0, portFromChunk1: portFromChunk1 || false, valueToEdit: "portFromChunk1" }
+												dependenciesValueToEditPlaceholder = String(portFromChunk1 || false)
 												dependenciesEditModalOpen = true
 											}}
 										/>

@@ -181,27 +181,31 @@ export default async function deploy(
 			})
 			configureSentryScope(sentryDiskAnalysisTransaction)
 
-			const contentFolders: string[] = []
-			const blobsFolders: string[] = []
+			let contentFolders: string[] = []
+			let blobsFolders: string[] = []
 
 			const scripts: string[][] = []
 
-			if (
-				manifest.contentFolder &&
-				manifest.contentFolder.length &&
-				fs.existsSync(path.join(process.cwd(), "Mods", mod, manifest.contentFolder)) &&
-				fs.readdirSync(path.join(process.cwd(), "Mods", mod, manifest.contentFolder)).length
-			) {
-				contentFolders.push(manifest.contentFolder)
+			for (const contentFolder of manifest.contentFolders || []) {
+				if (
+					contentFolder &&
+					contentFolder.length &&
+					fs.existsSync(path.join(process.cwd(), "Mods", mod, contentFolder)) &&
+					fs.readdirSync(path.join(process.cwd(), "Mods", mod, contentFolder)).length
+				) {
+					contentFolders.push(contentFolder)
+				}
 			}
 
-			if (
-				manifest.blobsFolder &&
-				manifest.blobsFolder.length &&
-				fs.existsSync(path.join(process.cwd(), "Mods", mod, manifest.blobsFolder)) &&
-				fs.readdirSync(path.join(process.cwd(), "Mods", mod, manifest.blobsFolder)).length
-			) {
-				blobsFolders.push(manifest.blobsFolder)
+			for (const blobsFolder of manifest.blobsFolders || []) {
+				if (
+					blobsFolder &&
+					blobsFolder.length &&
+					fs.existsSync(path.join(process.cwd(), "Mods", mod, blobsFolder)) &&
+					fs.readdirSync(path.join(process.cwd(), "Mods", mod, blobsFolder)).length
+				) {
+					blobsFolders.push(blobsFolder)
+				}
 			}
 
 			manifest.scripts && scripts.push(manifest.scripts)
@@ -218,22 +222,26 @@ export default async function deploy(
 								config
 							}))
 				)) {
-					if (
-						option.contentFolder &&
-						option.contentFolder.length &&
-						fs.existsSync(path.join(process.cwd(), "Mods", mod, option.contentFolder)) &&
-						fs.readdirSync(path.join(process.cwd(), "Mods", mod, option.contentFolder)).length
-					) {
-						contentFolders.push(option.contentFolder)
+					for (const contentFolder of option.contentFolders || []) {
+						if (
+							contentFolder &&
+							contentFolder.length &&
+							fs.existsSync(path.join(process.cwd(), "Mods", mod, contentFolder)) &&
+							fs.readdirSync(path.join(process.cwd(), "Mods", mod, contentFolder)).length
+						) {
+							contentFolders.push(contentFolder)
+						}
 					}
 
-					if (
-						option.blobsFolder &&
-						option.blobsFolder.length &&
-						fs.existsSync(path.join(process.cwd(), "Mods", mod, option.blobsFolder)) &&
-						fs.readdirSync(path.join(process.cwd(), "Mods", mod, option.blobsFolder)).length
-					) {
-						blobsFolders.push(option.blobsFolder)
+					for (const blobsFolder of option.blobsFolders || []) {
+						if (
+							blobsFolder &&
+							blobsFolder.length &&
+							fs.existsSync(path.join(process.cwd(), "Mods", mod, blobsFolder)) &&
+							fs.readdirSync(path.join(process.cwd(), "Mods", mod, blobsFolder)).length
+						) {
+							blobsFolders.push(blobsFolder)
+						}
 					}
 
 					manifest.localisation || (manifest.localisation = {} as ManifestOptionData["localisation"])
@@ -266,6 +274,9 @@ export default async function deploy(
 					option.scripts && scripts.push(option.scripts)
 				}
 			}
+
+			contentFolders = [...new Set(contentFolders)]
+			blobsFolders = [...new Set(blobsFolders)]
 
 			const content: DeployInstruction["content"] = []
 			const blobs: DeployInstruction["blobs"] = []

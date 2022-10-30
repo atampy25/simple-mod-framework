@@ -27,7 +27,7 @@
 		name: "Loading...",
 		description: "Extremely good description",
 		authors: ["Example"],
-		contentFolder: "content",
+		contentFolders: ["content"],
 		frameworkVersion: FrameworkVersion
 	} as Manifest
 	$: manifest = $page.params.mod
@@ -38,7 +38,7 @@
 				name: "Loading...",
 				description: "Extremely good description",
 				authors: ["Example"],
-				contentFolder: "content",
+				contentFolders: ["content"],
 				frameworkVersion: FrameworkVersion
 		  } as Manifest)
 

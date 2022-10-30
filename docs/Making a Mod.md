@@ -13,14 +13,14 @@ Then, put a file called `manifest.json` in it. Paste the following into it:
   "name": "Your First Mod",
   "description": "Extremely good description",
   "authors": ["YourNameOrUserName"],
-  "contentFolder": "content",
+  "contentFolders": ["content"],
   "frameworkVersion": "1.5.8"
 }
 ```
 
 Most of those fields are self-explanatory. There are other optional fields documented in, as well as more explanation of these ones in, [Manifest](Manifest.md).
 
-Notice how `contentFolder` has been set to `content`. This is the name of the folder where most of your mod's files will be. Create a folder called `content` (or change the value of `contentFolder` to whatever you want and name a new folder that).
+Notice how `contentFolders` has been set to `["content"]`. This is the name of the folder where most of your mod's files will be. Create a folder called `content` (or change the value of `contentFolders` to whatever you want and name a new folder that).
 
 ## Adding some content
 
@@ -30,4 +30,4 @@ Now, just place your mod's files in those chunk folders. Files in chunk0 for exa
 
 ## That's it lmao
 
-All a framework mod needs is a manifest and some content. In fact, if you only use manifest features, you don't even need a content folder!
+All a framework mod needs is a manifest and some content. In fact, if you only use manifest features, you don't even need any content folders!

@@ -14,8 +14,8 @@ Each mod contains a manifest. Manifests have the following format:
 	"updateCheck": "https://hitman-resources.netlify.app/framework/updates/exampleMod.json", // A JSON (see Mod Updates) that will be checked for updates (MUST BE HTTPS) - contact Atampy26 for hosting on hitman-resources.netlify.app
 
 	/* ------- This data can be used in mod options as well as on the top level (optional) ------- */
-	"contentFolder": "content", // Folder next to the manifest to use for the mod content
-	"blobsFolder": "blobs", // Folder next to the manifest to use for blobs (new/edited existing JSON and GFXI files)
+	"contentFolders": ["content"], // Folders next to the manifest to use for the mod content
+	"blobsFolders": ["blobs"], // Folders next to the manifest to use for blobs (new/edited existing JSON and GFXI files)
 	"localisation": {
 		"english": {
 			"UI_THEBESTMOD": "The Best Mod" // You can use UI_THEBESTMOD elsewhere
@@ -105,7 +105,7 @@ Each mod contains a manifest. Manifests have the following format:
 			"image": "additionalcontent.png", // Not required, will display an image to the right of the settings window with the image, option name and tooltip when hovered in the GUI
 			"type": "checkbox", // Checkbox type means a checkbox to use the variation or not
 			"enabledByDefault": false, // Default value of the mod option when the user first enables the mod - if it is enabled by default but requires a non-present mod it will be forcibly disabled
-			"contentFolder": "additional content", // Options can include all fields in the above section, and do not override them (so both content folders are used)
+			"contentFolders": ["additional content"], // Options can include all fields in the above section, and do not override them (so both content folders are used)
 			"requirements": ["Atampy26.AnotherRequiredModButOnlyIfVariationEnabled"]
 		},
 		{
@@ -159,7 +159,7 @@ Each mod contains a manifest. Manifests have the following format:
 			"name": "Use epic content",
 			"type": "conditional", // This variation will be active if its condition returns true and inactive otherwise - it will not be shown in the GUI
 			"condition": "\"Atampy26.SomeOtherMod\" in config.loadOrder", // The condition is passed the framework's config; you can check the syntax at https://github.com/m93a/filtrex#expressions
-			"contentFolder": "epicContent"
+			"contentFolders": ["epicContent"]
 		}
 	]
 }

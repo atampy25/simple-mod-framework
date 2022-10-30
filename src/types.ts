@@ -67,11 +67,11 @@ export type Manifest = {
 } & ManifestOptionData
 
 export interface ManifestOptionData {
-	/** A folder with content files that will be crawled and automatically deployed. */
-	contentFolder?: string
+	/** Folders with content files that will be crawled and automatically deployed. */
+	contentFolders?: string[]
 
-	/** A folder with blobs that will be crawled and automatically deployed. */
-	blobsFolder?: string
+	/** Folders with blobs that will be crawled and automatically deployed. */
+	blobsFolders?: string[]
 
 	/** Localisation for each supported language. */
 	localisation?: {

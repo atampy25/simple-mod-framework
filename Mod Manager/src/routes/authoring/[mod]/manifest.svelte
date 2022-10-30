@@ -19,7 +19,7 @@
 		name: "Loading...",
 		description: "Extremely good description",
 		authors: ["Example"],
-		contentFolder: "content",
+		contentFolders: ["content"],
 		frameworkVersion: FrameworkVersion
 	} as Manifest
 
@@ -31,7 +31,7 @@
 				name: "Loading...",
 				description: "Extremely good description",
 				authors: ["Example"],
-				contentFolder: "content",
+				contentFolders: ["content"],
 				frameworkVersion: FrameworkVersion
 		  } as Manifest)
 
@@ -57,30 +57,30 @@
 		source={manifest}
 		modRoot={getModFolder(manifest.id)}
 		on:contentFolder-define={({ detail }) => {
-			alterModManifest(manifest.id, { contentFolder: detail })
+			alterModManifest(manifest.id, { contentFolders: detail.split(", ") })
 			dummyForceUpdate = Math.random()
-			manifest.contentFolder = detail
+			manifest.contentFolders = detail.split(", ")
 		}}
 		on:contentFolder-undefine={() => {
 			const x = getManifestFromModID(manifest.id)
-			delete x["contentFolder"]
+			delete x["contentFolders"]
 			setModManifest(manifest.id, x)
 			dummyForceUpdate = Math.random()
 
-			manifest.contentFolder = undefined
+			manifest.contentFolders = undefined
 		}}
 		on:blobsFolder-define={({ detail }) => {
-			alterModManifest(manifest.id, { blobsFolder: detail })
+			alterModManifest(manifest.id, { blobsFolders: detail.split(", ") })
 			dummyForceUpdate = Math.random()
-			manifest.blobsFolder = detail
+			manifest.blobsFolders = detail.split(", ")
 		}}
 		on:blobsFolder-undefine={() => {
 			const x = getManifestFromModID(manifest.id)
-			delete x["blobsFolder"]
+			delete x["blobsFolders"]
 			setModManifest(manifest.id, x)
 			dummyForceUpdate = Math.random()
 
-			manifest.blobsFolder = undefined
+			manifest.blobsFolders = undefined
 		}}
 		on:localisationValue-define={({ detail }) => {
 			if (!getManifestFromModID(manifest.id)["localisation"])
