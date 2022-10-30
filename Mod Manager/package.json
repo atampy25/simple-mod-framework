@@ -39,6 +39,7 @@
 		"electron-reloader": "^1.2.3",
 		"electron-serve": "^1.1.0",
 		"electron-window-state": "^5.0.3",
+		"filtrex": "^3.0.0",
 		"fs-extra": "^10.1.0",
 		"json5": "^2.2.1",
 		"klaw-sync": "^6.0.0",

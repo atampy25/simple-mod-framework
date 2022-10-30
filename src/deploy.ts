@@ -4,6 +4,7 @@ import * as ts from "./typescript"
 
 import type { DeployInstruction, Manifest, ManifestOptionData, ModScript } from "./types"
 import { ModuleKind, ScriptTarget } from "typescript"
+import { compileExpression, useDotAccessOperatorAndOptionalChaining } from "filtrex"
 import { config, logger, rpkgInstance } from "./core-singleton"
 import { copyFromCache, copyToCache, extractOrCopyToTemp, getQuickEntityFromPatchVersion, getQuickEntityFromVersion, hexflip } from "./utils"
 
@@ -212,7 +213,10 @@ export default async function deploy(
 					(a) =>
 						(a.type == OptionType.checkbox && config.modOptions[manifest.id].includes(a.name)) ||
 						(a.type == OptionType.select && config.modOptions[manifest.id].includes(a.group + ":" + a.name)) ||
-						(a.type == OptionType.requirement && a.mods.every((b) => config.loadOrder.includes(b)))
+						(a.type == OptionType.conditional &&
+							compileExpression(a.condition, { customProp: useDotAccessOperatorAndOptionalChaining })({
+								config
+							}))
 				)) {
 					if (
 						option.contentFolder &&
@@ -1776,22 +1780,22 @@ export default async function deploy(
 	/* ---------------------------------------------------------------------------------------------- */
 	/*                                        Runtime packages                                        */
 	/* ---------------------------------------------------------------------------------------------- */
-	logger.info("Copying runtime packages")
+	// logger.info("Copying runtime packages")
 
-	let runtimePatchNumber = 201
-	for (const runtimeFile of runtimePackages) {
-		fs.copyFileSync(
-			path.join(process.cwd(), "Mods", runtimeFile.mod, runtimeFile.path),
-			config.outputToSeparateDirectory
-				? path.join(process.cwd(), "Output", "chunk" + runtimeFile.chunk + "patch" + runtimePatchNumber + ".rpkg")
-				: path.join(config.runtimePath, "chunk" + runtimeFile.chunk + "patch" + runtimePatchNumber + ".rpkg")
-		)
-		runtimePatchNumber++
+	// let runtimePatchNumber = 201
+	// for (const runtimeFile of runtimePackages) {
+	// 	fs.copyFileSync(
+	// 		path.join(process.cwd(), "Mods", runtimeFile.mod, runtimeFile.path),
+	// 		config.outputToSeparateDirectory
+	// 			? path.join(process.cwd(), "Output", "chunk" + runtimeFile.chunk + "patch" + runtimePatchNumber + ".rpkg")
+	// 			: path.join(config.runtimePath, "chunk" + runtimeFile.chunk + "patch" + runtimePatchNumber + ".rpkg")
+	// 	)
+	// 	runtimePatchNumber++
 
-		if (runtimePatchNumber >= 300) {
-			logger.error("More than 95 total runtime packages!")
-		} // Framework only manages patch200-300
-	}
+	// 	if (runtimePatchNumber >= 300) {
+	// 		logger.error("More than 95 total runtime packages!")
+	// 	} // Framework only manages patch200-300
+	// }
 
 	/* ---------------------------------------------------------------------------------------------- */
 	/*                                          Localisation                                          */

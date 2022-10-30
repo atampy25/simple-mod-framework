@@ -443,7 +443,7 @@
 		{/if}
 		<br />
 		<br />
-		<div class="flex flex-row items-center cursor-pointer" on:click={() => (runtimePackages = !runtimePackages)}>
+		<!-- <div class="flex flex-row items-center cursor-pointer" on:click={() => (runtimePackages = !runtimePackages)}>
 			<h4 class="flex-grow">Runtime packages</h4>
 			<div class:spin={runtimePackages} class:spinBack={!runtimePackages}>
 				<Icon icon={faChevronDown} />
@@ -520,7 +520,7 @@
 			</div>
 		{/if}
 		<br />
-		<br />
+		<br /> -->
 		<div class="flex flex-row items-center cursor-pointer" on:click={() => (dependencies = !dependencies)}>
 			<h4 class="flex-grow">Dependencies</h4>
 			<div class:spin={dependencies} class:spinBack={!dependencies}>

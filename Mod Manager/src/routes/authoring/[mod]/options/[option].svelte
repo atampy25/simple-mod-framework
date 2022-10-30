@@ -50,7 +50,7 @@
 	$: option = $page.params.option
 		? manifest.options!.find((a) =>
 				$page.params.option.split("$|$")[0] == "-"
-					? a.type == "checkbox" && a.name == $page.params.option.split("$|$")[1]
+					? (a.type == "checkbox" || a.type == "conditional") && a.name == $page.params.option.split("$|$")[1]
 					: a.type == "select" && a.group == $page.params.option.split("$|$")[0] && a.name == $page.params.option.split("$|$")[1]
 		  )!
 		: ({} as ArrayElement<Manifest["options"]>)
@@ -61,7 +61,7 @@
 		const m = getManifestFromModID(manifest.id)
 		const optIndex = m.options!.findIndex((a) =>
 			$page.params.option.split("$|$")[0] == "-"
-				? a.type == "checkbox" && a.name == $page.params.option.split("$|$")[1]
+				? (a.type == "checkbox" || a.type == "conditional") && a.name == $page.params.option.split("$|$")[1]
 				: a.type == "select" && a.group == $page.params.option.split("$|$")[0] && a.name == $page.params.option.split("$|$")[1]
 		)
 
@@ -83,7 +83,7 @@
 
 		return m.options!.find((a) =>
 			($page.params.option || "").split("$|$")[0] == "-"
-				? a.type == "checkbox" && a.name == ($page.params.option || "").split("$|$")[1]
+				? (a.type == "checkbox" || a.type == "conditional") && a.name == ($page.params.option || "").split("$|$")[1]
 				: a.type == "select" && a.group == ($page.params.option || "").split("$|$")[0] && a.name == ($page.params.option || "").split("$|$")[1]
 		)!
 	}
@@ -92,7 +92,7 @@
 		const m = getManifestFromModID(manifest.id)
 		const optIndex = m.options!.findIndex((a) =>
 			($page.params.option || "").split("$|$")[0] == "-"
-				? a.type == "checkbox" && a.name == ($page.params.option || "").split("$|$")[1]
+				? (a.type == "checkbox" || a.type == "conditional") && a.name == ($page.params.option || "").split("$|$")[1]
 				: a.type == "select" && a.group == ($page.params.option || "").split("$|$")[0] && a.name == ($page.params.option || "").split("$|$")[1]
 		)
 
@@ -113,6 +113,9 @@
 
 	let tooltipInputModal: TextInputModal
 	let tooltipInputModalOpen = false
+
+	let conditionInputModal: TextInputModal
+	let conditionInputModalOpen = false
 
 	window.ipc.receive("imageOpenDialogResult", (imagePopupResult: string[] | undefined) => {
 		if (!imagePopupResult) {
@@ -151,20 +154,20 @@
 				const opt = getOption(manifest.id)
 				opt.type = detail
 
-				delete opt.enabledByDefault // these are not present in all option types
+				// these are not present in all option types
+				delete opt.enabledByDefault
 				delete opt.group
 				delete opt.tooltip
 				delete opt.image
 				delete opt.mods
+				delete opt.condition
 
 				setOption(manifest.id, opt)
 				dummyForceUpdate = Math.random()
 			}}
 			legendText="Type of option"
 		>
-			{#each Object.keys(OptionType)
-				.filter((a) => typeof a == "string")
-				.filter((a) => a != "requirement") as optionType (optionType)}
+			{#each Object.keys(OptionType).filter((a) => typeof a == "string") as optionType (optionType)}
 				<RadioButton value={optionType} labelText={optionType.slice(0, 1).toUpperCase() + optionType.slice(1)} />
 			{/each}
 		</RadioButtonGroup>
@@ -252,6 +255,12 @@
 					}}
 				/>
 			{/if}
+		</div>
+	{/if}
+
+	{#if option.type == "conditional"}
+		<div>
+			<Button icon={Edit} on:click={() => (conditionInputModalOpen = true)}>Set condition</Button>
 		</div>
 	{/if}
 
@@ -897,6 +906,20 @@
 	on:close={() => {
 		if (tooltipInputModal.value && tooltipInputModal.value.length) {
 			alterOption(manifest.id, { tooltip: tooltipInputModal.value })
+			dummyForceUpdate = Math.random()
+		}
+	}}
+/>
+
+<TextInputModal
+	bind:this={conditionInputModal}
+	bind:showingModal={conditionInputModalOpen}
+	modalText="Edit the option condition"
+	modalPlaceholder={option.condition || ""}
+	modalInitialText={option.condition || ""}
+	on:close={() => {
+		if (conditionInputModal.value && conditionInputModal.value.length) {
+			alterOption(manifest.id, { condition: conditionInputModal.value })
 			dummyForceUpdate = Math.random()
 		}
 	}}

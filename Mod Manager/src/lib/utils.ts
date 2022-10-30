@@ -1,4 +1,5 @@
 import type { Config, Manifest } from "../../../src/types"
+import { compileExpression, useDotAccessOperatorAndOptionalChaining } from "filtrex"
 
 import Ajv from "ajv"
 import json5 from "json5"
@@ -160,7 +161,10 @@ export function sortMods() {
 								(a) =>
 									config.modOptions[modManifest.id].includes(a.name) ||
 									config.modOptions[modManifest.id].includes(a.group + ":" + a.name) ||
-									(a.type == "requirement" && a.mods.every((b) => config.loadOrder.includes(b)))
+									(a.type == OptionType.conditional &&
+										compileExpression(a.condition, { customProp: useDotAccessOperatorAndOptionalChaining })({
+											config
+										}))
 							)
 							.map((a) => a.loadBefore)
 							.filter((a) => a)
@@ -174,7 +178,10 @@ export function sortMods() {
 								(a) =>
 									config.modOptions[modManifest.id].includes(a.name) ||
 									config.modOptions[modManifest.id].includes(a.group + ":" + a.name) ||
-									(a.type == "requirement" && a.mods.every((b) => config.loadOrder.includes(b)))
+									(a.type == OptionType.conditional &&
+										compileExpression(a.condition, { customProp: useDotAccessOperatorAndOptionalChaining })({
+											config
+										}))
 							)
 							.map((a) => a.loadAfter)
 							.filter((a) => a)
@@ -306,7 +313,7 @@ const modWarnings: {
 				try {
 					const manifest = await window.fs.readJSON(fileToCheck)
 					if (!manifest) return true
-					if (!(await validateManifest(manifest))) return true
+					if (!validateManifest(manifest)) return true
 				} catch {
 					return true
 				}
@@ -343,17 +350,6 @@ const modWarnings: {
 		type: "error"
 	},
 	{
-		title: "Runtime package used",
-		subtitle: `
-			The <code class="h">runtimePackages</code> manifest feature is generally not recommended for use, as it can cause compatibility issues and is deprecated.<br><br>
-			You should place the files of runtime packages in a content folder instead, and make use of any relevant framework features.
-		`,
-		check: async (fileToCheck, hashList, baseGameHashes) => {
-			return fileToCheck.endsWith(".rpkg")
-		},
-		type: "warning"
-	},
-	{
 		title: "Base game repository is outright replaced",
 		subtitle: `
 			The entire repository is being outright replaced by a raw file. This is very likely to cause compatibility issues, as well as making things harder to view and edit for users and yourself.<br><br>
@@ -386,26 +382,6 @@ const modWarnings: {
 				(baseGameHashes.has(window.path.basename(fileToCheck, ".TEMP")) || baseGameHashes.has(window.path.basename(fileToCheck, ".TBLU")))
 			) {
 				return true
-			}
-
-			return false
-		},
-		type: "warning"
-	},
-	{
-		title: "Base game entity is outright replaced",
-		subtitle: `
-			A vanilla entity is being outright replaced by an <code class="h">entity.json</code> file. This can cause compatibility issues.<br><br>
-			You should review this, even if you think no other mods will edit that file.<br><br>
-			Using an <code class="h">entity.patch.json</code> file is a simple fix that will ensure compatibility.
-			It may make the mod slightly slower to deploy, but that's the whole idea of the framework
-			- it's best to use framework features whenever possible, as this future-proofs your mod and allows you to take advantage of any improvements immediately,
-			without you needing to make changes. You should never avoid a framework feature purely for speed reasons.
-		`,
-		check: async (fileToCheck, hashList, baseGameHashes) => {
-			if (fileToCheck.endsWith("entity.json")) {
-				const fileContents = await window.fs.readJSON(fileToCheck)
-				if (baseGameHashes.has(fileContents.tempHash) || baseGameHashes.has(fileContents.tbluHash)) return true
 			}
 
 			return false

@@ -13,6 +13,7 @@ import path from "path"
 import semver from "semver"
 import { xxhash3 } from "hash-wasm"
 import { ModuleKind, ScriptTarget } from "typescript"
+import { compileExpression, useDotAccessOperatorAndOptionalChaining } from "filtrex"
 
 const deepMerge = function (x, y) {
 	return mergeWith(x, y, (orig, src) => {
@@ -136,7 +137,10 @@ export default async function discover(): Promise<{ [x: string]: { hash: string;
 					(a) =>
 						(a.type == OptionType.checkbox && config.modOptions[manifest.id].includes(a.name)) ||
 						(a.type == OptionType.select && config.modOptions[manifest.id].includes(a.group + ":" + a.name)) ||
-						(a.type == OptionType.requirement && a.mods.every((b) => config.loadOrder.includes(b)))
+						(a.type == OptionType.conditional &&
+							compileExpression(a.condition, { customProp: useDotAccessOperatorAndOptionalChaining })({
+								config
+							}))
 				)) {
 					if (
 						option.contentFolder &&

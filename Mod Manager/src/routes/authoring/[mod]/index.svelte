@@ -232,7 +232,7 @@
 									<CheckboxChecked size={64} />
 								{:else if option.type == "select"}
 									<RadioButtonChecked size={64} />
-								{:else if option.type == "requirement"}
+								{:else if option.type == "conditional"}
 									<Asterisk size={64} />
 								{/if}
 							</div>

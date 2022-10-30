@@ -1,256 +1,297 @@
 {
 	"$schema": "http://json-schema.org/draft-07/schema#",
-	"type": "object",
-	"properties": {
-		"id": {
-			"type": "string"
-		},
-		"name": {
-			"type": "string"
-		},
-		"description": {
-			"type": "string"
-		},
-		"authors": {
-			"type": "array",
-			"items": {
-				"type": "string"
-			}
-		},
-		"version": {
-			"type": "string"
-		},
-		"frameworkVersion": {
-			"type": "string"
-		},
-		"updateCheck": {
-			"type": "string"
-		},
-		"contentFolder": {
-			"type": "string"
-		},
-		"blobsFolder": {
-			"type": "string"
-		},
-		"localisation": {
+	"allOf": [
+		{
 			"type": "object",
 			"properties": {
-				"english": {
-					"type": "object",
-					"properties": {},
-					"required": []
+				"id": {
+					"type": "string"
 				},
-				"french": {
-					"type": "object",
-					"properties": {},
-					"required": []
+				"name": {
+					"type": "string"
 				},
-				"italian": {
-					"type": "object",
-					"properties": {},
-					"required": []
+				"description": {
+					"type": "string"
 				},
-				"german": {
-					"type": "object",
-					"properties": {},
-					"required": []
+				"authors": {
+					"type": "array",
+					"items": {
+						"type": "string"
+					}
 				},
-				"spanish": {
-					"type": "object",
-					"properties": {},
-					"required": []
+				"version": {
+					"type": "string"
 				},
-				"russian": {
-					"type": "object",
-					"properties": {},
-					"required": []
+				"frameworkVersion": {
+					"type": "string"
 				},
-				"chineseSimplified": {
-					"type": "object",
-					"properties": {},
-					"required": []
+				"updateCheck": {
+					"type": "string"
 				},
-				"chineseTraditional": {
-					"type": "object",
-					"properties": {},
-					"required": []
-				},
-				"japanese": {
-					"type": "object",
-					"properties": {},
-					"required": []
+				"options": {
+					"type": "array",
+					"items": {
+						"allOf": [
+							{
+								"anyOf": [
+									{
+										"type": "object",
+										"properties": {
+											"name": {
+												"type": "string"
+											},
+											"type": {
+												"const": "checkbox"
+											},
+											"enabledByDefault": {
+												"type": "boolean"
+											},
+											"tooltip": {
+												"type": "string"
+											},
+											"image": {
+												"type": "string"
+											}
+										},
+										"required": ["name", "type"]
+									},
+									{
+										"type": "object",
+										"properties": {
+											"name": {
+												"type": "string"
+											},
+											"type": {
+												"const": "select"
+											},
+											"group": {
+												"type": "string"
+											},
+											"enabledByDefault": {
+												"type": "boolean"
+											},
+											"tooltip": {
+												"type": "string"
+											},
+											"image": {
+												"type": "string"
+											}
+										},
+										"required": ["name", "type", "group"]
+									},
+									{
+										"type": "object",
+										"properties": {
+											"name": {
+												"type": "string"
+											},
+											"type": {
+												"const": "conditional"
+											},
+											"condition": {
+												"type": "string"
+											}
+										},
+										"required": ["name", "type", "condition"]
+									}
+								]
+							},
+							{
+								"$ref": "#/definitions/ManifestOptionData"
+							}
+						]
+					}
 				}
 			},
-			"required": ["english", "french", "italian", "german", "spanish", "russian", "chineseSimplified", "chineseTraditional", "japanese"]
+			"required": ["id", "name", "description", "authors", "version", "frameworkVersion"]
 		},
-		"localisationOverrides": {
+		{
+			"$ref": "#/definitions/ManifestOptionData"
+		}
+	],
+	"definitions": {
+		"ManifestOptionData": {
 			"type": "object",
-			"patternProperties": {
-				"^.*$": {
+			"properties": {
+				"contentFolder": {
+					"type": "string"
+				},
+				"blobsFolder": {
+					"type": "string"
+				},
+				"localisation": {
 					"type": "object",
 					"properties": {
 						"english": {
-							"type": "object",
-							"properties": {},
-							"required": []
+							"type": "object"
 						},
 						"french": {
-							"type": "object",
-							"properties": {},
-							"required": []
+							"type": "object"
 						},
 						"italian": {
-							"type": "object",
-							"properties": {},
-							"required": []
+							"type": "object"
 						},
 						"german": {
-							"type": "object",
-							"properties": {},
-							"required": []
+							"type": "object"
 						},
 						"spanish": {
-							"type": "object",
-							"properties": {},
-							"required": []
+							"type": "object"
 						},
 						"russian": {
-							"type": "object",
-							"properties": {},
-							"required": []
+							"type": "object"
 						},
 						"chineseSimplified": {
-							"type": "object",
-							"properties": {},
-							"required": []
+							"type": "object"
 						},
 						"chineseTraditional": {
-							"type": "object",
-							"properties": {},
-							"required": []
+							"type": "object"
 						},
 						"japanese": {
-							"type": "object",
-							"properties": {},
-							"required": []
+							"type": "object"
 						}
 					},
 					"required": ["english", "french", "italian", "german", "spanish", "russian", "chineseSimplified", "chineseTraditional", "japanese"]
-				}
-			}
-		},
-		"localisedLines": {
-			"type": "object",
-			"properties": {},
-			"required": []
-		},
-		"packagedefinition": {
-			"type": "array",
-			"items": {
-				"anyOf": [
-					{
-						"type": "object",
-						"properties": {
-							"type": {
-								"type": "string"
+				},
+				"localisationOverrides": {
+					"type": "object",
+					"patternProperties": {
+						"^.*$": {
+							"type": "object",
+							"properties": {
+								"english": {
+									"type": "object"
+								},
+								"french": {
+									"type": "object"
+								},
+								"italian": {
+									"type": "object"
+								},
+								"german": {
+									"type": "object"
+								},
+								"spanish": {
+									"type": "object"
+								},
+								"russian": {
+									"type": "object"
+								},
+								"chineseSimplified": {
+									"type": "object"
+								},
+								"chineseTraditional": {
+									"type": "object"
+								},
+								"japanese": {
+									"type": "object"
+								}
 							},
-							"name": {
-								"type": "string"
-							},
-							"parent": {
-								"type": "string"
-							},
-							"partitionType": {
-								"type": "string"
-							}
-						},
-						"required": ["type", "name", "parent", "partitionType"]
-					},
-					{
-						"type": "object",
-						"properties": {
-							"type": {
-								"type": "string"
-							},
-							"partition": {
-								"type": "string"
-							},
-							"path": {
-								"type": "string"
-							}
-						},
-						"required": ["type", "partition", "path"]
+							"required": ["english", "french", "italian", "german", "spanish", "russian", "chineseSimplified", "chineseTraditional", "japanese"]
+						}
 					}
-				]
-			}
-		},
-		"thumbs": {
-			"type": "array",
-			"items": {
-				"type": "string"
-			}
-		},
-		"runtimePackages": {
-			"type": "array",
-			"items": {
-				"type": "object",
-				"properties": {
-					"chunk": {
-						"type": "number"
-					},
-					"path": {
+				},
+				"localisedLines": {
+					"type": "object"
+				},
+				"packagedefinition": {
+					"type": "array",
+					"items": {
+						"anyOf": [
+							{
+								"type": "object",
+								"properties": {
+									"type": {
+										"type": "string"
+									},
+									"name": {
+										"type": "string"
+									},
+									"parent": {
+										"type": "string"
+									},
+									"partitionType": {
+										"type": "string"
+									}
+								},
+								"required": ["type", "name", "parent", "partitionType"]
+							},
+							{
+								"type": "object",
+								"properties": {
+									"type": {
+										"type": "string"
+									},
+									"partition": {
+										"type": "string"
+									},
+									"path": {
+										"type": "string"
+									}
+								},
+								"required": ["type", "partition", "path"]
+							}
+						]
+					}
+				},
+				"thumbs": {
+					"type": "array",
+					"items": {
 						"type": "string"
 					}
 				},
-				"required": ["chunk", "path"]
-			}
-		},
-		"dependencies": {
-			"type": "array",
-			"items": {
-				"anyOf": [
-					{
-						"type": "string"
-					},
-					{
-						"type": "object",
-						"properties": {
-							"runtimeID": {
+				"dependencies": {
+					"type": "array",
+					"items": {
+						"anyOf": [
+							{
 								"type": "string"
 							},
-							"toChunk": {
-								"type": "number"
+							{
+								"type": "object",
+								"properties": {
+									"runtimeID": {
+										"type": "string"
+									},
+									"toChunk": {
+										"type": "number"
+									}
+								},
+								"required": ["runtimeID", "toChunk"]
 							}
-						},
-						"required": ["runtimeID", "toChunk"]
+						]
 					}
-				]
-			}
-		},
-		"supportedPlatforms": {
-			"type": "array",
-			"items": {
-				"type": "string"
-			}
-		},
-		"requirements": {
-			"type": "array",
-			"items": {
-				"type": "string"
-			}
-		},
-		"loadBefore": {
-			"type": "array",
-			"items": {
-				"type": "string"
-			}
-		},
-		"loadAfter": {
-			"type": "array",
-			"items": {
-				"type": "string"
+				},
+				"supportedPlatforms": {
+					"type": "array",
+					"items": {
+						"type": "string"
+					}
+				},
+				"requirements": {
+					"type": "array",
+					"items": {
+						"type": "string"
+					}
+				},
+				"loadBefore": {
+					"type": "array",
+					"items": {
+						"type": "string"
+					}
+				},
+				"loadAfter": {
+					"type": "array",
+					"items": {
+						"type": "string"
+					}
+				},
+				"scripts": {
+					"type": "array",
+					"items": {
+						"type": "string"
+					}
+				}
 			}
 		}
-	},
-	"required": ["id", "name", "description", "authors", "version", "frameworkVersion"]
+	}
 }

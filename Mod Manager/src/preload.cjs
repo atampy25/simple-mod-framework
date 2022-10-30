@@ -1,5 +1,4 @@
 const { contextBridge, ipcRenderer, shell } = require("electron")
-const { torchlight, Block } = require("./torchlight")
 
 contextBridge.exposeInMainWorld("fs", require("fs-extra"))
 contextBridge.exposeInMainWorld("path", require("path"))

@@ -69,13 +69,6 @@ Each mod contains a manifest. Manifests have the following format:
 		}
 	],
 	"thumbs": ["ConsoleCmd AAAAAAAAAA"], // Thumbs.dat commands to place after [Hitman5]
-	"runtimePackages": [
-		// RPKG files to place (and automatically name) in Runtime
-		{
-			"chunk": 0, // This for example would become chunk0patch205 if no other mods added RPKGs (numbers are incremented automatically)
-			"path": "portedhashes.rpkg"
-		}
-	],
 	"dependencies": [
 		// Runtime IDs of files to extract the dependencies of and place in chunk0 (automatic porting of dependencies) OR objects containing a runtime ID and the chunk to place the dependencies in
 		"00123456789ABCDE",
@@ -163,8 +156,8 @@ Each mod contains a manifest. Manifests have the following format:
 		},
 		{
 			"name": "Use epic content",
-			"type": "requirement", // This variation will be active if every mod in mods is enabled and inactive otherwise - it will not be shown in the GUI
-			"mods": ["Atampy26.SomeOtherMod"],
+			"type": "conditional", // This variation will be active if its condition returns true and inactive otherwise - it will not be shown in the GUI
+			"condition": "\"Atampy26.SomeOtherMod\" in config.loadOrder", // The condition is passed the framework's config; you can check the syntax at https://github.com/m93a/filtrex#expressions
 			"contentFolder": "epicContent"
 		}
 	]

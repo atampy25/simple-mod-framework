@@ -23,7 +23,7 @@ export enum Language {
 export enum OptionType {
 	checkbox = "checkbox",
 	select = "select",
-	requirement = "requirement"
+	conditional = "conditional"
 }
 
 export type Manifest = {
@@ -59,8 +59,8 @@ export type Manifest = {
 		  }
 		| {
 				name: string
-				type: OptionType.requirement
-				mods: string[]
+				type: OptionType.conditional
+				condition: string
 		  }
 	) &
 		ManifestOptionData)[]
@@ -112,13 +112,6 @@ export interface ManifestOptionData {
 
 	/** Commands to add to thumbs.dat after [Hitman5]. */
 	thumbs?: string[]
-
-	/** RPKG files to add to Runtime before the framework patch.
-	 * Use of this is discouraged. */
-	runtimePackages?: {
-		chunk: number
-		path: string
-	}[]
 
 	/** RuntimeIDs that will be ported to chunk0 or to a provided chunk. */
 	dependencies?: (
@@ -177,10 +170,6 @@ export interface DeployInstruction {
 
 		/** Commands to add to thumbs.dat after [Hitman5]. */
 		thumbs: ManifestOptionData["thumbs"]
-
-		/** RPKG patch files to add to Runtime before the framework patch.
-		 * Use of this is discouraged. */
-		runtimePackages: ManifestOptionData["runtimePackages"]
 
 		/** RuntimeIDs that will be ported to chunk0 or to a provided chunk. */
 		dependencies: ManifestOptionData["dependencies"]
