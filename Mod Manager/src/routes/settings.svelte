@@ -158,5 +158,9 @@
 	{/each}
 </div>
 
-<style>
+<style global>
+	.bx--radio-button-group {
+		flex-wrap: wrap;
+		row-gap: 0.2rem;
+	}
 </style>
