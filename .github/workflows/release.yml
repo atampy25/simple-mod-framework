@@ -20,14 +20,14 @@ jobs:
         uses: actions/cache@v2.1.6
         with:
           path: node_modules
-          key: buildCachev21
+          key: buildCachev22
 
       - name: Cache
         id: cache2
         uses: actions/cache@v2.1.6
         with:
           path: Mod Manager/node_modules
-          key: buildCache2v13
+          key: buildCache2v14
 
       - name: Install dependencies
         if: steps.cache.outputs.cache-hit != 'true'

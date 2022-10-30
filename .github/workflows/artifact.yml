@@ -17,7 +17,7 @@ jobs:
         uses: actions/cache@v2.1.6
         with:
           path: node_modules
-          key: buildCachev21
+          key: buildCachev22
 
       - name: Cache
         id: cache2

@@ -311,7 +311,7 @@ const modWarnings: {
 		check: async (fileToCheck, hashList, baseGameHashes) => {
 			if (window.path.basename(fileToCheck) == "manifest.json") {
 				try {
-					const manifest = await window.fs.readJSON(fileToCheck)
+					const manifest = json5.parse(String(await window.fs.readFile(fileToCheck)))
 					if (!manifest) return true
 					if (!validateManifest(manifest)) return true
 				} catch {
