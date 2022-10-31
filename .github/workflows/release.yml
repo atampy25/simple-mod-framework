@@ -126,9 +126,20 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Compile TypeScript
+      - name: Cache
+        id: cache
+        uses: actions/cache@v2.1.6
+        with:
+          path: node_modules
+          key: buildCachev22
+
+      - name: Install dependencies
+        if: steps.cache.outputs.cache-hit != 'true'
         run: |
           npm install
+
+      - name: Compile TypeScript
+        run: |
           npm install -g tsc-silent
           tsc-silent -p tsconfig.json --suppress @
 
