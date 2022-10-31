@@ -1,5 +1,6 @@
 import { OptionType, type Config, type Manifest } from "../../../src/types"
 import { compileExpression, useDotAccessOperatorAndOptionalChaining } from "filtrex"
+import { xxhash3 } from "hash-wasm"
 
 import Ajv from "ajv"
 import json5 from "json5"
@@ -249,12 +250,12 @@ export function setModManifest(modID: string, manifest: Manifest) {
 export const getModFolder = memoize(function (id: string) {
 	const folder = modIsFramework(id)
 		? window.fs
-				.readdirSync(window.path.join("..", "Mods"))
-				.find(
-					(a) =>
-						window.fs.existsSync(window.path.join("..", "Mods", a, "manifest.json")) &&
-						json5.parse(String(window.fs.readFileSync(window.path.join("..", "Mods", a, "manifest.json"), "utf8"))).id == id
-				) // Find mod by ID
+			.readdirSync(window.path.join("..", "Mods"))
+			.find(
+				(a) =>
+					window.fs.existsSync(window.path.join("..", "Mods", a, "manifest.json")) &&
+							json5.parse(String(window.fs.readFileSync(window.path.join("..", "Mods", a, "manifest.json"), "utf8"))).id == id
+			) // Find mod by ID
 		: window.path.join("..", "Mods", id) // Mod is an RPKG mod, use folder name
 
 	if (!folder) {
@@ -474,28 +475,13 @@ const modWarnings: {
 	}
 ]
 
-export async function getModWarnings(modID: string, allModFiles: string[], hashList: { hash: string; type: string; path: string }[], baseGameHashes: Set<string>) {
-	const warnings: { title: string; subtitle: string; trace: string; type: "error" | "warning" | "warning-suppressed" | "info" }[] = []
-
-	for (const file of allModFiles)
-		for (const warning of modWarnings) {
-			if (await warning.check(file, hashList, baseGameHashes))
-				warnings.push({
-					title: warning.title,
-					subtitle: warning.subtitle,
-					trace: file,
-					type: warning.type
-				})
-		}
-
-	return [modID, warnings]
-}
-
 let startedGettingModWarnings = false
 
 export async function getAllModWarnings() {
 	if (!startedGettingModWarnings && !window.fs.existsSync("./warnings.json")) {
 		startedGettingModWarnings = true
+
+		const cachedDiagnostics = window.fs.existsSync("./cachedDiagnostics.json") ? await window.fs.readJSON("./cachedDiagnostics.json") : {}
 
 		const hashList = window.fs
 			.readFileSync(window.path.join("..", "Third-Party", "hash_list.txt"), "utf-8")
@@ -514,15 +500,47 @@ export async function getAllModWarnings() {
 		const allWarnings = []
 
 		for (const mod of getAllMods().filter((a) => modIsFramework(a))) {
+			const fileWarnings: Record<string, any[]> = {}
+
+			const filesToCheck: string[][] = []
+
+			await Promise.all(
+				window.klaw(getModFolder(mod), { nodir: true }).map((a) => a.path).map(async (file) => {
+					const fileHash = await xxhash3(await window.fs.readFile(file))
+		
+					if (!cachedDiagnostics[file] || fileHash != cachedDiagnostics[file].hash) {
+						filesToCheck.push([fileHash, file])
+					} else {
+						fileWarnings[file] = cachedDiagnostics[file].diagnostics
+					}
+				})
+			)
+		
+			for (const [fileHash, file] of filesToCheck) {
+				fileWarnings[file] = []
+				for (const warning of modWarnings) {
+					if (await warning.check(file, hashList, baseGameHashes)) {
+						fileWarnings[file].push({
+							title: warning.title,
+							subtitle: warning.subtitle,
+							trace: file,
+							type: warning.type
+						})
+					}
+				}
+		
+				cachedDiagnostics[file] = {
+					hash: fileHash,
+					diagnostics: fileWarnings[file]
+				}
+			}
+
 			allWarnings.push(
-				getModWarnings(
-					mod,
-					window.klaw(getModFolder(mod), { nodir: true }).map((a) => a.path),
-					hashList,
-					baseGameHashes
-				)
+				[mod, Object.values(fileWarnings)]
 			)
 		}
+		
+		await window.fs.writeJSON("./cachedDiagnostics.json", cachedDiagnostics)
 
 		await window.fs.writeJSON("./warnings.json", Object.fromEntries(await Promise.all(allWarnings)))
 	} else if (startedGettingModWarnings) {

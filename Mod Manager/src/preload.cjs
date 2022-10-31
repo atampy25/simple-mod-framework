@@ -4,7 +4,10 @@ contextBridge.exposeInMainWorld("fs", require("fs-extra"))
 contextBridge.exposeInMainWorld("path", require("path"))
 contextBridge.exposeInMainWorld("klaw", require("klaw-sync"))
 contextBridge.exposeInMainWorld("AdmZip", require("adm-zip"))
-contextBridge.exposeInMainWorld("Buffer", require("buffer").Buffer)
+contextBridge.exposeInMainWorld("Buffer", {
+	isBuffer: Buffer.isBuffer,
+	from: Buffer.from
+})
 contextBridge.exposeInMainWorld("ipc", {
 	send: (channel, data) => {
 		ipcRenderer.send(channel, data)

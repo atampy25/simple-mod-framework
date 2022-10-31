@@ -16,7 +16,7 @@ declare global {
 		path: typeof path
 		klaw: typeof klaw
 		AdmZip: typeof AdmZip
-		Buffer: typeof buffer["Buffer"]
+		Buffer: typeof buffer
 		openExternalLink: typeof electron["shell"]["openExternal"]
 	}
 }

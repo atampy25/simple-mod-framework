@@ -146,7 +146,7 @@
 
 		window.fs.emptyDirSync("./staging")
 
-		new window.AdmZip(new window.Buffer(chunksAll)).extractAllTo("./staging")
+		new window.AdmZip(window.Buffer.from(chunksAll)).extractAllTo("./staging")
 
 		window.fs.removeSync("./staging/Mods")
 		window.fs.removeSync("./staging/cleanPackageDefinition.txt")
