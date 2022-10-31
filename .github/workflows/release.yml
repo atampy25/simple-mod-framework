@@ -128,7 +128,8 @@ jobs:
 
       - name: Compile TypeScript
         run: |
-          npm install -g typescript tsc-silent
+          npm install
+          npm install -g tsc-silent
           tsc-silent -p tsconfig.json --suppress @
 
       - name: Sentry release
