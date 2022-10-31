@@ -35,22 +35,23 @@
 		cannotFindConfig = true
 	}
 
+	
+	if (typeof getConfig().retailPath === "undefined") {
+		mergeConfig({
+			retailPath: "..\\Retail"
+		})
+	}
+
 	if (!cannotFindConfig) {
 		if (!window.fs.existsSync(window.path.resolve("..", getConfig().runtimePath))) {
-			cannotFindRuntime = true
-		} else {
-			if (typeof getConfig().retailPath === "undefined") {
-				mergeConfig({
-					retailPath: "..\\Retail"
-				})
-			}
-
 			if (window.fs.existsSync(window.path.join(getConfig().retailPath, "Runtime", "chunk0.rpkg")) && getConfig().runtimePath == "..\\Runtime") {
 				mergeConfig({
-					retailPath: "..\\Retail\\Runtime"
+					runtimePath: "..\\Retail\\Runtime"
 				})
+			} else {
+				cannotFindRuntime = true
 			}
-
+		} else {
 			if (!window.fs.existsSync(window.path.resolve("..", getConfig().retailPath))) {
 				cannotFindRetail = true
 			} else {
