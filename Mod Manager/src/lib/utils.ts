@@ -8,7 +8,7 @@ import manifestSchema from "$lib/manifest-schema.json"
 import memoize from "lodash.memoize"
 import merge from "lodash.mergewith"
 
-export const FrameworkVersion = "2.0.0"
+export const FrameworkVersion = "2.1.1"
 
 const validateManifest = new Ajv().compile(manifestSchema)
 
@@ -250,12 +250,12 @@ export function setModManifest(modID: string, manifest: Manifest) {
 export const getModFolder = memoize(function (id: string) {
 	const folder = modIsFramework(id)
 		? window.fs
-			.readdirSync(window.path.join("..", "Mods"))
-			.find(
-				(a) =>
-					window.fs.existsSync(window.path.join("..", "Mods", a, "manifest.json")) &&
-							json5.parse(String(window.fs.readFileSync(window.path.join("..", "Mods", a, "manifest.json"), "utf8"))).id == id
-			) // Find mod by ID
+				.readdirSync(window.path.join("..", "Mods"))
+				.find(
+					(a) =>
+						window.fs.existsSync(window.path.join("..", "Mods", a, "manifest.json")) &&
+						json5.parse(String(window.fs.readFileSync(window.path.join("..", "Mods", a, "manifest.json"), "utf8"))).id == id
+				) // Find mod by ID
 		: window.path.join("..", "Mods", id) // Mod is an RPKG mod, use folder name
 
 	if (!folder) {
@@ -505,17 +505,20 @@ export async function getAllModWarnings() {
 			const filesToCheck: string[][] = []
 
 			await Promise.all(
-				window.klaw(getModFolder(mod), { nodir: true }).map((a) => a.path).map(async (file) => {
-					const fileHash = await xxhash3(await window.fs.readFile(file))
-		
-					if (!cachedDiagnostics[file] || fileHash != cachedDiagnostics[file].hash) {
-						filesToCheck.push([fileHash, file])
-					} else {
-						fileWarnings[file] = cachedDiagnostics[file].diagnostics
-					}
-				})
+				window
+					.klaw(getModFolder(mod), { nodir: true })
+					.map((a) => a.path)
+					.map(async (file) => {
+						const fileHash = await xxhash3(await window.fs.readFile(file))
+
+						if (!cachedDiagnostics[file] || fileHash != cachedDiagnostics[file].hash) {
+							filesToCheck.push([fileHash, file])
+						} else {
+							fileWarnings[file] = cachedDiagnostics[file].diagnostics
+						}
+					})
 			)
-		
+
 			for (const [fileHash, file] of filesToCheck) {
 				fileWarnings[file] = []
 				for (const warning of modWarnings) {
@@ -528,18 +531,16 @@ export async function getAllModWarnings() {
 						})
 					}
 				}
-		
+
 				cachedDiagnostics[file] = {
 					hash: fileHash,
 					diagnostics: fileWarnings[file]
 				}
 			}
 
-			allWarnings.push(
-				[mod, Object.values(fileWarnings)]
-			)
+			allWarnings.push([mod, Object.values(fileWarnings)])
 		}
-		
+
 		await window.fs.writeJSON("./cachedDiagnostics.json", cachedDiagnostics)
 
 		await window.fs.writeJSON("./warnings.json", Object.fromEntries(await Promise.all(allWarnings)))

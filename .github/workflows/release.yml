@@ -128,8 +128,8 @@ jobs:
 
       - name: Compile TypeScript
         run: |
-          npm install -g typescript
-          tsc
+          npm install -g typescript tsc-silent
+          tsc-silent -p tsconfig.json --suppress @
 
       - name: Sentry release
         uses: getsentry/action-release@v1.1.6
@@ -140,4 +140,4 @@ jobs:
         with:
           environment: production
           version: ${{ github.ref }}
-          sourcemaps: './compiled/core-singleton.js.map ./compiled/core.js.map ./compiled/crc32.js.map ./compiled/deploy.js.map ./compiled/difference.js.map ./compiled/discover.js.map ./compiled/main.js.map ./compiled/patchWorker.js.map ./compiled/quickentity.js.map ./compiled/quickentity20.js.map ./compiled/quickentity1136.js.map ./compiled/rpkg.js.map ./compiled/three-onlymath.min.js.map ./compiled/types.js.map ./compiled/typescript.js.map ./compiled/utils.js.map'
+          sourcemaps: './compiled/core-singleton.js.map ./compiled/core.js.map ./compiled/crc32.js.map ./compiled/deploy.js.map ./compiled/difference.js.map ./compiled/discover.js.map ./compiled/main.js.map ./compiled/patchWorker.js.map ./compiled/quickentity-rs.js.map ./compiled/quickentity.js.map ./compiled/quickentity20.js.map ./compiled/quickentity1136.js.map ./compiled/rpkg.js.map ./compiled/three-onlymath.min.js.map ./compiled/types.js.map ./compiled/typescript.js.map ./compiled/utils.js.map'
