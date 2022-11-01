@@ -49,7 +49,7 @@ jobs:
         uses: aochmann/actions-download-artifact@5709392f11b5937bd316e52687ad87f7deced5f5
         with:
           repo: glacier-modding/RPKG-Tool
-          name: rpkg
+          name: rpkg-cli
           latest: true
           path: './Third-Party'
 
