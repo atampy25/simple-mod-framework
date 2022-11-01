@@ -388,7 +388,7 @@
 	{#if !removeModDiagnosticsElemYet}
 		<div in:fade out:fade={{ duration: 1000 }}>
 			<div class="flex items-center gap-16">
-				<h1 class="flex-grow">Running mod diagnostics...</h1>
+				<h1 class="flex-grow">Running mod diagnostics - don't leave this page...</h1>
 				<div>
 					{#if !modDiagnosticsComplete}
 						<InlineLoading />
@@ -397,7 +397,7 @@
 					{/if}
 				</div>
 			</div>
-			<p>We're checking all the mods you have installed for possible issues. This shouldn't take too long - don't leave this page.</p>
+			<p>We're checking all the mods you have installed for possible issues. This shouldn't take too long.</p>
 		</div>
 	{/if}
 </div>

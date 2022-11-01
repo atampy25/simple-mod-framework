@@ -1523,7 +1523,7 @@ export default async function deploy(
 						fs.emptyDirSync(path.join(process.cwd(), "temp"))
 
 						await callRPKGFunction(
-							`-${dependency.portFromChunk1 || false ? "extract_non_chunk0_hash_depends_from" : "extract_non_base_hash_depends_from"} "${path.join(config.runtimePath)}" -filter "${
+							`-${dependency.portFromChunk1 || false ? "extract_non_boot_hash_depends_from" : "extract_non_base_hash_depends_from"} "${path.join(config.runtimePath)}" -filter "${
 								typeof dependency == "string" ? dependency : dependency.runtimeID
 							}" -output_path temp`
 						)
