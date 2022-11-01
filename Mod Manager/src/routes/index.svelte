@@ -35,7 +35,6 @@
 		cannotFindConfig = true
 	}
 
-	
 	if (typeof getConfig().retailPath === "undefined") {
 		mergeConfig({
 			retailPath: "..\\Retail"
@@ -146,7 +145,9 @@
 
 		window.fs.emptyDirSync("./staging")
 
-		new window.AdmZip(window.Buffer.from(chunksAll)).extractAllTo("./staging")
+		window.fs.writeFileSync("./temp.zip", chunksAll)
+
+		new window.AdmZip("./temp.zip", { fs: window.originalFs }).extractAllTo("./staging")
 
 		window.fs.removeSync("./staging/Mods")
 		window.fs.removeSync("./staging/cleanPackageDefinition.txt")
@@ -162,17 +163,25 @@
 		window.fs.removeSync("./staging/Mod Manager/Mod Manager.exe")
 		window.fs.removeSync("./staging/Mod Manager/locales")
 		window.fs.removeSync("./staging/Mod Manager/resources.pak")
+		window.fs.removeSync("./staging/Mod Manager/snapshot_blob.bin")
 		window.fs.removeSync("./staging/Mod Manager/v8_context_snapshot.bin")
+		window.fs.removeSync("./staging/Mod Manager/vk_swiftshader.dll")
+		window.fs.removeSync("./staging/Mod Manager/vk_swiftshader_icd.json")
+		window.fs.removeSync("./staging/Mod Manager/vulkan_1.dll")
 
 		window.fs.removeSync("../Load Order Manager")
 
-		window.fs.copySync("./staging", "..")
+		window.originalFs.renameSync("./staging/Mod Manager/resources/app.asar", "./temp.asar")
+		window.originalFs.cpSync("./staging", "..", { recursive: true })
+		window.originalFs.copyFileSync("./temp.asar", "./resources/app.asar")
 
 		window.fs.removeSync("./staging")
+		window.fs.removeSync("./temp.zip")
+		window.fs.removeSync("./temp.asar")
 
 		updatingFramework = false
-
-		window.location.href = "app://-/"
+		
+		window.ipc.send("relaunchApp")
 	}
 
 	let modUpdates = checkForModUpdates()

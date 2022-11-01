@@ -145,3 +145,8 @@ ipcMain.on("imageOpenDialog", () => {
 		})
 	)
 })
+
+ipcMain.on("relaunchApp", () => {
+	app.relaunch()
+	app.exit()
+})

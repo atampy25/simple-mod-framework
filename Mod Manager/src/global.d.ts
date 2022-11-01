@@ -3,6 +3,7 @@
 /// <reference types="vite/client" />
 
 import type fs from "fs-extra"
+import type originalFs from "original-fs"
 import type klaw from "klaw-sync"
 import type path from "path"
 import type AdmZip from "adm-zip"
@@ -13,6 +14,7 @@ declare global {
 	interface Window {
 		ipc: any
 		fs: typeof fs
+		originalFs: typeof originalFs
 		path: typeof path
 		klaw: typeof klaw
 		AdmZip: typeof AdmZip
