@@ -484,18 +484,11 @@ export async function getAllModWarnings() {
 		const cachedDiagnostics = window.fs.existsSync("./cachedDiagnostics.json") ? await window.fs.readJSON("./cachedDiagnostics.json") : {}
 
 		const hashList = window.fs
-			.readFileSync(window.path.join("..", "Third-Party", "hash_list.txt"), "utf-8")
+			.readFileSync(window.path.join(".", "resources", "app.asar", "baseGameHashes.txt"), "utf-8")
 			.split("\n")
-			.filter((a) => !a.startsWith("#") && a.trim() != "")
-			.map((a) => {
-				return {
-					hash: a.trim().split(",")[0].split(".")[0],
-					type: a.trim().split(",")[0].split(".")[1],
-					path: a.trim().split(",").slice(1).join(",")
-				}
-			})
+			.map((a) => a.trim())
 
-		const baseGameHashes = new Set(hashList.map((a) => a.hash))
+		const baseGameHashes = new Set(hashList)
 
 		const allWarnings = []
 
