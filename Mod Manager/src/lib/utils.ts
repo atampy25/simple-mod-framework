@@ -427,6 +427,24 @@ const modWarnings: {
 		type: "warning-suppressed"
 	},
 	{
+		title: "QuickEntity version before 3.0 used",
+		subtitle: `
+			QuickEntity (<code class="h">entity.json</code> or <code class="h">entity.patch.json</code>) versions previous to 3.0 are much slower; you can obtain quite a significant performance benefit from upgrading to the latest QuickEntity version.
+		`,
+		check: async (fileToCheck, hashList, baseGameHashes) => {
+			if (fileToCheck.endsWith("entity.json")) {
+				const fileContents = await window.fs.readJSON(fileToCheck)
+				if (fileContents.quickEntityVersion < 3) return true
+			} else if (fileToCheck.endsWith("entity.patch.json")) {
+				const fileContents = await window.fs.readJSON(fileToCheck)
+				if (fileContents.patchVersion < 5) return true
+			}
+
+			return false
+		},
+		type: "warning-suppressed"
+	},
+	{
 		title: "Base game sound is outright replaced",
 		subtitle: `
 			A vanilla sound is being outright replaced by a raw file. This can cause compatibility issues, as well as making things harder to view and edit for users and yourself.<br><br>
