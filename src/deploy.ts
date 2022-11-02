@@ -1557,11 +1557,11 @@ export default async function deploy(
 					allFilesSuperseded = allFilesSuperseded.filter((a) => !/chunk[0-9]*(?:patch[0-9]*)?\.meta/gi.exec(path.basename(a))) // Remove RPKG metas
 
 					fs.ensureDirSync(path.join(process.cwd(), "staging", `chunk${dependency.toChunk || 0}`))
-					allFilesSuperseded.forEach((file) => {
-						fs.copySync(file, path.join(process.cwd(), "staging", `chunk${dependency.toChunk || 0}`, path.basename(file)), {
+					await Promise.all(allFilesSuperseded.map(async (file) => {
+						await fs.copy(file, path.join(process.cwd(), "staging", `chunk${dependency.toChunk || 0}`, path.basename(file)), {
 							overwrite: false
 						}) // Stage the files, but don't overwrite if they already exist (such as if another mod has edited them)
-					})
+					}))
 
 					fs.emptyDirSync(path.join(process.cwd(), "temp"))
 				}
