@@ -104,10 +104,12 @@
 		).json()
 
 		githubReleaseMarkdownBody = marked(release.body, { gfm: true }).replaceAll("Bugfixes", "Bug Fixes")
+		canAutomaticallyUpdate = !release.body.includes("CANNOT AUTOMATICALLY UPDATE")
 
 		return release
 	}
 
+	let canAutomaticallyUpdate = false
 	let updatingFramework = false
 	let frameworkDownloadProgress = 0
 	let frameworkDownloadSize = 0
@@ -367,21 +369,23 @@
 						<div class="mt-2">
 							{update.changelog}
 						</div>
-						<br />
-						<Button
-							kind="primary"
-							icon={Download}
-							on:click={() => {
-								updatingMod = {
-									id: modID,
-									...update
-								}
+						{#if canAutomaticallyUpdate}
+							<br />
+							<Button
+								kind="primary"
+								icon={Download}
+								on:click={() => {
+									updatingMod = {
+										id: modID,
+										...update
+									}
 
-								startModUpdate()
-							}}
-						>
-							Update
-						</Button>
+									startModUpdate()
+								}}
+							>
+								Update
+							</Button>
+						{/if}
 					</div>
 				{/each}
 			{:catch error}
