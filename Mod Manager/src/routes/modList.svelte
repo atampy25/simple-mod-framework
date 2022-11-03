@@ -18,6 +18,7 @@
 	import Settings from "carbon-icons-svelte/lib/Settings.svelte"
 	import TrashCan from "carbon-icons-svelte/lib/TrashCan.svelte"
 	import Close from "carbon-icons-svelte/lib/Close.svelte"
+	import { OptionType } from "../../../src/types"
 
 	let enabledMods: { value: string }[] = [],
 		disabledMods: { value: string }[] = []
@@ -244,7 +245,7 @@
 						manifest={modIsFramework(item.value) ? getManifestFromModID(item.value) : undefined}
 						rpkgModName={!modIsFramework(item.value) ? item.value : undefined}
 					>
-						{#if modIsFramework(item.value) && getManifestFromModID(item.value)?.options?.length}
+						{#if modIsFramework(item.value) && getManifestFromModID(item.value)?.options?.filter(a=>a.type != OptionType.conditional)?.length}
 							<Button
 								kind="ghost"
 								icon={Settings}

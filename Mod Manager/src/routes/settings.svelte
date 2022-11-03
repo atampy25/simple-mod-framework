@@ -5,7 +5,7 @@
 	import { getConfig, getManifestFromModID, getModFolder, mergeConfig, modIsFramework } from "$lib/utils"
 	import { Checkbox, RadioButtonGroup, RadioButton, Truncate } from "carbon-components-svelte"
 	import { scale } from "svelte/transition"
-	import type { Manifest } from "../../../src/types"
+	import { OptionType, type Manifest } from "../../../src/types"
 
 	import tippy from "svelte-tippy"
 	import "tippy.js/dist/tippy.css"
@@ -15,7 +15,7 @@
 	const mods = config.loadOrder
 		.filter((a) => modIsFramework(a) && config.modOptions[a])
 		.map((a) => getManifestFromModID(a))
-		.filter((a) => a && a.options)
+		.filter((a) => a && a.options && a.options.filter((a) => a.type != OptionType.conditional).length)
 
 	const columns: [Manifest[], Manifest[], Manifest[]] = [[], [], []]
 
