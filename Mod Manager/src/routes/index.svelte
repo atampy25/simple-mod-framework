@@ -1,6 +1,4 @@
 <script lang="ts">
-	import sanitizeHtml from "sanitize-html"
-
 	import { fade } from "svelte/transition"
 	import { page } from "$app/stores"
 
@@ -369,7 +367,7 @@
 						</div>
 						<hr class="bg-gray-500 border-none h-px" />
 						<div class="mt-2">
-							{@html sanitizeHtml(marked(update.changelog, { gfm: true }).replaceAll("Bugfixes", "Bug Fixes"))}
+							{@html window.sanitizeHtml(marked(update.changelog, { gfm: true }).replaceAll("Bugfixes", "Bug Fixes"))}
 						</div>
 						{#if canAutomaticallyUpdate}
 							<br />

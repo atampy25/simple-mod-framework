@@ -24,3 +24,4 @@ contextBridge.exposeInMainWorld("ipc", {
 	}
 })
 contextBridge.exposeInMainWorld("openExternalLink", shell.openExternal)
+contextBridge.exposeInMainWorld("sanitizeHtml", require("sanitize-html"))

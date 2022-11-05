@@ -9,6 +9,7 @@ import type path from "path"
 import type AdmZip from "adm-zip"
 import type buffer from "buffer"
 import type electron from "electron"
+import type sanitizeHtml from "sanitize-html"
 
 declare global {
 	interface Window {
@@ -20,5 +21,6 @@ declare global {
 		AdmZip: typeof AdmZip
 		Buffer: typeof buffer
 		openExternalLink: typeof electron["shell"]["openExternal"]
+		sanitizeHtml: typeof sanitizeHtml
 	}
 }
