@@ -331,7 +331,7 @@
 		rpkgModName = modNameInputModal.value
 
 		try {
-			var result = [...modFilePath.matchAll(/(chunk[0-9]*(?:patch[0-9]*)?)\.rpkg/g)]
+			var result = [...modFilePath.matchAll(/(chunk[0-9]*(?:patch.*)?)\.rpkg/g)]
 			result = [...result[result.length - 1][result[result.length - 1].length - 1].matchAll(/(chunk[0-9]*)/g)]
 			rpkgModChunk = result[result.length - 1][result[result.length - 1].length - 1]
 
@@ -349,7 +349,7 @@
 <TextInputModal
 	bind:this={modChunkInputModal}
 	showingModal={modChunkInputModalOpen}
-	modalText="Mod chunk (if it advises you to name it chunk0patch2, for example, then it's chunk0)"
+	modalText="Mod chunk (if it advises you to name it chunk0patch3 or the file is named chunk0patchX, for example, then it's chunk0)"
 	modalPlaceholder="chunk0"
 	on:close={() => {
 		rpkgModChunk = modChunkInputModal.value
