@@ -8,7 +8,7 @@ Each mod contains a manifest. Manifests have the following format:
 	"description": "It is a mod",
 	"authors": ["Atampy26", "No one else"],
 	"version": "1.0.0", // The mod's version, used to compare against the linked JSON - make sure to use semantic versioning (Major.Minor.Patch)
-	"frameworkVersion": "2.2.1", // The framework version the mod is designed for
+	"frameworkVersion": "2.2.2", // The framework version the mod is designed for
 
 	/* -------------------------------------- Optional data -------------------------------------- */
 	"updateCheck": "https://hitman-resources.netlify.app/framework/updates/exampleMod.json", // A JSON (see Mod Updates) that will be checked for updates (MUST BE HTTPS) - contact Atampy26 for hosting on hitman-resources.netlify.app
