@@ -47,6 +47,7 @@
 				mergeConfig({
 					runtimePath: "..\\Retail\\Runtime"
 				})
+				window.fs.copyFileSync(window.path.join(process.cwd(), "..", "cleanMicrosoftThumbs.dat"), window.path.join(process.cwd(), "..", "cleanThumbs.dat"))
 			} else {
 				cannotFindRuntime = true
 			}
