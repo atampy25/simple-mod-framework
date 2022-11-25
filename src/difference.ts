@@ -11,7 +11,7 @@ export default async function difference(
 	const invalidData = []
 	const validData = []
 
-	logger.verbose("changedFiles")
+	logger.verbose("Calculating changed files")
 
 	const changedFiles = []
 	for (const [filePath, newData] of Object.entries(newMap)) {
@@ -22,28 +22,46 @@ export default async function difference(
 		}
 	}
 
-	logger.verbose("invalidatedHashes")
+	for (const [filePath, oldData] of Object.entries(oldMap)) {
+		const newData = newMap[filePath]
+
+		if (!newData) {
+			changedFiles.push(filePath)
+		}
+	}
+
+	logger.verbose("Calculating hashes to invalidate")
 
 	const invalidatedHashes = []
 	for (const changedFile of changedFiles) {
-		invalidFiles.push(changedFile) // Must redeploy the changed file
+		invalidFiles.push(changedFile)
 
 		oldMap[changedFile] && invalidatedHashes.push(...oldMap[changedFile].affected)
-
-		invalidatedHashes.push(...newMap[changedFile].affected)
+		newMap[changedFile] && invalidatedHashes.push(...newMap[changedFile].affected)
 	}
 
-	logger.verbose("filePath, newData")
+	logger.verbose("Invalidating dependencies")
+
+	// do ten cycles of propagation
+	for (let i = 0; i < 10; i++) {
+		for (const [filePath, newData] of Object.entries(newMap)) {
+			const oldData = oldMap[filePath]
+
+			if (invalidatedHashes.some((a) => (oldData || { dependencies: [] }).dependencies.includes(a) || newData.dependencies.includes(a))) {
+				invalidatedHashes.push(...[...(oldData || { affected: [] }).affected, newData.affected])
+			}
+		}
+	}
 
 	for (const [filePath, newData] of Object.entries(newMap)) {
 		const oldData = oldMap[filePath]
 
 		if (invalidatedHashes.some((a) => (oldData || { dependencies: [] }).dependencies.includes(a) || newData.dependencies.includes(a))) {
-			invalidFiles.push(filePath) // Must redeploy any files that depend on a changed file
+			invalidFiles.push(filePath)
 		}
 	}
 
-	logger.verbose("filePath, data")
+	logger.verbose("Summarising")
 
 	for (const [filePath, data] of Object.entries(newMap)) {
 		if (!invalidFiles.includes(filePath)) {
