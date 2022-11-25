@@ -8,7 +8,7 @@ import manifestSchema from "$lib/manifest-schema.json"
 import memoize from "lodash.memoize"
 import merge from "lodash.mergewith"
 
-export const FrameworkVersion = "2.2.2"
+export const FrameworkVersion = "2.3.0"
 
 const validateManifest = new Ajv().compile(manifestSchema)
 
