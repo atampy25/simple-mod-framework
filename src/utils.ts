@@ -37,20 +37,20 @@ const QuickEntityPatch = {
 }
 
 export function getQuickEntityFromVersion(version: string) {
-	logger.verbose(`Getting QuickEntity version from entity version ${version}`)
+	void logger.verbose(`Getting QuickEntity version from entity version ${version}`)
 
 	if (+version < 3) {
-		logger.warn("QuickEntity versions prior to 3 are much slower; if you're a mod developer you can upgrade easily for a significant performance benefit!")
+		void logger.warn("QuickEntity versions prior to 3 are much slower; if you're a mod developer you can upgrade easily for a significant performance benefit!")
 	}
 
 	return QuickEntity[Object.keys(QuickEntity)[Object.keys(QuickEntity).findIndex((a) => parseFloat(a) > Number(version)) - 1]]
 }
 
 export function getQuickEntityFromPatchVersion(version: string) {
-	logger.verbose(`Getting QuickEntity version from patch version ${version}`)
+	void logger.verbose(`Getting QuickEntity version from patch version ${version}`)
 
 	if (+version < 5) {
-		logger.warn("QuickEntity versions prior to 3 (and patch versions prior to 5) are much slower; if you're a mod developer you can upgrade easily for a significant performance benefit!")
+		void logger.warn("QuickEntity versions prior to 3 (and patch versions prior to 5) are much slower; if you're a mod developer you can upgrade easily for a significant performance benefit!")
 	}
 
 	return QuickEntityPatch[Object.keys(QuickEntityPatch)[Object.keys(QuickEntityPatch).findIndex((a) => parseFloat(a) > Number(version)) - 1]]
@@ -67,7 +67,7 @@ export function hexflip(input: string) {
 }
 
 export async function extractOrCopyToTemp(rpkgOfFile: string, file: string, type: string, stagingChunk = "chunk0") {
-	logger.verbose(`Extract or copy to temp: ${rpkgOfFile} ${file} ${type} ${stagingChunk}`)
+	await logger.verbose(`Extract or copy to temp: ${rpkgOfFile} ${file} ${type} ${stagingChunk}`)
 
 	if (!fs.existsSync(path.join(process.cwd(), "staging", stagingChunk, file + "." + type))) {
 		await rpkgInstance.callFunction(`-extract_from_rpkg "${path.join(config.runtimePath, rpkgOfFile + ".rpkg")}" -filter "${file}" -output_path temp`) // Extract the file
@@ -80,14 +80,14 @@ export async function extractOrCopyToTemp(rpkgOfFile: string, file: string, type
 
 export async function copyFromCache(mod: string, cachePath: string, outputPath: string) {
 	if (fs.existsSync(path.join(process.cwd(), "cache", winPathEscape(mod), cachePath))) {
-		logger.verbose(`Cache hit: ${mod} ${cachePath} ${outputPath}`)
+		await logger.verbose(`Cache hit: ${mod} ${cachePath} ${outputPath}`)
 
 		fs.ensureDirSync(outputPath)
 		fs.copySync(path.join(process.cwd(), "cache", winPathEscape(mod), cachePath), outputPath)
 		return true
 	}
 
-	logger.verbose(`No cache hit: ${mod} ${cachePath} ${outputPath}`)
+	await logger.verbose(`No cache hit: ${mod} ${cachePath} ${outputPath}`)
 
 	return false
 }
@@ -95,14 +95,14 @@ export async function copyFromCache(mod: string, cachePath: string, outputPath: 
 export async function copyToCache(mod: string, originalPath: string, cachePath: string) {
 	// do not cache if less than 5 GB remaining on disk
 	if (fs.existsSync(originalPath) && (await freeSpace()) > 5) {
-		logger.verbose(`Copy to cache: ${mod} ${originalPath} ${cachePath}`)
+		await logger.verbose(`Copy to cache: ${mod} ${originalPath} ${cachePath}`)
 
 		fs.emptyDirSync(path.join(process.cwd(), "cache", winPathEscape(mod), cachePath))
 		fs.copySync(originalPath, path.join(process.cwd(), "cache", winPathEscape(mod), cachePath))
 		return true
 	}
 
-	logger.verbose(`Not enough space/nonexistent path: ${mod} ${originalPath} ${cachePath}`)
+	await logger.verbose(`Not enough space/nonexistent path: ${mod} ${originalPath} ${cachePath}`)
 
 	return false
 }

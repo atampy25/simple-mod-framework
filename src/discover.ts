@@ -15,7 +15,7 @@ import { xxhash3 } from "hash-wasm"
 import { ModuleKind, ScriptTarget } from "typescript"
 import { compileExpression, useDotAccessOperatorAndOptionalChaining } from "filtrex"
 
-const deepMerge = function (x, y) {
+const deepMerge = function (x: any, y: any) {
 	return mergeWith(x, y, (orig, src) => {
 		if (Array.isArray(orig)) {
 			return src
@@ -24,12 +24,12 @@ const deepMerge = function (x, y) {
 }
 
 export default async function discover(): Promise<{ [x: string]: { hash: string; dependencies: string[]; affected: string[] } }> {
-	logger.info("Discovering mod contents")
+	await logger.info("Discovering mod contents")
 
 	const fileMap: { [x: string]: { hash: string; dependencies: Array<string>; affected: Array<string> } } = {}
 
 	for (let mod of config.loadOrder) {
-		logger.verbose(`Resolving ${mod}`)
+		await logger.verbose(`Resolving ${mod}`)
 
 		// NOT Mod folder exists, mod has no manifest, mod has RPKGs (mod is an RPKG-only mod)
 		if (
@@ -50,18 +50,18 @@ export default async function discover(): Promise<{ [x: string]: { hash: string;
 				)
 		} // Essentially, if the mod isn't an RPKG mod, it is referenced by its ID, so this finds the mod folder with the right ID
 
-		logger.verbose(`Beginning mod discovery of ${mod}`)
+		await logger.verbose(`Beginning mod discovery of ${mod}`)
 		if (!fs.existsSync(path.join(process.cwd(), "Mods", mod, "manifest.json"))) {
-			logger.info("Discovering RPKG mod: " + mod)
+			await logger.info("Discovering RPKG mod: " + mod)
 
 			for (const chunkFolder of fs.readdirSync(path.join(process.cwd(), "Mods", mod))) {
 				for (const contentFile of fs.readdirSync(path.join(process.cwd(), "Mods", mod, chunkFolder))) {
 					fs.emptyDirSync(path.join(process.cwd(), "temp"))
 
-					logger.verbose(`-extract_from_rpkg "${path.join(process.cwd(), "Mods", mod, chunkFolder, contentFile)}" -output_path "${path.join(process.cwd(), "temp")}"`)
+					await logger.verbose(`-extract_from_rpkg "${path.join(process.cwd(), "Mods", mod, chunkFolder, contentFile)}" -output_path "${path.join(process.cwd(), "temp")}"`)
 					await rpkgInstance.callFunction(`-extract_from_rpkg "${path.join(process.cwd(), "Mods", mod, chunkFolder, contentFile)}" -output_path "${path.join(process.cwd(), "temp")}"`)
 
-					logger.verbose(`Adding ${path.join(process.cwd(), "Mods", mod, chunkFolder, contentFile)} to fileMap`)
+					await logger.verbose(`Adding ${path.join(process.cwd(), "Mods", mod, chunkFolder, contentFile)} to fileMap`)
 					fileMap[path.join(process.cwd(), "Mods", mod, chunkFolder, contentFile)] = {
 						hash: await xxhash3(fs.readFileSync(path.join(process.cwd(), "Mods", mod, chunkFolder, contentFile))),
 						dependencies: [], // Raw files: depend on nothing, overwrite contained files
@@ -77,33 +77,27 @@ export default async function discover(): Promise<{ [x: string]: { hash: string;
 		} else {
 			const manifest: Manifest = json5.parse(String(fs.readFileSync(path.join(process.cwd(), "Mods", mod, "manifest.json"))))
 
-			logger.info("Discovering mod: " + manifest.name)
+			await logger.info("Discovering mod: " + manifest.name)
 
-			logger.verbose("Validating manifest")
+			await logger.verbose("Validating manifest")
 
 			for (const key of ["id", "name", "description", "authors", "version", "frameworkVersion"]) {
 				if (typeof manifest[key] == "undefined") {
-					logger.error(`Mod ${manifest.name} is missing required manifest field "${key}"!`)
-					interoperability.cleanExit()
-					return
+					await logger.error(`Mod ${manifest.name} is missing required manifest field "${key}"!`)
 				}
 			}
 
 			if (semver.lt(manifest.frameworkVersion, FrameworkVersion)) {
 				if (semver.diff(manifest.frameworkVersion, FrameworkVersion) == "major") {
-					logger.error(`Mod ${manifest.name} is designed for an older version of the framework and is likely incompatible!`)
-					interoperability.cleanExit()
-					return
+					await logger.error(`Mod ${manifest.name} is designed for an older version of the framework and is likely incompatible!`)
 				}
 			}
 
 			if (semver.gt(manifest.frameworkVersion, FrameworkVersion)) {
-				logger.error(`Mod ${manifest.name} is designed for a newer version of the framework and is likely incompatible!`)
-				interoperability.cleanExit()
-				return
+				await logger.error(`Mod ${manifest.name} is designed for a newer version of the framework and is likely incompatible!`)
 			}
 
-			logger.verbose("Getting folders")
+			await logger.verbose("Getting folders")
 
 			let contentFolders: string[] = []
 			let blobsFolders: string[] = []
@@ -135,7 +129,7 @@ export default async function discover(): Promise<{ [x: string]: { hash: string;
 			manifest.scripts && scripts.push(manifest.scripts)
 
 			if (config.modOptions[manifest.id] && manifest.options && manifest.options.length) {
-				logger.verbose("Merging mod options")
+				await logger.verbose("Merging mod options")
 
 				for (const option of manifest.options.filter(
 					(a) =>
@@ -177,9 +171,6 @@ export default async function discover(): Promise<{ [x: string]: { hash: string;
 					manifest.localisedLines || (manifest.localisedLines = {})
 					option.localisedLines && deepMerge(manifest.localisedLines, option.localisedLines)
 
-					manifest.runtimePackages || (manifest.runtimePackages = [])
-					option.runtimePackages && manifest.runtimePackages.push(...option.runtimePackages)
-
 					manifest.dependencies || (manifest.dependencies = [])
 					option.dependencies && manifest.dependencies.push(...option.dependencies)
 
@@ -202,33 +193,29 @@ export default async function discover(): Promise<{ [x: string]: { hash: string;
 			contentFolders = [...new Set(contentFolders)]
 			blobsFolders = [...new Set(blobsFolders)]
 
-			logger.verbose("Validating manifest requirements")
+			await logger.verbose("Validating manifest requirements")
 
 			if (manifest.requirements && manifest.requirements.length) {
 				for (const req of manifest.requirements) {
 					if (!config.loadOrder.includes(req)) {
-						logger.error(`Mod ${manifest.name} is missing requirement ${req}!`)
-						interoperability.cleanExit()
-						return
+						await logger.error(`Mod ${manifest.name} is missing requirement ${req}!`)
 					}
 				}
 			}
 
 			if (manifest.supportedPlatforms && manifest.supportedPlatforms.length) {
 				if (!manifest.supportedPlatforms.includes(config.platform)) {
-					logger.error(
+					await logger.error(
 						`Mod ${manifest.name} only supports the ${
 							manifest.supportedPlatforms.slice(0, -1).length
 								? manifest.supportedPlatforms.slice(0, -1).join(", ") + " and " + manifest.supportedPlatforms[manifest.supportedPlatforms.length - 1]
 								: manifest.supportedPlatforms[0]
 						} platform${manifest.supportedPlatforms.length > 1 ? "s" : ""}!`
 					)
-					interoperability.cleanExit()
-					return
 				}
 			}
 
-			logger.verbose("Discovering scripts")
+			await logger.verbose("Discovering scripts")
 			for (const files of scripts) {
 				ts.compile(
 					files.map((a) => path.join(process.cwd(), "Mods", mod, a)),
@@ -260,7 +247,7 @@ export default async function discover(): Promise<{ [x: string]: { hash: string;
 				fs.removeSync(path.join(process.cwd(), "compiled"))
 			}
 
-			logger.verbose("Discovering content")
+			await logger.verbose("Discovering content")
 
 			/* ---------------------------------------------------------------------------------------------- */
 			/*                                             Content                                            */
@@ -334,7 +321,7 @@ export default async function discover(): Promise<{ [x: string]: { hash: string;
 				}
 			}
 
-			logger.verbose("Discovering blobs")
+			await logger.verbose("Discovering blobs")
 
 			/* ---------------------------------------------------------------------------------------------- */
 			/*                                              Blobs                                             */
@@ -368,7 +355,7 @@ export default async function discover(): Promise<{ [x: string]: { hash: string;
 			const manifestDependencies = []
 			const manifestAffected = []
 
-			logger.verbose("Discovering manifest keys")
+			await logger.verbose("Discovering manifest keys")
 
 			/* ---------------------------------------- Localisation ---------------------------------------- */
 			if (manifest.localisation) {

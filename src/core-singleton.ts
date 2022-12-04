@@ -1,4 +1,3 @@
-import type { Transaction } from "@sentry/tracing"
 import core from "./core"
 
 export const FrameworkVersion = core.FrameworkVersion
@@ -7,10 +6,7 @@ export const config = core.config
 export const logger = core.logger
 export const isDevBuild = core.isDevBuild
 export const args = core.args
-export const interoperability = {} as {
-	sentryTransaction: Transaction
-	cleanExit: () => void
-}
+export const cleanExit = core.cleanExit
 
 export default {
 	FrameworkVersion,
@@ -19,5 +15,5 @@ export default {
 	logger,
 	isDevBuild,
 	args,
-	interoperability
+	cleanExit
 }

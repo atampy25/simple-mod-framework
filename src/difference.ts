@@ -11,7 +11,7 @@ export default async function difference(
 	const invalidData = []
 	const validData = []
 
-	logger.verbose("Calculating changed files")
+	await logger.verbose("Calculating changed files")
 
 	const changedFiles = []
 	for (const [filePath, newData] of Object.entries(newMap)) {
@@ -30,7 +30,7 @@ export default async function difference(
 		}
 	}
 
-	logger.verbose("Calculating hashes to invalidate")
+	await logger.verbose("Calculating hashes to invalidate")
 
 	const invalidatedHashes = []
 	for (const changedFile of changedFiles) {
@@ -40,7 +40,7 @@ export default async function difference(
 		newMap[changedFile] && invalidatedHashes.push(...newMap[changedFile].affected)
 	}
 
-	logger.verbose("Invalidating dependencies")
+	await logger.verbose("Invalidating dependencies")
 
 	// do ten cycles of propagation
 	for (let i = 0; i < 10; i++) {
@@ -61,7 +61,7 @@ export default async function difference(
 		}
 	}
 
-	logger.verbose("Summarising")
+	await logger.verbose("Summarising")
 
 	for (const [filePath, data] of Object.entries(newMap)) {
 		if (!invalidFiles.includes(filePath)) {

@@ -15,7 +15,7 @@ import { xxhash3 } from "hash-wasm"
 require("clarify")
 
 const execCommand = function (command: string) {
-	logger.verbose(`Executing command ${command}`)
+	void logger.verbose(`Executing command ${command}`)
 	return new Promise((resolve, reject) => {
 		child_process.exec(command).on("close", resolve)
 	})
@@ -56,7 +56,7 @@ export = async ({
 		await rpkgInstance.waitForInitialised()
 
 		const callRPKGFunction = async function (command: string) {
-			logger.verbose(`Executing RPKG function ${command}`)
+			await logger.verbose(`Executing RPKG function ${command}`)
 			return await rpkgInstance.callFunction(command)
 		}
 
@@ -89,22 +89,22 @@ export = async ({
 		/* ------------------------------------ Convert to RT Source ------------------------------------ */
 		await Promise.all([
 			execCommand(
-				"\"" +
+				'"' +
 					path.join(process.cwd(), "Third-Party", "ResourceTool.exe") +
-					"\" HM3 convert TEMP \"" +
+					'" HM3 convert TEMP "' +
 					path.join(process.cwd(), assignedTemporaryDirectory, tempRPKG, "TEMP", tempHash + ".TEMP") +
-					"\" \"" +
+					'" "' +
 					path.join(process.cwd(), assignedTemporaryDirectory, tempRPKG, "TEMP", tempHash + ".TEMP") +
-					".json\" --simple"
+					'.json" --simple'
 			),
 			execCommand(
-				"\"" +
+				'"' +
 					path.join(process.cwd(), "Third-Party", "ResourceTool.exe") +
-					"\" HM3 convert TBLU \"" +
+					'" HM3 convert TBLU "' +
 					path.join(process.cwd(), assignedTemporaryDirectory, tbluRPKG, "TBLU", tbluHash + ".TBLU") +
-					"\" \"" +
+					'" "' +
 					path.join(process.cwd(), assignedTemporaryDirectory, tbluRPKG, "TBLU", tbluHash + ".TBLU") +
-					".json\" --simple"
+					'.json" --simple'
 			)
 		])
 		await callRPKGFunction(`-hash_meta_to_json "${path.join(process.cwd(), assignedTemporaryDirectory, tempRPKG, "TEMP", tempHash + ".TEMP.meta")}"`)
@@ -134,13 +134,13 @@ export = async ({
 		}
 
 		for (const patch of patches) {
-			logger.debug("Applying patch " + patch.path)
+			await logger.debug("Applying patch " + patch.path)
 
 			if (!getQuickEntityFromPatchVersion(patch.patchVersion.value)) {
 				rpkgInstance.exit()
 				fs.removeSync(path.join(process.cwd(), assignedTemporaryDirectory))
 
-				logger.error("Could not find matching QuickEntity version for patch version " + Number(patch.patchVersion.value) + "!")
+				await logger.error("Could not find matching QuickEntity version for patch version " + Number(patch.patchVersion.value) + "!")
 			}
 
 			fs.writeFileSync(path.join(process.cwd(), assignedTemporaryDirectory, "patch.json"), LosslessJSON.stringify(patch))
@@ -167,22 +167,22 @@ export = async ({
 		/* -------------------------------------- Convert to binary ------------------------------------- */
 		await Promise.all([
 			execCommand(
-				"\"" +
+				'"' +
 					path.join(process.cwd(), "Third-Party", "ResourceTool.exe") +
-					"\" HM3 generate TEMP \"" +
+					'" HM3 generate TEMP "' +
 					path.join(process.cwd(), assignedTemporaryDirectory, "temp.TEMP.json") +
-					"\" \"" +
+					'" "' +
 					path.join(process.cwd(), assignedTemporaryDirectory, tempHash + ".TEMP") +
-					"\" --simple"
+					'" --simple'
 			),
 			execCommand(
-				"\"" +
+				'"' +
 					path.join(process.cwd(), "Third-Party", "ResourceTool.exe") +
-					"\" HM3 generate TBLU \"" +
+					'" HM3 generate TBLU "' +
 					path.join(process.cwd(), assignedTemporaryDirectory, "temp.TBLU.json") +
-					"\" \"" +
+					'" "' +
 					path.join(process.cwd(), assignedTemporaryDirectory, tbluHash + ".TBLU") +
-					"\" --simple"
+					'" --simple'
 			)
 		])
 		await callRPKGFunction(`-json_to_hash_meta "${path.join(process.cwd(), assignedTemporaryDirectory, tempHash + ".TEMP.meta.JSON")}"`)
@@ -200,7 +200,7 @@ export = async ({
 
 		await copyToCache(cacheFolder, path.join(process.cwd(), assignedTemporaryDirectory), path.join(chunkFolder, await xxhash3(patches[patches.length - 1].path)))
 	} else {
-		logger.debug("Restored patch chain ending in " + patches[patches.length - 1].path + " from cache")
+		await logger.debug("Restored patch chain ending in " + patches[patches.length - 1].path + " from cache")
 	}
 
 	/* ------------------------------------- Stage binary files ------------------------------------- */

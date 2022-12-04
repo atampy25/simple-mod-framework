@@ -4,7 +4,7 @@ import { logger } from "./core-singleton"
 // Shim for QuickEntity 3.0 executable
 
 const execCommand = function (command: string) {
-	logger.verbose(`Executing QN 3.0 command ${command}`)
+	void logger.verbose(`Executing QN 3.0 command ${command}`)
 	child_process.execSync(command)
 }
 
