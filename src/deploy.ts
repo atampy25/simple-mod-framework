@@ -64,12 +64,6 @@ export default async function deploy(
 		}[]
 	> = {}
 
-	const runtimePackages: {
-		chunk: number
-		path: string
-		mod: string
-	}[] = []
-
 	const packagedefinition: ManifestOptionData["packagedefinition"] = []
 	const thumbs: string[] = []
 

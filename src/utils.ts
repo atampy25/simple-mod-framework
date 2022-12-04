@@ -3,6 +3,7 @@ import { config, logger, rpkgInstance } from "./core-singleton"
 import fs from "fs-extra"
 import path from "path"
 
+// eslint-disable-next-line
 const checkDiskSpace = require("check-disk-space").default
 const freeSpace = async () => Number((await checkDiskSpace(process.cwd())).free) / 1024 / 1024 / 1024
 
