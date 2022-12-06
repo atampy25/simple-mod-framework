@@ -4,7 +4,7 @@
 
 	import SortableList from "svelte-sortable-list"
 	import json5 from "json5"
-	import { Button, Modal } from "carbon-components-svelte"
+	import { Button, InlineNotification, Modal } from "carbon-components-svelte"
 
 	import { getAllMods, getConfig, mergeConfig, getManifestFromModID, modIsFramework, getModFolder, sortMods } from "$lib/utils"
 	import Mod from "$lib/Mod.svelte"
@@ -245,7 +245,7 @@
 						manifest={modIsFramework(item.value) ? getManifestFromModID(item.value) : undefined}
 						rpkgModName={!modIsFramework(item.value) ? item.value : undefined}
 					>
-						{#if modIsFramework(item.value) && getManifestFromModID(item.value)?.options?.filter(a=>a.type != OptionType.conditional)?.length}
+						{#if modIsFramework(item.value) && getManifestFromModID(item.value)?.options?.filter((a) => a.type != OptionType.conditional)?.length}
 							<Button
 								kind="ghost"
 								icon={Settings}
@@ -304,9 +304,19 @@
 <Modal passiveModal open={frameworkDeployModalOpen} modalHeading="Applying your mods" preventCloseOnClickOutside>
 	Your mods are being deployed. This may take a while - grab a coffee or something.
 	<br />
-	<pre class="mt-2 h-[10vh] overflow-y-auto whitespace-pre-wrap">
-		<code class="block -mt-4" id="deployOutputCodeElement">{deployOutput}</code>
-	</pre>
+	<div class="mt-2 h-[10vh] flex flex-row gap-2 w-full">
+		<pre class="flex-grow h-full overflow-y-auto whitespace-pre-wrap"><code id="deployOutputCodeElement">{deployOutput}</code></pre>
+		{#if deployOutput.split("\n").some((a) => a.startsWith("WARN")) || deployOutput.split("\n").some((a) => a.startsWith("ERROR"))}
+			{#each deployOutput.split("\n").filter((a) => a.startsWith("WARN") || a.startsWith("ERROR")) as line}
+				<InlineNotification hideCloseButton kind={line.startsWith("WARN") ? "warning" : "error"}>
+					<div slot="title" class="text-lg">
+						{line.startsWith("WARN") ? "Warning" : "Error"}
+					</div>
+					<div slot="subtitle">{line.replace("WARN ", "").replace("ERROR ", "")}</div>
+				</InlineNotification>
+			{/each}
+		{/if}
+	</div>
 
 	{#if deployFinished}
 		<br />

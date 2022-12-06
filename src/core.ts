@@ -52,18 +52,20 @@ config.retailPath = path.resolve(process.cwd(), config.retailPath)
 
 const logger = args["--useConsoleLogging"]
 	? {
-			verbose: async () => {},
+			verbose: async (...args: any) => {
+				console.debug("DETAIL", ...args)
+			},
 			debug: async (...args: any) => {
-				console.debug(...args)
+				console.debug("DEBUG", ...args)
 			},
 			info: async (...args: any) => {
-				console.info(...args)
+				console.info("INFO", ...args)
 			},
 			warn: async (...args: any) => {
-				console.warn(...args)
+				console.warn("WARN", ...args)
 			},
 			error: async function (a: unknown, exitAfter = true) {
-				console.log(a)
+				console.log("ERROR", a)
 
 				if (exitAfter) {
 					if (config.reportErrors) {
