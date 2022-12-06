@@ -4,14 +4,14 @@ export default async function difference(
 	oldMap: { [x: string]: { hash: string; dependencies: Array<string>; affected: Array<string> } },
 	newMap: { [x: string]: { hash: string; dependencies: Array<string>; affected: Array<string> } }
 ) {
-	logger.info("Invalidating cache")
+	await logger.info("Invalidating cache")
 
 	const invalidFiles = []
 
 	const invalidData = []
 	const validData = []
 
-	logger.verbose("Calculating changed files")
+	await logger.verbose("Calculating changed files")
 
 	const changedFiles = []
 	for (const [filePath, newData] of Object.entries(newMap)) {
@@ -30,9 +30,9 @@ export default async function difference(
 		}
 	}
 
-	logger.verbose("Calculating hashes to invalidate")
+	await logger.verbose("Calculating hashes to invalidate")
 
-	const invalidatedHashes = []
+	const invalidatedHashes: string[] = []
 	for (const changedFile of changedFiles) {
 		invalidFiles.push(changedFile)
 
@@ -40,7 +40,7 @@ export default async function difference(
 		newMap[changedFile] && invalidatedHashes.push(...newMap[changedFile].affected)
 	}
 
-	logger.verbose("Invalidating dependencies")
+	await logger.verbose("Invalidating dependencies")
 
 	// do ten cycles of propagation
 	for (let i = 0; i < 10; i++) {
@@ -48,7 +48,7 @@ export default async function difference(
 			const oldData = oldMap[filePath]
 
 			if (invalidatedHashes.some((a) => (oldData || { dependencies: [] }).dependencies.includes(a) || newData.dependencies.includes(a))) {
-				invalidatedHashes.push(...[...(oldData || { affected: [] }).affected, newData.affected])
+				invalidatedHashes.push(...[...(oldData || { affected: [] }).affected, ...newData.affected])
 			}
 		}
 	}
@@ -61,7 +61,7 @@ export default async function difference(
 		}
 	}
 
-	logger.verbose("Summarising")
+	await logger.verbose("Summarising")
 
 	for (const [filePath, data] of Object.entries(newMap)) {
 		if (!invalidFiles.includes(filePath)) {
