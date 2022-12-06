@@ -24,7 +24,7 @@ if (!args["--logLevel"] || !args["--logLevel"].length) {
 
 const rpkgInstance = new RPKGInstance()
 
-const config: Config = json5.parse(String(fs.readFileSync(path.join(process.cwd(), "config.json"))))
+const config: Config = json5.parse(fs.readFileSync(path.join(process.cwd(), "config.json"), "utf8"))
 
 if (typeof config.outputConfigToAppDataOnDeploy == "undefined") {
 	config.outputConfigToAppDataOnDeploy = true

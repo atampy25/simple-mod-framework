@@ -54,7 +54,7 @@ export default async function discover(): Promise<{ [x: string]: { hash: string;
 			mod = fs
 				.readdirSync(path.join(process.cwd(), "Mods"))
 				.find(
-					(a) => fs.existsSync(path.join(process.cwd(), "Mods", a, "manifest.json")) && json5.parse(String(fs.readFileSync(path.join(process.cwd(), "Mods", a, "manifest.json")))).id == mod
+					(a) => fs.existsSync(path.join(process.cwd(), "Mods", a, "manifest.json")) && json5.parse(fs.readFileSync(path.join(process.cwd(), "Mods", a, "manifest.json"), "utf8")).id == mod
 				)
 		} // Essentially, if the mod isn't an RPKG mod, it is referenced by its ID, so this finds the mod folder with the right ID
 
@@ -83,7 +83,7 @@ export default async function discover(): Promise<{ [x: string]: { hash: string;
 				}
 			}
 		} else {
-			const manifest: Manifest = json5.parse(String(fs.readFileSync(path.join(process.cwd(), "Mods", mod, "manifest.json"))))
+			const manifest: Manifest = json5.parse(fs.readFileSync(path.join(process.cwd(), "Mods", mod, "manifest.json"), "utf8"))
 
 			await logger.info("Discovering mod: " + manifest.name)
 
@@ -272,7 +272,7 @@ export default async function discover(): Promise<{ [x: string]: { hash: string;
 						let fileToReplace
 						switch (path.basename(contentFilePath).split(".").slice(1).join(".")) {
 							case "entity.json": // Edits the given entity; doesn't depend on anything
-								entityContent = LosslessJSON.parse(String(fs.readFileSync(contentFilePath)))
+								entityContent = LosslessJSON.parse(fs.readFileSync(contentFilePath, "utf8"))
 
 								if (baseGameEntityHashes.has(entityContent.tempHash)) {
 									await logger.warn(
@@ -291,7 +291,7 @@ export default async function discover(): Promise<{ [x: string]: { hash: string;
 								affected.push(entityContent.tempHash, entityContent.tbluHash)
 								break
 							case "entity.patch.json": // Depends on and edits the patched entity
-								entityContent = LosslessJSON.parse(String(fs.readFileSync(contentFilePath)))
+								entityContent = LosslessJSON.parse(fs.readFileSync(contentFilePath, "utf8"))
 
 								if (entityContent.quickEntityVersion < 3) {
 									await logger.warn(
@@ -313,7 +313,7 @@ export default async function discover(): Promise<{ [x: string]: { hash: string;
 								affected.push("00204D1AFD76AB13")
 								break
 							case "contract.json": // Edits the contract, depends on and edits the contracts ORES
-								entityContent = LosslessJSON.parse(String(fs.readFileSync(contentFilePath)))
+								entityContent = LosslessJSON.parse(fs.readFileSync(contentFilePath, "utf8"))
 
 								affected.push("00" + (await md5(("smfContract" + entityContent.Metadata.Id).toLowerCase())).slice(2, 16).toUpperCase())
 
@@ -321,7 +321,7 @@ export default async function discover(): Promise<{ [x: string]: { hash: string;
 								affected.push("002B07020D21D727")
 								break
 							case "JSON.patch.json": // Depends on and edits the patched file
-								entityContent = LosslessJSON.parse(String(fs.readFileSync(contentFilePath)))
+								entityContent = LosslessJSON.parse(fs.readFileSync(contentFilePath, "utf8"))
 
 								dependencies.push(entityContent.file)
 								affected.push(entityContent.file)

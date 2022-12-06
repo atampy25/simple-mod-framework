@@ -5,7 +5,7 @@ import path from "path"
 
 require("clarify")
 
-const config = json5.parse(String(fs.readFileSync(path.join(process.cwd(), "config.json"))))
+const config = json5.parse(fs.readFileSync(path.join(process.cwd(), "config.json"), "utf8"))
 
 class RPKGInstance {
 	rpkgProcess: child_process.ChildProcessWithoutNullStreams
