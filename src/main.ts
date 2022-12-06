@@ -130,7 +130,7 @@ function configureSentryScope(transaction: Span) {
 		})
 }
 
-process.on("SIGINT", () => void core.logger.error("Received SIGNINT signal"))
+process.on("SIGINT", () => void core.logger.error("Received SIGINT signal"))
 process.on("SIGTERM", () => void core.logger.error("Received SIGTERM signal"))
 
 async function doTheThing() {
@@ -147,9 +147,11 @@ async function doTheThing() {
 			integrations: [
 				new Sentry.Integrations.OnUncaughtException({
 					onFatalError: (err) => {
-						void core.logger.info("Reporting an error:").then(() => {
-							void core.logger.error("Uncaught exception! " + err, false)
-						})
+						if (!String(err).includes("write EPIPE")) {
+							void core.logger.info("Reporting an error:").then(() => {
+								void core.logger.error("Uncaught exception! " + err, false)
+							})
+						}
 					}
 				}),
 				new Sentry.Integrations.OnUnhandledRejection({
