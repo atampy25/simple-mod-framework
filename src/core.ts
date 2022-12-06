@@ -24,7 +24,7 @@ if (!args["--logLevel"] || !args["--logLevel"].length) {
 
 const rpkgInstance = new RPKGInstance()
 
-const config: Config = json5.parse(String(fs.readFileSync(path.join(process.cwd(), "config.json"))))
+const config: Config = json5.parse(fs.readFileSync(path.join(process.cwd(), "config.json"), "utf8"))
 
 if (typeof config.outputConfigToAppDataOnDeploy == "undefined") {
 	config.outputConfigToAppDataOnDeploy = true
@@ -52,32 +52,32 @@ config.retailPath = path.resolve(process.cwd(), config.retailPath)
 
 const logger = args["--useConsoleLogging"]
 	? {
-			verbose: async () => {},
+			verbose: async (...args: any) => {},
 			debug: async (...args: any) => {
-				console.debug(...args)
+				console.debug("DEBUG", ...args)
 			},
 			info: async (...args: any) => {
-				console.info(...args)
+				console.info("INFO", ...args)
 			},
 			warn: async (...args: any) => {
-				console.warn(...args)
+				console.warn("WARN", ...args)
 			},
 			error: async function (a: unknown, exitAfter = true) {
-				console.log(a)
+				console.log("ERROR", a)
 
 				if (exitAfter) {
 					if (config.reportErrors) {
 						Sentry.getCurrentHub().getScope()!.getTransaction()!.finish()
 					}
 
-					void Sentry.close().then(() => {
-						rpkgInstance.exit()
-						try {
-							// @ts-expect-error Assigning stuff on global is probably bad practice
-							global.currentWorkerPool.destroy()
-						} catch {}
-						process.exit()
-					})
+					await Sentry.close()
+
+					rpkgInstance.exit()
+					try {
+						// @ts-expect-error Assigning stuff on global is probably bad practice
+						global.currentWorkerPool.destroy()
+					} catch {}
+					process.exit()
 				}
 			}
 	  }

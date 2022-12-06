@@ -4,7 +4,7 @@
 
 	import SortableList from "svelte-sortable-list"
 	import json5 from "json5"
-	import { Button, Modal } from "carbon-components-svelte"
+	import { Button, InlineNotification, Modal } from "carbon-components-svelte"
 
 	import { getAllMods, getConfig, mergeConfig, getManifestFromModID, modIsFramework, getModFolder, sortMods } from "$lib/utils"
 	import Mod from "$lib/Mod.svelte"
@@ -245,7 +245,7 @@
 						manifest={modIsFramework(item.value) ? getManifestFromModID(item.value) : undefined}
 						rpkgModName={!modIsFramework(item.value) ? item.value : undefined}
 					>
-						{#if modIsFramework(item.value) && getManifestFromModID(item.value)?.options?.filter(a=>a.type != OptionType.conditional)?.length}
+						{#if modIsFramework(item.value) && getManifestFromModID(item.value)?.options?.filter((a) => a.type != OptionType.conditional)?.length}
 							<Button
 								kind="ghost"
 								icon={Settings}
@@ -304,16 +304,30 @@
 <Modal passiveModal open={frameworkDeployModalOpen} modalHeading="Applying your mods" preventCloseOnClickOutside>
 	Your mods are being deployed. This may take a while - grab a coffee or something.
 	<br />
-	<pre class="mt-2 h-[10vh] overflow-y-auto whitespace-pre-wrap">
-		<code class="block -mt-4" id="deployOutputCodeElement">{deployOutput}</code>
-	</pre>
+	<pre class="mt-2 h-[10vh] overflow-y-auto whitespace-pre-wrap"><code id="deployOutputCodeElement">{deployOutput}</code></pre>
+	{#if deployOutput.split("\n").some((a) => a.startsWith("WARN")) || deployOutput.split("\n").some((a) => a.startsWith("ERROR"))}
+		<br />
+		<div class="flex flex-row gap-2 flex-wrap">
+			{#each deployOutput.split("\n").filter((a) => a.startsWith("WARN") || a.startsWith("ERROR")) as line}
+				<InlineNotification hideCloseButton lowContrast kind={line.startsWith("WARN") ? "warning" : "error"}>
+					<div slot="title" class="-mt-1 text-lg">
+						{line.startsWith("WARN") ? "Warning" : "Error"}
+					</div>
+					<div slot="subtitle">{line.replace("WARN ", "").replace("ERROR ", "")}</div>
+				</InlineNotification>
+			{/each}
+		</div>
+	{/if}
 
 	{#if deployFinished}
 		<br />
 		<div class="flex gap-4 items-center">
-			{#if deployOutput.includes("Deployed all mods successfully.")}
+			{#if deployOutput.includes("Deployed all mods successfully.") && !deployOutput.split("\n").some((a) => a.startsWith("WARN"))}
 				<Button kind="primary" icon={Close} on:click={() => (frameworkDeployModalOpen = false)}>Close</Button>
 				<span class="text-green-300">Deploy successful</span>
+			{:else if deployOutput.includes("Deployed all mods successfully.") && deployOutput.split("\n").some((a) => a.startsWith("WARN"))}
+				<Button kind="primary" icon={Close} on:click={() => (frameworkDeployModalOpen = false)}>Close</Button>
+				<span class="text-yellow-300">Potential issues in deployment</span>
 			{:else}
 				<Button kind="primary" icon={Close} on:click={() => (frameworkDeployModalOpen = false)}>Close</Button>
 				<span class="text-red-300">Deploy unsuccessful</span>
@@ -410,5 +424,9 @@
 
 	:global(.bx--modal-close) {
 		display: none;
+	}
+
+	:global(.bx--inline-notification__icon) {
+		display: none
 	}
 </style>

@@ -28,6 +28,14 @@ export default async function discover(): Promise<{ [x: string]: { hash: string;
 
 	const fileMap: { [x: string]: { hash: string; dependencies: Array<string>; affected: Array<string> } } = {}
 
+	// All base game TEMP and TBLU hashes
+	const baseGameEntityHashes = new Set(
+		fs
+			.readFileSync(path.join(process.cwd(), "Third-Party", "baseGameHashes.txt"), "utf8")
+			.split("\n")
+			.map((a) => a.trim())
+	)
+
 	for (let mod of config.loadOrder) {
 		await logger.verbose(`Resolving ${mod}`)
 
@@ -46,7 +54,7 @@ export default async function discover(): Promise<{ [x: string]: { hash: string;
 			mod = fs
 				.readdirSync(path.join(process.cwd(), "Mods"))
 				.find(
-					(a) => fs.existsSync(path.join(process.cwd(), "Mods", a, "manifest.json")) && json5.parse(String(fs.readFileSync(path.join(process.cwd(), "Mods", a, "manifest.json")))).id == mod
+					(a) => fs.existsSync(path.join(process.cwd(), "Mods", a, "manifest.json")) && json5.parse(fs.readFileSync(path.join(process.cwd(), "Mods", a, "manifest.json"), "utf8")).id == mod
 				)
 		} // Essentially, if the mod isn't an RPKG mod, it is referenced by its ID, so this finds the mod folder with the right ID
 
@@ -75,7 +83,7 @@ export default async function discover(): Promise<{ [x: string]: { hash: string;
 				}
 			}
 		} else {
-			const manifest: Manifest = json5.parse(String(fs.readFileSync(path.join(process.cwd(), "Mods", mod, "manifest.json"))))
+			const manifest: Manifest = json5.parse(fs.readFileSync(path.join(process.cwd(), "Mods", mod, "manifest.json"), "utf8"))
 
 			await logger.info("Discovering mod: " + manifest.name)
 
@@ -261,14 +269,37 @@ export default async function discover(): Promise<{ [x: string]: { hash: string;
 						const affected = []
 
 						let entityContent
+						let fileToReplace
 						switch (path.basename(contentFilePath).split(".").slice(1).join(".")) {
 							case "entity.json": // Edits the given entity; doesn't depend on anything
-								entityContent = LosslessJSON.parse(String(fs.readFileSync(contentFilePath)))
+								entityContent = LosslessJSON.parse(fs.readFileSync(contentFilePath, "utf8"))
+
+								if (baseGameEntityHashes.has(entityContent.tempHash)) {
+									await logger.warn(
+										`Mod ${manifest.name} replaces a base game entity file (${entityContent.tempHash}) with an entity.json file. While this is still better than a raw file, it can cause compatibility issues as well as requiring more work when the game updates. Mod developers can fix this easily by using an entity.patch.json file, which has very little performance impact and is well-supported by all major modding tools.`
+									)
+								}
+
+								if (entityContent.quickEntityVersion < 3) {
+									await logger.warn(
+										`Mod ${manifest.name} uses a version of QuickEntity prior to 3.0 in ${path.basename(
+											contentFilePath
+										)}. This makes deployment of this file significantly slower. Mod developers can fix this easily by using an automatic updater available at the QuickEntity 3.0 GitHub releases.`
+									)
+								}
 
 								affected.push(entityContent.tempHash, entityContent.tbluHash)
 								break
 							case "entity.patch.json": // Depends on and edits the patched entity
-								entityContent = LosslessJSON.parse(String(fs.readFileSync(contentFilePath)))
+								entityContent = LosslessJSON.parse(fs.readFileSync(contentFilePath, "utf8"))
+
+								if (entityContent.quickEntityVersion < 3) {
+									await logger.warn(
+										`Mod ${manifest.name} uses a version of QuickEntity prior to 3.0 in ${path.basename(
+											contentFilePath
+										)}. This makes deployment of this file significantly slower. Mod developers can fix this easily by using an automatic updater available at the QuickEntity 3.0 GitHub releases.`
+									)
+								}
 
 								dependencies.push(entityContent.tempHash, entityContent.tbluHash)
 								affected.push(entityContent.tempHash, entityContent.tbluHash)
@@ -282,7 +313,7 @@ export default async function discover(): Promise<{ [x: string]: { hash: string;
 								affected.push("00204D1AFD76AB13")
 								break
 							case "contract.json": // Edits the contract, depends on and edits the contracts ORES
-								entityContent = LosslessJSON.parse(String(fs.readFileSync(contentFilePath)))
+								entityContent = LosslessJSON.parse(fs.readFileSync(contentFilePath, "utf8"))
 
 								affected.push("00" + (await md5(("smfContract" + entityContent.Metadata.Id).toLowerCase())).slice(2, 16).toUpperCase())
 
@@ -290,7 +321,7 @@ export default async function discover(): Promise<{ [x: string]: { hash: string;
 								affected.push("002B07020D21D727")
 								break
 							case "JSON.patch.json": // Depends on and edits the patched file
-								entityContent = LosslessJSON.parse(String(fs.readFileSync(contentFilePath)))
+								entityContent = LosslessJSON.parse(fs.readFileSync(contentFilePath, "utf8"))
 
 								dependencies.push(entityContent.file)
 								affected.push(entityContent.file)
@@ -306,9 +337,34 @@ export default async function discover(): Promise<{ [x: string]: { hash: string;
 								dependencies.push(path.basename(contentFilePath).split(".")[0].split("~")[0])
 								affected.push(path.basename(contentFilePath).split(".")[0].split("~")[0])
 								break
-							default:
-								// Replaces a file with a raw file
-								affected.push(path.basename(contentFilePath).split(".")[0])
+							default: // Replaces a file with a raw file
+								fileToReplace = path.basename(contentFilePath).split(".")[0]
+
+								if (baseGameEntityHashes.has(fileToReplace)) {
+									await logger.warn(
+										`Mod ${manifest.name} replaces a base game entity file (${fileToReplace}) with a raw file. This can cause compatibility issues, it makes the mod harder to work with and it requires more work when the game updates. Mod developers can fix this easily by using an entity.patch.json file.`
+									)
+								}
+
+								if (fileToReplace == "00204D1AFD76AB13") {
+									await logger.warn(
+										`Mod ${manifest.name} replaces the repository file (${fileToReplace}) in its entirety. This can cause compatibility issues, it makes the mod harder to work with and it requires more work when the game updates. Mod developers can fix this easily by using a repository.json or JSON.patch.json file.`
+									)
+								}
+
+								if (fileToReplace == "0057C2C3941115CA") {
+									await logger.warn(
+										`Mod ${manifest.name} replaces the unlockables file (${fileToReplace}) in its entirety. This can cause compatibility issues, it makes the mod harder to work with and it requires more work when the game updates. Mod developers can fix this easily by using an unlockables.json or JSON.patch.json file.`
+									)
+								}
+
+								if (path.basename(contentFilePath).split(".")[1] == "WWEV") {
+									await logger.warn(
+										`Mod ${manifest.name} replaces a sound bank file in its entirety. This can cause compatibility issues, it makes the mod harder to work with and it can require more work when the game updates. Mod developers can fix this easily by using an sfx.wem file.`
+									)
+								}
+
+								affected.push(fileToReplace)
 								break
 						}
 

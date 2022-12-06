@@ -111,7 +111,7 @@ export default async function deploy(
 			const foundMod = fs
 				.readdirSync(path.join(process.cwd(), "Mods"))
 				.find(
-					(a) => fs.existsSync(path.join(process.cwd(), "Mods", a, "manifest.json")) && json5.parse(String(fs.readFileSync(path.join(process.cwd(), "Mods", a, "manifest.json")))).id == mod
+					(a) => fs.existsSync(path.join(process.cwd(), "Mods", a, "manifest.json")) && json5.parse(fs.readFileSync(path.join(process.cwd(), "Mods", a, "manifest.json"), "utf8")).id == mod
 				)
 
 			if (!foundMod) {
@@ -159,7 +159,7 @@ export default async function deploy(
 
 			sentryModTransaction.finish()
 		} else {
-			const manifest: Manifest = json5.parse(String(fs.readFileSync(path.join(process.cwd(), "Mods", mod, "manifest.json"))))
+			const manifest: Manifest = json5.parse(fs.readFileSync(path.join(process.cwd(), "Mods", mod, "manifest.json"), "utf8"))
 
 			const sentryModTransaction = sentryModsTransaction.startChild({
 				op: "analyse",
@@ -576,10 +576,10 @@ export default async function deploy(
 				}
 
 				execCommand(`"Third-Party\\OREStool.exe" "${path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES")}"`)
-				contractsORESContent = JSON.parse(String(fs.readFileSync(path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES.JSON"))))
+				contractsORESContent = JSON.parse(fs.readFileSync(path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES.JSON"), "utf8"))
 
 				await callRPKGFunction(`-hash_meta_to_json "${path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES.meta")}"`)
-				contractsORESMetaContent = JSON.parse(String(fs.readFileSync(path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES.meta.JSON"))))
+				contractsORESMetaContent = JSON.parse(fs.readFileSync(path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES.meta.JSON"), "utf8"))
 			}
 		}
 
@@ -746,7 +746,7 @@ export default async function deploy(
 				case "entity.patch.json": {
 					await logger.debug("Preparing to apply patch " + contentIdentifier)
 
-					entityContent = content.source == "disk" ? LosslessJSON.parse(String(fs.readFileSync(content.path))) : LosslessJSON.parse(await content.content.text())
+					entityContent = content.source == "disk" ? LosslessJSON.parse(fs.readFileSync(content.path, "utf8")) : LosslessJSON.parse(await content.content.text())
 					entityContent.path = contentIdentifier
 
 					if (entityPatches.some((a) => a.tempHash == entityContent.tempHash)) {
@@ -772,7 +772,7 @@ export default async function deploy(
 				case "unlockables.json": {
 					await logger.debug("Applying unlockable patch " + contentIdentifier)
 
-					entityContent = content.source == "disk" ? JSON.parse(String(fs.readFileSync(content.path))) : JSON.parse(await content.content.text())
+					entityContent = content.source == "disk" ? JSON.parse(fs.readFileSync(content.path, "utf8")) : JSON.parse(await content.content.text())
 
 					let oresChunk: string
 					try {
@@ -789,7 +789,7 @@ export default async function deploy(
 						await extractOrCopyToTemp(oresChunk, "0057C2C3941115CA", "ORES") // Extract the ORES to temp
 
 						execCommand(`"Third-Party\\OREStool.exe" "${path.join(process.cwd(), "temp", oresChunk, "ORES", "0057C2C3941115CA.ORES")}"`)
-						const oresContent = JSON.parse(String(fs.readFileSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "0057C2C3941115CA.ORES.JSON"))))
+						const oresContent = JSON.parse(fs.readFileSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "0057C2C3941115CA.ORES.JSON"), "utf8"))
 
 						await logger.verbose("Deep merge")
 						const oresToPatch = Object.fromEntries(oresContent.map((a: { Id: string }) => [a.Id, a]))
@@ -810,7 +810,7 @@ export default async function deploy(
 				case "repository.json": {
 					await logger.debug("Applying repository patch " + contentIdentifier)
 
-					entityContent = content.source == "disk" ? JSON.parse(String(fs.readFileSync(content.path))) : JSON.parse(await content.content.text())
+					entityContent = content.source == "disk" ? JSON.parse(fs.readFileSync(content.path, "utf8")) : JSON.parse(await content.content.text())
 
 					let repoRPKG: string
 					try {
@@ -826,7 +826,7 @@ export default async function deploy(
 					) {
 						await extractOrCopyToTemp(repoRPKG, "00204D1AFD76AB13", "REPO") // Extract the REPO to temp
 
-						const repoContent = JSON.parse(String(fs.readFileSync(path.join(process.cwd(), "temp", repoRPKG, "REPO", "00204D1AFD76AB13.REPO"))))
+						const repoContent = JSON.parse(fs.readFileSync(path.join(process.cwd(), "temp", repoRPKG, "REPO", "00204D1AFD76AB13.REPO"), "utf8"))
 
 						const repoToPatch = Object.fromEntries(repoContent.map((a: { [x: string]: unknown }) => [a["ID_"], a]))
 						deepMerge(repoToPatch, entityContent)
@@ -835,7 +835,7 @@ export default async function deploy(
 						const editedItems = new Set(Object.keys(entityContent))
 
 						await callRPKGFunction(`-hash_meta_to_json "${path.join(process.cwd(), "temp", repoRPKG, "REPO", "00204D1AFD76AB13.REPO.meta")}"`)
-						const metaContent = JSON.parse(String(fs.readFileSync(path.join(process.cwd(), "temp", repoRPKG, "REPO", "00204D1AFD76AB13.REPO.meta.JSON"))))
+						const metaContent = JSON.parse(fs.readFileSync(path.join(process.cwd(), "temp", repoRPKG, "REPO", "00204D1AFD76AB13.REPO.meta.JSON"), "utf8"))
 						for (const repoItem of repoToWrite) {
 							if (editedItems.has(repoItem.ID_)) {
 								if (repoItem.Runtime) {
@@ -878,7 +878,7 @@ export default async function deploy(
 				case "contract.json": {
 					await logger.debug("Adding contract " + contentIdentifier)
 
-					entityContent = content.source == "disk" ? LosslessJSON.parse(String(fs.readFileSync(content.path))) : LosslessJSON.parse(await content.content.text())
+					entityContent = content.source == "disk" ? LosslessJSON.parse(fs.readFileSync(content.path, "utf8")) : LosslessJSON.parse(await content.content.text())
 
 					const contractHash =
 						"00" +
@@ -899,7 +899,7 @@ export default async function deploy(
 				case "JSON.patch.json": {
 					await logger.debug("Applying JSON patch " + contentIdentifier)
 
-					entityContent = content.source == "disk" ? JSON.parse(String(fs.readFileSync(content.path))) : JSON.parse(await content.content.text())
+					entityContent = content.source == "disk" ? JSON.parse(fs.readFileSync(content.path, "utf8")) : JSON.parse(await content.content.text())
 
 					let rpkgOfFile
 					try {
@@ -926,7 +926,7 @@ export default async function deploy(
 							)
 						}
 
-						let fileContent = JSON.parse(String(fs.readFileSync(path.join(process.cwd(), "temp", rpkgOfFile, fileType, entityContent.file + "." + fileType))))
+						let fileContent = JSON.parse(fs.readFileSync(path.join(process.cwd(), "temp", rpkgOfFile, fileType, entityContent.file + "." + fileType), "utf8"))
 
 						if (entityContent.type == "ORES" && Array.isArray(fileContent)) {
 							fileContent = Object.fromEntries(fileContent.map((a) => [a.Id, a])) // Change unlockables ORES to be an object
@@ -1377,10 +1377,10 @@ export default async function deploy(
 			await extractOrCopyToTemp(oresChunk, "00858D45F5F9E3CA", "ORES") // Extract the ORES to temp
 
 			execCommand(`"Third-Party\\OREStool.exe" "${path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES")}"`)
-			const oresContent = JSON.parse(String(fs.readFileSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES.JSON"))))
+			const oresContent = JSON.parse(fs.readFileSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES.JSON"), "utf8"))
 
 			await callRPKGFunction(`-hash_meta_to_json "${path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES.meta")}"`)
-			const metaContent = JSON.parse(String(fs.readFileSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES.meta.JSON"))))
+			const metaContent = JSON.parse(fs.readFileSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "00858D45F5F9E3CA.ORES.meta.JSON"), "utf8"))
 
 			for (const blob of instruction.blobs) {
 				let blobHash: string
@@ -1836,7 +1836,7 @@ export default async function deploy(
 
 			fs.ensureDirSync(path.join(process.cwd(), "staging", "chunk0"))
 
-			const locrFileContent = JSON.parse(String(fs.readFileSync(path.join(process.cwd(), "temp", "LOCR", localisationFileRPKG + ".rpkg", "00F5817876E691F1.LOCR.JSON"))))
+			const locrFileContent = JSON.parse(fs.readFileSync(path.join(process.cwd(), "temp", "LOCR", localisationFileRPKG + ".rpkg", "00F5817876E691F1.LOCR.JSON"), "utf8"))
 			const locrContent: Record<string, Record<string, string>> = {}
 
 			for (const localisationLanguage of locrFileContent) {
@@ -1927,7 +1927,7 @@ export default async function deploy(
 
 				fs.ensureDirSync(path.join(process.cwd(), "staging", "chunk0"))
 
-				const locrFileContent = JSON.parse(String(fs.readFileSync(path.join(process.cwd(), "temp", "LOCR", localisationFileRPKG + ".rpkg", locrHash + ".LOCR.JSON"))))
+				const locrFileContent = JSON.parse(fs.readFileSync(path.join(process.cwd(), "temp", "LOCR", localisationFileRPKG + ".rpkg", locrHash + ".LOCR.JSON"), "utf8"))
 				const locrContent = {} as Record<string, Record<string, string>>
 
 				for (const localisationLanguage of locrFileContent) {
@@ -2004,7 +2004,7 @@ export default async function deploy(
 
 		execCommand(`"Third-Party\\h6xtea.exe" -d --src "${path.join(process.cwd(), "cleanThumbs.dat")}" --dst "${path.join(process.cwd(), "temp", "thumbs.dat.decrypted")}"`) // Decrypt thumbs
 
-		let thumbsContent = String(fs.readFileSync(path.join(process.cwd(), "temp", "thumbs.dat.decrypted")))
+		let thumbsContent = fs.readFileSync(path.join(process.cwd(), "temp", "thumbs.dat.decrypted"), "utf8")
 		if (config.skipIntro) {
 			// Skip intro
 			thumbsContent = thumbsContent.replace("Boot.entity", "MainMenu.entity")
@@ -2044,13 +2044,14 @@ export default async function deploy(
 	}
 
 	execCommand(`"Third-Party\\h6xtea.exe" -d --src "${path.join(config.runtimePath, "packagedefinition.txt")}" --dst "${path.join(process.cwd(), "temp", "packagedefinitionVersionCheck.txt")}"`)
-	if (!String(fs.readFileSync(path.join(process.cwd(), "temp", "packagedefinitionVersionCheck.txt"))).includes("patchlevel=10001")) {
+	if (!fs.readFileSync(path.join(process.cwd(), "temp", "packagedefinitionVersionCheck.txt")).includes("patchlevel=10001")) {
 		// Check if Runtime PD is unmodded and if so overwrite current "clean" version
 		fs.copyFileSync(path.join(config.runtimePath, "packagedefinition.txt"), path.join(process.cwd(), "cleanPackageDefinition.txt"))
 	}
 
 	execCommand(`"Third-Party\\h6xtea.exe" -d --src "${path.join(process.cwd(), "cleanPackageDefinition.txt")}" --dst "${path.join(process.cwd(), "temp", "packagedefinition.txt.decrypted")}"`) // Decrypt PD
-	let packagedefinitionContent = String(fs.readFileSync(path.join(process.cwd(), "temp", "packagedefinition.txt.decrypted")))
+	let packagedefinitionContent = fs
+		.readFileSync(path.join(process.cwd(), "temp", "packagedefinition.txt.decrypted"), "utf8")
 		.split(/\r?\n/)
 		.join("\r\n")
 		.replace(/patchlevel=[0-9]*/g, "patchlevel=10001") // Patch levels
