@@ -1,7 +1,7 @@
 import * as LosslessJSON from "lossless-json"
 import * as ts from "./typescript"
 
-import { FrameworkVersion, config, interoperability, logger, rpkgInstance } from "./core-singleton"
+import { FrameworkVersion, config, logger, rpkgInstance } from "./core-singleton"
 
 import { type Manifest, OptionType, ModScript } from "./types"
 import mergeWith from "lodash.mergewith"
