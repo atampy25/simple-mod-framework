@@ -280,7 +280,7 @@ export default async function discover(): Promise<{ [x: string]: { hash: string;
 									)
 								}
 
-								if (entityContent.quickEntityVersion < 3) {
+								if (+entityContent.quickEntityVersion < 3) {
 									await logger.warn(
 										`Mod ${manifest.name} uses a version of QuickEntity prior to 3.0 in ${path.basename(
 											contentFilePath
@@ -293,7 +293,7 @@ export default async function discover(): Promise<{ [x: string]: { hash: string;
 							case "entity.patch.json": // Depends on and edits the patched entity
 								entityContent = LosslessJSON.parse(fs.readFileSync(contentFilePath, "utf8"))
 
-								if (entityContent.quickEntityVersion < 3) {
+								if (+entityContent.patchVersion < 5) {
 									await logger.warn(
 										`Mod ${manifest.name} uses a version of QuickEntity prior to 3.0 in ${path.basename(
 											contentFilePath
