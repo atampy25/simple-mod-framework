@@ -358,8 +358,6 @@ export async function getAllModWarnings() {
 	if (!startedGettingModWarnings && !window.fs.existsSync("./warnings.json")) {
 		startedGettingModWarnings = true
 
-		const cachedDiagnostics = window.fs.existsSync("./cachedDiagnostics.json") ? await window.fs.readJSON("./cachedDiagnostics.json") : {}
-
 		const allWarnings = []
 
 		for (const mod of getAllMods().filter((a) => modIsFramework(a))) {
@@ -367,22 +365,7 @@ export async function getAllModWarnings() {
 
 			const filesToCheck: string[][] = []
 
-			await Promise.all(
-				window
-					.klaw(getModFolder(mod), { nodir: true })
-					.map((a) => a.path)
-					.map(async (file) => {
-						const fileHash = await xxhash3(await window.fs.readFile(file))
-
-						if (!cachedDiagnostics[file] || fileHash != cachedDiagnostics[file].hash) {
-							filesToCheck.push([fileHash, file])
-						} else {
-							fileWarnings[file] = cachedDiagnostics[file].diagnostics
-						}
-					})
-			)
-
-			for (const [fileHash, file] of filesToCheck) {
+			for (const file of window.klaw(getModFolder(mod), { nodir: true }).map((a) => a.path)) {
 				fileWarnings[file] = []
 				for (const warning of modWarnings) {
 					if (await warning.check(file)) {
@@ -394,17 +377,10 @@ export async function getAllModWarnings() {
 						})
 					}
 				}
-
-				cachedDiagnostics[file] = {
-					hash: fileHash,
-					diagnostics: fileWarnings[file]
-				}
 			}
 
 			allWarnings.push([mod, Object.values(fileWarnings)])
 		}
-
-		await window.fs.writeJSON("./cachedDiagnostics.json", cachedDiagnostics)
 
 		await window.fs.writeJSON("./warnings.json", Object.fromEntries(await Promise.all(allWarnings)))
 	} else if (startedGettingModWarnings) {

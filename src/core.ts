@@ -52,9 +52,7 @@ config.retailPath = path.resolve(process.cwd(), config.retailPath)
 
 const logger = args["--useConsoleLogging"]
 	? {
-			verbose: async (...args: any) => {
-				console.debug("DETAIL", ...args)
-			},
+			verbose: async (...args: any) => {},
 			debug: async (...args: any) => {
 				console.debug("DEBUG", ...args)
 			},
@@ -72,14 +70,14 @@ const logger = args["--useConsoleLogging"]
 						Sentry.getCurrentHub().getScope()!.getTransaction()!.finish()
 					}
 
-					void Sentry.close().then(() => {
-						rpkgInstance.exit()
-						try {
-							// @ts-expect-error Assigning stuff on global is probably bad practice
-							global.currentWorkerPool.destroy()
-						} catch {}
-						process.exit()
-					})
+					await Sentry.close()
+
+					rpkgInstance.exit()
+					try {
+						// @ts-expect-error Assigning stuff on global is probably bad practice
+						global.currentWorkerPool.destroy()
+					} catch {}
+					process.exit()
 				}
 			}
 	  }
