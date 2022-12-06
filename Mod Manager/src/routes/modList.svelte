@@ -307,7 +307,7 @@
 	<pre class="mt-2 h-[10vh] overflow-y-auto whitespace-pre-wrap"><code id="deployOutputCodeElement">{deployOutput}</code></pre>
 	{#if deployOutput.split("\n").some((a) => a.startsWith("WARN")) || deployOutput.split("\n").some((a) => a.startsWith("ERROR"))}
 		<br />
-		<div class="flex flex-row gap-2 flex-wrap">
+		<div class="flex flex-row gap-2 flex-wrap max-h-[15vh] overflow-y-auto">
 			{#each deployOutput.split("\n").filter((a) => a.startsWith("WARN") || a.startsWith("ERROR")) as line}
 				<InlineNotification hideCloseButton lowContrast kind={line.startsWith("WARN") ? "warning" : "error"}>
 					<div slot="title" class="-mt-1 text-lg">

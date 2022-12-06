@@ -4,7 +4,7 @@
 	import Error from "carbon-icons-svelte/lib/Error.svelte"
 
 	import type { Manifest } from "../../../src/types"
-	import { FrameworkVersion, getAllModWarnings } from "./utils"
+	import { FrameworkVersion, getAllModWarnings, getModFolder } from "./utils"
 
 	import semver from "semver"
 
@@ -39,8 +39,64 @@
 					tabindex="0"
 					aria-pressed="false"
 					class="bx--btn bx--btn--ghost btn-error bx--btn--icon-only bx--tooltip__trigger bx--tooltip--a11y bx--btn--icon-only--bottom bx--tooltip--align-center"
+					style="cursor: pointer"
+					on:click={() => {
+						const m = JSON.parse(JSON.stringify(manifest))
+
+						if (m.contentFolder) {
+							m.contentFolders = [m.contentFolder]
+							delete m.contentFolder
+						}
+
+						if (m.blobsFolder) {
+							m.blobsFolders = [m.blobsFolder]
+							delete m.blobsFolder
+						}
+
+						if (m.dependencies) {
+							for (const dependency of m.dependencies) {
+								if (typeof dependency != "string") {
+									dependency.toChunk = Number(dependency.toChunk.replace("chunk", ""))
+								}
+							}
+						}
+
+						if (m.options) {
+							for (const option of m.options) {
+								if (option.contentFolder) {
+									option.contentFolders = [option.contentFolder]
+									delete option.contentFolder
+								}
+
+								if (option.blobsFolder) {
+									option.blobsFolders = [option.blobsFolder]
+									delete option.blobsFolder
+								}
+
+								if (option.dependencies) {
+									for (const dependency of option.dependencies) {
+										if (typeof dependency != "string") {
+											dependency.toChunk = Number(dependency.toChunk.replace("chunk", ""))
+										}
+									}
+								}
+
+								if (option.type == "requirement") {
+									option.type = "conditional"
+									option.condition = option.mods.map(mod => `"${mod}" in config.loadOrder`).join(" and ")
+									delete option.mods
+								}
+							}
+						}
+
+						m.frameworkVersion = "2.0.0"
+
+						window.fs.writeFileSync(window.path.join(getModFolder(manifest.id), "manifest.json"), JSON.stringify(m, null, "\t"))
+
+						window.location.reload()
+					}}
 				>
-					<span class="bx--assistive-text">This mod is designed for an earlier version of the framework; it must be updated to work with the new framework</span>
+					<span class="bx--assistive-text">This mod is designed for an earlier version of the framework; click to update it to work with the current version.</span>
 					<Error color="black" />
 				</div>
 			{:else if isFrameworkMod && modWarnings}
