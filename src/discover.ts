@@ -284,7 +284,7 @@ export default async function discover(): Promise<{ [x: string]: { hash: string;
 									await logger.warn(
 										`Mod ${manifest.name} uses a version of QuickEntity prior to 3.0 in ${path.basename(
 											contentFilePath
-										)}. This makes deployment of this file significantly slower. Mod developers can fix this easily by using an automatic updater available at the QuickEntity 3.0 GitHub releases.`
+										)}. This makes deployment of this file significantly slower. Mod developers can fix this easily by using an automatic updater available at the QuickEntity 3.1 GitHub releases.`
 									)
 								}
 
@@ -297,7 +297,13 @@ export default async function discover(): Promise<{ [x: string]: { hash: string;
 									await logger.warn(
 										`Mod ${manifest.name} uses a version of QuickEntity prior to 3.0 in ${path.basename(
 											contentFilePath
-										)}. This makes deployment of this file significantly slower. Mod developers can fix this easily by using an automatic updater available at the QuickEntity 3.0 GitHub releases.`
+										)}. This makes deployment of this file significantly slower. Mod developers can fix this easily by using an automatic updater available at the QuickEntity 3.1 GitHub releases.`
+									)
+								} else if (+entityContent.patchVersion < 6) {
+									await logger.warn(
+										`Mod ${manifest.name} uses a QuickEntity 3.0 patch in ${path.basename(
+											contentFilePath
+										)}. This is acceptable in most cases but can cause compatibility issues. Mod developers can fix this easily by using an automatic updater available at the QuickEntity 3.1 GitHub releases.`
 									)
 								}
 
