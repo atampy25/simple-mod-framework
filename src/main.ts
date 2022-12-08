@@ -243,7 +243,7 @@ async function doTheThing() {
 
 	if (core.config.outputConfigToAppDataOnDeploy) {
 		fs.ensureDirSync(path.join(process.env.LOCALAPPDATA!, "Simple Mod Framework"))
-		fs.writeFileSync(path.join(process.env.LOCALAPPDATA!, "Simple Mod Framework", "lastDeploy.json"), json5.stringify(core.config))
+		fs.writeFileSync(path.join(process.env.LOCALAPPDATA!, "Simple Mod Framework", "lastDeploy.json"), JSON.stringify(core.config))
 	}
 
 	if (core.args["--useConsoleLogging"]) {
