@@ -11,7 +11,8 @@ const QuickEntity = {
 	"0.1": require("./quickentity1136"),
 	"2.0": require("./quickentity20"),
 	"2.1": require("./quickentity"),
-	"3.0": require("./quickentity-rs"),
+	"3.0": require("./quickentity-3"),
+	"3.1": require("./quickentity-rs"),
 
 	"999.999": require("./quickentity-rs")
 } as {
@@ -26,7 +27,8 @@ const QuickEntityPatch = {
 	"0": require("./quickentity1136"),
 	"3": require("./quickentity20"),
 	"4": require("./quickentity"),
-	"5": require("./quickentity-rs"),
+	"5": require("./quickentity-3"),
+	"6": require("./quickentity-rs"),
 
 	"999": require("./quickentity-rs")
 } as {

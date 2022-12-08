@@ -1,10 +1,10 @@
 import child_process from "child_process"
 import { logger } from "./core-singleton"
 
-// Shim for QuickEntity 3.0 executable
+// Shim for QuickEntity 3.1 executable
 
 const execCommand = function (command: string) {
-	void logger.verbose(`Executing QN 3.0 command ${command}`)
+	void logger.verbose(`Executing QN 3.1 command ${command}`)
 	child_process.execSync(command)
 }
 
