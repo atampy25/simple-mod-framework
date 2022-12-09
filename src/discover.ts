@@ -274,14 +274,8 @@ export default async function discover(): Promise<{ [x: string]: { hash: string;
 							case "entity.json": // Edits the given entity; doesn't depend on anything
 								entityContent = LosslessJSON.parse(fs.readFileSync(contentFilePath, "utf8"))
 
-								if (baseGameEntityHashes.has(entityContent.tempHash)) {
-									await logger.warn(
-										`Mod ${manifest.name} replaces a base game entity file (${entityContent.tempHash}) with an entity.json file. While this is still better than a raw file, it can cause compatibility issues as well as requiring more work when the game updates. Mod developers can fix this easily by using an entity.patch.json file, which has very little performance impact and is well-supported by all major modding tools.`
-									)
-								}
-
 								if (+entityContent.quickEntityVersion < 3) {
-									await logger.warn(
+									await logger.info(
 										`Mod ${manifest.name} uses a version of QuickEntity prior to 3.0 in ${path.basename(
 											contentFilePath
 										)}. This makes deployment of this file significantly slower. Mod developers can fix this easily by using an automatic updater available at the QuickEntity 3.1 GitHub releases.`
@@ -294,13 +288,13 @@ export default async function discover(): Promise<{ [x: string]: { hash: string;
 								entityContent = LosslessJSON.parse(fs.readFileSync(contentFilePath, "utf8"))
 
 								if (+entityContent.patchVersion < 5) {
-									await logger.warn(
+									await logger.info(
 										`Mod ${manifest.name} uses a version of QuickEntity prior to 3.0 in ${path.basename(
 											contentFilePath
 										)}. This makes deployment of this file significantly slower. Mod developers can fix this easily by using an automatic updater available at the QuickEntity 3.1 GitHub releases.`
 									)
 								} else if (+entityContent.patchVersion < 6) {
-									await logger.warn(
+									await logger.info(
 										`Mod ${manifest.name} uses a QuickEntity 3.0 patch in ${path.basename(
 											contentFilePath
 										)}. This is acceptable in most cases but can cause compatibility issues. Mod developers can fix this easily by using an automatic updater available at the QuickEntity 3.1 GitHub releases.`
