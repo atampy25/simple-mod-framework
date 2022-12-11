@@ -75,7 +75,7 @@ A JSON with the following format:
 The repository items mentioned in the file are automatically added/edited in the repository file. Partial edits of existing items are supported (properties will be traversed and assigned).
 
 ## contract.json
-A contract JSON. The contract inside is automatically given a custom hash (determined by `smfContract` + the contract's UUID), added to the contracts ORES and placed in the staging folder. If you want to edit an existing contract, instead use a raw file.
+A contract JSON. The contract inside is automatically given a custom hash (determined by `smfContract` + the contract's UUID), added to the contracts ORES and placed in the staging folder. It supports editing existing game contracts.
 
 ## JSON.patch.json
 Mutates the given JSON file with a patch. The content of the `JSON.patch.json` file follows the following format:

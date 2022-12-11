@@ -888,18 +888,23 @@ export default async function deploy(
 					lastServerSideStates["contracts"] ??= {}
 					lastServerSideStates["contracts"][entityContent.Metadata.Id] = entityContent
 
-					const contractHash =
-						"00" +
-						md5(("smfContract" + entityContent.Metadata.Id).toLowerCase())
-							.slice(2, 16)
-							.toUpperCase()
+					let contractHash
+					if (!Object.values(contractsORESContent).includes(entityContent.Metadata.Id)) {
+						contractHash =
+							"00" +
+							md5(("smfContract" + entityContent.Metadata.Id).toLowerCase())
+								.slice(2, 16)
+								.toUpperCase()
 
-					contractsORESContent[contractHash] = entityContent.Metadata.Id // Add the contract to the ORES; this will be a no-op if the cache is used later
+						contractsORESContent[contractHash] = entityContent.Metadata.Id // Add the contract to the ORES; this will be a no-op if the cache is used later
 
-					contractsORESMetaContent["hash_reference_data"].push({
-						hash: contractHash,
-						flag: "9F"
-					})
+						contractsORESMetaContent["hash_reference_data"].push({
+							hash: contractHash,
+							flag: "9F"
+						})
+					} else {
+						contractHash = Object.entries(contractsORESContent).find((a) => a[1] == entityContent.Metadata.Id)![0]
+					}
 
 					fs.writeFileSync(path.join(process.cwd(), "staging", "chunk0", contractHash + ".JSON"), LosslessJSON.stringify(entityContent)) // Write the actual contract to the staging directory
 					break
