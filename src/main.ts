@@ -16,6 +16,7 @@ import fs from "fs-extra"
 import json5 from "json5"
 import md5File from "md5-file"
 import path from "path"
+import { xxhash3 } from "hash-wasm"
 
 require("clarify")
 
@@ -237,13 +238,27 @@ async function doTheThing() {
 	})
 
 	await core.logger.verbose("Beginning deploy")
-	await deploy(sentryTransaction, configureSentryScope, invalidData)
+	const { lastServerSideStates } = (await deploy(sentryTransaction, configureSentryScope, invalidData))!
 
 	await core.logger.verbose("Finishing")
 
 	if (core.config.outputConfigToAppDataOnDeploy) {
 		fs.ensureDirSync(path.join(process.env.LOCALAPPDATA!, "Simple Mod Framework"))
-		fs.writeFileSync(path.join(process.env.LOCALAPPDATA!, "Simple Mod Framework", "lastDeploy.json"), JSON.stringify(core.config))
+		fs.writeFileSync(
+			path.join(process.env.LOCALAPPDATA!, "Simple Mod Framework", "lastDeploy.json"),
+			JSON.stringify({
+				...core.config,
+				lastServerSideStates: {
+					unlockables: lastServerSideStates.unlockables,
+					contracts: lastServerSideStates.contracts,
+					blobs: Object.fromEntries(await Promise.all(Object.entries(lastServerSideStates.blobs).map(async (a) => [a[0], await xxhash3(a[1])])))
+				}
+			})
+		)
+		fs.ensureDirSync(path.join(process.env.LOCALAPPDATA!, "Simple Mod Framework", "blobs"))
+		for (const x of Object.values(lastServerSideStates.blobs)) {
+			fs.writeFileSync(path.join(process.env.LOCALAPPDATA!, "Simple Mod Framework", "blobs", await xxhash3(x)), Buffer.from(x, "base64"))
+		}
 	}
 
 	if (core.args["--useConsoleLogging"]) {

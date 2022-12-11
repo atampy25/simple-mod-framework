@@ -90,6 +90,12 @@ export default async function deploy(
 	})
 	configureSentryScope(sentryModsTransaction)
 
+	const lastServerSideStates = {} as {
+		unlockables: any
+		contracts: Record<string, any>
+		blobs: Record<string, string>
+	}
+
 	/* ---------------------------------------------------------------------------------------------- */
 	/*                                          Analyse mods                                          */
 	/* ---------------------------------------------------------------------------------------------- */
@@ -553,7 +559,6 @@ export default async function deploy(
 				contractsORESChunk = await getRPKGOfHash("002B07020D21D727")
 			} catch {
 				await logger.error("Couldn't find the contracts ORES in the game files! Make sure you've installed the framework in the right place.")
-				return
 			}
 
 			if (invalidatedData.some((a) => a.data.affected.includes("002B07020D21D727")) || !(await copyFromCache(instruction.cacheFolder, "contractsORES", path.join(process.cwd(), "temp2")))) {
@@ -764,7 +769,6 @@ export default async function deploy(
 							})
 						} catch {
 							await logger.error("Couldn't find the entity to patch in the game files! Make sure you've installed the framework in the right place.")
-							return
 						}
 					}
 					break
@@ -779,7 +783,6 @@ export default async function deploy(
 						oresChunk = await getRPKGOfHash("0057C2C3941115CA")
 					} catch {
 						await logger.error("Couldn't find the unlockables ORES in the game files! Make sure you've installed the framework in the right place.")
-						return
 					}
 
 					if (
@@ -803,6 +806,9 @@ export default async function deploy(
 						await copyToCache(instruction.cacheFolder, path.join(process.cwd(), "temp", oresChunk), path.join("chunk" + content.chunk, await xxhash3(contentIdentifier)))
 					}
 
+					execCommand(`"Third-Party\\OREStool.exe" "${path.join(process.cwd(), "temp", oresChunk, "ORES", "0057C2C3941115CA.ORES")}"`)
+					lastServerSideStates["unlockables"] = JSON.parse(fs.readFileSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "0057C2C3941115CA.ORES.JSON"), "utf8"))
+
 					fs.copyFileSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "0057C2C3941115CA.ORES"), path.join(process.cwd(), "staging", "chunk0", "0057C2C3941115CA.ORES"))
 					fs.copyFileSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "0057C2C3941115CA.ORES.meta"), path.join(process.cwd(), "staging", "chunk0", "0057C2C3941115CA.ORES.meta"))
 					break
@@ -817,7 +823,6 @@ export default async function deploy(
 						repoRPKG = await getRPKGOfHash("00204D1AFD76AB13")
 					} catch {
 						await logger.error("Couldn't find the repository in the game files! Make sure you've installed the framework in the right place.")
-						return
 					}
 
 					if (
@@ -880,6 +885,9 @@ export default async function deploy(
 
 					entityContent = content.source == "disk" ? LosslessJSON.parse(fs.readFileSync(content.path, "utf8")) : LosslessJSON.parse(await content.content.text())
 
+					lastServerSideStates["contracts"] ??= {}
+					lastServerSideStates["contracts"][entityContent.Metadata.Id] = entityContent
+
 					const contractHash =
 						"00" +
 						md5(("smfContract" + entityContent.Metadata.Id).toLowerCase())
@@ -906,7 +914,6 @@ export default async function deploy(
 						rpkgOfFile = await getRPKGOfHash(entityContent.file)
 					} catch {
 						await logger.error("Couldn't find the file to patch in the game files! Make sure you've installed the framework in the right place.")
-						return
 					}
 
 					const fileType = entityContent.type || "JSON"
@@ -952,6 +959,15 @@ export default async function deploy(
 						}
 
 						await copyToCache(instruction.cacheFolder, path.join(process.cwd(), "temp", rpkgOfFile), path.join("chunk" + content.chunk, await xxhash3(contentIdentifier)))
+					}
+
+					if (contractsORESContent[entityContent.file]) {
+						const fileContent = JSON.parse(fs.readFileSync(path.join(process.cwd(), "temp", rpkgOfFile, fileType, entityContent.file + "." + fileType), "utf8"))
+						lastServerSideStates["contracts"][fileContent.Metadata.Id] = fileContent
+					} else if (entityContent.type == "ORES" && entityContent.file == "0057C2C3941115CA") {
+						execCommand(`"Third-Party\\OREStool.exe" "${path.join(process.cwd(), "temp", rpkgOfFile, fileType, entityContent.file + "." + fileType)}"`)
+						const fileContent = JSON.parse(fs.readFileSync(path.join(process.cwd(), "temp", rpkgOfFile, fileType, entityContent.file + "." + fileType + ".JSON"), "utf8"))
+						lastServerSideStates["unlockables"] = fileContent
 					}
 
 					fs.copyFileSync(
@@ -1219,7 +1235,6 @@ export default async function deploy(
 							rpkgOfFile = await getRPKGOfHash(runtimeID)
 						} catch {
 							await logger.error("Couldn't find the file to patch in the game files! Make sure you've installed the framework in the right place.")
-							return
 						}
 
 						await extractOrCopyToTemp(rpkgOfFile, runtimeID, fileType, "chunk" + content.chunk) // Extract the file to temp // Extract the file to temp // Extract the file to temp // Extract the file to temp
@@ -1371,7 +1386,6 @@ export default async function deploy(
 				oresChunk = await getRPKGOfHash("00858D45F5F9E3CA")
 			} catch {
 				await logger.error("Couldn't find the blobs ORES in the game files! Make sure you've installed the framework in the right place.")
-				return
 			}
 
 			await extractOrCopyToTemp(oresChunk, "00858D45F5F9E3CA", "ORES") // Extract the ORES to temp
@@ -1409,6 +1423,10 @@ export default async function deploy(
 				}
 
 				oresContent[blobHash] = blob.blobPath // Add the blob to the ORES
+
+				lastServerSideStates["blobs"] ??= {}
+				lastServerSideStates["blobs"][blob.blobPath] =
+					blob.source == "disk" ? fs.readFileSync(blob.filePath).toString("base64") : Buffer.from(await blob.content.arrayBuffer()).toString("base64")
 
 				if (!metaContent["hash_reference_data"].find((a: { hash: unknown }) => a.hash == blobHash)) {
 					metaContent["hash_reference_data"].push({
@@ -1826,7 +1844,6 @@ export default async function deploy(
 			localisationFileRPKG = await getRPKGOfHash("00F5817876E691F1")
 		} catch {
 			await logger.error("Couldn't find the localisation file in the game files! Make sure you've installed the framework in the right place.")
-			return
 		}
 
 		if (invalidatedData.some((a) => a.data.affected.includes("00F5817876E691F1")) || !(await copyFromCache("global", path.join("LOCR", "manifest"), path.join(process.cwd(), "temp")))) {
@@ -1917,7 +1934,6 @@ export default async function deploy(
 				localisationFileRPKG = await getRPKGOfHash(locrHash)
 			} catch {
 				await logger.error("Couldn't find the localisation file in the game files! Make sure you've installed the framework in the right place.")
-				return
 			}
 
 			if (invalidatedData.some((a) => a.data.affected.includes(locrHash)) || !(await copyFromCache("global", path.join("LOCR", locrHash), path.join(process.cwd(), "temp")))) {
@@ -2120,4 +2136,6 @@ export default async function deploy(
 
 	fs.removeSync(path.join(process.cwd(), "staging"))
 	fs.removeSync(path.join(process.cwd(), "temp"))
+
+	return { lastServerSideStates }
 }
