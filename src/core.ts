@@ -1,4 +1,4 @@
-const FrameworkVersion = "2.5.1"
+const FrameworkVersion = "2.6.0"
 const isDevBuild = false
 
 import * as Sentry from "@sentry/node"
