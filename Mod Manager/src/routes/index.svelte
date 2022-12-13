@@ -194,7 +194,11 @@
 
 		for (let mod of getAllMods()) {
 			if (modIsFramework(mod) && getManifestFromModID(mod).updateCheck) {
-				modUpdateJSONs.push([mod, await (await fetch(getManifestFromModID(mod).updateCheck!)).json()])
+				try {
+					modUpdateJSONs.push([mod, await (await fetch(getManifestFromModID(mod).updateCheck!)).json()])
+				} catch {
+					modUpdateJSONs.push([mod, false])
+				}
 			}
 		}
 
@@ -352,13 +356,21 @@
 					</div>
 				</div>
 			{:then updates}
-				{#each updates.filter(([modID, update]) => !semver.lt(getManifestFromModID(modID).version, update.version)) as [modID, update] (modID)}
+				{#each updates.filter(([modID, update]) => !update) as [modID] (modID)}
+					<div class="flex items-center">
+						<p class="flex-grow">Couldn't check {getManifestFromModID(modID).name} for updates</p>
+						<div>
+							<InlineLoading status="error" />
+						</div>
+					</div>
+				{/each}
+				{#each updates.filter(([modID, update]) => update && !semver.lt(getManifestFromModID(modID).version, update.version)) as [modID, update] (modID)}
 					<div class="flex items-center">
 						<p class="flex-grow">{getManifestFromModID(modID).name} is up to date</p>
 						<Checkmark />
 					</div>
 				{/each}
-				{#each updates.filter(([modID, update]) => semver.lt(getManifestFromModID(modID).version, update.version)) as [modID, update] (modID)}
+				{#each updates.filter(([modID, update]) => update && semver.lt(getManifestFromModID(modID).version, update.version)) as [modID, update] (modID)}
 					<div class="my-4">
 						<div class="flex items-center">
 							<h3 class="flex-grow">
