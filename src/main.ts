@@ -251,7 +251,7 @@ async function doTheThing() {
 				lastServerSideStates: {
 					unlockables: lastServerSideStates.unlockables,
 					contracts: lastServerSideStates.contracts,
-					blobs: Object.fromEntries(await Promise.all(Object.entries(lastServerSideStates.blobs).map(async (a) => [a[0], await xxhash3(a[1])])))
+					blobs: lastServerSideStates.blobs ? Object.fromEntries(await Promise.all(Object.entries(lastServerSideStates.blobs).map(async (a) => [a[0], await xxhash3(a[1])]))) : undefined
 				}
 			})
 		)
