@@ -255,9 +255,12 @@ async function doTheThing() {
 				}
 			})
 		)
-		fs.ensureDirSync(path.join(process.env.LOCALAPPDATA!, "Simple Mod Framework", "blobs"))
-		for (const x of Object.values(lastServerSideStates.blobs)) {
-			fs.writeFileSync(path.join(process.env.LOCALAPPDATA!, "Simple Mod Framework", "blobs", await xxhash3(x)), Buffer.from(x, "base64"))
+
+		if (lastServerSideStates.blobs) {
+			fs.emptyDirSync(path.join(process.env.LOCALAPPDATA!, "Simple Mod Framework", "blobs"))
+			for (const x of Object.values(lastServerSideStates.blobs)) {
+				fs.writeFileSync(path.join(process.env.LOCALAPPDATA!, "Simple Mod Framework", "blobs", await xxhash3(x)), Buffer.from(x, "base64"))
+			}
 		}
 	}
 
