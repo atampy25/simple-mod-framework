@@ -36,13 +36,20 @@ const execCommand = function (command: string) {
 }
 
 const callRPKGFunction = async function (command: string) {
-	void logger.verbose(`Executing RPKG function ${command}`)
+	await logger.verbose(`Executing RPKG function ${command}`)
 	return await rpkgInstance.callFunction(command)
 }
 
-const getRPKGOfHash = async function (hash: string) {
-	void logger.verbose(`Getting RPKG of hash ${hash}`)
-	return await rpkgInstance.getRPKGOfHash(hash)
+const getRPKGOfHash = async function (hash: string): Promise<string> {
+	await logger.verbose(`Getting RPKG of hash ${hash}`)
+
+	try {
+		return await rpkgInstance.getRPKGOfHash(hash)
+	} catch {
+		await logger.error(`Couldn't find ${hash} in the game files! Make sure your game is up-to-date and you've installed the framework in the right place.`)
+
+		process.exit(1) // This is unreachable but TypeScript doesn't know that
+	}
 }
 
 export default async function deploy(
@@ -555,11 +562,7 @@ export default async function deploy(
 		await logger.verbose("Check contracts ORES necessary")
 
 		if (instruction.content.some((a) => a.type == "contract.json")) {
-			try {
-				contractsORESChunk = await getRPKGOfHash("002B07020D21D727")
-			} catch {
-				await logger.error("Couldn't find the contracts ORES in the game files! Make sure you've installed the framework in the right place.")
-			}
+			contractsORESChunk = await getRPKGOfHash("002B07020D21D727")
 
 			if (invalidatedData.some((a) => a.data.affected.includes("002B07020D21D727")) || !(await copyFromCache(instruction.cacheFolder, "contractsORES", path.join(process.cwd(), "temp2")))) {
 				contractsCacheInvalid = true
@@ -757,19 +760,15 @@ export default async function deploy(
 					if (entityPatches.some((a) => a.tempHash == entityContent.tempHash)) {
 						entityPatches.find((a) => a.tempHash == entityContent.tempHash)!.patches.push(entityContent)
 					} else {
-						try {
-							entityPatches.push({
-								tempHash: entityContent.tempHash,
-								tempRPKG: await getRPKGOfHash(entityContent.tempHash),
-								tbluHash: entityContent.tbluHash,
-								tbluRPKG: await getRPKGOfHash(entityContent.tbluHash),
-								chunkFolder: "chunk" + content.chunk,
-								patches: [entityContent],
-								mod: instruction.cacheFolder
-							})
-						} catch {
-							await logger.error("Couldn't find the entity to patch in the game files! Make sure you've installed the framework in the right place.")
-						}
+						entityPatches.push({
+							tempHash: entityContent.tempHash,
+							tempRPKG: await getRPKGOfHash(entityContent.tempHash),
+							tbluHash: entityContent.tbluHash,
+							tbluRPKG: await getRPKGOfHash(entityContent.tbluHash),
+							chunkFolder: "chunk" + content.chunk,
+							patches: [entityContent],
+							mod: instruction.cacheFolder
+						})
 					}
 					break
 				}
@@ -778,12 +777,7 @@ export default async function deploy(
 
 					entityContent = content.source == "disk" ? JSON.parse(fs.readFileSync(content.path, "utf8")) : JSON.parse(await content.content.text())
 
-					let oresChunk: string
-					try {
-						oresChunk = await getRPKGOfHash("0057C2C3941115CA")
-					} catch {
-						await logger.error("Couldn't find the unlockables ORES in the game files! Make sure you've installed the framework in the right place.")
-					}
+					const oresChunk = await getRPKGOfHash("0057C2C3941115CA")
 
 					if (
 						invalidatedData.some((a) => a.filePath == contentIdentifier) || // must redeploy, invalid cache
@@ -818,12 +812,7 @@ export default async function deploy(
 
 					entityContent = content.source == "disk" ? JSON.parse(fs.readFileSync(content.path, "utf8")) : JSON.parse(await content.content.text())
 
-					let repoRPKG: string
-					try {
-						repoRPKG = await getRPKGOfHash("00204D1AFD76AB13")
-					} catch {
-						await logger.error("Couldn't find the repository in the game files! Make sure you've installed the framework in the right place.")
-					}
+					const repoRPKG = await getRPKGOfHash("00204D1AFD76AB13")
 
 					if (
 						invalidatedData.some((a) => a.filePath == contentIdentifier) || // must redeploy, invalid cache
@@ -914,12 +903,7 @@ export default async function deploy(
 
 					entityContent = content.source == "disk" ? JSON.parse(fs.readFileSync(content.path, "utf8")) : JSON.parse(await content.content.text())
 
-					let rpkgOfFile
-					try {
-						rpkgOfFile = await getRPKGOfHash(entityContent.file)
-					} catch {
-						await logger.error("Couldn't find the file to patch in the game files! Make sure you've installed the framework in the right place.")
-					}
+					const rpkgOfFile = await getRPKGOfHash(entityContent.file)
 
 					const fileType = entityContent.type || "JSON"
 
@@ -1235,12 +1219,7 @@ export default async function deploy(
 					) {
 						fs.ensureDirSync(path.join(process.cwd(), "temp", "chunk" + content.chunk))
 
-						let rpkgOfFile
-						try {
-							rpkgOfFile = await getRPKGOfHash(runtimeID)
-						} catch {
-							await logger.error("Couldn't find the file to patch in the game files! Make sure you've installed the framework in the right place.")
-						}
+						const rpkgOfFile = await getRPKGOfHash(runtimeID)
 
 						await extractOrCopyToTemp(rpkgOfFile, runtimeID, fileType, "chunk" + content.chunk) // Extract the file to temp // Extract the file to temp // Extract the file to temp // Extract the file to temp
 
@@ -1386,12 +1365,7 @@ export default async function deploy(
 
 			fs.ensureDirSync(path.join(process.cwd(), "staging", "chunk0"))
 
-			let oresChunk
-			try {
-				oresChunk = await getRPKGOfHash("00858D45F5F9E3CA")
-			} catch {
-				await logger.error("Couldn't find the blobs ORES in the game files! Make sure you've installed the framework in the right place.")
-			}
+			const oresChunk = await getRPKGOfHash("00858D45F5F9E3CA")
 
 			await extractOrCopyToTemp(oresChunk, "00858D45F5F9E3CA", "ORES") // Extract the ORES to temp
 
@@ -1761,12 +1735,7 @@ export default async function deploy(
 
 		const WWEVhash = entry[0]
 
-		let rpkgOfWWEV
-		try {
-			rpkgOfWWEV = await getRPKGOfHash(WWEVhash)
-		} catch {
-			await logger.error("Couldn't find the WWEV in the game files! Make sure you've installed the framework in the right place.")
-		}
+		const rpkgOfWWEV = await getRPKGOfHash(WWEVhash)
 
 		if (invalidatedData.some((a) => a.data.affected.includes(WWEVhash)) || !(await copyFromCache("global", path.join("WWEV", WWEVhash), path.join(process.cwd(), "temp")))) {
 			// we need to re-deploy WWEV OR WWEV data couldn't be copied from cache
@@ -1844,12 +1813,7 @@ export default async function deploy(
 
 		fs.emptyDirSync(path.join(process.cwd(), "temp"))
 
-		let localisationFileRPKG
-		try {
-			localisationFileRPKG = await getRPKGOfHash("00F5817876E691F1")
-		} catch {
-			await logger.error("Couldn't find the localisation file in the game files! Make sure you've installed the framework in the right place.")
-		}
+		const localisationFileRPKG = await getRPKGOfHash("00F5817876E691F1")
 
 		if (invalidatedData.some((a) => a.data.affected.includes("00F5817876E691F1")) || !(await copyFromCache("global", path.join("LOCR", "manifest"), path.join(process.cwd(), "temp")))) {
 			// we need to re-deploy the localisation files OR the localisation files couldn't be copied from cache
@@ -1934,12 +1898,7 @@ export default async function deploy(
 		fs.emptyDirSync(path.join(process.cwd(), "temp"))
 
 		for (const locrHash of Object.keys(localisationOverrides)) {
-			let localisationFileRPKG
-			try {
-				localisationFileRPKG = await getRPKGOfHash(locrHash)
-			} catch {
-				await logger.error("Couldn't find the localisation file in the game files! Make sure you've installed the framework in the right place.")
-			}
+			const localisationFileRPKG = await getRPKGOfHash(locrHash)
 
 			if (invalidatedData.some((a) => a.data.affected.includes(locrHash)) || !(await copyFromCache("global", path.join("LOCR", locrHash), path.join(process.cwd(), "temp")))) {
 				// we need to re-deploy the localisation files OR the localisation files couldn't be copied from cache
@@ -2090,7 +2049,7 @@ export default async function deploy(
 						new RegExp(`@partition name=${brick.partition} parent=(.*?) type=(.*?) patchlevel=10001\r\n`),
 						(a, parent, type) => `@partition name=${brick.partition} parent=${parent} type=${type} patchlevel=10001\r\n${brick.path}\r\n`
 					)
-					
+
 					if (packagedefinitionContent === newPD) {
 						await logger.error(`Couldn't find packagedefinition partition ${brick.partition} in which to add ${brick.path}!`)
 					}
