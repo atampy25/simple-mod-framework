@@ -1,5 +1,6 @@
 import * as LosslessJSON from "lossless-json"
 import * as rfc6902 from "rfc6902"
+import * as rust_utils from "./smf-rust"
 import * as ts from "./typescript"
 
 import type { DeployInstruction, Manifest, ManifestOptionData, ModScript } from "./types"
@@ -1505,39 +1506,7 @@ export default async function deploy(
 						await copyToCache(instruction.cacheFolder, path.join(process.cwd(), "temp"), path.join("dependencies", typeof dependency == "string" ? dependency : dependency.runtimeID))
 					}
 
-					const allFiles = klaw(path.join(process.cwd(), "temp"))
-						.filter((a) => a.stats.isFile())
-						.map((a) => a.path)
-						.map((a) => {
-							return {
-								rpkg: /00[0-9A-F]*\..*?\\(chunk[0-9]*(?:patch[0-9]*)?)\\/gi.exec(a)![1],
-								path: a
-							}
-						})
-						.sort((a, b) =>
-							b.rpkg.localeCompare(a.rpkg, undefined, {
-								numeric: true,
-								sensitivity: "base"
-							})
-						) // Sort files by RPKG name in descending order
-
-					let allFilesSuperseded: string[] = []
-					allFiles.forEach((a) => {
-						if (!allFilesSuperseded.some((b) => path.basename(b) == path.basename(a.path))) {
-							allFilesSuperseded.push(a.path)
-						}
-					}) // Add files without duplicates (since the list is in desc order patches are first which means that superseded files are added correctly)
-
-					allFilesSuperseded = allFilesSuperseded.filter((a) => !/chunk[0-9]*(?:patch[0-9]*)?\.meta/gi.exec(path.basename(a))) // Remove RPKG metas
-
-					fs.ensureDirSync(path.join(process.cwd(), "staging", `chunk${dependency.toChunk || 0}`))
-					await Promise.all(
-						allFilesSuperseded.map(async (file) => {
-							await fs.copy(file, path.join(process.cwd(), "staging", `chunk${dependency.toChunk || 0}`, path.basename(file)), {
-								overwrite: false
-							}) // Stage the files, but don't overwrite if they already exist (such as if another mod has edited them)
-						})
-					)
+					rust_utils.stageDependenciesFromTemp(`chunk${dependency.toChunk || 0}`)
 
 					fs.emptyDirSync(path.join(process.cwd(), "temp"))
 				}

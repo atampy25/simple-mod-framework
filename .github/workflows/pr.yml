@@ -40,6 +40,7 @@ jobs:
           New-Item -ItemType Directory -Force -Path ./node_modules/piscina
           robocopy ./piscina ./node_modules/piscina /COPYALL /E /is /it; if ($lastexitcode -lt 8) { $global:LASTEXITCODE = $null }
           tsc
+          copy ./src/smf-rust.node ./compiled/smf-rust.node
           pkg package.json --targets node14-win-x64 --output Deploy.exe --compress Brotli
 
       - name: Download RPKG
