@@ -2086,10 +2086,16 @@ export default async function deploy(
 				break
 			case "entity":
 				if (!packagedefinitionContent.includes(brick.path)) {
-					packagedefinitionContent = packagedefinitionContent.replace(
+					const newPD = packagedefinitionContent.replace(
 						new RegExp(`@partition name=${brick.partition} parent=(.*?) type=(.*?) patchlevel=10001\r\n`),
 						(a, parent, type) => `@partition name=${brick.partition} parent=${parent} type=${type} patchlevel=10001\r\n${brick.path}\r\n`
 					)
+					
+					if (packagedefinitionContent === newPD) {
+						await logger.error(`Couldn't find packagedefinition partition ${brick.partition} in which to add ${brick.path}!`)
+					}
+
+					packagedefinitionContent = newPD
 				}
 				break
 		}
