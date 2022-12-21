@@ -246,7 +246,7 @@ export default async function discover(): Promise<{ [x: string]: { hash: string;
 
 				for (const file of files) {
 					fileMap[file] = {
-						hash: await xxhash3(fs.readFileSync(file)),
+						hash: await xxhash3(fs.readFileSync(path.join(process.cwd(), "Mods", mod, file))),
 						dependencies: [],
 						affected: modScript.cachingPolicy.affected
 					}

@@ -418,8 +418,8 @@ export interface ModAPI {
 		warn(message: string): void
 
 		/** Print a message at the error log level.
-		 * This will by default exit the program. It is recommended to leave exitAfter on; exitAfter is only used internally for certain errors.
+		 * This will by default exit the program. It is recommended to leave exitAfter enabled (which it is by default); exitAfter is only used internally for certain errors.
 		 * If there is an error that is not critical (not deserving of exiting the program), use warn instead. */
-		error(message: string, exitAfter: boolean): void
+		error(message: string, exitAfter?: boolean): void
 	}
 }
