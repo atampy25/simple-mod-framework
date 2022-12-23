@@ -43,7 +43,7 @@
 
 	if (!cannotFindConfig) {
 		if (!window.fs.existsSync(window.path.resolve("..", getConfig().runtimePath))) {
-			if (window.fs.existsSync(window.path.join(getConfig().retailPath, "Runtime", "chunk0.rpkg")) && getConfig().runtimePath == "..\\Runtime") {
+			if (window.fs.existsSync(window.path.join(window.path.resolve("..", getConfig().retailPath), "Runtime", "chunk0.rpkg")) && getConfig().runtimePath == "..\\Runtime") {
 				mergeConfig({
 					runtimePath: "..\\Retail\\Runtime"
 				})
@@ -56,14 +56,14 @@
 				cannotFindRetail = true
 			} else {
 				if (
-					!window.fs.existsSync(window.path.join(getConfig().retailPath, "Runtime", "chunk0.rpkg")) &&
+					!window.fs.existsSync(window.path.join(window.path.resolve("..", getConfig().retailPath), "Runtime", "chunk0.rpkg")) &&
 					!window.fs.existsSync(window.path.join(window.path.resolve("..", getConfig().retailPath), "HITMAN3.exe"))
 				) {
 					cannotFindHITMAN3 = true
 				}
 
 				if (
-					window.fs.existsSync(window.path.join(getConfig().retailPath, "Runtime", "chunk0.rpkg")) &&
+					window.fs.existsSync(window.path.join(window.path.resolve("..", getConfig().retailPath), "Runtime", "chunk0.rpkg")) &&
 					!window.fs.existsSync(window.path.join(window.path.resolve("..", getConfig().retailPath), "..", "MicrosoftGame.Config"))
 				) {
 					cannotFindGameConfig = true
