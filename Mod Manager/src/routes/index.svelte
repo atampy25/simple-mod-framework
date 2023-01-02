@@ -91,6 +91,12 @@
 		invalidModOpen = true
 	}
 
+	let installedViaZIP = false
+	if (window.originalFs.existsSync("../config.json:Zone.Identifier")) {
+		installedViaZIP = true
+		window.originalFs.unlinkSync("../config.json:Zone.Identifier")
+	}
+
 	let latestGithubRelease = checkForUpdates()
 
 	let githubReleaseMarkdownBody = ""
@@ -310,7 +316,7 @@
 				{#if semver.lt(FrameworkVersion, release.tag_name)}
 					<div class="flex items-center">
 						<h3 class="flex-grow">
-							{({ patch: "Framework patch available", minor: "Minor framework update available", major: "Major framework update available" })[
+							{{ patch: "Framework patch available", minor: "Minor framework update available", major: "Major framework update available" }[
 								semver.diff(FrameworkVersion, release.tag_name)
 							] || "Update available"}
 						</h3>
@@ -450,6 +456,14 @@
 
 <Modal alert bind:open={invalidModOpen} modalHeading="Invalid mod" primaryButtonText="OK" on:submit={() => (invalidModOpen = false)}>
 	<p>The mod {invalidModText} is broken. Ensure it has all of the required keys in the manifest (see the documentation), and if that fails, contact Atampy26 on Hitman Forum.</p>
+</Modal>
+
+<Modal alert bind:open={installedViaZIP} modalHeading="Installed via alternate means" primaryButtonText="OK" on:submit={() => (installedViaZIP = false)}>
+	<p>
+		The framework has been installed via alternate means (likely by extracting a ZIP file). This could be because you installed the framework before the installer EXE existed (in which case you
+		can safely ignore this warning), or because you deliberately downloaded a ZIP file version from a site other than Nexus Mods. In that case, while it might not affect the functioning of the
+		framework, it's still best to use the officially supported installer available on Nexus Mods.
+	</p>
 </Modal>
 
 <Modal

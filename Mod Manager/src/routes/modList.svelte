@@ -150,6 +150,19 @@
 
 		rpkgModExtractionInProgress = false
 	}
+
+	let displayZonedModsDialog = false
+	const zonedMods: string[] = []
+
+	for (const mod of getAllMods().filter((a) => modIsFramework(a))) {
+		const modFolder = getModFolder(mod)
+
+		if (window.originalFs.existsSync(window.path.join(modFolder, "manifest.json:Zone.Identifier"))) {
+			zonedMods.push(getManifestFromModID(mod).name)
+			displayZonedModsDialog = true
+			window.originalFs.unlinkSync(window.path.join(modFolder, "manifest.json:Zone.Identifier")) // Will prevent the message from being shown again for the same mod
+		}
+	}
 </script>
 
 <div class="grid grid-cols-2 gap-4 w-full mb-16">
@@ -402,6 +415,15 @@
 	</p>
 </Modal>
 
+<Modal alert bind:open={displayZonedModsDialog} modalHeading="Incorrectly installed mod{zonedMods.length > 1 ? 's' : ''}" primaryButtonText="OK" shouldSubmitOnEnter={false} on:submit={() => (displayZonedModsDialog = false)}>
+	<p>
+		The mod{zonedMods.length > 1 ? "s" : ""}
+		{zonedMods.slice(0, -1).length ? zonedMods.slice(0, -1).join(", ") + " and " + zonedMods[zonedMods.length - 1] : zonedMods[0]}
+		{zonedMods.length > 1 ? "were" : "was"} installed by extracting the ZIP file directly to the Mods folder. That's not how you're meant to install mods; doing things this way could pose risks as
+		it bypasses the framework's checks for mod validity and safety. Instead, use the Add a Mod button to add any mods you want. This message won't be shown again for {zonedMods.length > 1 ? "these mods" : "this mod"}.
+	</p>
+</Modal>
+
 <style>
 	:global(.bx--btn--ghost) {
 		color: inherit;
@@ -427,6 +449,6 @@
 	}
 
 	:global(.bx--inline-notification__icon) {
-		display: none
+		display: none;
 	}
 </style>
