@@ -52,7 +52,7 @@ class RPKGInstance {
 				console.log(line)
 			}
 
-			process.exit(1)
+			setTimeout(() => process.exit(1), 4000)
 		})
 	}
 
@@ -80,6 +80,7 @@ class RPKGInstance {
 	}
 
 	exit() {
+		this.shouldExit = true
 		this.rpkgProcess.kill()
 	}
 }

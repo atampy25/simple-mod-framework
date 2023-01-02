@@ -186,6 +186,6 @@ export default {
 			// @ts-expect-error Assigning stuff on global is probably bad practice
 			global.currentWorkerPool.destroy()
 		} catch {}
-		process.exit(1)
+		process.exit()
 	}
 }
