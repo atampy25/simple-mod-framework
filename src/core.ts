@@ -77,7 +77,7 @@ const logger = args["--useConsoleLogging"]
 						// @ts-expect-error Assigning stuff on global is probably bad practice
 						global.currentWorkerPool.destroy()
 					} catch {}
-					process.exit()
+					process.exit(1)
 				}
 			}
 	  }
@@ -161,7 +161,7 @@ const logger = args["--useConsoleLogging"]
 							// @ts-expect-error Assigning stuff on global is probably bad practice
 							global.currentWorkerPool.destroy()
 						} catch {}
-						process.exit()
+						process.exit(1)
 					}
 				}
 			}
@@ -186,6 +186,6 @@ export default {
 			// @ts-expect-error Assigning stuff on global is probably bad practice
 			global.currentWorkerPool.destroy()
 		} catch {}
-		process.exit()
+		process.exit(1)
 	}
 }

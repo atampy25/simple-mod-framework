@@ -16,12 +16,15 @@ class RPKGInstance {
 	initialised: boolean
 	ready: boolean
 
+	shouldExit: boolean
+
 	constructor() {
 		this.rpkgProcess = child_process.spawn(path.join(process.cwd(), "Third-Party", "rpkg-cli"), ["-i"])
 		this.output = ""
 		this.previousOutput = ""
 		this.initialised = false
 		this.ready = false
+		this.shouldExit = false
 
 		this.rpkgProcess.stdout.on("data", (data) => {
 			this.output += String(data)
@@ -39,6 +42,17 @@ class RPKGInstance {
 				this.output = ""
 				this.ready = true
 			}
+		})
+
+		this.rpkgProcess.on("close", () => {
+			console.error("Fatal error!")
+			console.error("RPKG process exited unexpectedly with output:")
+			
+			for (let line of this.output.split("\n")) {
+				console.log(line)
+			}
+
+			process.exit(1)
 		})
 	}
 
