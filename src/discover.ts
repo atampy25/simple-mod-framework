@@ -437,7 +437,22 @@ export default async function discover(): Promise<{ [x: string]: { hash: string;
 			}
 
 			fileMap[path.join(process.cwd(), "Mods", mod, "manifest.json")] = {
-				hash: await xxhash3(fs.readFileSync(path.join(process.cwd(), "Mods", mod, "manifest.json"))),
+				hash: await xxhash3(
+					fs.readFileSync(path.join(process.cwd(), "Mods", mod, "manifest.json")) +
+						(manifest.options
+							? JSON.stringify(
+									manifest.options.filter(
+										(a) =>
+											(a.type == OptionType.checkbox && config.modOptions[manifest.id].includes(a.name)) ||
+											(a.type == OptionType.select && config.modOptions[manifest.id].includes(a.group + ":" + a.name)) ||
+											(a.type == OptionType.conditional &&
+												compileExpression(a.condition, { customProp: useDotAccessOperatorAndOptionalChaining })({
+													config
+												}))
+									)
+							  )
+							: "")
+				),
 				dependencies: manifestDependencies,
 				affected: manifestAffected
 			}
