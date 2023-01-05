@@ -2,6 +2,18 @@ Creating a mod with the framework is very simple - just add a manifest file and 
 
 ## Setting up
 
+### Recommended: the GitHub template
+
+If you plan on updating your mod after its release, or you'd like the ability to quickly set up a new mod, or you'd like to collaborate with others, or you'd like to track your changes for easy debugging, there's a GitHub template for mods that handles everything for you - it'll automatically increment the version and generate changelogs, among other things.
+
+The only prerequisite is knowledge of Git/GitHub, which is generally something you should have when you're working with mods anyway.
+
+You can find the template at `https://github.com/atampy25/smf-mod`. Follow the instructions in the README, then clone the mod to your Mods folder.
+
+### Manually setting up a mod folder
+
+If you want to make an incredibly simple mod that you will never update again, or you don't have knowledge of Git and don't want to spend the half an hour required to learn it, you can manually set up a mod folder.
+
 Create a new folder in the `Mods` folder where you have put the framework. Call it whatever you like.
 
 Then, put a file called `manifest.json` in it. Paste the following into it:
