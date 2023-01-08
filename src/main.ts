@@ -86,7 +86,9 @@ core.config.platform = fs.existsSync(path.join(core.config.retailPath, "Runtime"
 	: gameHashes[md5File.sync(path.join(core.config.runtimePath, "..", "Retail", "HITMAN3.exe"))] // Platform detection
 
 if (typeof core.config.platform == "undefined") {
-	void core.logger.error("Unknown platform/game version - update both the game and the framework and if that doesn't work, contact Atampy26 on Hitman Forum!")
+	void core.logger.error(
+		"Could not detect a workable game copy! If the game has recently updated, the framework will also need an update. If you're using a cracked version, that sounds like a you problem."
+	)
 }
 
 let sentryTransaction = {
