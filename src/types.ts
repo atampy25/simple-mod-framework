@@ -150,6 +150,9 @@ export interface DeployInstruction {
 	/** Unique identifier. Should be the mod's ID. */
 	id: string
 
+	/** Mod's friendly name. Should be the mod's name as defined in the manifest. */
+	name: string
+
 	/** Cache folder. Should be the mod's folder name in Mods. */
 	cacheFolder: string
 
@@ -406,20 +409,20 @@ export interface ModAPI {
 	/** Functions for logging to the console. */
 	logger: {
 		/** Print a message at the verbose log level. This is not shown by default to a user, but is useful for debugging. */
-		verbose(message: string): void
+		verbose(message: string): Promise<void>
 
 		/** Print a message at the debug log level. */
-		debug(message: string): void
+		debug(message: string): Promise<void>
 
 		/** Print a message at the info log level. */
-		info(message: string): void
+		info(message: string): Promise<void>
 
 		/** Print a message at the warn log level. */
-		warn(message: string): void
+		warn(message: string): Promise<void>
 
 		/** Print a message at the error log level.
 		 * This will by default exit the program. It is recommended to leave exitAfter enabled (which it is by default); exitAfter is only used internally for certain errors.
 		 * If there is an error that is not critical (not deserving of exiting the program), use warn instead. */
-		error(message: string, exitAfter?: boolean): void
+		error(message: string, exitAfter?: boolean): Promise<void>
 	}
 }

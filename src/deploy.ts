@@ -348,6 +348,7 @@ export default async function deploy(
 
 			const deployInstruction: DeployInstruction = {
 				id: manifest.id,
+				name: manifest.name,
 				cacheFolder: mod,
 				manifestSources: {
 					localisation: manifest.localisation,
@@ -421,7 +422,13 @@ export default async function deploy(
 								getQuickEntityFromPatchVersion,
 								hexflip
 							},
-							logger
+							logger: {
+								verbose: (a) => logger.verbose(a, manifest.name),
+								debug: (a) => logger.debug(a, manifest.name),
+								info: (a) => logger.info(a, manifest.name),
+								warn: (a) => logger.warn(a, manifest.name),
+								error: (a, b) => logger.error(a, b, manifest.name)
+							}
 						}
 					)
 
@@ -509,7 +516,13 @@ export default async function deploy(
 							getQuickEntityFromPatchVersion,
 							hexflip
 						},
-						logger
+						logger: {
+							verbose: (a) => logger.verbose(a, instruction.name),
+							debug: (a) => logger.debug(a, instruction.name),
+							info: (a) => logger.info(a, instruction.name),
+							warn: (a) => logger.warn(a, instruction.name),
+							error: (a, b) => logger.error(a, b, instruction.name)
+						}
 					}
 				)
 
@@ -1667,7 +1680,13 @@ export default async function deploy(
 							getQuickEntityFromPatchVersion,
 							hexflip
 						},
-						logger
+						logger: {
+							verbose: (a) => logger.verbose(a, instruction.name),
+							debug: (a) => logger.debug(a, instruction.name),
+							info: (a) => logger.info(a, instruction.name),
+							warn: (a) => logger.warn(a, instruction.name),
+							error: (a, b) => logger.error(a, b, instruction.name)
+						}
 					}
 				)
 
