@@ -1972,7 +1972,8 @@ export default async function deploy(
 
 		execCommand(`"Third-Party\\h6xtea.exe" -d --src "${path.join(process.cwd(), "cleanThumbs.dat")}" --dst "${path.join(process.cwd(), "temp", "thumbs.dat.decrypted")}"`) // Decrypt thumbs
 
-		let thumbsContent = fs.readFileSync(path.join(process.cwd(), "temp", "thumbs.dat.decrypted"), "utf8")
+		let thumbsContent = fs.readFileSync(path.join(process.cwd(), "temp", "thumbs.dat.decrypted"), "utf8").split(/\r?\n/).join("\n")
+
 		if (config.skipIntro) {
 			// Skip intro
 			thumbsContent = thumbsContent.replace("Boot.entity", "MainMenu.entity")
@@ -1980,7 +1981,7 @@ export default async function deploy(
 
 		for (const patch of thumbs) {
 			// Manifest patches
-			thumbsContent.replace(/\[Hitman5\]\n/gi, "[Hitman5]\n" + patch + "\n")
+			thumbsContent = thumbsContent.replace(/\[Hitman5\]\n/gi, "[Hitman5]\n" + patch + "\n")
 		}
 
 		fs.writeFileSync(path.join(process.cwd(), "temp", "thumbs.dat.decrypted"), thumbsContent)
