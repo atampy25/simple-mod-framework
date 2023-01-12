@@ -8,5 +8,8 @@ export function compile(fileNames: string[], options: ts.CompilerOptions, rootDi
 	program.emit(undefined, (filename, data) => {
 		fs.ensureDirSync(path.join(process.cwd(), "compiled", path.dirname(path.relative(rootDir, filename))))
 		fs.writeFileSync(path.join(process.cwd(), "compiled", path.relative(rootDir, filename)), data)
+
+		// rome-ignore lint/performance/noDelete: lmao
+		delete require.cache[require.resolve(path.join(process.cwd(), "compiled", path.relative(rootDir, filename)))]
 	})
 }
