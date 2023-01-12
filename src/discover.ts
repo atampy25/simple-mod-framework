@@ -53,14 +53,12 @@ export default async function discover(): Promise<{ [x: string]: { hash: string;
 			// Find mod with ID in Mods folder, set the current mod to that folder
 			mod = fs
 				.readdirSync(path.join(process.cwd(), "Mods"))
-				.find(
-					(a) => fs.existsSync(path.join(process.cwd(), "Mods", a, "manifest.json")) && json5.parse(fs.readFileSync(path.join(process.cwd(), "Mods", a, "manifest.json"), "utf8")).id == mod
-				)
+				.find((a) => fs.existsSync(path.join(process.cwd(), "Mods", a, "manifest.json")) && json5.parse(fs.readFileSync(path.join(process.cwd(), "Mods", a, "manifest.json"), "utf8")).id === mod)
 		} // Essentially, if the mod isn't an RPKG mod, it is referenced by its ID, so this finds the mod folder with the right ID
 
 		await logger.verbose(`Beginning mod discovery of ${mod}`)
 		if (!fs.existsSync(path.join(process.cwd(), "Mods", mod, "manifest.json"))) {
-			await logger.info("Discovering RPKG mod: " + mod)
+			await logger.info(`Discovering RPKG mod: ${mod}`)
 
 			for (const chunkFolder of fs.readdirSync(path.join(process.cwd(), "Mods", mod))) {
 				for (const contentFile of fs.readdirSync(path.join(process.cwd(), "Mods", mod, chunkFolder))) {
@@ -85,18 +83,18 @@ export default async function discover(): Promise<{ [x: string]: { hash: string;
 		} else {
 			const manifest: Manifest = json5.parse(fs.readFileSync(path.join(process.cwd(), "Mods", mod, "manifest.json"), "utf8"))
 
-			await logger.info("Discovering mod: " + manifest.name)
+			await logger.info(`Discovering mod: ${manifest.name}`)
 
 			await logger.verbose("Validating manifest")
 
 			for (const key of ["id", "name", "description", "authors", "version", "frameworkVersion"]) {
-				if (typeof manifest[key] == "undefined") {
+				if (typeof manifest[key] === "undefined") {
 					await logger.error(`Mod ${manifest.name} is missing required manifest field "${key}"!`)
 				}
 			}
 
 			if (semver.lt(manifest.frameworkVersion, FrameworkVersion)) {
-				if (semver.diff(manifest.frameworkVersion, FrameworkVersion) == "major") {
+				if (semver.diff(manifest.frameworkVersion, FrameworkVersion) === "major") {
 					await logger.error(`Mod ${manifest.name} is designed for an older version of the framework and is likely incompatible!`)
 				}
 			}
@@ -113,23 +111,13 @@ export default async function discover(): Promise<{ [x: string]: { hash: string;
 			const scripts: string[][] = []
 
 			for (const contentFolder of manifest.contentFolders || []) {
-				if (
-					contentFolder &&
-					contentFolder.length &&
-					fs.existsSync(path.join(process.cwd(), "Mods", mod, contentFolder)) &&
-					fs.readdirSync(path.join(process.cwd(), "Mods", mod, contentFolder)).length
-				) {
+				if (contentFolder?.length && fs.existsSync(path.join(process.cwd(), "Mods", mod, contentFolder)) && fs.readdirSync(path.join(process.cwd(), "Mods", mod, contentFolder)).length) {
 					contentFolders.push(contentFolder)
 				}
 			}
 
 			for (const blobsFolder of manifest.blobsFolders || []) {
-				if (
-					blobsFolder &&
-					blobsFolder.length &&
-					fs.existsSync(path.join(process.cwd(), "Mods", mod, blobsFolder)) &&
-					fs.readdirSync(path.join(process.cwd(), "Mods", mod, blobsFolder)).length
-				) {
+				if (blobsFolder?.length && fs.existsSync(path.join(process.cwd(), "Mods", mod, blobsFolder)) && fs.readdirSync(path.join(process.cwd(), "Mods", mod, blobsFolder)).length) {
 					blobsFolders.push(blobsFolder)
 				}
 			}
@@ -141,31 +129,21 @@ export default async function discover(): Promise<{ [x: string]: { hash: string;
 
 				for (const option of manifest.options.filter(
 					(a) =>
-						(a.type == OptionType.checkbox && config.modOptions[manifest.id].includes(a.name)) ||
-						(a.type == OptionType.select && config.modOptions[manifest.id].includes(a.group + ":" + a.name)) ||
-						(a.type == OptionType.conditional &&
+						(a.type === OptionType.checkbox && config.modOptions[manifest.id].includes(a.name)) ||
+						(a.type === OptionType.select && config.modOptions[manifest.id].includes(`${a.group}:${a.name}`)) ||
+						(a.type === OptionType.conditional &&
 							compileExpression(a.condition, { customProp: useDotAccessOperatorAndOptionalChaining })({
 								config
 							}))
 				)) {
 					for (const contentFolder of option.contentFolders || []) {
-						if (
-							contentFolder &&
-							contentFolder.length &&
-							fs.existsSync(path.join(process.cwd(), "Mods", mod, contentFolder)) &&
-							fs.readdirSync(path.join(process.cwd(), "Mods", mod, contentFolder)).length
-						) {
+						if (contentFolder?.length && fs.existsSync(path.join(process.cwd(), "Mods", mod, contentFolder)) && fs.readdirSync(path.join(process.cwd(), "Mods", mod, contentFolder)).length) {
 							contentFolders.push(contentFolder)
 						}
 					}
 
 					for (const blobsFolder of option.blobsFolders || []) {
-						if (
-							blobsFolder &&
-							blobsFolder.length &&
-							fs.existsSync(path.join(process.cwd(), "Mods", mod, blobsFolder)) &&
-							fs.readdirSync(path.join(process.cwd(), "Mods", mod, blobsFolder)).length
-						) {
+						if (blobsFolder?.length && fs.existsSync(path.join(process.cwd(), "Mods", mod, blobsFolder)) && fs.readdirSync(path.join(process.cwd(), "Mods", mod, blobsFolder)).length) {
 							blobsFolders.push(blobsFolder)
 						}
 					}
@@ -203,7 +181,7 @@ export default async function discover(): Promise<{ [x: string]: { hash: string;
 
 			await logger.verbose("Validating manifest requirements")
 
-			if (manifest.requirements && manifest.requirements.length) {
+			if (manifest.requirements?.length) {
 				for (const req of manifest.requirements) {
 					if (!config.loadOrder.includes(req)) {
 						await logger.error(`Mod ${manifest.name} is missing requirement ${req}!`)
@@ -211,12 +189,12 @@ export default async function discover(): Promise<{ [x: string]: { hash: string;
 				}
 			}
 
-			if (manifest.supportedPlatforms && manifest.supportedPlatforms.length) {
+			if (manifest.supportedPlatforms?.length) {
 				if (!manifest.supportedPlatforms.includes(config.platform)) {
 					await logger.error(
 						`Mod ${manifest.name} only supports the ${
 							manifest.supportedPlatforms.slice(0, -1).length
-								? manifest.supportedPlatforms.slice(0, -1).join(", ") + " and " + manifest.supportedPlatforms[manifest.supportedPlatforms.length - 1]
+								? `${manifest.supportedPlatforms.slice(0, -1).join(", ")} and ${manifest.supportedPlatforms[manifest.supportedPlatforms.length - 1]}`
 								: manifest.supportedPlatforms[0]
 						} platform${manifest.supportedPlatforms.length > 1 ? "s" : ""}!`
 					)
@@ -315,7 +293,7 @@ export default async function discover(): Promise<{ [x: string]: { hash: string;
 							case "contract.json": // Edits the contract, depends on and edits the contracts ORES
 								entityContent = LosslessJSON.parse(fs.readFileSync(contentFilePath, "utf8"))
 
-								affected.push("00" + (await md5(("smfContract" + entityContent.Metadata.Id).toLowerCase())).slice(2, 16).toUpperCase())
+								affected.push(`00${(await md5(`smfContract${entityContent.Metadata.Id}`.toLowerCase())).slice(2, 16).toUpperCase()}`)
 
 								dependencies.push("002B07020D21D727")
 								affected.push("002B07020D21D727")
@@ -346,19 +324,19 @@ export default async function discover(): Promise<{ [x: string]: { hash: string;
 									)
 								}
 
-								if (fileToReplace == "00204D1AFD76AB13") {
+								if (fileToReplace === "00204D1AFD76AB13") {
 									await logger.warn(
 										`Mod ${manifest.name} replaces the repository file (${fileToReplace}) in its entirety. This can cause compatibility issues, it makes the mod harder to work with and it requires more work when the game updates. Mod developers can fix this easily by using a repository.json or JSON.patch.json file.`
 									)
 								}
 
-								if (fileToReplace == "0057C2C3941115CA") {
+								if (fileToReplace === "0057C2C3941115CA") {
 									await logger.warn(
 										`Mod ${manifest.name} replaces the unlockables file (${fileToReplace}) in its entirety. This can cause compatibility issues, it makes the mod harder to work with and it requires more work when the game updates. Mod developers can fix this easily by using an unlockables.json or JSON.patch.json file.`
 									)
 								}
 
-								if (path.basename(contentFilePath).split(".")[1] == "WWEV") {
+								if (path.basename(contentFilePath).split(".")[1] === "WWEV") {
 									await logger.warn(
 										`Mod ${manifest.name} replaces a sound bank file in its entirety. This can cause compatibility issues, it makes the mod harder to work with and it can require more work when the game updates. Mod developers can fix this easily by using an sfx.wem file.`
 									)
@@ -390,13 +368,12 @@ export default async function discover(): Promise<{ [x: string]: { hash: string;
 						const blobPath = blob.replace(path.join(process.cwd(), "Mods", mod, blobsFolder), "").slice(1).split(path.sep).join("/").toLowerCase()
 
 						let blobHash
-						if (path.extname(blob).startsWith(".jp") || path.extname(blob) == ".png") {
-							blobHash = "00" + (await md5(`[assembly:/_pro/online/default/cloudstorage/resources/${blobPath}].pc_gfx`.toLowerCase())).slice(2, 16).toUpperCase()
-						} else if (path.extname(blob) == ".json") {
-							blobHash = "00" + (await md5(`[assembly:/_pro/online/default/cloudstorage/resources/${blobPath}].pc_json`.toLowerCase())).slice(2, 16).toUpperCase()
+						if (path.extname(blob).startsWith(".jp") || path.extname(blob) === ".png") {
+							blobHash = `00${(await md5(`[assembly:/_pro/online/default/cloudstorage/resources/${blobPath}].pc_gfx`.toLowerCase())).slice(2, 16).toUpperCase()}`
+						} else if (path.extname(blob) === ".json") {
+							blobHash = `00${(await md5(`[assembly:/_pro/online/default/cloudstorage/resources/${blobPath}].pc_json`.toLowerCase())).slice(2, 16).toUpperCase()}`
 						} else {
-							blobHash =
-								"00" + (await md5(`[assembly:/_pro/online/default/cloudstorage/resources/${blobPath}].pc_${path.extname(blob).slice(1)}`.toLowerCase())).slice(2, 16).toUpperCase()
+							blobHash = `00${(await md5(`[assembly:/_pro/online/default/cloudstorage/resources/${blobPath}].pc_${path.extname(blob).slice(1)}`.toLowerCase())).slice(2, 16).toUpperCase()}`
 						}
 
 						fileMap[blob] = {
@@ -443,9 +420,9 @@ export default async function discover(): Promise<{ [x: string]: { hash: string;
 							? JSON.stringify(
 									manifest.options.filter(
 										(a) =>
-											(a.type == OptionType.checkbox && config.modOptions[manifest.id].includes(a.name)) ||
-											(a.type == OptionType.select && config.modOptions[manifest.id].includes(a.group + ":" + a.name)) ||
-											(a.type == OptionType.conditional &&
+											(a.type === OptionType.checkbox && config.modOptions[manifest.id].includes(a.name)) ||
+											(a.type === OptionType.select && config.modOptions[manifest.id].includes(`${a.group}:${a.name}`)) ||
+											(a.type === OptionType.conditional &&
 												compileExpression(a.condition, { customProp: useDotAccessOperatorAndOptionalChaining })({
 													config
 												}))

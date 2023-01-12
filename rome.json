@@ -1,0 +1,19 @@
+{
+	"linter": {
+		"enabled": true,
+		"rules": {
+			"recommended": true
+		},
+		"ignore": ["*.js"]
+	},
+	"formatter": {
+		"lineWidth": 200,
+		"ignore": ["*.js"]
+	},
+	"javascript": {
+		"formatter": {
+			"semicolons": "asNeeded",
+			"trailingComma": "none"
+		}
+	}
+}

@@ -124,9 +124,7 @@ export default async function deploy(
 			// Find mod with ID in Mods folder, set the current mod to that folder
 			const foundMod = fs
 				.readdirSync(path.join(process.cwd(), "Mods"))
-				.find(
-					(a) => fs.existsSync(path.join(process.cwd(), "Mods", a, "manifest.json")) && json5.parse(fs.readFileSync(path.join(process.cwd(), "Mods", a, "manifest.json"), "utf8")).id == mod
-				)
+				.find((a) => fs.existsSync(path.join(process.cwd(), "Mods", a, "manifest.json")) && json5.parse(fs.readFileSync(path.join(process.cwd(), "Mods", a, "manifest.json"), "utf8")).id === mod)
 
 			if (!foundMod) {
 				await logger.error(`Could not resolve mod ${mod} to its folder in Mods!`)
@@ -143,7 +141,7 @@ export default async function deploy(
 			})
 			configureSentryScope(sentryModTransaction)
 
-			await logger.info("Staging RPKG mod: " + mod)
+			await logger.info(`Staging RPKG mod: ${mod}`)
 
 			for (const chunkFolder of fs.readdirSync(path.join(process.cwd(), "Mods", mod))) {
 				fs.ensureDirSync(path.join(process.cwd(), "staging", chunkFolder))
@@ -152,7 +150,7 @@ export default async function deploy(
 
 				for (const contentFile of fs.readdirSync(path.join(process.cwd(), "Mods", mod, chunkFolder))) {
 					if (
-						invalidatedData.some((a) => a.filePath == path.join(process.cwd(), "Mods", mod, chunkFolder, contentFile)) || // must redeploy, invalid cache
+						invalidatedData.some((a) => a.filePath === path.join(process.cwd(), "Mods", mod, chunkFolder, contentFile)) || // must redeploy, invalid cache
 						!(await copyFromCache(mod, path.join(chunkFolder, contentFile), path.join(process.cwd(), "temp"))) // cache is not available
 					) {
 						await callRPKGFunction(`-extract_from_rpkg "${path.join(process.cwd(), "Mods", mod, chunkFolder, contentFile)}" -output_path "${path.join(process.cwd(), "temp")}"`)
@@ -195,23 +193,13 @@ export default async function deploy(
 			const scripts: string[][] = []
 
 			for (const contentFolder of manifest.contentFolders || []) {
-				if (
-					contentFolder &&
-					contentFolder.length &&
-					fs.existsSync(path.join(process.cwd(), "Mods", mod, contentFolder)) &&
-					fs.readdirSync(path.join(process.cwd(), "Mods", mod, contentFolder)).length
-				) {
+				if (contentFolder?.length && fs.existsSync(path.join(process.cwd(), "Mods", mod, contentFolder)) && fs.readdirSync(path.join(process.cwd(), "Mods", mod, contentFolder)).length) {
 					contentFolders.push(contentFolder)
 				}
 			}
 
 			for (const blobsFolder of manifest.blobsFolders || []) {
-				if (
-					blobsFolder &&
-					blobsFolder.length &&
-					fs.existsSync(path.join(process.cwd(), "Mods", mod, blobsFolder)) &&
-					fs.readdirSync(path.join(process.cwd(), "Mods", mod, blobsFolder)).length
-				) {
+				if (blobsFolder?.length && fs.existsSync(path.join(process.cwd(), "Mods", mod, blobsFolder)) && fs.readdirSync(path.join(process.cwd(), "Mods", mod, blobsFolder)).length) {
 					blobsFolders.push(blobsFolder)
 				}
 			}
@@ -223,31 +211,23 @@ export default async function deploy(
 
 				for (const option of manifest.options.filter(
 					(a) =>
-						(a.type == OptionType.checkbox && config.modOptions[manifest.id].includes(a.name)) ||
-						(a.type == OptionType.select && config.modOptions[manifest.id].includes(a.group + ":" + a.name)) ||
-						(a.type == OptionType.conditional &&
-							compileExpression(a.condition, { customProp: useDotAccessOperatorAndOptionalChaining })({
+						(a.type === OptionType.checkbox && config.modOptions[manifest.id].includes(a.name)) ||
+						(a.type === OptionType.select && config.modOptions[manifest.id].includes(`${a.group}:${a.name}`)) ||
+						(a.type === OptionType.conditional &&
+							compileExpression(a.condition, {
+								customProp: useDotAccessOperatorAndOptionalChaining
+							})({
 								config
 							}))
 				)) {
 					for (const contentFolder of option.contentFolders || []) {
-						if (
-							contentFolder &&
-							contentFolder.length &&
-							fs.existsSync(path.join(process.cwd(), "Mods", mod, contentFolder)) &&
-							fs.readdirSync(path.join(process.cwd(), "Mods", mod, contentFolder)).length
-						) {
+						if (contentFolder?.length && fs.existsSync(path.join(process.cwd(), "Mods", mod, contentFolder)) && fs.readdirSync(path.join(process.cwd(), "Mods", mod, contentFolder)).length) {
 							contentFolders.push(contentFolder)
 						}
 					}
 
 					for (const blobsFolder of option.blobsFolders || []) {
-						if (
-							blobsFolder &&
-							blobsFolder.length &&
-							fs.existsSync(path.join(process.cwd(), "Mods", mod, blobsFolder)) &&
-							fs.readdirSync(path.join(process.cwd(), "Mods", mod, blobsFolder)).length
-						) {
+						if (blobsFolder?.length && fs.existsSync(path.join(process.cwd(), "Mods", mod, blobsFolder)) && fs.readdirSync(path.join(process.cwd(), "Mods", mod, blobsFolder)).length) {
 							blobsFolders.push(blobsFolder)
 						}
 					}
@@ -305,10 +285,10 @@ export default async function deploy(
 					}
 
 					/* ------------------------------ Copy chunk meta to staging folder ----------------------------- */
-					if (fs.existsSync(path.join(process.cwd(), "Mods", mod, contentFolder, chunkFolder, chunkFolder + ".meta"))) {
+					if (fs.existsSync(path.join(process.cwd(), "Mods", mod, contentFolder, chunkFolder, `${chunkFolder}.meta`))) {
 						rpkgTypes[chunkFolder] = {
 							type: "base",
-							chunkMeta: path.join(process.cwd(), "Mods", mod, contentFolder, chunkFolder, chunkFolder + ".meta")
+							chunkMeta: path.join(process.cwd(), "Mods", mod, contentFolder, chunkFolder, `${chunkFolder}.meta`)
 						}
 					} else {
 						rpkgTypes[chunkFolder] = {
@@ -325,16 +305,14 @@ export default async function deploy(
 					const blobPath = blob.replace(path.join(process.cwd(), "Mods", mod, blobsFolder), "").slice(1).split(path.sep).join("/").toLowerCase()
 
 					let blobHash: string
-					if (path.extname(blob).startsWith(".jp") || path.extname(blob) == ".png") {
-						blobHash = "00" + md5(`[assembly:/_pro/online/default/cloudstorage/resources/${blobPath}].pc_gfx`.toLowerCase()).slice(2, 16).toUpperCase()
-					} else if (path.extname(blob) == ".json") {
-						blobHash = "00" + md5(`[assembly:/_pro/online/default/cloudstorage/resources/${blobPath}].pc_json`.toLowerCase()).slice(2, 16).toUpperCase()
+					if (path.extname(blob).startsWith(".jp") || path.extname(blob) === ".png") {
+						blobHash = `00${md5(`[assembly:/_pro/online/default/cloudstorage/resources/${blobPath}].pc_gfx`.toLowerCase()).slice(2, 16).toUpperCase()}`
+					} else if (path.extname(blob) === ".json") {
+						blobHash = `00${md5(`[assembly:/_pro/online/default/cloudstorage/resources/${blobPath}].pc_json`.toLowerCase()).slice(2, 16).toUpperCase()}`
 					} else {
-						blobHash =
-							"00" +
-							md5(`[assembly:/_pro/online/default/cloudstorage/resources/${blobPath}].pc_${path.extname(blob).slice(1)}`.toLowerCase())
-								.slice(2, 16)
-								.toUpperCase()
+						blobHash = `00${md5(`[assembly:/_pro/online/default/cloudstorage/resources/${blobPath}].pc_${path.extname(blob).slice(1)}`.toLowerCase())
+							.slice(2, 16)
+							.toUpperCase()}`
 					}
 
 					blobs.push({
@@ -411,7 +389,7 @@ export default async function deploy(
 								async extractFileFromRPKG(hash: string, rpkg: string) {
 									await logger.verbose(`Extracting ${hash} from ${rpkg}`)
 									await rpkgInstance.callFunction(
-										`-extract_from_rpkg "${path.join(config.runtimePath, rpkg + ".rpkg")}" -filter "${hash}" -output_path ${path.join(process.cwd(), "scriptTempFolder")}`
+										`-extract_from_rpkg "${path.join(config.runtimePath, `${rpkg}.rpkg`)}" -filter "${hash}" -output_path ${path.join(process.cwd(), "scriptTempFolder")}`
 									)
 								}
 							},
@@ -504,9 +482,7 @@ export default async function deploy(
 							getRPKGOfHash,
 							async extractFileFromRPKG(hash: string, rpkg: string) {
 								await logger.verbose(`Extracting ${hash} from ${rpkg}`)
-								await rpkgInstance.callFunction(
-									`-extract_from_rpkg "${path.join(config.runtimePath, rpkg + ".rpkg")}" -filter "${hash}" -output_path ${path.join(process.cwd(), "scriptTempFolder")}`
-								)
+								await rpkgInstance.callFunction(`-extract_from_rpkg "${path.join(config.runtimePath, `${rpkg}.rpkg`)}" -filter "${hash}" -output_path ${path.join(process.cwd(), "scriptTempFolder")}`)
 							}
 						},
 						utils: {
@@ -556,7 +532,7 @@ export default async function deploy(
 		configureSentryScope(sentryContentTransaction)
 
 		instruction.content.sort((a, b) =>
-			(a.order || (a.source == "disk" ? a.chunk + a.path : a.chunk + a.identifier)).localeCompare(b.order || (b.source == "disk" ? b.chunk + b.path : b.chunk + b.identifier), "en-AU", {
+			(a.order || (a.source === "disk" ? a.chunk + a.path : a.chunk + a.identifier)).localeCompare(b.order || (b.source === "disk" ? b.chunk + b.path : b.chunk + b.identifier), "en-AU", {
 				numeric: true
 			})
 		)
@@ -569,13 +545,15 @@ export default async function deploy(
 
 		let contractsCacheInvalid = false
 
-		let contractsORESChunk,
-			contractsORESContent = {} as Record<string, Record<string, unknown>>,
-			contractsORESMetaContent = { hash_reference_data: [] as Record<string, unknown>[] }
+		let contractsORESChunk
+		let contractsORESContent = {} as Record<string, Record<string, unknown>>
+		let contractsORESMetaContent = {
+			hash_reference_data: [] as Record<string, unknown>[]
+		}
 
 		await logger.verbose("Check contracts ORES necessary")
 
-		if (instruction.content.some((a) => a.type == "contract.json")) {
+		if (instruction.content.some((a) => a.type === "contract.json")) {
 			contractsORESChunk = await getRPKGOfHash("002B07020D21D727")
 
 			if (invalidatedData.some((a) => a.data.affected.includes("002B07020D21D727")) || !(await copyFromCache(instruction.cacheFolder, "contractsORES", path.join(process.cwd(), "temp2")))) {
@@ -587,14 +565,11 @@ export default async function deploy(
 				fs.emptyDirSync(path.join(process.cwd(), "temp2"))
 
 				if (!fs.existsSync(path.join(process.cwd(), "staging", "chunk0", "002B07020D21D727.ORES"))) {
-					await callRPKGFunction(`-extract_from_rpkg "${path.join(config.runtimePath, contractsORESChunk + ".rpkg")}" -filter "002B07020D21D727" -output_path temp2`) // Extract the contracts ORES
+					await callRPKGFunction(`-extract_from_rpkg "${path.join(config.runtimePath, `${contractsORESChunk}.rpkg`)}" -filter "002B07020D21D727" -output_path temp2`) // Extract the contracts ORES
 				} else {
 					fs.ensureDirSync(path.join(process.cwd(), "temp2", contractsORESChunk, "ORES"))
 					fs.copyFileSync(path.join(process.cwd(), "staging", "chunk0", "002B07020D21D727.ORES"), path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES")) // Use the staging one (for mod compat - one mod can extract, patch and build, then the next can patch that one instead)
-					fs.copyFileSync(
-						path.join(process.cwd(), "staging", "chunk0", "002B07020D21D727.ORES.meta"),
-						path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES.meta")
-					)
+					fs.copyFileSync(path.join(process.cwd(), "staging", "chunk0", "002B07020D21D727.ORES.meta"), path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES.meta"))
 				}
 
 				execCommand(`"Third-Party\\OREStool.exe" "${path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES")}"`)
@@ -606,27 +581,19 @@ export default async function deploy(
 		}
 
 		for (const content of instruction.content) {
-			const contentIdentifier = content.source == "disk" ? content.path : content.identifier
+			const contentIdentifier = content.source === "disk" ? content.path : content.identifier
 
-			fs.ensureDirSync(path.join(process.cwd(), "staging", "chunk" + content.chunk))
+			fs.ensureDirSync(path.join(process.cwd(), "staging", `chunk${content.chunk}`))
 
 			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 			let entityContent: any
 
-			const sentryContentFileTransaction = [
-				"entity.json",
-				"entity.patch.json",
-				"unlockables.json",
-				"repository.json",
-				"contract.json",
-				"JSON.patch.json",
-				"texture.tga",
-				"sfx.wem",
-				"delta"
-			].includes(content.type)
+			const sentryContentFileTransaction = ["entity.json", "entity.patch.json", "unlockables.json", "repository.json", "contract.json", "JSON.patch.json", "texture.tga", "sfx.wem", "delta"].includes(
+				content.type
+			)
 				? sentryContentTransaction.startChild({
 						op: "stageContentFile",
-						description: "Stage " + content.type
+						description: `Stage ${content.type}`
 				  })
 				: {
 						startChild() {
@@ -668,18 +635,18 @@ export default async function deploy(
 				  } // Don't track raw files, only special file types
 			configureSentryScope(sentryContentFileTransaction)
 
-			content.source == "disk" && logger.verbose(`Staging ${content.type} file ${content.path}`)
-			content.source == "virtual" && logger.verbose(`Staging virtual ${content.type} file ${content.identifier}`)
+			content.source === "disk" && logger.verbose(`Staging ${content.type} file ${content.path}`)
+			content.source === "virtual" && logger.verbose(`Staging virtual ${content.type} file ${content.identifier}`)
 
 			switch (content.type) {
 				case "entity.json": {
-					await logger.debug("Converting entity " + contentIdentifier)
+					await logger.debug(`Converting entity ${contentIdentifier}`)
 
-					entityContent = LosslessJSON.parse(String(content.source == "disk" ? fs.readFileSync(content.path) : await content.content.text()))
+					entityContent = LosslessJSON.parse(String(content.source === "disk" ? fs.readFileSync(content.path) : await content.content.text()))
 
 					try {
 						if (!getQuickEntityFromVersion(entityContent.quickEntityVersion.value)) {
-							await logger.error("Could not find matching QuickEntity version for " + Number(entityContent.quickEntityVersion.value) + "!")
+							await logger.error(`Could not find matching QuickEntity version for ${Number(entityContent.quickEntityVersion.value)}!`)
 						}
 					} catch {
 						await logger.error("Improper QuickEntity JSON; couldn't find the version!")
@@ -687,16 +654,12 @@ export default async function deploy(
 
 					await logger.verbose("Cache check")
 					if (
-						invalidatedData.some((a) => a.filePath == contentIdentifier) || // must redeploy, invalid cache
-						!(await copyFromCache(
-							instruction.cacheFolder,
-							path.join("chunk" + content.chunk, await xxhash3(contentIdentifier)),
-							path.join(process.cwd(), "staging", "chunk" + content.chunk)
-						)) // cache is not available
+						invalidatedData.some((a) => a.filePath === contentIdentifier) || // must redeploy, invalid cache
+						!(await copyFromCache(instruction.cacheFolder, path.join(`chunk${content.chunk}`, await xxhash3(contentIdentifier)), path.join(process.cwd(), "staging", `chunk${content.chunk}`))) // cache is not available
 					) {
 						let contentPath
 
-						if (content.source == "disk") {
+						if (content.source === "disk") {
 							contentPath = content.path
 						} else {
 							fs.ensureDirSync(path.join(process.cwd(), "virtual"))
@@ -711,9 +674,9 @@ export default async function deploy(
 								"HM3",
 								contentPath,
 								path.join(process.cwd(), "temp", "temp.TEMP.json"),
-								path.join(process.cwd(), "temp", entityContent.tempHash + ".TEMP.meta.json"),
+								path.join(process.cwd(), "temp", `${entityContent.tempHash}.TEMP.meta.json`),
 								path.join(process.cwd(), "temp", "temp.TBLU.json"),
-								path.join(process.cwd(), "temp", entityContent.tbluHash + ".TBLU.meta.json")
+								path.join(process.cwd(), "temp", `${entityContent.tbluHash}.TBLU.meta.json`)
 							)
 						} catch {
 							await logger.error(`Could not generate entity ${contentIdentifier}!`)
@@ -723,63 +686,57 @@ export default async function deploy(
 
 						// Generate the RT source from the QN json
 						execCommand(
-							'"Third-Party\\ResourceTool.exe" HM3 generate TEMP "' +
-								path.join(process.cwd(), "temp", "temp.TEMP.json") +
-								'" "' +
-								path.join(process.cwd(), "temp", entityContent.tempHash + ".TEMP") +
-								'" --simple'
+							`"Third-Party\\ResourceTool.exe" HM3 generate TEMP "${path.join(process.cwd(), "temp", "temp.TEMP.json")}" "${path.join(
+								process.cwd(),
+								"temp",
+								`${entityContent.tempHash}.TEMP`
+							)}" --simple`
 						)
 						execCommand(
-							'"Third-Party\\ResourceTool.exe" HM3 generate TBLU "' +
-								path.join(process.cwd(), "temp", "temp.TBLU.json") +
-								'" "' +
-								path.join(process.cwd(), "temp", entityContent.tbluHash + ".TBLU") +
-								'" --simple'
+							`"Third-Party\\ResourceTool.exe" HM3 generate TBLU "${path.join(process.cwd(), "temp", "temp.TBLU.json")}" "${path.join(
+								process.cwd(),
+								"temp",
+								`${entityContent.tbluHash}.TBLU`
+							)}" --simple`
 						)
 
-						await callRPKGFunction(`-json_to_hash_meta "${path.join(process.cwd(), "temp", entityContent.tempHash + ".TEMP.meta.json")}"`)
-						await callRPKGFunction(`-json_to_hash_meta "${path.join(process.cwd(), "temp", entityContent.tbluHash + ".TBLU.meta.json")}"`)
+						await callRPKGFunction(`-json_to_hash_meta "${path.join(process.cwd(), "temp", `${entityContent.tempHash}.TEMP.meta.json`)}"`)
+						await callRPKGFunction(`-json_to_hash_meta "${path.join(process.cwd(), "temp", `${entityContent.tbluHash}.TBLU.meta.json`)}"`)
 						// Generate the binary files from the RT json
 
+						fs.copyFileSync(path.join(process.cwd(), "temp", `${entityContent.tempHash}.TEMP`), path.join(process.cwd(), "staging", `chunk${content.chunk}`, `${entityContent.tempHash}.TEMP`))
 						fs.copyFileSync(
-							path.join(process.cwd(), "temp", entityContent.tempHash + ".TEMP"),
-							path.join(process.cwd(), "staging", "chunk" + content.chunk, entityContent.tempHash + ".TEMP")
+							path.join(process.cwd(), "temp", `${entityContent.tempHash}.TEMP.meta`),
+							path.join(process.cwd(), "staging", `chunk${content.chunk}`, `${entityContent.tempHash}.TEMP.meta`)
 						)
+						fs.copyFileSync(path.join(process.cwd(), "temp", `${entityContent.tbluHash}.TBLU`), path.join(process.cwd(), "staging", `chunk${content.chunk}`, `${entityContent.tbluHash}.TBLU`))
 						fs.copyFileSync(
-							path.join(process.cwd(), "temp", entityContent.tempHash + ".TEMP.meta"),
-							path.join(process.cwd(), "staging", "chunk" + content.chunk, entityContent.tempHash + ".TEMP.meta")
-						)
-						fs.copyFileSync(
-							path.join(process.cwd(), "temp", entityContent.tbluHash + ".TBLU"),
-							path.join(process.cwd(), "staging", "chunk" + content.chunk, entityContent.tbluHash + ".TBLU")
-						)
-						fs.copyFileSync(
-							path.join(process.cwd(), "temp", entityContent.tbluHash + ".TBLU.meta"),
-							path.join(process.cwd(), "staging", "chunk" + content.chunk, entityContent.tbluHash + ".TBLU.meta")
+							path.join(process.cwd(), "temp", `${entityContent.tbluHash}.TBLU.meta`),
+							path.join(process.cwd(), "staging", `chunk${content.chunk}`, `${entityContent.tbluHash}.TBLU.meta`)
 						)
 						// Copy the binary files to the staging directory
 
-						await copyToCache(instruction.cacheFolder, path.join(process.cwd(), "temp"), path.join("chunk" + content.chunk, await xxhash3(contentIdentifier)))
+						await copyToCache(instruction.cacheFolder, path.join(process.cwd(), "temp"), path.join(`chunk${content.chunk}`, await xxhash3(contentIdentifier)))
 						// Copy the binary files to the cache
 					}
 
 					break
 				}
 				case "entity.patch.json": {
-					await logger.debug("Preparing to apply patch " + contentIdentifier)
+					await logger.debug(`Preparing to apply patch ${contentIdentifier}`)
 
-					entityContent = content.source == "disk" ? LosslessJSON.parse(fs.readFileSync(content.path, "utf8")) : LosslessJSON.parse(await content.content.text())
+					entityContent = content.source === "disk" ? LosslessJSON.parse(fs.readFileSync(content.path, "utf8")) : LosslessJSON.parse(await content.content.text())
 					entityContent.path = contentIdentifier
 
-					if (entityPatches.some((a) => a.tempHash == entityContent.tempHash)) {
-						entityPatches.find((a) => a.tempHash == entityContent.tempHash)!.patches.push(entityContent)
+					if (entityPatches.some((a) => a.tempHash === entityContent.tempHash)) {
+						entityPatches.find((a) => a.tempHash === entityContent.tempHash)!.patches.push(entityContent)
 					} else {
 						entityPatches.push({
 							tempHash: entityContent.tempHash,
 							tempRPKG: await getRPKGOfHash(entityContent.tempHash),
 							tbluHash: entityContent.tbluHash,
 							tbluRPKG: await getRPKGOfHash(entityContent.tbluHash),
-							chunkFolder: "chunk" + content.chunk,
+							chunkFolder: `chunk${content.chunk}`,
 							patches: [entityContent],
 							mod: instruction.cacheFolder
 						})
@@ -787,15 +744,15 @@ export default async function deploy(
 					break
 				}
 				case "unlockables.json": {
-					await logger.debug("Applying unlockable patch " + contentIdentifier)
+					await logger.debug(`Applying unlockable patch ${contentIdentifier}`)
 
-					entityContent = content.source == "disk" ? JSON.parse(fs.readFileSync(content.path, "utf8")) : JSON.parse(await content.content.text())
+					entityContent = content.source === "disk" ? JSON.parse(fs.readFileSync(content.path, "utf8")) : JSON.parse(await content.content.text())
 
 					const oresChunk = await getRPKGOfHash("0057C2C3941115CA")
 
 					if (
-						invalidatedData.some((a) => a.filePath == contentIdentifier) || // must redeploy, invalid cache
-						!(await copyFromCache(instruction.cacheFolder, path.join("chunk" + content.chunk, await xxhash3(contentIdentifier)), path.join(process.cwd(), "temp", oresChunk))) // cache is not available
+						invalidatedData.some((a) => a.filePath === contentIdentifier) || // must redeploy, invalid cache
+						!(await copyFromCache(instruction.cacheFolder, path.join(`chunk${content.chunk}`, await xxhash3(contentIdentifier)), path.join(process.cwd(), "temp", oresChunk))) // cache is not available
 					) {
 						await extractOrCopyToTemp(oresChunk, "0057C2C3941115CA", "ORES") // Extract the ORES to temp
 
@@ -811,7 +768,7 @@ export default async function deploy(
 						fs.rmSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "0057C2C3941115CA.ORES"))
 						execCommand(`"Third-Party\\OREStool.exe" "${path.join(process.cwd(), "temp", oresChunk, "ORES", "0057C2C3941115CA.ORES.json")}"`)
 
-						await copyToCache(instruction.cacheFolder, path.join(process.cwd(), "temp", oresChunk), path.join("chunk" + content.chunk, await xxhash3(contentIdentifier)))
+						await copyToCache(instruction.cacheFolder, path.join(process.cwd(), "temp", oresChunk), path.join(`chunk${content.chunk}`, await xxhash3(contentIdentifier)))
 					}
 
 					execCommand(`"Third-Party\\OREStool.exe" "${path.join(process.cwd(), "temp", oresChunk, "ORES", "0057C2C3941115CA.ORES")}"`)
@@ -822,15 +779,15 @@ export default async function deploy(
 					break
 				}
 				case "repository.json": {
-					await logger.debug("Applying repository patch " + contentIdentifier)
+					await logger.debug(`Applying repository patch ${contentIdentifier}`)
 
-					entityContent = content.source == "disk" ? JSON.parse(fs.readFileSync(content.path, "utf8")) : JSON.parse(await content.content.text())
+					entityContent = content.source === "disk" ? JSON.parse(fs.readFileSync(content.path, "utf8")) : JSON.parse(await content.content.text())
 
 					const repoRPKG = await getRPKGOfHash("00204D1AFD76AB13")
 
 					if (
-						invalidatedData.some((a) => a.filePath == contentIdentifier) || // must redeploy, invalid cache
-						!(await copyFromCache(instruction.cacheFolder, path.join("chunk" + content.chunk, await xxhash3(contentIdentifier)), path.join(process.cwd(), "temp", repoRPKG))) // cache is not available
+						invalidatedData.some((a) => a.filePath === contentIdentifier) || // must redeploy, invalid cache
+						!(await copyFromCache(instruction.cacheFolder, path.join(`chunk${content.chunk}`, await xxhash3(contentIdentifier)), path.join(process.cwd(), "temp", repoRPKG))) // cache is not available
 					) {
 						await extractOrCopyToTemp(repoRPKG, "00204D1AFD76AB13", "REPO") // Extract the REPO to temp
 
@@ -847,7 +804,7 @@ export default async function deploy(
 						for (const repoItem of repoToWrite) {
 							if (editedItems.has(repoItem.ID_)) {
 								if (repoItem.Runtime) {
-									if (!metaContent["hash_reference_data"].find((a: { hash: string }) => a.hash == parseInt(repoItem.Runtime).toString(16).toUpperCase())) {
+									if (!metaContent["hash_reference_data"].find((a: { hash: string }) => a.hash === parseInt(repoItem.Runtime).toString(16).toUpperCase())) {
 										metaContent["hash_reference_data"].push({
 											hash: parseInt(repoItem.Runtime).toString(16).toUpperCase(),
 											flag: "9F"
@@ -858,12 +815,11 @@ export default async function deploy(
 								if (repoItem.Image) {
 									if (
 										!metaContent["hash_reference_data"].find(
-											(a: { hash: string }) =>
-												a.hash == "00" + md5(`[assembly:/_pro/online/default/cloudstorage/resources/${repoItem.Image}].pc_gfx`.toLowerCase()).slice(2, 16).toUpperCase()
+											(a: { hash: string }) => a.hash === `00${md5(`[assembly:/_pro/online/default/cloudstorage/resources/${repoItem.Image}].pc_gfx`.toLowerCase()).slice(2, 16).toUpperCase()}`
 										)
 									) {
 										metaContent["hash_reference_data"].push({
-											hash: "00" + md5(`[assembly:/_pro/online/default/cloudstorage/resources/${repoItem.Image}].pc_gfx`.toLowerCase()).slice(2, 16).toUpperCase(),
+											hash: `00${md5(`[assembly:/_pro/online/default/cloudstorage/resources/${repoItem.Image}].pc_gfx`.toLowerCase()).slice(2, 16).toUpperCase()}`,
 											flag: "9F"
 										}) // Add Image of any items to REPO depends if not already there
 									}
@@ -876,7 +832,7 @@ export default async function deploy(
 
 						fs.writeFileSync(path.join(process.cwd(), "temp", repoRPKG, "REPO", "00204D1AFD76AB13.REPO"), JSON.stringify(repoToWrite))
 
-						await copyToCache(instruction.cacheFolder, path.join(process.cwd(), "temp", repoRPKG), path.join("chunk" + content.chunk, await xxhash3(contentIdentifier)))
+						await copyToCache(instruction.cacheFolder, path.join(process.cwd(), "temp", repoRPKG), path.join(`chunk${content.chunk}`, await xxhash3(contentIdentifier)))
 					}
 
 					fs.copyFileSync(path.join(process.cwd(), "temp", repoRPKG, "REPO", "00204D1AFD76AB13.REPO"), path.join(process.cwd(), "staging", "chunk0", "00204D1AFD76AB13.REPO"))
@@ -884,20 +840,16 @@ export default async function deploy(
 					break
 				}
 				case "contract.json": {
-					await logger.debug("Adding contract " + contentIdentifier)
+					await logger.debug(`Adding contract ${contentIdentifier}`)
 
-					entityContent = content.source == "disk" ? LosslessJSON.parse(fs.readFileSync(content.path, "utf8")) : LosslessJSON.parse(await content.content.text())
+					entityContent = content.source === "disk" ? LosslessJSON.parse(fs.readFileSync(content.path, "utf8")) : LosslessJSON.parse(await content.content.text())
 
 					lastServerSideStates["contracts"] ??= {}
 					lastServerSideStates["contracts"][entityContent.Metadata.Id] = entityContent
 
 					let contractHash
 					if (!Object.values(contractsORESContent).includes(entityContent.Metadata.Id)) {
-						contractHash =
-							"00" +
-							md5(("smfContract" + entityContent.Metadata.Id).toLowerCase())
-								.slice(2, 16)
-								.toUpperCase()
+						contractHash = `00${md5(`smfContract${entityContent.Metadata.Id}`.toLowerCase()).slice(2, 16).toUpperCase()}`
 
 						contractsORESContent[contractHash] = entityContent.Metadata.Id // Add the contract to the ORES; this will be a no-op if the cache is used later
 
@@ -906,97 +858,97 @@ export default async function deploy(
 							flag: "9F"
 						})
 					} else {
-						contractHash = Object.entries(contractsORESContent).find((a) => a[1] == entityContent.Metadata.Id)![0]
+						contractHash = Object.entries(contractsORESContent).find((a) => a[1] === entityContent.Metadata.Id)![0]
 					}
 
-					fs.writeFileSync(path.join(process.cwd(), "staging", "chunk0", contractHash + ".JSON"), LosslessJSON.stringify(entityContent)) // Write the actual contract to the staging directory
+					fs.writeFileSync(path.join(process.cwd(), "staging", "chunk0", `${contractHash}.JSON`), LosslessJSON.stringify(entityContent)) // Write the actual contract to the staging directory
 					break
 				}
 				case "JSON.patch.json": {
-					await logger.debug("Applying JSON patch " + contentIdentifier)
+					await logger.debug(`Applying JSON patch ${contentIdentifier}`)
 
-					entityContent = content.source == "disk" ? JSON.parse(fs.readFileSync(content.path, "utf8")) : JSON.parse(await content.content.text())
+					entityContent = content.source === "disk" ? JSON.parse(fs.readFileSync(content.path, "utf8")) : JSON.parse(await content.content.text())
 
 					const rpkgOfFile = await getRPKGOfHash(entityContent.file)
 
 					const fileType = entityContent.type || "JSON"
 
 					if (
-						invalidatedData.some((a) => a.filePath == contentIdentifier) || // must redeploy, invalid cache
-						!(await copyFromCache(instruction.cacheFolder, path.join("chunk" + content.chunk, await xxhash3(contentIdentifier)), path.join(process.cwd(), "temp", rpkgOfFile))) // cache is not available
+						invalidatedData.some((a) => a.filePath === contentIdentifier) || // must redeploy, invalid cache
+						!(await copyFromCache(instruction.cacheFolder, path.join(`chunk${content.chunk}`, await xxhash3(contentIdentifier)), path.join(process.cwd(), "temp", rpkgOfFile))) // cache is not available
 					) {
-						await extractOrCopyToTemp(rpkgOfFile, entityContent.file, fileType, "chunk" + content.chunk) // Extract the JSON to temp
+						await extractOrCopyToTemp(rpkgOfFile, entityContent.file, fileType, `chunk${content.chunk}`) // Extract the JSON to temp
 
-						if (entityContent.type == "ORES") {
-							execCommand(`"Third-Party\\OREStool.exe" "${path.join(process.cwd(), "temp", rpkgOfFile, fileType, entityContent.file + "." + fileType)}"`)
-							fs.rmSync(path.join(process.cwd(), "temp", rpkgOfFile, fileType, entityContent.file + "." + fileType))
+						if (entityContent.type === "ORES") {
+							execCommand(`"Third-Party\\OREStool.exe" "${path.join(process.cwd(), "temp", rpkgOfFile, fileType, `${entityContent.file}.${fileType}`)}"`)
+							fs.rmSync(path.join(process.cwd(), "temp", rpkgOfFile, fileType, `${entityContent.file}.${fileType}`))
 							fs.renameSync(
-								path.join(process.cwd(), "temp", rpkgOfFile, fileType, entityContent.file + "." + fileType + ".json"),
-								path.join(process.cwd(), "temp", rpkgOfFile, fileType, entityContent.file + "." + fileType)
+								path.join(process.cwd(), "temp", rpkgOfFile, fileType, `${entityContent.file}.${fileType}.json`),
+								path.join(process.cwd(), "temp", rpkgOfFile, fileType, `${entityContent.file}.${fileType}`)
 							)
 						}
 
-						let fileContent = JSON.parse(fs.readFileSync(path.join(process.cwd(), "temp", rpkgOfFile, fileType, entityContent.file + "." + fileType), "utf8"))
+						let fileContent = JSON.parse(fs.readFileSync(path.join(process.cwd(), "temp", rpkgOfFile, fileType, `${entityContent.file}.${fileType}`), "utf8"))
 
-						if (entityContent.type == "ORES" && Array.isArray(fileContent)) {
+						if (entityContent.type === "ORES" && Array.isArray(fileContent)) {
 							fileContent = Object.fromEntries(fileContent.map((a) => [a.Id, a])) // Change unlockables ORES to be an object
-						} else if (entityContent.type == "REPO") {
+						} else if (entityContent.type === "REPO") {
 							fileContent = Object.fromEntries(fileContent.map((a: { [x: string]: unknown }) => [a["ID_"], a])) // Change REPO to be an object
 						}
 
 						rfc6902.applyPatch(fileContent, entityContent.patch) // Apply the JSON patch
 
-						if ((entityContent.type == "ORES" && Object.prototype.toString.call(fileContent) == "[object Object]") || entityContent.type == "REPO") {
+						if ((entityContent.type === "ORES" && Object.prototype.toString.call(fileContent) === "[object Object]") || entityContent.type === "REPO") {
 							fileContent = Object.values(fileContent) // Change back to an array
 						}
 
-						if (entityContent.type == "ORES") {
+						if (entityContent.type === "ORES") {
 							fs.renameSync(
-								path.join(process.cwd(), "temp", rpkgOfFile, fileType, entityContent.file + "." + fileType),
-								path.join(process.cwd(), "temp", rpkgOfFile, fileType, entityContent.file + "." + fileType + ".json")
+								path.join(process.cwd(), "temp", rpkgOfFile, fileType, `${entityContent.file}.${fileType}`),
+								path.join(process.cwd(), "temp", rpkgOfFile, fileType, `${entityContent.file}.${fileType}.json`)
 							)
-							fs.writeFileSync(path.join(process.cwd(), "temp", rpkgOfFile, fileType, entityContent.file + "." + fileType + ".json"), JSON.stringify(fileContent))
-							execCommand(`"Third-Party\\OREStool.exe" "${path.join(process.cwd(), "temp", rpkgOfFile, fileType, entityContent.file + "." + fileType + ".json")}"`)
+							fs.writeFileSync(path.join(process.cwd(), "temp", rpkgOfFile, fileType, `${entityContent.file}.${fileType}.json`), JSON.stringify(fileContent))
+							execCommand(`"Third-Party\\OREStool.exe" "${path.join(process.cwd(), "temp", rpkgOfFile, fileType, `${entityContent.file}.${fileType}.json`)}"`)
 						} else {
-							fs.writeFileSync(path.join(process.cwd(), "temp", rpkgOfFile, fileType, entityContent.file + "." + fileType), JSON.stringify(fileContent))
+							fs.writeFileSync(path.join(process.cwd(), "temp", rpkgOfFile, fileType, `${entityContent.file}.${fileType}`), JSON.stringify(fileContent))
 						}
 
-						await copyToCache(instruction.cacheFolder, path.join(process.cwd(), "temp", rpkgOfFile), path.join("chunk" + content.chunk, await xxhash3(contentIdentifier)))
+						await copyToCache(instruction.cacheFolder, path.join(process.cwd(), "temp", rpkgOfFile), path.join(`chunk${content.chunk}`, await xxhash3(contentIdentifier)))
 					}
 
 					if (contractsORESContent[entityContent.file]) {
-						const fileContent = JSON.parse(fs.readFileSync(path.join(process.cwd(), "temp", rpkgOfFile, fileType, entityContent.file + "." + fileType), "utf8"))
+						const fileContent = JSON.parse(fs.readFileSync(path.join(process.cwd(), "temp", rpkgOfFile, fileType, `${entityContent.file}.${fileType}`), "utf8"))
 						lastServerSideStates["contracts"][fileContent.Metadata.Id] = fileContent
-					} else if (entityContent.type == "ORES" && entityContent.file == "0057C2C3941115CA") {
-						execCommand(`"Third-Party\\OREStool.exe" "${path.join(process.cwd(), "temp", rpkgOfFile, fileType, entityContent.file + "." + fileType)}"`)
-						const fileContent = JSON.parse(fs.readFileSync(path.join(process.cwd(), "temp", rpkgOfFile, fileType, entityContent.file + "." + fileType + ".JSON"), "utf8"))
+					} else if (entityContent.type === "ORES" && entityContent.file === "0057C2C3941115CA") {
+						execCommand(`"Third-Party\\OREStool.exe" "${path.join(process.cwd(), "temp", rpkgOfFile, fileType, `${entityContent.file}.${fileType}`)}"`)
+						const fileContent = JSON.parse(fs.readFileSync(path.join(process.cwd(), "temp", rpkgOfFile, fileType, `${entityContent.file}.${fileType}.JSON`), "utf8"))
 						lastServerSideStates["unlockables"] = fileContent
 					}
 
 					fs.copyFileSync(
-						path.join(process.cwd(), "temp", rpkgOfFile, fileType, entityContent.file + "." + fileType),
-						path.join(process.cwd(), "staging", "chunk" + content.chunk, entityContent.file + "." + fileType)
+						path.join(process.cwd(), "temp", rpkgOfFile, fileType, `${entityContent.file}.${fileType}`),
+						path.join(process.cwd(), "staging", `chunk${content.chunk}`, `${entityContent.file}.${fileType}`)
 					)
 					fs.copyFileSync(
-						path.join(process.cwd(), "temp", rpkgOfFile, fileType, entityContent.file + "." + fileType + ".meta"),
-						path.join(process.cwd(), "staging", "chunk" + content.chunk, entityContent.file + "." + fileType + ".meta")
+						path.join(process.cwd(), "temp", rpkgOfFile, fileType, `${entityContent.file}.${fileType}.meta`),
+						path.join(process.cwd(), "staging", `chunk${content.chunk}`, `${entityContent.file}.${fileType}.meta`)
 					)
 					break
 				}
 				case "texture.tga": {
-					await logger.debug("Converting texture " + contentIdentifier)
+					await logger.debug(`Converting texture ${contentIdentifier}`)
 
 					if (
-						invalidatedData.some((a) => a.filePath == contentIdentifier) || // must redeploy, invalid cache
-						!(await copyFromCache(instruction.cacheFolder, path.join("chunk" + content.chunk, await xxhash3(contentIdentifier)), path.join(process.cwd(), "temp", "chunk" + content.chunk))) // cache is not available
+						invalidatedData.some((a) => a.filePath === contentIdentifier) || // must redeploy, invalid cache
+						!(await copyFromCache(instruction.cacheFolder, path.join(`chunk${content.chunk}`, await xxhash3(contentIdentifier)), path.join(process.cwd(), "temp", `chunk${content.chunk}`))) // cache is not available
 					) {
-						fs.ensureDirSync(path.join(process.cwd(), "temp", "chunk" + content.chunk))
+						fs.ensureDirSync(path.join(process.cwd(), "temp", `chunk${content.chunk}`))
 
-						if ((content.source == "disk" && path.basename(content.path).split(".")[0].split("~").length > 1) || (content.source == "virtual" && content.extraInformation.texdHash)) {
+						if ((content.source === "disk" && path.basename(content.path).split(".")[0].split("~").length > 1) || (content.source === "virtual" && content.extraInformation.texdHash)) {
 							// TEXT and TEXD
 
 							let contentFilePath
-							if (content.source == "disk") {
+							if (content.source === "disk") {
 								contentFilePath = content.path
 							} else {
 								fs.ensureDirSync(path.join(process.cwd(), "virtual"))
@@ -1006,16 +958,16 @@ export default async function deploy(
 							}
 
 							execCommand(
-								`"Third-Party\\HMTextureTools" rebuild H3 "${contentFilePath}" --metapath "${contentFilePath + ".meta"}" "${path.join(
+								`"Third-Party\\HMTextureTools" rebuild H3 "${contentFilePath}" --metapath "${`${contentFilePath}.meta`}" "${path.join(
 									process.cwd(),
 									"temp",
-									"chunk" + content.chunk,
-									(content.source == "disk" ? path.basename(content.path).split(".")[0].split("~")[0] : content.extraInformation.textHash) + ".TEXT"
+									`chunk${content.chunk}`,
+									`${content.source === "disk" ? path.basename(content.path).split(".")[0].split("~")[0] : content.extraInformation.textHash}.TEXT`
 								)}" --rebuildboth --texdoutput "${path.join(
 									process.cwd(),
 									"temp",
-									"chunk" + content.chunk,
-									(content.source == "disk" ? path.basename(content.path).split(".")[0].split("~")[1] : content.extraInformation.texdHash) + ".TEXD"
+									`chunk${content.chunk}`,
+									`${content.source === "disk" ? path.basename(content.path).split(".")[0].split("~")[1] : content.extraInformation.texdHash}.TEXD`
 								)}"`
 							) // Rebuild texture to TEXT/TEXD
 
@@ -1023,11 +975,11 @@ export default async function deploy(
 								path.join(
 									process.cwd(),
 									"temp",
-									"chunk" + content.chunk,
-									(content.source == "disk" ? path.basename(content.path).split(".")[0].split("~")[0] : content.extraInformation.textHash) + ".TEXT.meta.JSON"
+									`chunk${content.chunk}`,
+									`${content.source === "disk" ? path.basename(content.path).split(".")[0].split("~")[0] : content.extraInformation.textHash}.TEXT.meta.JSON`
 								),
 								JSON.stringify({
-									hash_value: content.source == "disk" ? path.basename(content.path).split(".")[0].split("~")[0] : content.extraInformation.textHash,
+									hash_value: content.source === "disk" ? path.basename(content.path).split(".")[0].split("~")[0] : content.extraInformation.textHash,
 									hash_offset: 21488715,
 									hash_size: 2147483648,
 									hash_resource_type: "TEXT",
@@ -1038,7 +990,7 @@ export default async function deploy(
 									hash_size_in_video_memory: 688128,
 									hash_reference_data: [
 										{
-											hash: content.source == "disk" ? path.basename(content.path).split(".")[0].split("~")[1] : content.extraInformation.texdHash,
+											hash: content.source === "disk" ? path.basename(content.path).split(".")[0].split("~")[1] : content.extraInformation.texdHash,
 											flag: "9F"
 										}
 									]
@@ -1049,11 +1001,11 @@ export default async function deploy(
 								path.join(
 									process.cwd(),
 									"temp",
-									"chunk" + content.chunk,
-									(content.source == "disk" ? path.basename(content.path).split(".")[0].split("~")[1] : content.extraInformation.texdHash) + ".TEXD.meta.JSON"
+									`chunk${content.chunk}`,
+									`${content.source === "disk" ? path.basename(content.path).split(".")[0].split("~")[1] : content.extraInformation.texdHash}.TEXD.meta.JSON`
 								),
 								JSON.stringify({
-									hash_value: content.source == "disk" ? path.basename(content.path).split(".")[0].split("~")[1] : content.extraInformation.texdHash,
+									hash_value: content.source === "disk" ? path.basename(content.path).split(".")[0].split("~")[1] : content.extraInformation.texdHash,
 									hash_offset: 233821026,
 									hash_size: 0,
 									hash_resource_type: "TEXD",
@@ -1070,8 +1022,8 @@ export default async function deploy(
 								`-json_to_hash_meta "${path.join(
 									process.cwd(),
 									"temp",
-									"chunk" + content.chunk,
-									(content.source == "disk" ? path.basename(content.path).split(".")[0].split("~")[0] : content.extraInformation.textHash) + ".TEXT.meta.JSON"
+									`chunk${content.chunk}`,
+									`${content.source === "disk" ? path.basename(content.path).split(".")[0].split("~")[0] : content.extraInformation.textHash}.TEXT.meta.JSON`
 								)}"`
 							) // Rebuild the TEXT meta
 
@@ -1079,8 +1031,8 @@ export default async function deploy(
 								`-json_to_hash_meta "${path.join(
 									process.cwd(),
 									"temp",
-									"chunk" + content.chunk,
-									(content.source == "disk" ? path.basename(content.path).split(".")[0].split("~")[1] : content.extraInformation.texdHash) + ".TEXD.meta.JSON"
+									`chunk${content.chunk}`,
+									`${content.source === "disk" ? path.basename(content.path).split(".")[0].split("~")[1] : content.extraInformation.texdHash}.TEXD.meta.JSON`
 								)}"`
 							) // Rebuild the TEXD meta
 
@@ -1089,7 +1041,7 @@ export default async function deploy(
 							// TEXT only
 
 							let contentFilePath
-							if (content.source == "disk") {
+							if (content.source === "disk") {
 								contentFilePath = content.path
 							} else {
 								fs.ensureDirSync(path.join(process.cwd(), "virtual"))
@@ -1099,11 +1051,11 @@ export default async function deploy(
 							}
 
 							execCommand(
-								`"Third-Party\\HMTextureTools" rebuild H3 "${contentFilePath}" --metapath "${contentFilePath + ".meta"}" "${path.join(
+								`"Third-Party\\HMTextureTools" rebuild H3 "${contentFilePath}" --metapath "${`${contentFilePath}.meta`}" "${path.join(
 									process.cwd(),
 									"temp",
-									"chunk" + content.chunk,
-									path.basename(contentFilePath).split(".")[0] + ".TEXT"
+									`chunk${content.chunk}`,
+									`${path.basename(contentFilePath).split(".")[0]}.TEXT`
 								)}"`
 							) // Rebuild texture to TEXT only
 
@@ -1111,11 +1063,11 @@ export default async function deploy(
 								path.join(
 									process.cwd(),
 									"temp",
-									"chunk" + content.chunk,
-									(content.source == "disk" ? path.basename(content.path).split(".")[0].split("~")[0] : content.extraInformation.textHash) + ".TEXT.meta.json"
+									`chunk${content.chunk}`,
+									`${content.source === "disk" ? path.basename(content.path).split(".")[0].split("~")[0] : content.extraInformation.textHash}.TEXT.meta.json`
 								),
 								JSON.stringify({
-									hash_value: content.source == "disk" ? path.basename(content.path).split(".")[0].split("~")[0] : content.extraInformation.textHash,
+									hash_value: content.source === "disk" ? path.basename(content.path).split(".")[0].split("~")[0] : content.extraInformation.textHash,
 									hash_offset: 21488715,
 									hash_size: 2147483648,
 									hash_resource_type: "TEXT",
@@ -1132,113 +1084,113 @@ export default async function deploy(
 								`-json_to_hash_meta "${path.join(
 									process.cwd(),
 									"temp",
-									"chunk" + content.chunk,
-									(content.source == "disk" ? path.basename(content.path).split(".")[0].split("~")[0] : content.extraInformation.textHash) + ".TEXT.meta.json"
+									`chunk${content.chunk}`,
+									`${content.source === "disk" ? path.basename(content.path).split(".")[0].split("~")[0] : content.extraInformation.textHash}.TEXT.meta.json`
 								)}"`
 							) // Rebuild the meta
 
 							fs.removeSync(path.join(process.cwd(), "virtual"))
 						}
 
-						await copyToCache(instruction.cacheFolder, path.join(process.cwd(), "temp", "chunk" + content.chunk), path.join("chunk" + content.chunk, await xxhash3(contentIdentifier)))
+						await copyToCache(instruction.cacheFolder, path.join(process.cwd(), "temp", `chunk${content.chunk}`), path.join(`chunk${content.chunk}`, await xxhash3(contentIdentifier)))
 					}
 
-					fs.ensureDirSync(path.join(process.cwd(), "staging", "chunk" + content.chunk))
+					fs.ensureDirSync(path.join(process.cwd(), "staging", `chunk${content.chunk}`))
 
 					// Copy TEXT stuff
 					fs.copyFileSync(
 						path.join(
 							process.cwd(),
 							"temp",
-							"chunk" + content.chunk,
-							(content.source == "disk" ? path.basename(content.path).split(".")[0].split("~")[0] : content.extraInformation.textHash) + ".TEXT"
+							`chunk${content.chunk}`,
+							`${content.source === "disk" ? path.basename(content.path).split(".")[0].split("~")[0] : content.extraInformation.textHash}.TEXT`
 						),
 						path.join(
 							process.cwd(),
 							"staging",
-							"chunk" + content.chunk,
-							(content.source == "disk" ? path.basename(content.path).split(".")[0].split("~")[0] : content.extraInformation.textHash) + ".TEXT"
+							`chunk${content.chunk}`,
+							`${content.source === "disk" ? path.basename(content.path).split(".")[0].split("~")[0] : content.extraInformation.textHash}.TEXT`
 						)
 					)
 					fs.copyFileSync(
 						path.join(
 							process.cwd(),
 							"temp",
-							"chunk" + content.chunk,
-							(content.source == "disk" ? path.basename(content.path).split(".")[0].split("~")[0] : content.extraInformation.textHash) + ".TEXT.meta"
+							`chunk${content.chunk}`,
+							`${content.source === "disk" ? path.basename(content.path).split(".")[0].split("~")[0] : content.extraInformation.textHash}.TEXT.meta`
 						),
 						path.join(
 							process.cwd(),
 							"staging",
-							"chunk" + content.chunk,
-							(content.source == "disk" ? path.basename(content.path).split(".")[0].split("~")[0] : content.extraInformation.textHash) + ".TEXT.meta"
+							`chunk${content.chunk}`,
+							`${content.source === "disk" ? path.basename(content.path).split(".")[0].split("~")[0] : content.extraInformation.textHash}.TEXT.meta`
 						)
 					)
 
 					// Copy TEXD stuff if necessary
-					if ((content.source == "disk" && path.basename(content.path).split(".")[0].split("~").length > 1) || (content.source == "virtual" && content.extraInformation.texdHash)) {
+					if ((content.source === "disk" && path.basename(content.path).split(".")[0].split("~").length > 1) || (content.source === "virtual" && content.extraInformation.texdHash)) {
 						fs.copyFileSync(
 							path.join(
 								process.cwd(),
 								"temp",
-								"chunk" + content.chunk,
-								(content.source == "disk" ? path.basename(content.path).split(".")[0].split("~")[1] : content.extraInformation.texdHash) + ".TEXD"
+								`chunk${content.chunk}`,
+								`${content.source === "disk" ? path.basename(content.path).split(".")[0].split("~")[1] : content.extraInformation.texdHash}.TEXD`
 							),
 							path.join(
 								process.cwd(),
 								"staging",
-								"chunk" + content.chunk,
-								(content.source == "disk" ? path.basename(content.path).split(".")[0].split("~")[1] : content.extraInformation.texdHash) + ".TEXD"
+								`chunk${content.chunk}`,
+								`${content.source === "disk" ? path.basename(content.path).split(".")[0].split("~")[1] : content.extraInformation.texdHash}.TEXD`
 							)
 						)
 						fs.copyFileSync(
 							path.join(
 								process.cwd(),
 								"temp",
-								"chunk" + content.chunk,
-								(content.source == "disk" ? path.basename(content.path).split(".")[0].split("~")[1] : content.extraInformation.texdHash) + ".TEXD.meta"
+								`chunk${content.chunk}`,
+								`${content.source === "disk" ? path.basename(content.path).split(".")[0].split("~")[1] : content.extraInformation.texdHash}.TEXD.meta`
 							),
 							path.join(
 								process.cwd(),
 								"staging",
-								"chunk" + content.chunk,
-								(content.source == "disk" ? path.basename(content.path).split(".")[0].split("~")[1] : content.extraInformation.texdHash) + ".TEXD.meta"
+								`chunk${content.chunk}`,
+								`${content.source === "disk" ? path.basename(content.path).split(".")[0].split("~")[1] : content.extraInformation.texdHash}.TEXD.meta`
 							)
 						)
 					}
 					break
 				}
 				case "sfx.wem": {
-					if (!WWEVpatches[content.source == "disk" ? path.basename(content.path).split(".")[0].split("~")[0] : content.extraInformation.wwevHash!]) {
-						WWEVpatches[content.source == "disk" ? path.basename(content.path).split(".")[0].split("~")[0] : content.extraInformation.wwevHash!] = []
+					if (!WWEVpatches[content.source === "disk" ? path.basename(content.path).split(".")[0].split("~")[0] : content.extraInformation.wwevHash!]) {
+						WWEVpatches[content.source === "disk" ? path.basename(content.path).split(".")[0].split("~")[0] : content.extraInformation.wwevHash!] = []
 					}
 
 					// Add the WWEV patch; this will be a no-op if the cache is used later
-					WWEVpatches[content.source == "disk" ? path.basename(content.path).split(".")[0].split("~")[0] : String(content.extraInformation.wwevHash)].push({
-						index: content.source == "disk" ? path.basename(content.path).split(".")[0].split("~")[1] : String(content.extraInformation.wwevElement),
-						content: content.source == "disk" ? content.path : content.content,
-						chunk: "chunk" + content.chunk
+					WWEVpatches[content.source === "disk" ? path.basename(content.path).split(".")[0].split("~")[0] : String(content.extraInformation.wwevHash)].push({
+						index: content.source === "disk" ? path.basename(content.path).split(".")[0].split("~")[1] : String(content.extraInformation.wwevElement),
+						content: content.source === "disk" ? content.path : content.content,
+						chunk: `chunk${content.chunk}`
 					})
 					break
 				}
 				case "delta": {
-					await logger.debug("Patching delta " + contentIdentifier)
+					await logger.debug(`Patching delta ${contentIdentifier}`)
 
-					const runtimeID = content.source == "disk" ? path.basename(content.path).split(".")[0].split("~")[0] : content.extraInformation.runtimeID!
-					const fileType = content.source == "disk" ? path.basename(content.path).split(".")[0].split("~")[1] : content.extraInformation.fileType!
+					const runtimeID = content.source === "disk" ? path.basename(content.path).split(".")[0].split("~")[0] : content.extraInformation.runtimeID!
+					const fileType = content.source === "disk" ? path.basename(content.path).split(".")[0].split("~")[1] : content.extraInformation.fileType!
 
 					if (
-						invalidatedData.some((a) => a.filePath == contentIdentifier) || // must redeploy, invalid cache
-						!(await copyFromCache(instruction.cacheFolder, path.join("chunk" + content.chunk, await xxhash3(contentIdentifier)), path.join(process.cwd(), "temp", "chunk" + content.chunk))) // cache is not available
+						invalidatedData.some((a) => a.filePath === contentIdentifier) || // must redeploy, invalid cache
+						!(await copyFromCache(instruction.cacheFolder, path.join(`chunk${content.chunk}`, await xxhash3(contentIdentifier)), path.join(process.cwd(), "temp", `chunk${content.chunk}`))) // cache is not available
 					) {
-						fs.ensureDirSync(path.join(process.cwd(), "temp", "chunk" + content.chunk))
+						fs.ensureDirSync(path.join(process.cwd(), "temp", `chunk${content.chunk}`))
 
 						const rpkgOfFile = await getRPKGOfHash(runtimeID)
 
-						await extractOrCopyToTemp(rpkgOfFile, runtimeID, fileType, "chunk" + content.chunk) // Extract the file to temp // Extract the file to temp // Extract the file to temp // Extract the file to temp
+						await extractOrCopyToTemp(rpkgOfFile, runtimeID, fileType, `chunk${content.chunk}`) // Extract the file to temp // Extract the file to temp // Extract the file to temp // Extract the file to temp
 
 						let contentFilePath
-						if (content.source == "disk") {
+						if (content.source === "disk") {
 							contentFilePath = content.path
 						} else {
 							fs.ensureDirSync(path.join(process.cwd(), "virtual"))
@@ -1247,34 +1199,34 @@ export default async function deploy(
 						}
 
 						execCommand(
-							`"Third-Party\\xdelta3" -d -s "${path.join(process.cwd(), "temp", rpkgOfFile, fileType, runtimeID + "." + fileType)}" "${contentFilePath}" "${path.join(
+							`"Third-Party\\xdelta3" -d -s "${path.join(process.cwd(), "temp", rpkgOfFile, fileType, `${runtimeID}.${fileType}`)}" "${contentFilePath}" "${path.join(
 								process.cwd(),
 								"temp",
-								"chunk" + content.chunk,
-								runtimeID + "." + fileType
+								`chunk${content.chunk}`,
+								`${runtimeID}.${fileType}`
 							)}"`
 						) // Patch file with delta
 
 						fs.removeSync(path.join(process.cwd(), "virtual"))
 
-						await copyToCache(instruction.cacheFolder, path.join(process.cwd(), "temp", "chunk" + content.chunk), path.join("chunk" + content.chunk, await xxhash3(contentIdentifier)))
+						await copyToCache(instruction.cacheFolder, path.join(process.cwd(), "temp", `chunk${content.chunk}`), path.join(`chunk${content.chunk}`, await xxhash3(contentIdentifier)))
 					}
 
-					fs.ensureDirSync(path.join(process.cwd(), "staging", "chunk" + content.chunk))
+					fs.ensureDirSync(path.join(process.cwd(), "staging", `chunk${content.chunk}`))
 
 					// Copy patched file to staging
 					fs.copyFileSync(
-						path.join(process.cwd(), "temp", "chunk" + content.chunk, runtimeID + "." + fileType),
-						path.join(process.cwd(), "staging", "chunk" + content.chunk, runtimeID + "." + fileType)
+						path.join(process.cwd(), "temp", `chunk${content.chunk}`, `${runtimeID}.${fileType}`),
+						path.join(process.cwd(), "staging", `chunk${content.chunk}`, `${runtimeID}.${fileType}`)
 					)
 					break
 				}
 				default: // Copy the file to the staging directory; we don't cache these for obvious reasons
 					fs.writeFileSync(
-						content.source == "disk"
-							? path.join(process.cwd(), "staging", "chunk" + content.chunk, path.basename(content.path))
-							: path.join(process.cwd(), "staging", "chunk" + content.chunk, content.extraInformation.runtimeID! + "." + content.extraInformation.fileType!),
-						content.source == "disk" ? fs.readFileSync(content.path) : Buffer.from(await content.content.arrayBuffer())
+						content.source === "disk"
+							? path.join(process.cwd(), "staging", `chunk${content.chunk}`, path.basename(content.path))
+							: path.join(process.cwd(), "staging", `chunk${content.chunk}`, `${content.extraInformation.runtimeID!}.${content.extraInformation.fileType!}`),
+						content.source === "disk" ? fs.readFileSync(content.path) : Buffer.from(await content.content.arrayBuffer())
 					)
 					break
 			}
@@ -1284,7 +1236,7 @@ export default async function deploy(
 			fs.emptyDirSync(path.join(process.cwd(), "temp"))
 		}
 
-		if (instruction.content.some((a) => a.type == "contract.json")) {
+		if (instruction.content.some((a) => a.type === "contract.json")) {
 			contractsORESChunk = contractsORESChunk as string
 
 			if (contractsCacheInvalid) {
@@ -1309,13 +1261,13 @@ export default async function deploy(
 
 		/* ------------------------------ Copy chunk meta to staging folder ----------------------------- */
 		for (const [rpkg, data] of Object.entries(instruction.rpkgTypes)) {
-			if (data.type == "base") {
+			if (data.type === "base") {
 				fs.ensureDirSync(path.join(process.cwd(), "staging", rpkg))
 
-				if (typeof data.chunkMeta == "string") {
-					fs.copyFileSync(data.chunkMeta, path.join(process.cwd(), "staging", rpkg, rpkg + ".meta"))
+				if (typeof data.chunkMeta === "string") {
+					fs.copyFileSync(data.chunkMeta, path.join(process.cwd(), "staging", rpkg, `${rpkg}.meta`))
 				} else if (data.chunkMeta instanceof Blob) {
-					fs.writeFileSync(path.join(process.cwd(), "staging", rpkg, rpkg + ".meta"), Buffer.from(await data.chunkMeta.arrayBuffer()))
+					fs.writeFileSync(path.join(process.cwd(), "staging", rpkg, `${rpkg}.meta`), Buffer.from(await data.chunkMeta.arrayBuffer()))
 				}
 			}
 
@@ -1351,7 +1303,7 @@ export default async function deploy(
 					tbluRPKG,
 					chunkFolder,
 					patches,
-					assignedTemporaryDirectory: "patchWorker" + index,
+					assignedTemporaryDirectory: `patchWorker${index}`,
 					invalidatedData,
 					cacheFolder: instruction.cacheFolder
 				})
@@ -1394,22 +1346,18 @@ export default async function deploy(
 
 				if (!blob.blobHash) {
 					if (
-						(blob.source == "disk" ? path.extname(blob.filePath).slice(1) : blob.filetype).startsWith("jp") ||
-						(blob.source == "disk" ? path.extname(blob.filePath).slice(1) : blob.filetype) == "png"
+						(blob.source === "disk" ? path.extname(blob.filePath).slice(1) : blob.filetype).startsWith("jp") ||
+						(blob.source === "disk" ? path.extname(blob.filePath).slice(1) : blob.filetype) === "png"
 					) {
-						blobHash = "00" + md5(`[assembly:/_pro/online/default/cloudstorage/resources/${blob.blobPath}].pc_gfx`.toLowerCase()).slice(2, 16).toUpperCase()
-					} else if ((blob.source == "disk" ? path.extname(blob.filePath).slice(1) : blob.filetype) == "json") {
-						blobHash = "00" + md5(`[assembly:/_pro/online/default/cloudstorage/resources/${blob.blobPath}].pc_json`.toLowerCase()).slice(2, 16).toUpperCase()
+						blobHash = `00${md5(`[assembly:/_pro/online/default/cloudstorage/resources/${blob.blobPath}].pc_gfx`.toLowerCase()).slice(2, 16).toUpperCase()}`
+					} else if ((blob.source === "disk" ? path.extname(blob.filePath).slice(1) : blob.filetype) === "json") {
+						blobHash = `00${md5(`[assembly:/_pro/online/default/cloudstorage/resources/${blob.blobPath}].pc_json`.toLowerCase()).slice(2, 16).toUpperCase()}`
 					} else {
-						blobHash =
-							"00" +
-							md5(
-								`[assembly:/_pro/online/default/cloudstorage/resources/${blob.blobPath}].pc_${
-									blob.source == "disk" ? path.extname(blob.filePath).slice(1) : blob.filetype
-								}`.toLowerCase()
-							)
-								.slice(2, 16)
-								.toUpperCase()
+						blobHash = `00${md5(
+							`[assembly:/_pro/online/default/cloudstorage/resources/${blob.blobPath}].pc_${blob.source === "disk" ? path.extname(blob.filePath).slice(1) : blob.filetype}`.toLowerCase()
+						)
+							.slice(2, 16)
+							.toUpperCase()}`
 					}
 				} else {
 					blobHash = blob.blobHash
@@ -1418,30 +1366,29 @@ export default async function deploy(
 				oresContent[blobHash] = blob.blobPath // Add the blob to the ORES
 
 				lastServerSideStates["blobs"] ??= {}
-				lastServerSideStates["blobs"][blob.blobPath] =
-					blob.source == "disk" ? fs.readFileSync(blob.filePath).toString("base64") : Buffer.from(await blob.content.arrayBuffer()).toString("base64")
+				lastServerSideStates["blobs"][blob.blobPath] = blob.source === "disk" ? fs.readFileSync(blob.filePath).toString("base64") : Buffer.from(await blob.content.arrayBuffer()).toString("base64")
 
-				if (!metaContent["hash_reference_data"].find((a: { hash: unknown }) => a.hash == blobHash)) {
+				if (!metaContent["hash_reference_data"].find((a: { hash: unknown }) => a.hash === blobHash)) {
 					metaContent["hash_reference_data"].push({
 						hash: blobHash,
 						flag: "9F"
 					})
 				}
 
-				if (blob.source == "disk") {
+				if (blob.source === "disk") {
 					fs.copyFileSync(
 						blob.filePath,
 						path.join(
 							process.cwd(),
 							"staging",
 							"chunk0",
-							blobHash +
-								"." +
-								(path.extname(blob.filePath).slice(1) == "json"
+							`${blobHash}.${
+								path.extname(blob.filePath).slice(1) === "json"
 									? "JSON"
-									: path.extname(blob.filePath).slice(1).startsWith("jp") || path.extname(blob.filePath).slice(1) == "png"
+									: path.extname(blob.filePath).slice(1).startsWith("jp") || path.extname(blob.filePath).slice(1) === "png"
 									? "GFXI"
-									: path.extname(blob.filePath).slice(1).toUpperCase())
+									: path.extname(blob.filePath).slice(1).toUpperCase()
+							}`
 						)
 					)
 				} else {
@@ -1450,7 +1397,7 @@ export default async function deploy(
 							process.cwd(),
 							"staging",
 							"chunk0",
-							blobHash + "." + (blob.filetype == "json" ? "JSON" : blob.filetype.startsWith("jp") || blob.filetype == "png" ? "GFXI" : blob.filetype.toUpperCase())
+							`${blobHash}.${blob.filetype === "json" ? "JSON" : blob.filetype.startsWith("jp") || blob.filetype === "png" ? "GFXI" : blob.filetype.toUpperCase()}`
 						),
 						Buffer.from(await blob.content.arrayBuffer())
 					)
@@ -1491,32 +1438,30 @@ export default async function deploy(
 			}[] = []
 			for (const dependency of instruction.manifestSources.dependencies) {
 				if (
-					!doneHashes.some((a) => a.id == (typeof dependency == "string" ? dependency : dependency.runtimeID) && a.chunk == (dependency.toChunk || 0)) ||
-					(doneHashes.filter((a) => a.id == (typeof dependency == "string" ? dependency : dependency.runtimeID) && a.chunk == (dependency.toChunk || 0)).every((a) => !a.portChunk1) &&
+					!doneHashes.some((a) => a.id === (typeof dependency === "string" ? dependency : dependency.runtimeID) && a.chunk === (dependency.toChunk || 0)) ||
+					(doneHashes.filter((a) => a.id === (typeof dependency === "string" ? dependency : dependency.runtimeID) && a.chunk === (dependency.toChunk || 0)).every((a) => !a.portChunk1) &&
 						dependency.portFromChunk1)
 				) {
-					await logger.debug("Extracting dependency " + (typeof dependency == "string" ? dependency : dependency.runtimeID))
+					await logger.debug(`Extracting dependency ${typeof dependency === "string" ? dependency : dependency.runtimeID}`)
 
 					doneHashes.push({
-						id: typeof dependency == "string" ? dependency : dependency.runtimeID,
+						id: typeof dependency === "string" ? dependency : dependency.runtimeID,
 						chunk: dependency.toChunk || 0,
-						portChunk1: dependency.portFromChunk1 || false
+						portChunk1: dependency.portFromChunk1
 					})
 
-					if (
-						!(await copyFromCache(instruction.cacheFolder, path.join("dependencies", typeof dependency == "string" ? dependency : dependency.runtimeID), path.join(process.cwd(), "temp")))
-					) {
+					if (!(await copyFromCache(instruction.cacheFolder, path.join("dependencies", typeof dependency === "string" ? dependency : dependency.runtimeID), path.join(process.cwd(), "temp")))) {
 						// the dependency files couldn't be copied from the cache
 
 						fs.emptyDirSync(path.join(process.cwd(), "temp"))
 
 						await callRPKGFunction(
-							`-${dependency.portFromChunk1 || false ? "extract_non_boot_hash_depends_from" : "extract_non_base_hash_depends_from"} "${path.join(config.runtimePath)}" -filter "${
-								typeof dependency == "string" ? dependency : dependency.runtimeID
+							`-${dependency.portFromChunk1 ? "extract_non_boot_hash_depends_from" : "extract_non_base_hash_depends_from"} "${path.join(config.runtimePath)}" -filter "${
+								typeof dependency === "string" ? dependency : dependency.runtimeID
 							}" -output_path temp`
 						)
 
-						await copyToCache(instruction.cacheFolder, path.join(process.cwd(), "temp"), path.join("dependencies", typeof dependency == "string" ? dependency : dependency.runtimeID))
+						await copyToCache(instruction.cacheFolder, path.join(process.cwd(), "temp"), path.join("dependencies", typeof dependency === "string" ? dependency : dependency.runtimeID))
 					}
 
 					rust_utils.stageDependenciesFromTemp(`chunk${dependency.toChunk || 0}`)
@@ -1585,12 +1530,19 @@ export default async function deploy(
 					!(await copyFromCache(instruction.cacheFolder, path.join("localisedLines", lineHash), path.join(process.cwd(), "temp")))
 				) {
 					fs.writeFileSync(
-						path.join(process.cwd(), "temp", "chunk0", lineHash + ".LINE"),
-						Buffer.from(hexflip(crc32(instruction.manifestSources.localisedLines[lineHash].toUpperCase()).toString(16).padStart(8, "0")) + "00", "hex")
+						path.join(process.cwd(), "temp", "chunk0", `${lineHash}.LINE`),
+						Buffer.from(
+							`${hexflip(
+								crc32(instruction.manifestSources.localisedLines[lineHash].toUpperCase())
+									.toString(16)
+									.padStart(8, "0")
+							)}00`,
+							"hex"
+						)
 					) // Create the LINE file
 
 					fs.writeFileSync(
-						path.join(process.cwd(), "temp", "chunk0", lineHash + ".LINE.meta.JSON"),
+						path.join(process.cwd(), "temp", "chunk0", `${lineHash}.LINE.meta.JSON`),
 						JSON.stringify({
 							hash_value: lineHash,
 							hash_offset: 163430439,
@@ -1610,7 +1562,7 @@ export default async function deploy(
 						})
 					)
 
-					await callRPKGFunction(`-json_to_hash_meta "${path.join(process.cwd(), "temp", "chunk0", lineHash + ".LINE.meta.JSON")}"`) // Rebuild the meta
+					await callRPKGFunction(`-json_to_hash_meta "${path.join(process.cwd(), "temp", "chunk0", `${lineHash}.LINE.meta.JSON`)}"`) // Rebuild the meta
 
 					await copyToCache(instruction.cacheFolder, path.join(process.cwd(), "temp"), path.join("localisedLines", lineHash))
 				}
@@ -1668,9 +1620,7 @@ export default async function deploy(
 							getRPKGOfHash,
 							async extractFileFromRPKG(hash: string, rpkg: string) {
 								await logger.verbose(`Extracting ${hash} from ${rpkg}`)
-								await rpkgInstance.callFunction(
-									`-extract_from_rpkg "${path.join(config.runtimePath, rpkg + ".rpkg")}" -filter "${hash}" -output_path ${path.join(process.cwd(), "scriptTempFolder")}`
-								)
+								await rpkgInstance.callFunction(`-extract_from_rpkg "${path.join(config.runtimePath, `${rpkg}.rpkg`)}" -filter "${hash}" -output_path ${path.join(process.cwd(), "scriptTempFolder")}`)
 							}
 						},
 						utils: {
@@ -1717,7 +1667,7 @@ export default async function deploy(
 	configureSentryScope(sentryWWEVTransaction)
 
 	for (const entry of Object.entries(WWEVpatches)) {
-		await logger.debug("Patching WWEV " + entry[0])
+		await logger.debug(`Patching WWEV ${entry[0]}`)
 
 		fs.emptyDirSync(path.join(process.cwd(), "temp"))
 
@@ -1730,13 +1680,13 @@ export default async function deploy(
 
 			await callRPKGFunction(`-extract_wwev_to_ogg_from "${path.join(config.runtimePath)}" -filter "${WWEVhash}" -output_path temp`) // Extract the WWEV
 
-			const workingPath = path.join(process.cwd(), "temp", "WWEV", rpkgOfWWEV + ".rpkg", fs.readdirSync(path.join(process.cwd(), "temp", "WWEV", rpkgOfWWEV + ".rpkg"))[0])
+			const workingPath = path.join(process.cwd(), "temp", "WWEV", `${rpkgOfWWEV}.rpkg`, fs.readdirSync(path.join(process.cwd(), "temp", "WWEV", `${rpkgOfWWEV}.rpkg`))[0])
 
 			for (const patch of entry[1]) {
-				if (typeof patch.content == "string") {
-					fs.copyFileSync(patch.content, path.join(workingPath, "wem", patch.index + ".wem")) // Copy the wem
+				if (typeof patch.content === "string") {
+					fs.copyFileSync(patch.content, path.join(workingPath, "wem", `${patch.index}.wem`)) // Copy the wem
 				} else if (patch.content instanceof Blob) {
-					fs.writeFileSync(path.join(workingPath, "wem", patch.index + ".wem"), Buffer.from(await patch.content.arrayBuffer())) // Copy the wem
+					fs.writeFileSync(path.join(workingPath, "wem", `${patch.index}.wem`), Buffer.from(await patch.content.arrayBuffer())) // Copy the wem
 				}
 			}
 
@@ -1745,12 +1695,12 @@ export default async function deploy(
 			await copyToCache("global", path.join(process.cwd(), "temp"), path.join("WWEV", WWEVhash))
 		}
 
-		const workingPath = path.join(process.cwd(), "temp", "WWEV", rpkgOfWWEV + ".rpkg", fs.readdirSync(path.join(process.cwd(), "temp", "WWEV", rpkgOfWWEV + ".rpkg"))[0])
+		const workingPath = path.join(process.cwd(), "temp", "WWEV", `${rpkgOfWWEV}.rpkg`, fs.readdirSync(path.join(process.cwd(), "temp", "WWEV", `${rpkgOfWWEV}.rpkg`))[0])
 
 		fs.ensureDirSync(path.join(process.cwd(), "staging", entry[1][0].chunk))
 
-		fs.copyFileSync(path.join(workingPath, WWEVhash + ".WWEV"), path.join(process.cwd(), "staging", entry[1][0].chunk, WWEVhash + ".WWEV"))
-		fs.copyFileSync(path.join(workingPath, WWEVhash + ".WWEV.meta"), path.join(process.cwd(), "staging", entry[1][0].chunk, WWEVhash + ".WWEV.meta")) // Copy the WWEV and its meta
+		fs.copyFileSync(path.join(workingPath, `${WWEVhash}.WWEV`), path.join(process.cwd(), "staging", entry[1][0].chunk, `${WWEVhash}.WWEV`))
+		fs.copyFileSync(path.join(workingPath, `${WWEVhash}.WWEV.meta`), path.join(process.cwd(), "staging", entry[1][0].chunk, `${WWEVhash}.WWEV.meta`)) // Copy the WWEV and its meta
 	}
 
 	sentryWWEVTransaction.finish()
@@ -1806,27 +1756,27 @@ export default async function deploy(
 		if (invalidatedData.some((a) => a.data.affected.includes("00F5817876E691F1")) || !(await copyFromCache("global", path.join("LOCR", "manifest"), path.join(process.cwd(), "temp")))) {
 			// we need to re-deploy the localisation files OR the localisation files couldn't be copied from cache
 
-			await callRPKGFunction(`-extract_locr_to_json_from "${path.join(config.runtimePath, localisationFileRPKG + ".rpkg")}" -filter "00F5817876E691F1" -output_path temp`)
+			await callRPKGFunction(`-extract_locr_to_json_from "${path.join(config.runtimePath, `${localisationFileRPKG}.rpkg`)}" -filter "00F5817876E691F1" -output_path temp`)
 
 			fs.ensureDirSync(path.join(process.cwd(), "staging", "chunk0"))
 
-			const locrFileContent = JSON.parse(fs.readFileSync(path.join(process.cwd(), "temp", "LOCR", localisationFileRPKG + ".rpkg", "00F5817876E691F1.LOCR.JSON"), "utf8"))
+			const locrFileContent = JSON.parse(fs.readFileSync(path.join(process.cwd(), "temp", "LOCR", `${localisationFileRPKG}.rpkg`, "00F5817876E691F1.LOCR.JSON"), "utf8"))
 			const locrContent: Record<string, Record<string, string>> = {}
 
 			for (const localisationLanguage of locrFileContent) {
 				locrContent[localisationLanguage[0].Language] = {}
 				for (const localisationItem of localisationLanguage.slice(1)) {
-					locrContent[localisationLanguage[0].Language]["abc" + localisationItem.StringHash] = localisationItem.String
+					locrContent[localisationLanguage[0].Language][`abc${localisationItem.StringHash}`] = localisationItem.String
 				}
 			}
 
 			for (const item of localisation) {
 				const toMerge: Record<string, string> = {}
-				toMerge["abc" + crc32(item.locString.toUpperCase())] = item.text
+				toMerge[`abc${crc32(item.locString.toUpperCase())}`] = item.text
 
 				deepMerge(locrContent[languages[item.language]], toMerge)
 
-				if (item.language == "english") {
+				if (item.language === "english") {
 					deepMerge(locrContent["xx"], toMerge)
 				}
 			}
@@ -1848,14 +1798,14 @@ export default async function deploy(
 				}
 			}
 
-			fs.writeFileSync(path.join(process.cwd(), "temp", "LOCR", localisationFileRPKG + ".rpkg", "00F5817876E691F1.LOCR.JSON"), JSON.stringify(locrToWrite))
+			fs.writeFileSync(path.join(process.cwd(), "temp", "LOCR", `${localisationFileRPKG}.rpkg`, "00F5817876E691F1.LOCR.JSON"), JSON.stringify(locrToWrite))
 
 			await copyToCache("global", path.join(process.cwd(), "temp"), path.join("LOCR", "manifest"))
 		}
 
-		await callRPKGFunction(`-rebuild_locr_from_json_from "${path.join(process.cwd(), "temp", "LOCR", localisationFileRPKG + ".rpkg")}"`) // Rebuild the LOCR
+		await callRPKGFunction(`-rebuild_locr_from_json_from "${path.join(process.cwd(), "temp", "LOCR", `${localisationFileRPKG}.rpkg`)}"`) // Rebuild the LOCR
 		fs.copyFileSync(
-			path.join(process.cwd(), "temp", "LOCR", localisationFileRPKG + ".rpkg", "LOCR.rebuilt", "00F5817876E691F1.LOCR"),
+			path.join(process.cwd(), "temp", "LOCR", `${localisationFileRPKG}.rpkg`, "LOCR.rebuilt", "00F5817876E691F1.LOCR"),
 			path.join(process.cwd(), "staging", localisationFileRPKG.replace(/patch[0-9]*/gi, ""), "00F5817876E691F1.LOCR")
 		)
 
@@ -1891,28 +1841,28 @@ export default async function deploy(
 			if (invalidatedData.some((a) => a.data.affected.includes(locrHash)) || !(await copyFromCache("global", path.join("LOCR", locrHash), path.join(process.cwd(), "temp")))) {
 				// we need to re-deploy the localisation files OR the localisation files couldn't be copied from cache
 
-				await callRPKGFunction(`-extract_locr_to_json_from "${path.join(config.runtimePath, localisationFileRPKG + ".rpkg")}" -filter "${locrHash}" -output_path temp`)
+				await callRPKGFunction(`-extract_locr_to_json_from "${path.join(config.runtimePath, `${localisationFileRPKG}.rpkg`)}" -filter "${locrHash}" -output_path temp`)
 
 				fs.ensureDirSync(path.join(process.cwd(), "staging", "chunk0"))
 
-				const locrFileContent = JSON.parse(fs.readFileSync(path.join(process.cwd(), "temp", "LOCR", localisationFileRPKG + ".rpkg", locrHash + ".LOCR.JSON"), "utf8"))
+				const locrFileContent = JSON.parse(fs.readFileSync(path.join(process.cwd(), "temp", "LOCR", `${localisationFileRPKG}.rpkg`, `${locrHash}.LOCR.JSON`), "utf8"))
 				const locrContent = {} as Record<string, Record<string, string>>
 
 				for (const localisationLanguage of locrFileContent) {
 					locrContent[localisationLanguage[0].Language] = {}
 					for (const localisationItem of localisationLanguage.slice(1)) {
-						locrContent[localisationLanguage[0].Language]["abc" + localisationItem.StringHash] = localisationItem.String
+						locrContent[localisationLanguage[0].Language][`abc${localisationItem.StringHash}`] = localisationItem.String
 					}
 				}
 
 				for (const item of localisationOverrides[locrHash]) {
 					const toMerge = {} as Record<string, string>
 
-					toMerge["abc" + item.locString] = item.text
+					toMerge[`abc${item.locString}`] = item.text
 
 					deepMerge(locrContent[languages[item.language]], toMerge)
 
-					if (item.language == "english") {
+					if (item.language === "english") {
 						deepMerge(locrContent["xx"], toMerge)
 					}
 				}
@@ -1934,15 +1884,15 @@ export default async function deploy(
 					}
 				}
 
-				fs.writeFileSync(path.join(process.cwd(), "temp", "LOCR", localisationFileRPKG + ".rpkg", locrHash + ".LOCR.JSON"), JSON.stringify(locrToWrite))
+				fs.writeFileSync(path.join(process.cwd(), "temp", "LOCR", `${localisationFileRPKG}.rpkg`, `${locrHash}.LOCR.JSON`), JSON.stringify(locrToWrite))
 
 				await copyToCache("global", path.join(process.cwd(), "temp"), path.join("LOCR", locrHash))
 			}
 
-			await callRPKGFunction(`-rebuild_locr_from_json_from "${path.join(process.cwd(), "temp", "LOCR", localisationFileRPKG + ".rpkg")}"`) // Rebuild the LOCR
+			await callRPKGFunction(`-rebuild_locr_from_json_from "${path.join(process.cwd(), "temp", "LOCR", `${localisationFileRPKG}.rpkg`)}"`) // Rebuild the LOCR
 			fs.copyFileSync(
-				path.join(process.cwd(), "temp", "LOCR", localisationFileRPKG + ".rpkg", "LOCR.rebuilt", locrHash + ".LOCR"),
-				path.join(process.cwd(), "staging", localisationFileRPKG.replace(/patch[0-9]*/gi, ""), locrHash + ".LOCR")
+				path.join(process.cwd(), "temp", "LOCR", `${localisationFileRPKG}.rpkg`, "LOCR.rebuilt", `${locrHash}.LOCR`),
+				path.join(process.cwd(), "staging", localisationFileRPKG.replace(/patch[0-9]*/gi, ""), `${locrHash}.LOCR`)
 			)
 
 			fs.emptyDirSync(path.join(process.cwd(), "temp"))
@@ -2049,7 +1999,7 @@ export default async function deploy(
 		}
 	}
 
-	fs.writeFileSync(path.join(process.cwd(), "temp", "packagedefinition.txt.decrypted"), packagedefinitionContent + "\r\n\r\n\r\n\r\n") // Add blank lines to ensure correct encryption (XTEA uses blocks of 8 bytes)
+	fs.writeFileSync(path.join(process.cwd(), "temp", "packagedefinition.txt.decrypted"), `${packagedefinitionContent}\r\n\r\n\r\n\r\n`) // Add blank lines to ensure correct encryption (XTEA uses blocks of 8 bytes)
 	execCommand(
 		`"Third-Party\\h6xtea.exe" -e --src "${path.join(process.cwd(), "temp", "packagedefinition.txt.decrypted")}" --dst "${path.join(
 			process.cwd(),
@@ -2081,10 +2031,10 @@ export default async function deploy(
 
 		try {
 			fs.copyFileSync(
-				path.join(process.cwd(), "staging", stagingChunkFolder + ".rpkg"),
+				path.join(process.cwd(), "staging", `${stagingChunkFolder}.rpkg`),
 				config.outputToSeparateDirectory
-					? path.join(process.cwd(), "Output", allRPKGTypes[stagingChunkFolder] == "base" ? stagingChunkFolder + ".rpkg" : stagingChunkFolder + "patch300.rpkg")
-					: path.join(config.runtimePath, allRPKGTypes[stagingChunkFolder] == "base" ? stagingChunkFolder + ".rpkg" : stagingChunkFolder + "patch300.rpkg")
+					? path.join(process.cwd(), "Output", allRPKGTypes[stagingChunkFolder] === "base" ? `${stagingChunkFolder}.rpkg` : `${stagingChunkFolder}patch300.rpkg`)
+					: path.join(config.runtimePath, allRPKGTypes[stagingChunkFolder] === "base" ? `${stagingChunkFolder}.rpkg` : `${stagingChunkFolder}patch300.rpkg`)
 			)
 		} catch {
 			await logger.error("Couldn't copy the RPKG files! Make sure the game isn't running when you deploy your mods.")

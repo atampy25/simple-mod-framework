@@ -16,7 +16,7 @@ export function getConfig() {
 	const config: Config = json5.parse(String(window.fs.readFileSync("../config.json", "utf8")))
 
 	// Remove duplicate items in load order
-	config.loadOrder = config.loadOrder.filter((value, index, array) => array.indexOf(value) == index)
+	config.loadOrder = config.loadOrder.filter((value, index, array) => array.indexOf(value) === index)
 
 	// Remove non-existent mods from load order
 	config.loadOrder = config.loadOrder.filter((value) => {
@@ -40,9 +40,7 @@ export function getConfig() {
 						{
 							modOptions: {
 								[mod]: [
-									...manifest.options
-										.filter((a) => (a.type == "checkbox" || a.type == "select" ? a.enabledByDefault : false))
-										.map((a) => (a.type == "select" ? a.group + ":" + a.name : a.name))
+									...manifest.options.filter((a) => (a.type === "checkbox" || a.type === "select" ? a.enabledByDefault : false)).map((a) => (a.type === "select" ? `${a.group}:${a.name}` : a.name))
 								]
 							}
 						},
@@ -56,23 +54,26 @@ export function getConfig() {
 
 				config.modOptions[mod].push(
 					...manifest.options
-						.filter((a) => a.type == "select" && a.enabledByDefault)
-						.filter((a) => !config.modOptions[mod].some((b) => b.split(":").length > 1 && b.split(":")[0] != a.name))
-						.map((a) => (a.type == "select" ? a.group + ":" + a.name : a.name))
+						.filter((a) => a.type === "select" && a.enabledByDefault)
+						.filter((a) => !config.modOptions[mod].some((b) => b.split(":").length > 1 && b.split(":")[0] !== a.name))
+						.map((a) => (a.type === "select" ? `${a.group}:${a.name}` : a.name))
 				) // Select default options in select type IF there is no selected option
 
 				for (let i = config.modOptions[mod].length - 1; i >= 0; i--) {
 					if (
-						!manifest.options.some((a) => a.type == "checkbox" && a.name == config.modOptions[mod][i]) &&
-						!manifest.options.some((a) => a.type == "select" && a.group + ":" + a.name == config.modOptions[mod][i])
+						!(
+							manifest.options.some((a) => a.type === "checkbox" && a.name === config.modOptions[mod][i]) ||
+							manifest.options.some((a) => a.type === "select" && `${a.group}:${a.name}` === config.modOptions[mod][i])
+						)
 					) {
-						if (manifest.options.some((a) => a.type == "select" && a.name == config.modOptions[mod][i])) {
+						if (manifest.options.some((a) => a.type === "select" && a.name === config.modOptions[mod][i])) {
 							// There's a select and it's using the old name format (just the name), change it to the new format (group:name)
 							config.modOptions[mod][i] =
 								// @ts-expect-error TypeScript doesn't think that a select has a group apparently
-								manifest.options.find((a) => a.type == "select" && a.name == config.modOptions[mod][i])!.group +
-								":" +
-								manifest.options.find((a) => a.type == "select" && a.name == config.modOptions[mod][i])!.name
+								`${
+									// @ts-expect-error TypeScript doesn't think that a select has a group apparently
+									manifest.options.find((a) => a.type === "select" && a.name === config.modOptions[mod][i])!.group
+								}:${manifest.options.find((a) => a.type === "select" && a.name === config.modOptions[mod][i])!.name}`
 						} else {
 							// Remove it, it doesn't exist
 							config.modOptions[mod].splice(i, 1)
@@ -83,14 +84,12 @@ export function getConfig() {
 				for (let i = config.modOptions[manifest.id].length - 1; i >= 0; i--) {
 					if (
 						manifest.options.find(
-							(a) => (a.type == "checkbox" && a.name == config.modOptions[manifest.id][i]) || (a.type == "select" && a.group + ":" + a.name == config.modOptions[manifest.id][i])
+							(a) => (a.type === "checkbox" && a.name === config.modOptions[manifest.id][i]) || (a.type === "select" && `${a.group}:${a.name}` === config.modOptions[manifest.id][i])
 						)?.requirements
 					) {
 						if (
 							!manifest.options
-								.find(
-									(a) => (a.type == "checkbox" && a.name == config.modOptions[manifest.id][i]) || (a.type == "select" && a.group + ":" + a.name == config.modOptions[manifest.id][i])
-								)!
+								.find((a) => (a.type === "checkbox" && a.name === config.modOptions[manifest.id][i]) || (a.type === "select" && `${a.group}:${a.name}` === config.modOptions[manifest.id][i]))!
 								.requirements!.every((a) => config.loadOrder.includes(a))
 						) {
 							config.modOptions[manifest.id].splice(i, 1)
@@ -145,8 +144,8 @@ export function sortMods() {
 
 		console.log(`Cycle ${cycle}:`)
 
-		config.loadOrder = ["dummy-1", ...config.loadOrder.filter((a) => a != "dummy-1" && a != "dummy-2"), "dummy-2"]
-		let modsToSort = JSON.parse(JSON.stringify(config.loadOrder)).filter((a) => a != "dummy-1" && a != "dummy-2")
+		config.loadOrder = ["dummy-1", ...config.loadOrder.filter((a) => a !== "dummy-1" && a !== "dummy-2"), "dummy-2"]
+		let modsToSort = JSON.parse(JSON.stringify(config.loadOrder)).filter((a) => a !== "dummy-1" && a !== "dummy-2")
 
 		modSorting: while (modsToSort.length) {
 			for (const mod of modsToSort) {
@@ -161,8 +160,8 @@ export function sortMods() {
 							.filter(
 								(a) =>
 									config.modOptions[modManifest.id].includes(a.name) ||
-									config.modOptions[modManifest.id].includes(a.group + ":" + a.name) ||
-									(a.type == OptionType.conditional &&
+									config.modOptions[modManifest.id].includes(`${a.group}:${a.name}`) ||
+									(a.type === OptionType.conditional &&
 										compileExpression(a.condition, { customProp: useDotAccessOperatorAndOptionalChaining })({
 											config
 										}))
@@ -178,8 +177,8 @@ export function sortMods() {
 							.filter(
 								(a) =>
 									config.modOptions[modManifest.id].includes(a.name) ||
-									config.modOptions[modManifest.id].includes(a.group + ":" + a.name) ||
-									(a.type == OptionType.conditional &&
+									config.modOptions[modManifest.id].includes(`${a.group}:${a.name}`) ||
+									(a.type === OptionType.conditional &&
 										compileExpression(a.condition, { customProp: useDotAccessOperatorAndOptionalChaining })({
 											config
 										}))
@@ -192,14 +191,14 @@ export function sortMods() {
 					for (const modToLoadBefore of modManifest.loadBefore) {
 						// Move the mod to just before where the other mod is
 						if (config.loadOrder.includes(modToLoadBefore) && config.loadOrder.indexOf(modToLoadBefore) < config.loadOrder.indexOf(mod)) {
-							if (config.loadOrder.indexOf(modToLoadBefore) - 1 == 0) {
-								config.loadOrder = config.loadOrder.filter((a) => a != mod)
+							if (config.loadOrder.indexOf(modToLoadBefore) - 1 === 0) {
+								config.loadOrder = config.loadOrder.filter((a) => a !== mod)
 								config.loadOrder.unshift(mod)
 							} else {
 								config.loadOrder.splice(config.loadOrder.indexOf(modToLoadBefore) - 1, 0, config.loadOrder.splice(config.loadOrder.indexOf(mod), 1)[0])
 							}
 							console.log(`Moved ${mod} to before ${modToLoadBefore}`, config.loadOrder)
-							modsToSort = modsToSort.filter((a) => a != mod)
+							modsToSort = modsToSort.filter((a) => a !== mod)
 							doAnotherCycle = true
 							continue modSorting
 						}
@@ -210,20 +209,20 @@ export function sortMods() {
 						if (config.loadOrder.includes(modToLoadAfter) && config.loadOrder.indexOf(modToLoadAfter) > config.loadOrder.indexOf(mod)) {
 							config.loadOrder.splice(config.loadOrder.indexOf(modToLoadAfter) + 1, 0, config.loadOrder.splice(config.loadOrder.indexOf(mod), 1)[0])
 							console.log(`Moved ${mod} to after ${modToLoadAfter}`, config.loadOrder)
-							modsToSort = modsToSort.filter((a) => a != mod)
+							modsToSort = modsToSort.filter((a) => a !== mod)
 							doAnotherCycle = true
 							continue modSorting
 						}
 					}
 				}
 
-				modsToSort = modsToSort.filter((a) => a != mod)
+				modsToSort = modsToSort.filter((a) => a !== mod)
 				continue modSorting
 			}
 		}
 	}
 
-	config.loadOrder = config.loadOrder.filter((a) => a != "dummy-1" && a != "dummy-2")
+	config.loadOrder = config.loadOrder.filter((a) => a !== "dummy-1" && a !== "dummy-2")
 
 	if (cycle < 100) {
 		setConfig(config)
@@ -254,7 +253,7 @@ export const getModFolder = memoize(function (id: string) {
 				.find(
 					(a) =>
 						window.fs.existsSync(window.path.join("..", "Mods", a, "manifest.json")) &&
-						json5.parse(String(window.fs.readFileSync(window.path.join("..", "Mods", a, "manifest.json"), "utf8"))).id == id
+						json5.parse(String(window.fs.readFileSync(window.path.join("..", "Mods", a, "manifest.json"), "utf8"))).id === id
 				) // Find mod by ID
 		: window.path.join("..", "Mods", id) // Mod is an RPKG mod, use folder name
 
@@ -310,7 +309,7 @@ const modWarnings: {
 			You should resolve this - this <b>will</b> cause issues.
 		`,
 		check: async (fileToCheck) => {
-			if (window.path.basename(fileToCheck) == "manifest.json") {
+			if (window.path.basename(fileToCheck) === "manifest.json") {
 				try {
 					const manifest = json5.parse(await window.fs.readFile(fileToCheck, "utf8"))
 					if (!manifest) return true
@@ -355,7 +354,7 @@ const modWarnings: {
 let startedGettingModWarnings = false
 
 export async function getAllModWarnings() {
-	if (!startedGettingModWarnings && !window.fs.existsSync("./warnings.json")) {
+	if (!(startedGettingModWarnings || window.fs.existsSync("./warnings.json"))) {
 		startedGettingModWarnings = true
 
 		const allWarnings = []

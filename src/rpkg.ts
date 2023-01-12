@@ -73,11 +73,7 @@ class RPKGInstance {
 	}
 
 	async getRPKGOfHash(hash: string): Promise<string> {
-		const result = [
-			...(await this.callFunction('-hash_probe "' + path.resolve(process.cwd(), config.runtimePath) + '" -filter "' + hash + '"')).matchAll(
-				/is in RPKG file: (chunk[0-9]*(?:patch[1-9])?)\.rpkg/g
-			)
-		]
+		const result = [...(await this.callFunction(`-hash_probe "${path.resolve(process.cwd(), config.runtimePath)}" -filter "${hash}"`)).matchAll(/is in RPKG file: (chunk[0-9]*(?:patch[1-9])?)\.rpkg/g)]
 		return result[result.length - 1][result[result.length - 1].length - 1] // enjoy lmao
 	}
 

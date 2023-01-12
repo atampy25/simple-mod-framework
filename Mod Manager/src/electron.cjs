@@ -86,7 +86,8 @@ app.on("window-all-closed", () => {
 })
 
 ipcMain.on("deploy", () => {
-	let deployProcess = require("child_process").spawn("Deploy.exe --useConsoleLogging", ["--useConsoleLogging"], { // just to make sure
+	let deployProcess = require("child_process").spawn("Deploy.exe --useConsoleLogging", ["--useConsoleLogging"], {
+		// just to make sure
 		shell: true,
 		cwd: ".."
 	})

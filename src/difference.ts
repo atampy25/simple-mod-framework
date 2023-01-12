@@ -17,7 +17,7 @@ export default async function difference(
 	for (const [filePath, newData] of Object.entries(newMap)) {
 		const oldData = oldMap[filePath]
 
-		if (!oldData || oldData.hash != newData.hash) {
+		if (!oldData || oldData.hash !== newData.hash) {
 			changedFiles.push(filePath)
 		}
 	}

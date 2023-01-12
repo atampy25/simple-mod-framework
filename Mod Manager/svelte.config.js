@@ -14,9 +14,7 @@ const config = {
 		vite: {
 			build: {
 				rollupOptions: {
-					external: [
-						...builtinModules.flatMap(p => [p, `node:${p}`])
-					]
+					external: [...builtinModules.flatMap((p) => [p, `node:${p}`])]
 				}
 			}
 		}

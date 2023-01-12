@@ -42,7 +42,7 @@ if (!core.config.reportErrors) {
 				await core.logger.warn("Error reporting is disabled; if you experience this issue again, please enable it so that the problem can be debugged.")
 			}
 
-			await core.logger.error("Uncaught exception! " + err, false)
+			await core.logger.error(`Uncaught exception! ${err}`, false)
 			console.error(origin)
 			await core.cleanExit()
 		})()
@@ -54,7 +54,7 @@ if (!core.config.reportErrors) {
 				await core.logger.warn("Error reporting is disabled; if you experience this issue again, please enable it so that the problem can be debugged.")
 			}
 
-			await core.logger.error("Unhandled promise rejection! " + err, false)
+			await core.logger.error(`Unhandled promise rejection! ${err}`, false)
 			console.error(origin)
 			await core.cleanExit()
 		})()
@@ -65,7 +65,7 @@ if (!fs.existsSync(core.config.runtimePath)) {
 	void core.logger.error("The Runtime folder couldn't be located, please re-read the installation instructions!")
 }
 
-if (!fs.existsSync(path.join(core.config.retailPath, "Runtime", "chunk0.rpkg")) && !fs.existsSync(path.join(core.config.runtimePath, "..", "Retail", "HITMAN3.exe"))) {
+if (!(fs.existsSync(path.join(core.config.retailPath, "Runtime", "chunk0.rpkg")) || fs.existsSync(path.join(core.config.runtimePath, "..", "Retail", "HITMAN3.exe")))) {
 	void core.logger.error("HITMAN3.exe couldn't be located, please re-read the installation instructions!")
 }
 
@@ -85,7 +85,7 @@ core.config.platform = fs.existsSync(path.join(core.config.retailPath, "Runtime"
 	? gameHashes[md5File.sync(path.join(core.config.retailPath, "..", "MicrosoftGame.Config"))]
 	: gameHashes[md5File.sync(path.join(core.config.runtimePath, "..", "Retail", "HITMAN3.exe"))] // Platform detection
 
-if (typeof core.config.platform == "undefined") {
+if (typeof core.config.platform === "undefined") {
 	void core.logger.error(
 		"Could not detect a workable game copy! If the game has recently updated, the framework will also need an update. If you're using a cracked version, that sounds like a you problem."
 	)
@@ -156,7 +156,7 @@ async function doTheThing() {
 					onFatalError: (err) => {
 						if (!String(err).includes("write EPIPE")) {
 							void core.logger.info("Reporting an error:").then(() => {
-								void core.logger.error("Uncaught exception! " + err, false)
+								void core.logger.error(`Uncaught exception! ${err}`, false)
 							})
 						}
 					}
@@ -221,7 +221,7 @@ async function doTheThing() {
 	if (fs.existsSync(path.join(process.cwd(), "cache", "map.json"))) {
 		if (
 			fs.readJSONSync(path.join(process.cwd(), "cache", "map.json")).frameworkVersion < core.FrameworkVersion ||
-			fs.readJSONSync(path.join(process.cwd(), "cache", "map.json")).game !=
+			fs.readJSONSync(path.join(process.cwd(), "cache", "map.json")).game !==
 				(fs.existsSync(path.join(core.config.retailPath, "Runtime", "chunk0.rpkg"))
 					? md5File.sync(path.join(core.config.retailPath, "..", "MicrosoftGame.Config"))
 					: md5File.sync(path.join(core.config.runtimePath, "..", "Retail", "HITMAN3.exe")))
@@ -273,14 +273,12 @@ async function doTheThing() {
 		await core.logger.info("Deployed all mods successfully.")
 	} else {
 		await core.logger.info(
-			"Done " +
-				DateTime.now()
-					.plus({
-						// @ts-expect-error TypeScript doesn't like date operations
-						milliseconds: DateTime.now() - startedDate
-					})
-					.toRelative() +
-				"."
+			`Done ${DateTime.now()
+				.plus({
+					// @ts-expect-error TypeScript doesn't like date operations
+					milliseconds: DateTime.now() - startedDate
+				})
+				.toRelative()}.`
 		)
 	}
 
