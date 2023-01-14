@@ -35,25 +35,15 @@
 	$: disabledMods = getAllMods()
 		.filter((a) => !getConfig().loadOrder.includes(a))
 		.sort((a, b) => {
-			function getNonFrameworkModName(id: string) {
-				let parts = id.split('.')
-
-				return parts[parts.length - 1]
-			}
-
-			let modNameA
-			let modNameB
+			let modNameA = a
+			let modNameB = b
 
 			try {
 				modNameA = getManifestFromModID(a).name
-			} catch(error) {
-				modNameA = getNonFrameworkModName(a)
-			}
+			} catch(error) {}
 			try {
 				modNameB = getManifestFromModID(b).name
-			} catch(error) {
-				modNameB = getNonFrameworkModName(b)
-			}
+			} catch(error) {}
 
 			return modNameA.localeCompare(modNameB)
 		})
