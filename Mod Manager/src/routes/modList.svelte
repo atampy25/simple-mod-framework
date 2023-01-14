@@ -4,7 +4,7 @@
 
 	import SortableList from "svelte-sortable-list"
 	import json5 from "json5"
-	import { Button, InlineNotification, Modal } from "carbon-components-svelte"
+	import { Button, InlineNotification, Modal, TextInput } from "carbon-components-svelte"
 
 	import { getAllMods, getConfig, mergeConfig, getManifestFromModID, modIsFramework, getModFolder, sortMods } from "$lib/utils"
 	import Mod from "$lib/Mod.svelte"
@@ -40,10 +40,10 @@
 
 			try {
 				modNameA = getManifestFromModID(a).name
-			} catch(error) {}
+			} catch (error) {}
 			try {
 				modNameB = getManifestFromModID(b).name
-			} catch(error) {}
+			} catch (error) {}
 
 			return modNameA.localeCompare(modNameB)
 		})
@@ -75,6 +75,9 @@
 	window.ipc.receive("frameworkDeployFinished", () => {
 		deployFinished = true
 	})
+
+	let modSearch = ""
+	let modSearchInvalid = false
 
 	let modNameInputModal: TextInputModal
 	let modNameInputModalOpen = false
@@ -164,6 +167,31 @@
 		rpkgModExtractionInProgress = false
 	}
 
+	function matchesSearch(mod: any): boolean {
+		let modId = typeof mod === "string" ? mod : mod.value
+
+		if (modSearch.length < 1 || !isValidRegExp(modSearch)) return true
+
+		let searchRegExp = new RegExp(modSearch, "i")
+
+		if (searchRegExp.test(modId)) return true
+
+		try {
+			return searchRegExp.test(JSON.stringify(getManifestFromModID(modId)))
+		} catch (err) {}
+
+		return false
+	}
+
+	function isValidRegExp(regexp: string): boolean {
+		try {
+			new RegExp(regexp)
+			return true
+		} catch (err) {}
+
+		return false
+	}
+
 	let displayZonedModsDialog = false
 	const zonedMods: string[] = []
 
@@ -177,6 +205,19 @@
 		}
 	}
 </script>
+
+<div class="pb-6">
+	{#key modSearchInvalid}
+		<TextInput
+			labelText="Search Mods"
+			placeholder="Search for a mod, an author and more (RegEx)..."
+			invalid={modSearchInvalid}
+			invalidText="Invalid RegEx"
+			bind:value={modSearch}
+			on:keyup={() => (modSearchInvalid = !isValidRegExp(modSearch))}
+		/>
+	{/key}
+</div>
 
 <div class="grid grid-cols-2 gap-4 w-full mb-16">
 	<div class="w-full">
@@ -193,42 +234,46 @@
 			</Button>
 		</div>
 		<br />
-		<div class="h-[90vh] overflow-y-auto">
-			{#each disabledMods as item (item.value)}
-				<div animate:flip={{ duration: 300 }}>
-					<div transition:scale>
-						<Mod
-							isFrameworkMod={modIsFramework(item.value)}
-							manifest={modIsFramework(item.value) ? getManifestFromModID(item.value) : undefined}
-							rpkgModName={!modIsFramework(item.value) ? item.value : undefined}
-						>
-							<Button
-								kind="primary"
-								icon={AddAlt}
-								on:click={() => {
-									mergeConfig({
-										loadOrder: [...getConfig().loadOrder, item.value]
-									})
-									forceModListsUpdate = Math.random()
-								}}
-							>
-								Enable
-							</Button>
-							<Button
-								kind="danger"
-								icon={TrashCan}
-								on:click={() => {
-									deleteModInProgress = item.value
-									deleteModModalOpen = true
-								}}
-							>
-								Delete
-							</Button>
-						</Mod>
+		<div class="h-[84vh] overflow-y-auto">
+			{#key modSearch}
+				{#each disabledMods as item (item.value)}
+					<div animate:flip={{ duration: 300 }}>
+						{#if matchesSearch(item)}
+							<div transition:scale>
+								<Mod
+									isFrameworkMod={modIsFramework(item.value)}
+									manifest={modIsFramework(item.value) ? getManifestFromModID(item.value) : undefined}
+									rpkgModName={!modIsFramework(item.value) ? item.value : undefined}
+								>
+									<Button
+										kind="primary"
+										icon={AddAlt}
+										on:click={() => {
+											mergeConfig({
+												loadOrder: [...getConfig().loadOrder, item.value]
+											})
+											forceModListsUpdate = Math.random()
+										}}
+									>
+										Enable
+									</Button>
+									<Button
+										kind="danger"
+										icon={TrashCan}
+										on:click={() => {
+											deleteModInProgress = item.value
+											deleteModModalOpen = true
+										}}
+									>
+										Delete
+									</Button>
+								</Mod>
+							</div>
+							<br />
+						{/if}
 					</div>
-					<br />
-				</div>
-			{/each}
+				{/each}
+			{/key}
 		</div>
 	</div>
 	<div class="w-full">
@@ -252,51 +297,53 @@
 			</Button>
 		</div>
 		<br />
-		<div class="h-[90vh] overflow-y-auto">
-			<SortableList
-				list={enabledMods}
-				key="value"
-				on:sort={(event) => {
-					mergeConfig({
-						loadOrder: event.detail.map((a) => a.value)
-					})
-					forceModListsUpdate = Math.random()
-					changed = true
-				}}
-				let:item
-			>
-				<div class="cursor-grab">
-					<Mod
-						isFrameworkMod={modIsFramework(item.value)}
-						manifest={modIsFramework(item.value) ? getManifestFromModID(item.value) : undefined}
-						rpkgModName={!modIsFramework(item.value) ? item.value : undefined}
-					>
-						{#if modIsFramework(item.value) && getManifestFromModID(item.value)?.options?.filter((a) => a.type != OptionType.conditional)?.length}
-							<Button
-								kind="ghost"
-								icon={Settings}
-								iconDescription="Adjust this mod's settings"
-								on:click={() => {
-									goto(`/settings?mod=${getManifestFromModID(item.value).id}`)
-								}}
-							/>
-						{/if}
-						<Button
-							kind="danger"
-							icon={SubtractAlt}
-							on:click={() => {
-								mergeConfig({
-									loadOrder: getConfig().loadOrder.filter((a) => a != item.value)
-								})
-								forceModListsUpdate = Math.random()
-							}}
+		<div class="h-[84vh] overflow-y-auto">
+			{#key modSearch}
+				<SortableList
+					list={enabledMods.filter((mod) => matchesSearch(mod?.value))}
+					key="value"
+					on:sort={(event) => {
+						mergeConfig({
+							loadOrder: event.detail.map((a) => a.value)
+						})
+						forceModListsUpdate = Math.random()
+						changed = true
+					}}
+					let:item
+				>
+					<div class="cursor-grab">
+						<Mod
+							isFrameworkMod={modIsFramework(item.value)}
+							manifest={modIsFramework(item.value) ? getManifestFromModID(item.value) : undefined}
+							rpkgModName={!modIsFramework(item.value) ? item.value : undefined}
 						>
-							Disable
-						</Button>
-					</Mod>
-					<br />
-				</div>
-			</SortableList>
+							{#if modIsFramework(item.value) && getManifestFromModID(item.value)?.options?.filter((a) => a.type != OptionType.conditional)?.length}
+								<Button
+									kind="ghost"
+									icon={Settings}
+									iconDescription="Adjust this mod's settings"
+									on:click={() => {
+										goto(`/settings?mod=${getManifestFromModID(item.value).id}`)
+									}}
+								/>
+							{/if}
+							<Button
+								kind="danger"
+								icon={SubtractAlt}
+								on:click={() => {
+									mergeConfig({
+										loadOrder: getConfig().loadOrder.filter((a) => a != item.value)
+									})
+									forceModListsUpdate = Math.random()
+								}}
+							>
+								Disable
+							</Button>
+						</Mod>
+						<br />
+					</div>
+				</SortableList>
+			{/key}
 		</div>
 	</div>
 </div>
@@ -428,12 +475,21 @@
 	</p>
 </Modal>
 
-<Modal alert bind:open={displayZonedModsDialog} modalHeading="Incorrectly installed mod{zonedMods.length > 1 ? 's' : ''}" primaryButtonText="OK" shouldSubmitOnEnter={false} on:submit={() => (displayZonedModsDialog = false)}>
+<Modal
+	alert
+	bind:open={displayZonedModsDialog}
+	modalHeading="Incorrectly installed mod{zonedMods.length > 1 ? 's' : ''}"
+	primaryButtonText="OK"
+	shouldSubmitOnEnter={false}
+	on:submit={() => (displayZonedModsDialog = false)}
+>
 	<p>
 		The mod{zonedMods.length > 1 ? "s" : ""}
 		{zonedMods.slice(0, -1).length ? zonedMods.slice(0, -1).join(", ") + " and " + zonedMods[zonedMods.length - 1] : zonedMods[0]}
 		{zonedMods.length > 1 ? "were" : "was"} installed by extracting the ZIP file directly to the Mods folder. That's not how you're meant to install mods; doing things this way could pose risks as
-		it bypasses the framework's checks for mod validity and safety. Instead, use the Add a Mod button to add any mods you want. This message won't be shown again for {zonedMods.length > 1 ? "these mods" : "this mod"}.
+		it bypasses the framework's checks for mod validity and safety. Instead, use the Add a Mod button to add any mods you want. This message won't be shown again for {zonedMods.length > 1
+			? "these mods"
+			: "this mod"}.
 	</p>
 </Modal>
 
