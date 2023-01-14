@@ -45,12 +45,12 @@
 			let modNameB
 
 			try {
-				modNameA = getManifestFromModID(a).name ?? ''
+				modNameA = getManifestFromModID(a).name
 			} catch(error) {
 				modNameA = getNonFrameworkModName(a)
 			}
 			try {
-				modNameB = getManifestFromModID(b).name ?? ''
+				modNameB = getManifestFromModID(b).name
 			} catch(error) {
 				modNameB = getNonFrameworkModName(b)
 			}
