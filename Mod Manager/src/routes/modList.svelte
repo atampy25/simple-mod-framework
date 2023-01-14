@@ -76,8 +76,9 @@
 		deployFinished = true
 	})
 
-	let modSearch = ""
+	let preModSearchInputValue = ""
 	let modSearchInvalid = false
+	let modSearch = ""
 
 	let modNameInputModal: TextInputModal
 	let modNameInputModalOpen = false
@@ -213,8 +214,9 @@
 			placeholder="Search for a mod, an author and more (RegEx)..."
 			invalid={modSearchInvalid}
 			invalidText="Invalid RegEx"
-			bind:value={modSearch}
+			bind:value={preModSearchInputValue}
 			on:keyup={() => (modSearchInvalid = !isValidRegExp(modSearch))}
+			on:change={() => (modSearch = preModSearchInputValue)}
 		/>
 	{/key}
 </div>
