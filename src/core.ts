@@ -84,7 +84,7 @@ const logger = args["--useConsoleLogging"]
 	: {
 			verbose: async function (text: string, mod?: string) {
 				if (args["--logLevel"]!.includes("verbose")) {
-					process.stdout.write(chalk(Object.assign([], { raw: [`{grey DETAIL${mod ? `\t${mod}` : ""}\t${text}}\n`] })))
+					process.stdout.write(chalk(Object.assign([], { raw: [`{grey DETAIL${mod ? `\t${mod}` : ""}\t${text.replace(/\\/gi, "\\\\")}}\n`] })))
 
 					if (args["--pauseAfterLogging"]) {
 						child_process.execSync("pause", {
@@ -98,7 +98,7 @@ const logger = args["--useConsoleLogging"]
 
 			debug: async function (text: string, mod?: string) {
 				if (args["--logLevel"]!.includes("debug")) {
-					process.stdout.write(chalk(Object.assign([], { raw: [`{grey DEBUG${mod ? `\t${mod}` : ""}\t${text}}\n`] })))
+					process.stdout.write(chalk(Object.assign([], { raw: [`{grey DEBUG${mod ? `\t${mod}` : ""}\t${text.replace(/\\/gi, "\\\\")}}\n`] })))
 
 					if (args["--pauseAfterLogging"]) {
 						child_process.execSync("pause", {
@@ -112,7 +112,7 @@ const logger = args["--useConsoleLogging"]
 
 			info: async function (text: string, mod?: string) {
 				if (args["--logLevel"]!.includes("info")) {
-					process.stdout.write(chalk(Object.assign([], { raw: [`{blue INFO}${mod ? `\t{magenta ${mod}}` : ""}\t${text}\n`] })))
+					process.stdout.write(chalk(Object.assign([], { raw: [`{blue INFO}${mod ? `\t{magenta ${mod}}` : ""}\t${text.replace(/\\/gi, "\\\\")}\n`] })))
 
 					if (args["--pauseAfterLogging"]) {
 						child_process.execSync("pause", {
@@ -126,7 +126,7 @@ const logger = args["--useConsoleLogging"]
 
 			warn: async function (text: string, mod?: string) {
 				if (args["--logLevel"]!.includes("warn")) {
-					process.stdout.write(chalk(Object.assign([], { raw: [`{yellow WARN}${mod ? `\t{magenta ${mod}}` : ""}\t${text}\n`] })))
+					process.stdout.write(chalk(Object.assign([], { raw: [`{yellow WARN}${mod ? `\t{magenta ${mod}}` : ""}\t${text.replace(/\\/gi, "\\\\")}\n`] })))
 
 					if (args["--pauseAfterLogging"]) {
 						child_process.execSync("pause", {
@@ -140,7 +140,7 @@ const logger = args["--useConsoleLogging"]
 
 			error: async function (text: string, exitAfter = true, mod?: string) {
 				if (args["--logLevel"]!.includes("error")) {
-					process.stderr.write(chalk(Object.assign([], { raw: [`{red ERROR}${mod ? `\t{magenta ${mod}}` : ""}\t${text}\n`] })))
+					process.stderr.write(chalk(Object.assign([], { raw: [`{red ERROR}${mod ? `\t{magenta ${mod}}` : ""}\t${text.replace(/\\/gi, "\\\\")}\n`] })))
 					console.trace()
 
 					child_process.execSync("pause", {
