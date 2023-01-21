@@ -141,7 +141,10 @@ const logger = args["--useConsoleLogging"]
 			error: async function (text: string, exitAfter = true, mod?: string) {
 				if (args["--logLevel"]!.includes("error")) {
 					process.stderr.write(chalk(Object.assign([], { raw: [`{red ERROR}${mod ? `\t{magenta ${mod}}` : ""}\t${text.replace(/\\/gi, "\\\\")}\n`] })))
-					console.trace()
+
+					if (mod) {
+						console.trace() // It's unimportant where framework errors come from
+					}
 
 					child_process.execSync("pause", {
 						// @ts-expect-error This code works and I'm not going to question it
