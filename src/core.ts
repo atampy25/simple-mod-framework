@@ -42,6 +42,10 @@ if (config.runtimePath === "..\\Runtime" && fs.existsSync(path.join(config.retai
 	fs.copyFileSync(path.join(process.cwd(), "cleanMicrosoftThumbs.dat"), path.join(process.cwd(), "cleanThumbs.dat"))
 } // Automatically set runtime path and fix clean thumbs if using microsoft platform
 
+if (fs.existsSync(path.join(config.retailPath, "Runtime", "chunk0.rpkg"))) {
+	fs.copyFileSync(path.join(process.cwd(), "cleanMicrosoftThumbs.dat"), path.join(process.cwd(), "cleanThumbs.dat"))
+} // This is just to auto-fix some installs that only partially worked due to a GUI bug
+
 if (typeof config.reportErrors === "undefined") {
 	config.reportErrors = false
 	config.errorReportingID = null
