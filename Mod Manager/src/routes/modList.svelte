@@ -472,7 +472,7 @@
 	}}
 >
 	<p>
-		This mod contains scripts; that means it effectively has full control over your PC whenever you apply your mods. Scripts can do cool things and make a lot of mods possible, but they can also
+		This mod contains scripts; that means it is able to execute its own (external to the framework) code and effectively has complete control over your PC whenever you apply your mods. Scripts can do cool things and make a lot of mods possible, but they can also
 		do bad things like installing malware on your computer. Make sure you trust whoever developed this mod, and wherever you downloaded it from. Are you sure you want to add this mod?
 	</p>
 </Modal>

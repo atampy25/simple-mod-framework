@@ -1,4 +1,4 @@
-const FrameworkVersion = "2.11.2"
+const FrameworkVersion = "2.12.3"
 const isDevBuild = false
 
 import * as Sentry from "@sentry/node"
@@ -42,6 +42,10 @@ if (config.runtimePath === "..\\Runtime" && fs.existsSync(path.join(config.retai
 	fs.copyFileSync(path.join(process.cwd(), "cleanMicrosoftThumbs.dat"), path.join(process.cwd(), "cleanThumbs.dat"))
 } // Automatically set runtime path and fix clean thumbs if using microsoft platform
 
+if (fs.existsSync(path.join(config.retailPath, "Runtime", "chunk0.rpkg"))) {
+	fs.copyFileSync(path.join(process.cwd(), "cleanMicrosoftThumbs.dat"), path.join(process.cwd(), "cleanThumbs.dat"))
+} // This is just to auto-fix some installs that only partially worked due to a GUI bug
+
 if (typeof config.reportErrors === "undefined") {
 	config.reportErrors = false
 	config.errorReportingID = null
@@ -84,7 +88,7 @@ const logger = args["--useConsoleLogging"]
 	: {
 			verbose: async function (text: string, mod?: string) {
 				if (args["--logLevel"]!.includes("verbose")) {
-					process.stdout.write(chalk(Object.assign([], { raw: [`{grey DETAIL${mod ? `\t${mod}` : ""}\t${text}}\n`] })))
+					process.stdout.write(chalk(Object.assign([], { raw: [`{grey DETAIL${mod ? `\t${mod}` : ""}\t${text.replace(/\\/gi, "\\\\")}}\n`] })))
 
 					if (args["--pauseAfterLogging"]) {
 						child_process.execSync("pause", {
@@ -98,7 +102,7 @@ const logger = args["--useConsoleLogging"]
 
 			debug: async function (text: string, mod?: string) {
 				if (args["--logLevel"]!.includes("debug")) {
-					process.stdout.write(chalk(Object.assign([], { raw: [`{grey DEBUG${mod ? `\t${mod}` : ""}\t${text}}\n`] })))
+					process.stdout.write(chalk(Object.assign([], { raw: [`{grey DEBUG${mod ? `\t${mod}` : ""}\t${text.replace(/\\/gi, "\\\\")}}\n`] })))
 
 					if (args["--pauseAfterLogging"]) {
 						child_process.execSync("pause", {
@@ -112,7 +116,7 @@ const logger = args["--useConsoleLogging"]
 
 			info: async function (text: string, mod?: string) {
 				if (args["--logLevel"]!.includes("info")) {
-					process.stdout.write(chalk(Object.assign([], { raw: [`{blue INFO}${mod ? `\t{magenta ${mod}}` : ""}\t${text}\n`] })))
+					process.stdout.write(chalk(Object.assign([], { raw: [`{blue INFO}${mod ? `\t{magenta ${mod}}` : ""}\t${text.replace(/\\/gi, "\\\\")}\n`] })))
 
 					if (args["--pauseAfterLogging"]) {
 						child_process.execSync("pause", {
@@ -126,7 +130,7 @@ const logger = args["--useConsoleLogging"]
 
 			warn: async function (text: string, mod?: string) {
 				if (args["--logLevel"]!.includes("warn")) {
-					process.stdout.write(chalk(Object.assign([], { raw: [`{yellow WARN}${mod ? `\t{magenta ${mod}}` : ""}\t${text}\n`] })))
+					process.stdout.write(chalk(Object.assign([], { raw: [`{yellow WARN}${mod ? `\t{magenta ${mod}}` : ""}\t${text.replace(/\\/gi, "\\\\")}\n`] })))
 
 					if (args["--pauseAfterLogging"]) {
 						child_process.execSync("pause", {
@@ -140,8 +144,11 @@ const logger = args["--useConsoleLogging"]
 
 			error: async function (text: string, exitAfter = true, mod?: string) {
 				if (args["--logLevel"]!.includes("error")) {
-					process.stderr.write(chalk(Object.assign([], { raw: [`{red ERROR}${mod ? `\t{magenta ${mod}}` : ""}\t${text}\n`] })))
-					console.trace()
+					process.stderr.write(chalk(Object.assign([], { raw: [`{red ERROR}${mod ? `\t{magenta ${mod}}` : ""}\t${text.replace(/\\/gi, "\\\\")}\n`] })))
+
+					if (mod) {
+						console.trace() // It's unimportant where framework errors come from
+					}
 
 					child_process.execSync("pause", {
 						// @ts-expect-error This code works and I'm not going to question it

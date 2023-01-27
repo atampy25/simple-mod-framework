@@ -1,10 +1,10 @@
 {
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"id": "Atampy26.RealisticAI",
 	"name": "Realistic AI",
 	"description": "Makes the AI smarter, more realistic and more attentive in Master mode.",
 	"authors": ["Atampy26"],
-	"frameworkVersion": "2.11.2",
+	"frameworkVersion": "2.12.3",
 	"updateCheck": "https://hitman-resources.netlify.app/framework/updates/Realistic AI.json",
 	"options": [
 		{
@@ -13,21 +13,21 @@
 			"tooltip": "The base version of Realistic AI; more realistic than vanilla.",
 			"enabledByDefault": true,
 			"type": "select",
-			"contentFolder": "content-normal"
+			"contentFolders": ["content-normal"]
 		},
 		{
 			"group": "Edition",
 			"name": "Manhunt",
 			"tooltip": "Guards now set up Manhunts, in which a large area of the map is searched, centred at your last known position.",
 			"type": "select",
-			"contentFolder": "content-manhunt"
+			"contentFolders": ["content-manhunt"]
 		},
 		{
 			"group": "Edition",
 			"name": "Extreme",
 			"tooltip": "Increases everything to ridiculous levels, past the point of realism. Everyone now has precognition and knows exactly what you're doing.",
 			"type": "select",
-			"contentFolder": "content-extreme"
+			"contentFolders": ["content-extreme"]
 		}
 	]
 }
