@@ -22,15 +22,12 @@ require("clarify")
 
 const gameHashes = {
 	"7e662b4e79d090d4d3ace188a4311e89": Platform.epic,
-	// f48ad3b8d29feea7a61a62325e3378f3: Platform.epic, // ansel unlock
+	"768d99bd0b69eaec97753dc326412ceb": Platform.epic, // ansel unlock
 	"a6bcd7ba2587b589764fe00ef6942f7a": Platform.steam,
 	// cb394df8fc4776cfb5093126f23f55a6: Platform.steam, // ansel unlock
 
-	// fe5a0561fda7f0a9d529896b8a7b4541: Platform.steam, // freelancer closed test
-	// b317ee62137528c701922aaa7e1cc196: Platform.steam, // freelancer closed test with patch (?)
-
 	// Gamepass/store protects the EXE from reading so we can't hash it, instead we hash the game config
-	// "651f40cc3c838d14aad5e452486c18f8": Platform.microsoft
+	"b019c300b16b3c61b1aa4da7e5e22326": Platform.microsoft
 } as {
 	[k: string]: Platform
 }
