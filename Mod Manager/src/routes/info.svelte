@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { FrameworkVersion, getConfig, mergeConfig } from "$lib/utils"
 
-	import { Button } from "carbon-components-svelte"
+	import { Button, Checkbox } from "carbon-components-svelte"
 
 	import { fade } from "svelte/transition"
 	import { v4 } from "uuid"
@@ -19,6 +19,16 @@
 		<p in:fade={{ delay: 800 }}>Thanks to the Hitman modding community for making this possible, and thanks to IO Interactive for making the game this is for.</p>
 		<br />
 		<div in:fade={{ delay: 1200 }}>
+			<Checkbox
+				checked={getConfig().skipIntro}
+				on:check={({ detail }) => {
+					mergeConfig({ skipIntro: detail })
+				}}
+				labelText="Skip intro"
+			/>
+		</div>
+		<br />
+		<div in:fade={{ delay: 1600 }}>
 			<div class="flex gap-4 items-center">
 				<Button
 					kind="primary"
