@@ -1,7 +1,7 @@
 {
     "runtimePath": "..\\Runtime",
     "retailPath": "..\\Retail",
-    "skipIntro": true,
+    "skipIntro": false,
     "outputToSeparateDirectory": false,
     "loadOrder": [],
     "modOptions": {},
