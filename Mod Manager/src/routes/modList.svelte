@@ -34,6 +34,7 @@
 
 	$: disabledMods = getAllMods()
 		.filter((a) => !getConfig().loadOrder.includes(a))
+		.sort((a, b) => (modIsFramework(a) ? getManifestFromModID(a).name : a).localeCompare((modIsFramework(b) ? getManifestFromModID(b).name : b), undefined, { numeric: true, sensitivity: "base" }))
 		.map((a) => {
 			return { value: a, dummy: forceModListsUpdate }
 		})
