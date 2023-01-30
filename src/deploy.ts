@@ -7,7 +7,7 @@ import type { DeployInstruction, Manifest, ManifestOptionData, ModScript } from 
 import { ModuleKind, ScriptTarget } from "typescript"
 import { compileExpression, useDotAccessOperatorAndOptionalChaining } from "filtrex"
 import { config, logger, rpkgInstance } from "./core-singleton"
-import { copyFromCache, copyToCache, extractOrCopyToTemp, getQuickEntityFromPatchVersion, getQuickEntityFromVersion, hexflip } from "./utils"
+import { copyFromCache, copyToCache, extractOrCopyToTemp, getQuickEntityFromPatchVersion, getQuickEntityFromVersion, hexflip, winPathEscape } from "./utils"
 
 import { OptionType } from "./types"
 import Piscina from "piscina"
@@ -41,15 +41,24 @@ const callRPKGFunction = async function (command: string) {
 	return await rpkgInstance.callFunction(command)
 }
 
+const RPKGHashCache: Record<string, string> = {}
+
 const getRPKGOfHash = async function (hash: string): Promise<string> {
 	await logger.verbose(`Getting RPKG of hash ${hash}`)
 
-	try {
-		return await rpkgInstance.getRPKGOfHash(hash)
-	} catch {
-		await logger.error(`Couldn't find ${hash} in the game files! Make sure your game is up-to-date and you've installed the framework in the right place.`)
+	if (RPKGHashCache[hash]) {
+		await logger.verbose(`Returning RPKG of hash ${hash} from cache`)
+		return RPKGHashCache[hash]
+	} else {
+		try {
+			const x = await rpkgInstance.getRPKGOfHash(hash)
+			RPKGHashCache[hash] = x
+			return x
+		} catch {
+			await logger.error(`Couldn't find ${hash} in the game files! Make sure your game is up-to-date and you've installed the framework in the right place.`)
 
-		process.exit(1) // This is unreachable but TypeScript doesn't know that
+			process.exit(1) // This is unreachable but TypeScript doesn't know that
+		}
 	}
 }
 
@@ -651,6 +660,9 @@ export default async function deploy(
 					} catch {
 						await logger.error("Improper QuickEntity JSON; couldn't find the version!")
 					}
+
+					RPKGHashCache[entityContent.tempHash] = `chunk${content.chunk}`
+					RPKGHashCache[entityContent.tbluHash] = `chunk${content.chunk}`
 
 					await logger.verbose("Cache check")
 					if (
@@ -1450,8 +1462,11 @@ export default async function deploy(
 						portChunk1: dependency.portFromChunk1
 					})
 
-					if (!(await copyFromCache(instruction.cacheFolder, path.join("dependencies", typeof dependency === "string" ? dependency : dependency.runtimeID), path.join(process.cwd(), "temp")))) {
-						// the dependency files couldn't be copied from the cache
+					// If cache hit
+					if (fs.existsSync(path.join(process.cwd(), "cache", winPathEscape(instruction.cacheFolder), path.join("dependencies", typeof dependency === "string" ? dependency : dependency.runtimeID)))) {
+						rust_utils.stageDependenciesFrom(path.join(process.cwd(), "cache", winPathEscape(instruction.cacheFolder), path.join("dependencies", typeof dependency === "string" ? dependency : dependency.runtimeID)), `chunk${dependency.toChunk || 0}`)
+					} else {
+						// no cache yet
 
 						fs.emptyDirSync(path.join(process.cwd(), "temp"))
 
@@ -1462,11 +1477,11 @@ export default async function deploy(
 						)
 
 						await copyToCache(instruction.cacheFolder, path.join(process.cwd(), "temp"), path.join("dependencies", typeof dependency === "string" ? dependency : dependency.runtimeID))
+
+						rust_utils.stageDependenciesFrom("temp", `chunk${dependency.toChunk || 0}`)
+
+						fs.emptyDirSync(path.join(process.cwd(), "temp"))
 					}
-
-					rust_utils.stageDependenciesFromTemp(`chunk${dependency.toChunk || 0}`)
-
-					fs.emptyDirSync(path.join(process.cwd(), "temp"))
 				}
 			}
 
