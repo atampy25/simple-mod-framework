@@ -34,19 +34,7 @@
 
 	$: disabledMods = getAllMods()
 		.filter((a) => !getConfig().loadOrder.includes(a))
-		.sort((a, b) => {
-			let modNameA = a
-			let modNameB = b
-
-			try {
-				modNameA = getManifestFromModID(a).name
-			} catch (error) {}
-			try {
-				modNameB = getManifestFromModID(b).name
-			} catch (error) {}
-
-			return modNameA.localeCompare(modNameB)
-		})
+		.sort((a, b) => (modIsFramework(a) ? getManifestFromModID(a).name : a).localeCompare((modIsFramework(b) ? getManifestFromModID(b).name : b), undefined, { numeric: true, sensitivity: "base" }))
 		.map((a) => {
 			return { value: a, dummy: forceModListsUpdate }
 		})
