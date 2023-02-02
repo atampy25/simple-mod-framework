@@ -1978,7 +1978,7 @@ export default async function deploy(
 	}
 
 	execCommand(`"Third-Party\\h6xtea.exe" -d --src "${path.join(config.runtimePath, "packagedefinition.txt")}" --dst "${path.join(process.cwd(), "temp", "packagedefinitionVersionCheck.txt")}"`)
-	if (!fs.readFileSync(path.join(process.cwd(), "temp", "packagedefinitionVersionCheck.txt")).includes("patchlevel=10001")) {
+	if (!fs.readFileSync(path.join(process.cwd(), "temp", "packagedefinitionVersionCheck.txt")).includes("patchlevel=310")) {
 		// Check if Runtime PD is unmodded and if so overwrite current "clean" version
 		fs.copyFileSync(path.join(config.runtimePath, "packagedefinition.txt"), path.join(process.cwd(), "cleanPackageDefinition.txt"))
 	}
@@ -1988,20 +1988,20 @@ export default async function deploy(
 		.readFileSync(path.join(process.cwd(), "temp", "packagedefinition.txt.decrypted"), "utf8")
 		.split(/\r?\n/)
 		.join("\r\n")
-		.replace(/patchlevel=[0-9]*/g, "patchlevel=10001") // Patch levels
+		.replace(/patchlevel=[0-9]*/g, "patchlevel=310") // Patch levels
 
 	for (const brick of packagedefinition) {
 		// Apply all PD changes
 		switch (brick.type) {
 			case "partition":
 				packagedefinitionContent += "\r\n"
-				packagedefinitionContent += `@partition name=${brick.name} parent=${brick.parent} type=${brick.partitionType} patchlevel=10001\r\n`
+				packagedefinitionContent += `@partition name=${brick.name} parent=${brick.parent} type=${brick.partitionType} patchlevel=310\r\n`
 				break
 			case "entity":
 				if (!packagedefinitionContent.includes(brick.path)) {
 					const newPD = packagedefinitionContent.replace(
-						new RegExp(`@partition name=${brick.partition} parent=(.*?) type=(.*?) patchlevel=10001\r\n`),
-						(a, parent, type) => `@partition name=${brick.partition} parent=${parent} type=${type} patchlevel=10001\r\n${brick.path}\r\n`
+						new RegExp(`@partition name=${brick.partition} parent=(.*?) type=(.*?) patchlevel=310\r\n`),
+						(a, parent, type) => `@partition name=${brick.partition} parent=${parent} type=${type} patchlevel=310\r\n${brick.path}\r\n`
 					)
 
 					if (packagedefinitionContent === newPD) {
