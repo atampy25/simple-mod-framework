@@ -522,11 +522,15 @@
 
 <style>
 	:global(h2) {
+		font-size: 1.5rem;
+		font-weight: 300;
 		margin-bottom: 0.25rem;
 	}
 
 	:global(li) {
 		margin-bottom: 0.5rem;
+		list-style-position: inside;
+    	list-style-type: disclosure-closed;
 	}
 
 	:global(.bx--modal-close) {
