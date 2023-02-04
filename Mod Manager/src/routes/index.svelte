@@ -110,7 +110,7 @@
 			})
 		).json()
 
-		githubReleaseMarkdownBody = marked(release.body, { gfm: true }).replaceAll("Bugfixes", "Bug Fixes")
+		githubReleaseMarkdownBody = marked(release.body, { gfm: true })
 		canAutomaticallyUpdate = !release.body.includes("CANNOT AUTOMATICALLY UPDATE")
 
 		return release
@@ -386,7 +386,7 @@
 						</div>
 						<hr class="bg-gray-500 border-none h-px" />
 						<div class="mt-2">
-							{@html window.sanitizeHtml(marked(update.changelog, { gfm: true }).replaceAll("Bugfixes", "Bug Fixes"))}
+							{@html window.sanitizeHtml(marked(update.changelog, { gfm: true }))}
 						</div>
 						{#if canAutomaticallyUpdate}
 							<br />
@@ -511,7 +511,7 @@
 </Modal>
 
 <Modal passiveModal open={!!updatingMod} modalHeading={updatingMod ? "Updating " + getManifestFromModID(updatingMod.id).name : "Updating the mod"} preventCloseOnClickOutside>
-	<div class="mb-2">{updatingMod?.changelog}</div>
+	<div class="mb-2">{@html window.sanitizeHtml(marked(updatingMod.changelog, { gfm: true }))}</div>
 	<br />
 	{#if !modExtracting}
 		<ProgressBar kind="inline" value={modDownloadProgress} max={modDownloadSize} labelText="Downloading..." />

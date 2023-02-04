@@ -107,6 +107,7 @@ jobs:
         uses: loopwerk/tag-changelog@v1.0.4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+          config_file: .github/tag-changelog-config.js
           exclude_types: other,docs,chore,build,amend,refactor
 
       - name: Release
