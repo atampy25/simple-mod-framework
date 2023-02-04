@@ -256,7 +256,7 @@ export default async function discover(): Promise<{ [x: string]: { hash: string;
 									await logger.info(
 										`Mod ${manifest.name} uses a version of QuickEntity prior to 3.0 in ${path.basename(
 											contentFilePath
-										)}. This makes deployment of this file significantly slower. Mod developers can fix this easily by using an automatic updater available at the QuickEntity 3.1 GitHub releases.`
+										)}. This makes deployment of this file significantly slower. Mod developers can fix this easily by using an automatic updater available at the QuickEntity GitHub releases.`
 									)
 								}
 
@@ -265,17 +265,21 @@ export default async function discover(): Promise<{ [x: string]: { hash: string;
 							case "entity.patch.json": // Depends on and edits the patched entity
 								entityContent = LosslessJSON.parse(fs.readFileSync(contentFilePath, "utf8"))
 
+								if (entityContent.tempHash === "004F945201F83AB1" && +entityContent.patchVersion < 5) {
+									await logger.error(`Mod ${manifest.name} uses a version of QuickEntity prior to 3.0 in a patch to Dartmoor's scenario. This causes noticeable issues with entity positioning and rotation, one of which is the bushes in Dartmoor. This can be fixed easily by the mod's developer by using an automatic updater available at the QuickEntity Github releases.`)
+								}
+
 								if (+entityContent.patchVersion < 5) {
 									await logger.info(
 										`Mod ${manifest.name} uses a version of QuickEntity prior to 3.0 in ${path.basename(
 											contentFilePath
-										)}. This makes deployment of this file significantly slower. Mod developers can fix this easily by using an automatic updater available at the QuickEntity 3.1 GitHub releases.`
+										)}. This makes deployment of this file significantly slower. Mod developers can fix this easily by using an automatic updater available at the QuickEntity GitHub releases.`
 									)
 								} else if (+entityContent.patchVersion < 6) {
 									await logger.info(
 										`Mod ${manifest.name} uses a QuickEntity 3.0 patch in ${path.basename(
 											contentFilePath
-										)}. This is acceptable in most cases but can cause compatibility issues. Mod developers can fix this easily by using an automatic updater available at the QuickEntity 3.1 GitHub releases.`
+										)}. This is acceptable in most cases but can cause compatibility issues. Mod developers can fix this easily by using an automatic updater available at the QuickEntity GitHub releases.`
 									)
 								}
 
