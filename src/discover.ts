@@ -36,6 +36,8 @@ export default async function discover(): Promise<{ [x: string]: { hash: string;
 			.map((a) => a.trim())
 	)
 
+	const loadedModManifests: Manifest[] = []
+
 	for (let mod of config.loadOrder) {
 		await logger.verbose(`Resolving ${mod}`)
 
@@ -181,14 +183,6 @@ export default async function discover(): Promise<{ [x: string]: { hash: string;
 
 			await logger.verbose("Validating manifest requirements")
 
-			if (manifest.requirements?.length) {
-				for (const req of manifest.requirements) {
-					if (!config.loadOrder.includes(req)) {
-						await logger.error(`Mod ${manifest.name} is missing requirement ${req}!`)
-					}
-				}
-			}
-
 			if (manifest.supportedPlatforms?.length) {
 				if (!manifest.supportedPlatforms.includes(config.platform)) {
 					await logger.error(
@@ -200,6 +194,8 @@ export default async function discover(): Promise<{ [x: string]: { hash: string;
 					)
 				}
 			}
+
+			loadedModManifests.push(manifest)
 
 			await logger.verbose("Discovering scripts")
 			for (const files of scripts) {
@@ -266,7 +262,9 @@ export default async function discover(): Promise<{ [x: string]: { hash: string;
 								entityContent = LosslessJSON.parse(fs.readFileSync(contentFilePath, "utf8"))
 
 								if (entityContent.tempHash === "004F945201F83AB1" && +entityContent.patchVersion < 5) {
-									await logger.error(`Mod ${manifest.name} uses a version of QuickEntity prior to 3.0 in a patch to Dartmoor's scenario. This causes noticeable issues with entity positioning and rotation, one of which is the bushes in Dartmoor. This can be fixed easily by the mod's developer by using an automatic updater available at the QuickEntity Github releases.`)
+									await logger.error(
+										`Mod ${manifest.name} uses a version of QuickEntity prior to 3.0 in a patch to Dartmoor's scenario. This causes noticeable issues with entity positioning and rotation, one of which is the bushes in Dartmoor. This can be fixed easily by the mod's developer by using an automatic updater available at the QuickEntity Github releases.`
+									)
 								}
 
 								if (+entityContent.patchVersion < 5) {
@@ -436,6 +434,36 @@ export default async function discover(): Promise<{ [x: string]: { hash: string;
 				),
 				dependencies: manifestDependencies,
 				affected: manifestAffected
+			}
+		}
+	}
+
+	for (const manifest of loadedModManifests) {
+		if (manifest.requirements?.length) {
+			for (const req of manifest.requirements) {
+				if (typeof req === "string") {
+					if (!config.loadOrder.includes(req)) {
+						await logger.error(`Mod ${manifest.name} is missing requirement ${req}!`)
+					}
+				} else {
+					if (!(config.loadOrder.includes(req[0]) && semver.satisfies(loadedModManifests.find((a) => a.id === req[0])!.version, req[1]))) {
+						await logger.error(`Mod ${manifest.name} expected mod ${req[0]} to satisfy version range ${req[1]}!`)
+					}
+				}
+			}
+		}
+
+		if (manifest.incompatibilities?.length) {
+			for (const inc of manifest.incompatibilities) {
+				if (typeof inc === "string") {
+					if (config.loadOrder.includes(inc)) {
+						await logger.error(`Mod ${manifest.name} is incompatible with ${inc}!`)
+					}
+				} else {
+					if (config.loadOrder.includes(inc[0]) && semver.satisfies(loadedModManifests.find((a) => a.id === inc[0])!.version, inc[1])) {
+						await logger.error(`Mod ${manifest.name} is incompatible with ${inc[1]} versions of mod ${inc[0]}!`)
+					}
+				}
 			}
 		}
 	}

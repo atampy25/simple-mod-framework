@@ -316,7 +316,7 @@
 				{#if semver.lt(FrameworkVersion, release.tag_name)}
 					<div class="flex items-center">
 						<h3 class="flex-grow">
-							{{ patch: "Framework patch available", minor: "Minor framework update available", major: "Major framework update available" }[
+							{({ patch: "Framework patch available", minor: "Minor framework update available", major: "Major framework update available" })[
 								semver.diff(FrameworkVersion, release.tag_name)
 							] || "Update available"}
 						</h3>

@@ -84,7 +84,14 @@ Each mod contains a manifest. Manifests have the following format:
 	],
 	"requirements": [
 		// Required mods (if a requirement is missing the framework will not deploy and will warn the user)
-		"Atampy26.RequiredMod"
+		"Atampy26.RequiredMod",
+
+		// Specify a version range for the mod using the semver range syntax (Google it) - this works for everything that takes a mod ID
+		["Atampy26.OtherRequiredMod", ">2.5.0 || 1.0.2 - 2.0.1"]
+	],
+	"incompatibilities": [
+		// Incompatible mods (if present, the deploy will fail)
+		"SomeOtherDeveloper.SomeOtherMod"
 	],
 	"loadBefore": [
 		// Mods that this mod should load *before* if they are enabled, i.e. mods that should override this one (the GUI will automatically sort based on this before deploying)

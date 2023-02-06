@@ -128,17 +128,21 @@ export interface ManifestOptionData {
 	 * Only use this when a mod uses features that only one platform supports, such as Ghost Mode and Steam. */
 	supportedPlatforms?: Platform[]
 
-	/** Mod IDs that this mod depends on to function.
+	/** Mod IDs (possibly accompanied by version ranges) that this mod depends on to function.
 	 * Clients without these mods enabled will be prevented from using this mod. */
-	requirements?: ModID[]
+	requirements?: (ModID | [ModID, string])[]
 
-	/** Mod IDs this mod should load before.
-	 * Used in automatic sorting by the Mod Manager GUI. */
-	loadBefore?: ModID[]
+	/** Mod IDs (possibly accompanied by version ranges) that this mod will not function with.
+	 * Clients with these mods enabled will be prevented from using this mod. */
+	incompatibilities?: (ModID | [ModID, string])[]
 
-	/** Mod IDs this mod should load after.
+	/** Mod IDs (possibly accompanied by version ranges) this mod should load before.
 	 * Used in automatic sorting by the Mod Manager GUI. */
-	loadAfter?: ModID[]
+	loadBefore?: (ModID | [ModID, string])[]
+
+	/** Mod IDs (possibly accompanied by version ranges) this mod should load after.
+	 * Used in automatic sorting by the Mod Manager GUI. */
+	loadAfter?: (ModID | [ModID, string])[]
 
 	/** Paths to TypeScript files that can alter deployment of the mod.
 	 * The first item is considered to be the entry point; it must export the necessary functions.

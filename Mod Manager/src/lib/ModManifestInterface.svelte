@@ -675,69 +675,6 @@
 				{/each}
 			</div>
 		{/if}
-		<br />
-		<br />
-		<div class="flex flex-row items-center cursor-pointer" on:click={() => (requirements = !requirements)}>
-			<h4 class="flex-grow">Requirements</h4>
-			<div class:spin={requirements} class:spinBack={!requirements}>
-				<Icon icon={faChevronDown} />
-			</div>
-		</div>
-		{#if requirements}
-			<div transition:slide>
-				<ListEditor
-					data={source.requirements || []}
-					on:define={({ detail }) => {
-						dispatch("requirements-define", detail)
-					}}
-					on:undefine={({ detail }) => {
-						dispatch("requirements-undefine", detail)
-					}}
-				/>
-			</div>
-		{/if}
-		<br />
-		<br />
-		<div class="flex flex-row items-center cursor-pointer" on:click={() => (loadBefore = !loadBefore)}>
-			<h4 class="flex-grow">Load before</h4>
-			<div class:spin={loadBefore} class:spinBack={!loadBefore}>
-				<Icon icon={faChevronDown} />
-			</div>
-		</div>
-		{#if loadBefore}
-			<div transition:slide>
-				<ListEditor
-					data={source.loadBefore || []}
-					on:define={({ detail }) => {
-						dispatch("loadBefore-define", detail)
-					}}
-					on:undefine={({ detail }) => {
-						dispatch("loadBefore-undefine", detail)
-					}}
-				/>
-			</div>
-		{/if}
-		<br />
-		<br />
-		<div class="flex flex-row items-center cursor-pointer" on:click={() => (loadAfter = !loadAfter)}>
-			<h4 class="flex-grow">Load after</h4>
-			<div class:spin={loadAfter} class:spinBack={!loadAfter}>
-				<Icon icon={faChevronDown} />
-			</div>
-		</div>
-		{#if loadAfter}
-			<div transition:slide>
-				<ListEditor
-					data={source.loadAfter || []}
-					on:define={({ detail }) => {
-						dispatch("loadAfter-define", detail)
-					}}
-					on:undefine={({ detail }) => {
-						dispatch("loadAfter-undefine", detail)
-					}}
-				/>
-			</div>
-		{/if}
 	</div>
 {/if}
 

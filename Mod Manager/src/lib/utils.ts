@@ -7,6 +7,8 @@ import json5 from "json5"
 import manifestSchema from "$lib/manifest-schema.json"
 import memoize from "lodash.memoize"
 import merge from "lodash.mergewith"
+import semver from "semver"
+import { cloneDeep } from "lodash"
 
 export const FrameworkVersion = "2.12.4"
 
@@ -40,7 +42,9 @@ export function getConfig() {
 						{
 							modOptions: {
 								[mod]: [
-									...manifest.options.filter((a) => (a.type === "checkbox" || a.type === "select" ? a.enabledByDefault : false)).map((a) => (a.type === "select" ? `${a.group}:${a.name}` : a.name))
+									...manifest.options
+										.filter((a) => (a.type === "checkbox" || a.type === "select" ? a.enabledByDefault : false))
+										.map((a) => (a.type === "select" ? `${a.group}:${a.name}` : a.name))
 								]
 							}
 						},
@@ -89,7 +93,10 @@ export function getConfig() {
 					) {
 						if (
 							!manifest.options
-								.find((a) => (a.type === "checkbox" && a.name === config.modOptions[manifest.id][i]) || (a.type === "select" && `${a.group}:${a.name}` === config.modOptions[manifest.id][i]))!
+								.find(
+									(a) =>
+										(a.type === "checkbox" && a.name === config.modOptions[manifest.id][i]) || (a.type === "select" && `${a.group}:${a.name}` === config.modOptions[manifest.id][i])
+								)!
 								.requirements!.every((a) => config.loadOrder.includes(a))
 						) {
 							config.modOptions[manifest.id].splice(i, 1)
@@ -150,7 +157,7 @@ export function sortMods() {
 		modSorting: while (modsToSort.length) {
 			for (const mod of modsToSort) {
 				if (modIsFramework(mod)) {
-					const modManifest = getManifestFromModID(mod)
+					const modManifest = cloneDeep(getManifestFromModID(mod))
 
 					modManifest.options || (modManifest.options = [])
 
@@ -188,8 +195,17 @@ export function sortMods() {
 							.flat(1)
 					)
 
-					for (const modToLoadBefore of modManifest.loadBefore) {
+					for (let modToLoadBefore of modManifest.loadBefore) {
+						if (typeof modToLoadBefore !== "string") { // has version requirement
+							if (semver.satisfies(getManifestFromModID(modToLoadBefore[0]).version, modToLoadBefore[1])) { // version requirement satisfied
+								modToLoadBefore = modToLoadBefore[0] // load before that mod
+							} else {
+								continue // do not consider this requirement
+							}
+						}
+
 						// Move the mod to just before where the other mod is
+
 						if (config.loadOrder.includes(modToLoadBefore) && config.loadOrder.indexOf(modToLoadBefore) < config.loadOrder.indexOf(mod)) {
 							if (config.loadOrder.indexOf(modToLoadBefore) - 1 === 0) {
 								config.loadOrder = config.loadOrder.filter((a) => a !== mod)
@@ -204,8 +220,17 @@ export function sortMods() {
 						}
 					}
 
-					for (const modToLoadAfter of modManifest.loadAfter) {
+					for (let modToLoadAfter of modManifest.loadAfter) {
+						if (typeof modToLoadAfter !== "string") { // has version requirement
+							if (semver.satisfies(getManifestFromModID(modToLoadAfter[0]).version, modToLoadAfter[1])) { // version requirement satisfied
+								modToLoadAfter = modToLoadAfter[0] // load after that mod
+							} else {
+								continue // do not consider this requirement
+							}
+						}
+
 						// Move the mod to just after where the other mod is
+
 						if (config.loadOrder.includes(modToLoadAfter) && config.loadOrder.indexOf(modToLoadAfter) > config.loadOrder.indexOf(mod)) {
 							config.loadOrder.splice(config.loadOrder.indexOf(modToLoadAfter) + 1, 0, config.loadOrder.splice(config.loadOrder.indexOf(mod), 1)[0])
 							console.log(`Moved ${mod} to after ${modToLoadAfter}`, config.loadOrder)
