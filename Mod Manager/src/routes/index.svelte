@@ -511,7 +511,7 @@
 </Modal>
 
 <Modal passiveModal open={!!updatingMod} modalHeading={updatingMod ? "Updating " + getManifestFromModID(updatingMod.id).name : "Updating the mod"} preventCloseOnClickOutside>
-	<div class="mb-2">{@html window.sanitizeHtml(marked(updatingMod.changelog, { gfm: true }))}</div>
+	<div class="mb-2">{#if updatingMod}{@html window.sanitizeHtml(marked(updatingMod.changelog, { gfm: true }))}{/if}</div>
 	<br />
 	{#if !modExtracting}
 		<ProgressBar kind="inline" value={modDownloadProgress} max={modDownloadSize} labelText="Downloading..." />
