@@ -196,8 +196,8 @@ export function sortMods() {
 					)
 
 					for (let modToLoadBefore of modManifest.loadBefore) {
-						if (typeof modToLoadBefore !== "string") { // has version requirement
-							if (semver.satisfies(getManifestFromModID(modToLoadBefore[0]).version, modToLoadBefore[1])) { // version requirement satisfied
+						if (typeof modToLoadBefore[0] === "string") { // has version requirement
+							if (config.loadOrder.includes(modToLoadBefore[0]) && semver.satisfies(getManifestFromModID(modToLoadBefore[0]).version, modToLoadBefore[1])) { // version requirement satisfied
 								modToLoadBefore = modToLoadBefore[0] // load before that mod
 							} else {
 								continue // do not consider this requirement
@@ -221,8 +221,8 @@ export function sortMods() {
 					}
 
 					for (let modToLoadAfter of modManifest.loadAfter) {
-						if (typeof modToLoadAfter !== "string") { // has version requirement
-							if (semver.satisfies(getManifestFromModID(modToLoadAfter[0]).version, modToLoadAfter[1])) { // version requirement satisfied
+						if (typeof modToLoadAfter[0] === "string") { // has version requirement
+							if (config.loadOrder.includes(modToLoadAfter[0]) && semver.satisfies(getManifestFromModID(modToLoadAfter[0]).version, modToLoadAfter[1])) { // version requirement satisfied
 								modToLoadAfter = modToLoadAfter[0] // load after that mod
 							} else {
 								continue // do not consider this requirement
