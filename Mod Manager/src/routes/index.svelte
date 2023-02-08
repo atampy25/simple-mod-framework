@@ -110,10 +110,44 @@
 			})
 		).json()
 
-		githubReleaseMarkdownBody = marked(release.body, { gfm: true })
-		canAutomaticallyUpdate = !release.body.includes("CANNOT AUTOMATICALLY UPDATE")
+		const releases = await (
+			await fetch("https://api.github.com/repos/atampy25/simple-mod-framework/releases", {
+				headers: {
+					Accept: "application/vnd.github.v3+json"
+				}
+			})
+		).json()
 
-		return release
+		if (semver.lt(FrameworkVersion, release.tag_name)) {
+			const allNewReleases = releases.filter((a) => semver.lt(FrameworkVersion, a.tag_name)).map((a) => a.body)
+			allNewReleases.reverse()
+
+			const sections: Record<string, string[]> = { "": [] }
+			let currentSection = ""
+			for (const item of allNewReleases) {
+				for (const line of item.split("\n")) {
+					if (line.trim() !== "") {
+						if (line.trim().startsWith("##")) {
+							sections[line.trim()] ??= []
+							currentSection = line.trim()
+						} else {
+							sections[currentSection].push(line.trim())
+						}
+					}
+				}
+			}
+
+			githubReleaseMarkdownBody = marked(
+				Object.entries(sections)
+					.map(([a, b]) => a + "\n" + b.join("\n"))
+					.join("\n"),
+				{ gfm: true }
+			)
+
+			canAutomaticallyUpdate = !githubReleaseMarkdownBody.includes("CANNOT AUTOMATICALLY UPDATE")
+		}
+
+		return { release, releases }
 	}
 
 	let canAutomaticallyUpdate = false
@@ -201,7 +235,45 @@
 		for (let mod of getAllMods()) {
 			if (modIsFramework(mod) && getManifestFromModID(mod).updateCheck) {
 				try {
-					modUpdateJSONs.push([mod, await (await fetch(getManifestFromModID(mod).updateCheck!)).json()])
+					const updateJSON = await (await fetch(getManifestFromModID(mod).updateCheck!)).json()
+
+					let changelog = updateJSON.changelog
+
+					if (getManifestFromModID(mod).updateCheck!.match("https://github.com/(.*)/releases/latest/download/updates.json")) {
+						// GitHub based mod, we can check its previous releases
+
+						const releases = await (
+							await fetch(`https://api.github.com/repos/${getManifestFromModID(mod).updateCheck!.match("https://github.com/(.*)/releases/latest/download/updates.json")[1]}/releases`, {
+								headers: {
+									Accept: "application/vnd.github.v3+json"
+								}
+							})
+						).json()
+
+						const allNewReleases = releases.filter((a) => semver.lt(getManifestFromModID(mod).version, a.tag_name)).map((a) => a.body)
+						allNewReleases.reverse()
+
+						const sections: Record<string, string[]> = { "": [] }
+						let currentSection = ""
+						for (const item of allNewReleases) {
+							for (const line of item.split("\n")) {
+								if (line.trim() !== "") {
+									if (line.trim().startsWith("##")) {
+										sections[line.trim()] ??= []
+										currentSection = line.trim()
+									} else {
+										sections[currentSection].push(line.trim())
+									}
+								}
+							}
+						}
+
+						changelog = Object.entries(sections)
+							.map(([a, b]) => a + "\n" + b.join("\n"))
+							.join("\n")
+					}
+
+					modUpdateJSONs.push([mod, { version: updateJSON.version, changelog, url: updateJSON.url }])
 				} catch {
 					modUpdateJSONs.push([mod, false])
 				}
@@ -312,7 +384,7 @@
 						<InlineLoading />
 					</div>
 				</div>
-			{:then release}
+			{:then { release, releases }}
 				{#if semver.lt(FrameworkVersion, release.tag_name)}
 					<div class="flex items-center">
 						<h3 class="flex-grow">
@@ -327,17 +399,19 @@
 						{@html githubReleaseMarkdownBody}
 					</div>
 					<br />
-					<Button
-						kind="primary"
-						icon={Download}
-						on:click={() => {
-							updatingFramework = true
+					{#if canAutomaticallyUpdate}
+						<Button
+							kind="primary"
+							icon={Download}
+							on:click={() => {
+								updatingFramework = true
 
-							startFrameworkUpdate()
-						}}
-					>
-						Update
-					</Button>
+								startFrameworkUpdate()
+							}}
+						>
+							Update
+						</Button>
+					{/if}
 				{:else}
 					<div class="flex items-center">
 						<p class="flex-grow">Up to date (version {FrameworkVersion})</p>
@@ -388,23 +462,21 @@
 						<div class="mt-2">
 							{@html window.sanitizeHtml(marked(update.changelog, { gfm: true }))}
 						</div>
-						{#if canAutomaticallyUpdate}
-							<br />
-							<Button
-								kind="primary"
-								icon={Download}
-								on:click={() => {
-									updatingMod = {
-										id: modID,
-										...update
-									}
+						<br />
+						<Button
+							kind="primary"
+							icon={Download}
+							on:click={() => {
+								updatingMod = {
+									id: modID,
+									...update
+								}
 
-									startModUpdate()
-								}}
-							>
-								Update
-							</Button>
-						{/if}
+								startModUpdate()
+							}}
+						>
+							Update
+						</Button>
 					</div>
 				{/each}
 			{:catch error}
@@ -511,7 +583,9 @@
 </Modal>
 
 <Modal passiveModal open={!!updatingMod} modalHeading={updatingMod ? "Updating " + getManifestFromModID(updatingMod.id).name : "Updating the mod"} preventCloseOnClickOutside>
-	<div class="mb-2">{#if updatingMod}{@html window.sanitizeHtml(marked(updatingMod.changelog, { gfm: true }))}{/if}</div>
+	<div class="mb-2">
+		{#if updatingMod}{@html window.sanitizeHtml(marked(updatingMod.changelog, { gfm: true }))}{/if}
+	</div>
 	<br />
 	{#if !modExtracting}
 		<ProgressBar kind="inline" value={modDownloadProgress} max={modDownloadSize} labelText="Downloading..." />
@@ -530,7 +604,7 @@
 	:global(li) {
 		margin-bottom: 0.5rem;
 		list-style-position: inside;
-    	list-style-type: disclosure-closed;
+		list-style-type: disclosure-closed;
 	}
 
 	:global(.bx--modal-close) {
