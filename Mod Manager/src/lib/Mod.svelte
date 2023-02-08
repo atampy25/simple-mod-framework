@@ -13,11 +13,13 @@
 	export let manifest: Manifest = {} as Manifest
 	export let rpkgModName: string = ""
 
+	export let darken: boolean = false
+
 	let modWarnings: Promise<{ title: string; subtitle: string; trace: string }[]>
 	setTimeout(() => (modWarnings = getAllModWarnings()), 100)
 </script>
 
-<Tile>
+<Tile style={darken ? "filter: brightness(0.75); transition: 250ms filter" : "transition: 250ms filter"}>
 	<div class="flex flex-row items-center gap-8">
 		<div class="flex-grow">
 			{#if isFrameworkMod}
@@ -83,7 +85,7 @@
 
 								if (option.type == "requirement") {
 									option.type = "conditional"
-									option.condition = option.mods.map(mod => `"${mod}" in config.loadOrder`).join(" and ")
+									option.condition = option.mods.map((mod) => `"${mod}" in config.loadOrder`).join(" and ")
 									delete option.mods
 								}
 							}

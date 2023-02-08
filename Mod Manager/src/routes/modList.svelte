@@ -4,7 +4,7 @@
 
 	import SortableList from "svelte-sortable-list"
 	import json5 from "json5"
-	import { Button, CodeSnippet, InlineNotification, Modal } from "carbon-components-svelte"
+	import { Button, CodeSnippet, InlineNotification, Modal, Search } from "carbon-components-svelte"
 
 	import { getAllMods, getConfig, mergeConfig, getManifestFromModID, modIsFramework, getModFolder, sortMods } from "$lib/utils"
 	import Mod from "$lib/Mod.svelte"
@@ -19,6 +19,7 @@
 	import TrashCan from "carbon-icons-svelte/lib/TrashCan.svelte"
 	import Close from "carbon-icons-svelte/lib/Close.svelte"
 	import CloudUpload from "carbon-icons-svelte/lib/CloudUpload.svelte"
+	import Filter from "carbon-icons-svelte/lib/Filter.svelte"
 	import { OptionType } from "../../../src/types"
 
 	let enabledMods: { value: string }[] = [],
@@ -169,12 +170,18 @@
 	let uploadedLogURL = ""
 	let uploadLogModalOpen = false
 	let uploadLogFailedModalOpen = false
+
+	let availableModFilter = ""
+	let enabledModFilter = ""
 </script>
 
 <div class="grid grid-cols-2 gap-4 w-full mb-16">
 	<div class="w-full">
 		<div class="flex gap-4 items-center justify-center" transition:scale>
 			<h1 class="flex-grow">Available Mods</h1>
+			<div>
+				<Search icon={Filter} placeholder="Filter available mods" bind:value={availableModFilter} />
+			</div>
 			<Button
 				kind="primary"
 				icon={Add}
@@ -187,7 +194,7 @@
 		</div>
 		<br />
 		<div class="h-[90vh] overflow-y-auto">
-			{#each disabledMods as item (item.value)}
+			{#each disabledMods.filter((a) => ((modIsFramework(a.value) ? getManifestFromModID(a.value).name : a.value) + (modIsFramework(a.value) ? getManifestFromModID(a.value).description : "")).toLowerCase().includes(availableModFilter.toLowerCase())) as item (item.value)}
 				<div animate:flip={{ duration: 300 }}>
 					<div transition:scale>
 						<Mod
@@ -227,6 +234,9 @@
 	<div class="w-full">
 		<div class="flex gap-4 items-center justify-center" transition:scale>
 			<h1 class="flex-grow">{changed && !deployFinished ? "To Be Applied" : "Enabled Mods"}</h1>
+			<div>
+				<Search icon={Filter} placeholder="Filter enabled mods" bind:value={enabledModFilter} />
+			</div>
 			<Button
 				kind="primary"
 				style={changed && !deployFinished ? "background-color: green" : ""}
@@ -263,6 +273,7 @@
 						isFrameworkMod={modIsFramework(item.value)}
 						manifest={modIsFramework(item.value) ? getManifestFromModID(item.value) : undefined}
 						rpkgModName={!modIsFramework(item.value) ? item.value : undefined}
+						darken={!((modIsFramework(item.value) ? getManifestFromModID(item.value).name : item.value) + (modIsFramework(item.value) ? getManifestFromModID(item.value).description : "")).toLowerCase().includes(enabledModFilter.toLowerCase())}
 					>
 						{#if modIsFramework(item.value) && getManifestFromModID(item.value)?.options?.filter((a) => a.type != OptionType.conditional)?.length}
 							<Button
