@@ -4,7 +4,7 @@
 
 	import SortableList from "svelte-sortable-list"
 	import json5 from "json5"
-	import { Button, InlineNotification, Modal } from "carbon-components-svelte"
+	import { Button, CodeSnippet, InlineNotification, Modal } from "carbon-components-svelte"
 
 	import { getAllMods, getConfig, mergeConfig, getManifestFromModID, modIsFramework, getModFolder, sortMods } from "$lib/utils"
 	import Mod from "$lib/Mod.svelte"
@@ -18,6 +18,7 @@
 	import Settings from "carbon-icons-svelte/lib/Settings.svelte"
 	import TrashCan from "carbon-icons-svelte/lib/TrashCan.svelte"
 	import Close from "carbon-icons-svelte/lib/Close.svelte"
+	import CloudUpload from "carbon-icons-svelte/lib/CloudUpload.svelte"
 	import { OptionType } from "../../../src/types"
 
 	let enabledMods: { value: string }[] = [],
@@ -34,7 +35,7 @@
 
 	$: disabledMods = getAllMods()
 		.filter((a) => !getConfig().loadOrder.includes(a))
-		.sort((a, b) => (modIsFramework(a) ? getManifestFromModID(a).name : a).localeCompare((modIsFramework(b) ? getManifestFromModID(b).name : b), undefined, { numeric: true, sensitivity: "base" }))
+		.sort((a, b) => (modIsFramework(a) ? getManifestFromModID(a).name : a).localeCompare(modIsFramework(b) ? getManifestFromModID(b).name : b, undefined, { numeric: true, sensitivity: "base" }))
 		.map((a) => {
 			return { value: a, dummy: forceModListsUpdate }
 		})
@@ -164,6 +165,10 @@
 			window.originalFs.unlinkSync(window.path.join(modFolder, "manifest.json:Zone.Identifier")) // Will prevent the message from being shown again for the same mod
 		}
 	}
+
+	let uploadedLogURL = ""
+	let uploadLogModalOpen = false
+	let uploadLogFailedModalOpen = false
 </script>
 
 <div class="grid grid-cols-2 gap-4 w-full mb-16">
@@ -344,6 +349,30 @@
 				<span class="text-yellow-300">Potential issues in deployment</span>
 			{:else}
 				<Button kind="primary" icon={Close} on:click={() => (frameworkDeployModalOpen = false)}>Close</Button>
+				<Button
+					kind="primary"
+					icon={CloudUpload}
+					on:click={async () => {
+						const req = await fetch("http://hitman-resources.netlify.app/.netlify/functions/upload-smf-log", {
+							method: "POST",
+							headers: {
+								"Content-Type": "application/json"
+							},
+							body: JSON.stringify({ content: deployOutput })
+						})
+
+						if (req.status == 200) {
+							uploadedLogURL = `https://hastebin.com/share/${await req.text()}`
+
+							frameworkDeployModalOpen = false
+							uploadLogModalOpen = true
+						} else {
+							uploadLogFailedModalOpen = true
+						}
+					}}
+				>
+					Upload log
+				</Button>
 				<span class="text-red-300">Deploy unsuccessful</span>
 			{/if}
 		</div>
@@ -411,18 +440,39 @@
 	}}
 >
 	<p>
-		This mod contains scripts; that means it is able to execute its own (external to the framework) code and effectively has complete control over your PC whenever you apply your mods. Scripts can do cool things and make a lot of mods possible, but they can also
-		do bad things like installing malware on your computer. Make sure you trust whoever developed this mod, and wherever you downloaded it from. Are you sure you want to add this mod?
+		This mod contains scripts; that means it is able to execute its own (external to the framework) code and effectively has complete control over your PC whenever you apply your mods. Scripts can
+		do cool things and make a lot of mods possible, but they can also do bad things like installing malware on your computer. Make sure you trust whoever developed this mod, and wherever you
+		downloaded it from. Are you sure you want to add this mod?
 	</p>
 </Modal>
 
-<Modal alert bind:open={displayZonedModsDialog} modalHeading="Incorrectly installed mod{zonedMods.length > 1 ? 's' : ''}" primaryButtonText="OK" shouldSubmitOnEnter={false} on:submit={() => (displayZonedModsDialog = false)}>
+<Modal
+	alert
+	bind:open={displayZonedModsDialog}
+	modalHeading="Incorrectly installed mod{zonedMods.length > 1 ? 's' : ''}"
+	primaryButtonText="OK"
+	shouldSubmitOnEnter={false}
+	on:submit={() => (displayZonedModsDialog = false)}
+>
 	<p>
 		The mod{zonedMods.length > 1 ? "s" : ""}
 		{zonedMods.slice(0, -1).length ? zonedMods.slice(0, -1).join(", ") + " and " + zonedMods[zonedMods.length - 1] : zonedMods[0]}
 		{zonedMods.length > 1 ? "were" : "was"} installed by extracting the ZIP file directly to the Mods folder. That's not how you're meant to install mods; doing things this way could pose risks as
-		it bypasses the framework's checks for mod validity and safety. Instead, use the Add a Mod button to add any mods you want. This message won't be shown again for {zonedMods.length > 1 ? "these mods" : "this mod"}.
+		it bypasses the framework's checks for mod validity and safety. Instead, use the Add a Mod button to add any mods you want. This message won't be shown again for {zonedMods.length > 1
+			? "these mods"
+			: "this mod"}.
 	</p>
+</Modal>
+
+<Modal alert bind:open={uploadLogFailedModalOpen} modalHeading="Couldn't upload log" primaryButtonText="OK" shouldSubmitOnEnter={false} on:submit={() => (uploadLogFailedModalOpen = false)}>
+	<p>Your log couldn't be uploaded. Make sure you're connected to the Internet.</p>
+</Modal>
+
+<Modal alert bind:open={uploadLogModalOpen} modalHeading="Log uploaded" primaryButtonText="OK" shouldSubmitOnEnter={false} on:submit={() => (uploadLogModalOpen = false)}>
+	<p class="mb-2">Your deploy log has been anonymously uploaded to the Internet.</p>
+	<CodeSnippet code={uploadedLogURL} />
+	<br />
+	<div class="mb-6" />
 </Modal>
 
 <style>
@@ -451,5 +501,9 @@
 
 	:global(.bx--inline-notification__icon) {
 		display: none;
+	}
+
+	:global(.bx--snippet.bx--snippet--single) {
+		background-color: #262626;
 	}
 </style>
