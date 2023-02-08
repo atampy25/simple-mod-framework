@@ -358,7 +358,7 @@
 							headers: {
 								"Content-Type": "application/json"
 							},
-							body: JSON.stringify({ content: deployOutput })
+							body: JSON.stringify({ content: "Config:\n" + JSON.stringify(getConfig()) + "\n\nDeploy log:\n" + deployOutput })
 						})
 
 						if (req.status == 200) {
@@ -371,7 +371,7 @@
 						}
 					}}
 				>
-					Upload log
+					Upload mod list and log
 				</Button>
 				<span class="text-red-300">Deploy unsuccessful</span>
 			{/if}
