@@ -373,7 +373,7 @@
 						})
 
 						if (req.status == 200) {
-							uploadedLogURL = `https://hastebin.com/share/${await req.text()}`
+							uploadedLogURL = await req.text()
 
 							frameworkDeployModalOpen = false
 							uploadLogModalOpen = true

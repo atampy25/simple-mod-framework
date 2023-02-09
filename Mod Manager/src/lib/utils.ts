@@ -10,7 +10,7 @@ import merge from "lodash.mergewith"
 import semver from "semver"
 import { cloneDeep } from "lodash"
 
-export const FrameworkVersion = "2.14.0"
+export const FrameworkVersion = "2.15.0"
 
 const validateManifest = new Ajv().compile(manifestSchema)
 
@@ -42,9 +42,7 @@ export function getConfig() {
 						{
 							modOptions: {
 								[mod]: [
-									...manifest.options
-										.filter((a) => (a.type === "checkbox" || a.type === "select" ? a.enabledByDefault : false))
-										.map((a) => (a.type === "select" ? `${a.group}:${a.name}` : a.name))
+									...manifest.options.filter((a) => (a.type === "checkbox" || a.type === "select" ? a.enabledByDefault : false)).map((a) => (a.type === "select" ? `${a.group}:${a.name}` : a.name))
 								]
 							}
 						},
@@ -93,10 +91,7 @@ export function getConfig() {
 					) {
 						if (
 							!manifest.options
-								.find(
-									(a) =>
-										(a.type === "checkbox" && a.name === config.modOptions[manifest.id][i]) || (a.type === "select" && `${a.group}:${a.name}` === config.modOptions[manifest.id][i])
-								)!
+								.find((a) => (a.type === "checkbox" && a.name === config.modOptions[manifest.id][i]) || (a.type === "select" && `${a.group}:${a.name}` === config.modOptions[manifest.id][i]))!
 								.requirements!.every((a) => config.loadOrder.includes(a))
 						) {
 							config.modOptions[manifest.id].splice(i, 1)
@@ -196,8 +191,10 @@ export function sortMods() {
 					)
 
 					for (let modToLoadBefore of modManifest.loadBefore) {
-						if (typeof modToLoadBefore[0] === "string") { // has version requirement
-							if (config.loadOrder.includes(modToLoadBefore[0]) && semver.satisfies(getManifestFromModID(modToLoadBefore[0]).version, modToLoadBefore[1])) { // version requirement satisfied
+						if (typeof modToLoadBefore[0] === "string") {
+							// has version requirement
+							if (config.loadOrder.includes(modToLoadBefore[0]) && semver.satisfies(getManifestFromModID(modToLoadBefore[0]).version, modToLoadBefore[1])) {
+								// version requirement satisfied
 								modToLoadBefore = modToLoadBefore[0] // load before that mod
 							} else {
 								continue // do not consider this requirement
@@ -221,8 +218,10 @@ export function sortMods() {
 					}
 
 					for (let modToLoadAfter of modManifest.loadAfter) {
-						if (typeof modToLoadAfter[0] === "string") { // has version requirement
-							if (config.loadOrder.includes(modToLoadAfter[0]) && semver.satisfies(getManifestFromModID(modToLoadAfter[0]).version, modToLoadAfter[1])) { // version requirement satisfied
+						if (typeof modToLoadAfter[0] === "string") {
+							// has version requirement
+							if (config.loadOrder.includes(modToLoadAfter[0]) && semver.satisfies(getManifestFromModID(modToLoadAfter[0]).version, modToLoadAfter[1])) {
+								// version requirement satisfied
 								modToLoadAfter = modToLoadAfter[0] // load after that mod
 							} else {
 								continue // do not consider this requirement
