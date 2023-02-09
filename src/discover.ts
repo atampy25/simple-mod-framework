@@ -306,6 +306,21 @@ export default async function discover(): Promise<{ [x: string]: { hash: string;
 								dependencies.push(entityContent.file)
 								affected.push(entityContent.file)
 								break
+							case "material.json": // Depends on nothing, edits several files depending on contents
+								entityContent = LosslessJSON.parse(fs.readFileSync(contentFilePath, "utf8"))
+
+								if (entityContent.MATI !== "") {
+									affected.push(entityContent.MATI.includes(":") ? `00${(await md5(entityContent.MATI.toLowerCase())).slice(2, 16).toUpperCase()}` : entityContent.MATI)
+								}
+
+								if (entityContent.MATT !== "") {
+									affected.push(entityContent.MATT.includes(":") ? `00${(await md5(entityContent.MATT.toLowerCase())).slice(2, 16).toUpperCase()}` : entityContent.MATT)
+								}
+
+								if (entityContent.MATB !== "") {
+									affected.push(entityContent.MATB.includes(":") ? `00${(await md5(entityContent.MATB.toLowerCase())).slice(2, 16).toUpperCase()}` : entityContent.MATB)
+								}
+								break
 							case "texture.tga": // Depends on nothing, edits the texture files
 								affected.push(...path.basename(contentFilePath).split(".")[0].split("~"))
 								break

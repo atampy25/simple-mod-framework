@@ -29,6 +29,7 @@ The content folder contains chunk folders, which contain files (and folders, the
 | `repository.json`     | Repository items to be placed in the repository                              |
 | `contract.json`       | A contract that will be added to the contracts ORES                          |
 | `JSON.patch.json`     | An RFC6902 JSON patch that will be applied to the hash the file specifies    |
+| `material.json`       | An RPKG tool material JSON that will replace the targeted material           |
 | `texture.tga`         | A TGA to rebuild into a game texture (TEXT only or TEXT and TEXD)            |
 | `sfx.wem`             | A Wwise sound effect to patch a WWEV file with                               |
 | `delta`               | A VCDiff delta file to patch the hash the file specifies with                |

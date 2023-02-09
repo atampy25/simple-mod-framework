@@ -597,9 +597,18 @@ export default async function deploy(
 			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 			let entityContent: any
 
-			const sentryContentFileTransaction = ["entity.json", "entity.patch.json", "unlockables.json", "repository.json", "contract.json", "JSON.patch.json", "texture.tga", "sfx.wem", "delta"].includes(
-				content.type
-			)
+			const sentryContentFileTransaction = [
+				"entity.json",
+				"entity.patch.json",
+				"unlockables.json",
+				"repository.json",
+				"contract.json",
+				"JSON.patch.json",
+				"material.json",
+				"texture.tga",
+				"sfx.wem",
+				"delta"
+			].includes(content.type)
 				? sentryContentTransaction.startChild({
 						op: "stageContentFile",
 						description: `Stage ${content.type}`
@@ -945,6 +954,23 @@ export default async function deploy(
 						path.join(process.cwd(), "temp", rpkgOfFile, fileType, `${entityContent.file}.${fileType}.meta`),
 						path.join(process.cwd(), "staging", `chunk${content.chunk}`, `${entityContent.file}.${fileType}.meta`)
 					)
+					break
+				}
+				case "material.json": {
+					await logger.debug(`Converting material ${contentIdentifier}`)
+
+					let contentFilePath
+					if (content.source === "disk") {
+						contentFilePath = content.path
+					} else {
+						fs.ensureDirSync(path.join(process.cwd(), "virtual"))
+						fs.writeFileSync(path.join(process.cwd(), "virtual", "material.json"), Buffer.from(await content.content.arrayBuffer()))
+						contentFilePath = path.join(process.cwd(), "virtual", "material.json")
+					}
+
+					await callRPKGFunction(`-json_to_material "${contentFilePath}" -output_path "${path.join(process.cwd(), "staging", `chunk${content.chunk}`)}"`)
+
+					fs.removeSync(path.join(process.cwd(), "virtual"))
 					break
 				}
 				case "texture.tga": {
@@ -1464,7 +1490,10 @@ export default async function deploy(
 
 					// If cache hit
 					if (fs.existsSync(path.join(process.cwd(), "cache", winPathEscape(instruction.cacheFolder), path.join("dependencies", typeof dependency === "string" ? dependency : dependency.runtimeID)))) {
-						rust_utils.stageDependenciesFrom(path.join(process.cwd(), "cache", winPathEscape(instruction.cacheFolder), path.join("dependencies", typeof dependency === "string" ? dependency : dependency.runtimeID)), `chunk${dependency.toChunk || 0}`)
+						rust_utils.stageDependenciesFrom(
+							path.join(process.cwd(), "cache", winPathEscape(instruction.cacheFolder), path.join("dependencies", typeof dependency === "string" ? dependency : dependency.runtimeID)),
+							`chunk${dependency.toChunk || 0}`
+						)
 					} else {
 						// no cache yet
 
