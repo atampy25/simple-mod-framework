@@ -20,6 +20,10 @@ export async function generate(game: string, input: string, TEMP: string, TEMPme
 	)
 }
 
+export async function createPatchJSON(original: string, modified: string, output: string) {
+	execCommand(`"Third-Party\\quickentity-rs.exe" patch generate --input1 ${original} --input2 ${modified} --output ${output} --format-fix`)
+}
+
 export async function applyPatchJSON(original: string, patch: string, output: string) {
 	execCommand(`"Third-Party\\quickentity-rs.exe" patch apply --input "${original}" --patch "${patch}" --output "${output}" --permissive`)
 }
