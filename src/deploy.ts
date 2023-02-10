@@ -673,6 +673,96 @@ export default async function deploy(
 					RPKGHashCache[entityContent.tempHash] = `chunk${content.chunk}`
 					RPKGHashCache[entityContent.tbluHash] = `chunk${content.chunk}`
 
+					if (+entityContent.quickEntityVersion.value < 3) {
+						if (content.source === "disk") {
+							await logger.info(`Optimising entity.json file ${contentIdentifier}`)
+
+							fs.ensureDirSync(path.join(process.cwd(), "qn-update"))
+
+							const comments = Object.entries(entityContent.entities).filter((a) => (a[1] as { type: string | undefined }).type === "comment")
+
+							await getQuickEntityFromVersion(entityContent.quickEntityVersion.value).generate(
+								"HM3",
+								content.path,
+								path.join(process.cwd(), "qn-update", "temp.json"),
+								path.join(process.cwd(), "qn-update", "temp.meta.json"),
+								path.join(process.cwd(), "qn-update", "tblu.json"),
+								path.join(process.cwd(), "qn-update", "tblu.meta.json")
+							)
+
+							await getQuickEntityFromVersion("3.1").convert(
+								"HM3",
+								path.join(process.cwd(), "qn-update", "temp.json"),
+								path.join(process.cwd(), "qn-update", "temp.meta.json"),
+								path.join(process.cwd(), "qn-update", "tblu.json"),
+								path.join(process.cwd(), "qn-update", "tblu.meta.json"),
+								content.path
+							)
+
+							fs.writeFileSync(
+								content.path,
+								LosslessJSON.stringify(
+									Object.assign(LosslessJSON.parse(fs.readFileSync(content.path, "utf8")), {
+										comments: comments.map((a: [string, { parent: string; name: string; text: string }]) => {
+											return {
+												parent: a[1].parent,
+												name: a[1].name,
+												text: a[1].text
+											}
+										})
+									})
+								)
+							)
+
+							fs.removeSync(path.join(process.cwd(), "qn-update"))
+
+							await logger.warn(`Optimised an entity.json file from ${instruction.id}. This should improve the speed of deploys from now on.`)
+						} else {
+							await logger.warn(`Mod ${instruction.id} emits a virtual QuickEntity JSON with a version less than 3.1 using scripting. This should not be the case.`)
+						}
+					} else if (+entityContent.quickEntityVersion.value < 3.1) {
+						if (content.source === "disk") {
+							await logger.info(`Optimising entity.json file ${contentIdentifier}`)
+
+							fs.ensureDirSync(path.join(process.cwd(), "qn-update"))
+
+							const comments = entityContent.comments
+
+							await getQuickEntityFromVersion(entityContent.quickEntityVersion.value).generate(
+								"HM3",
+								content.path,
+								path.join(process.cwd(), "qn-update", "temp.json"),
+								path.join(process.cwd(), "qn-update", "temp.meta.json"),
+								path.join(process.cwd(), "qn-update", "tblu.json"),
+								path.join(process.cwd(), "qn-update", "tblu.meta.json")
+							)
+
+							await getQuickEntityFromVersion("3.1").convert(
+								"HM3",
+								path.join(process.cwd(), "qn-update", "temp.json"),
+								path.join(process.cwd(), "qn-update", "temp.meta.json"),
+								path.join(process.cwd(), "qn-update", "tblu.json"),
+								path.join(process.cwd(), "qn-update", "tblu.meta.json"),
+								content.path
+							)
+
+							fs.writeFileSync(
+								content.path,
+								LosslessJSON.stringify(
+									Object.assign(LosslessJSON.parse(fs.readFileSync(content.path, "utf8")), {
+										comments
+									})
+								)
+							)
+
+							fs.removeSync(path.join(process.cwd(), "qn-update"))
+
+							await logger.warn(`Optimised an entity.json file from ${instruction.id}. This should improve the speed of deploys from now on.`)
+						} else {
+							await logger.warn(`Mod ${instruction.id} emits a virtual QuickEntity JSON with a version less than 3.1 using scripting. This should not be the case.`)
+						}
+					}
+
 					await logger.verbose("Cache check")
 					if (
 						invalidatedData.some((a) => a.filePath === contentIdentifier) || // must redeploy, invalid cache
