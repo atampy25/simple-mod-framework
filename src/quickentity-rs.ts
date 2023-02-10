@@ -5,7 +5,7 @@ import { logger } from "./core-singleton"
 
 const execCommand = function (command: string) {
 	void logger.verbose(`Executing QN 3.1 command ${command}`)
-	child_process.execSync(command)
+	child_process.execSync(command, { stdio: "inherit" })
 }
 
 export async function convert(game: string, TEMP: string, TEMPmeta: string, TBLU: string, TBLUmeta: string, output: string) {
@@ -21,5 +21,5 @@ export async function generate(game: string, input: string, TEMP: string, TEMPme
 }
 
 export async function applyPatchJSON(original: string, patch: string, output: string) {
-	execCommand(`"Third-Party\\quickentity-rs.exe" patch apply --input "${original}" --patch "${patch}" --output "${output}"`)
+	execCommand(`"Third-Party\\quickentity-rs.exe" patch apply --input "${original}" --patch "${patch}" --output "${output}" --permissive`)
 }
