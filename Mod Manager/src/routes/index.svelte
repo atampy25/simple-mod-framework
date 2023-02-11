@@ -29,6 +29,8 @@
 	let invalidModOpen = false
 	let invalidModText = ""
 
+	let fileInModFolder = false
+
 	try {
 		getConfig()
 	} catch {
@@ -78,17 +80,28 @@
 		}
 	}
 
-	try {
-		getAllMods().map((a) => (modIsFramework(a) ? getManifestFromModID(a) : a))
-	} catch {
-		invalidModText =
-			window.fs
-				.readdirSync(window.path.join("..", "Mods"))
-				.map((a) => window.path.resolve(window.path.join("..", "Mods", a)))
-				.find((a) => window.fs.existsSync(window.path.join(a, "manifest.json")) && !json5.parse(window.fs.readFileSync(window.path.join(a, "manifest.json"), "utf8")).id)
-				?.split(window.path.sep)
-				?.pop() || "<can't find which one>"
-		invalidModOpen = true
+	if (
+		window.fs
+			.readdirSync(window.path.join("..", "Mods"))
+			.map((a) => window.path.resolve(window.path.join("..", "Mods", a)))
+			.some((a) => window.fs.statSync(a).isFile())
+	) {
+		fileInModFolder = true
+	}
+
+	if (!fileInModFolder) {
+		try {
+			getAllMods().map((a) => (modIsFramework(a) ? getManifestFromModID(a) : a))
+		} catch {
+			invalidModText =
+				window.fs
+					.readdirSync(window.path.join("..", "Mods"))
+					.map((a) => window.path.resolve(window.path.join("..", "Mods", a)))
+					.find((a) => window.fs.existsSync(window.path.join(a, "manifest.json")) && !json5.parse(window.fs.readFileSync(window.path.join(a, "manifest.json"), "utf8")).id)
+					?.split(window.path.sep)
+					?.pop() || "<can't find which one>"
+			invalidModOpen = true
+		}
 	}
 
 	let installedViaZIP = false
@@ -235,7 +248,7 @@
 		for (let mod of getAllMods()) {
 			if (modIsFramework(mod) && getManifestFromModID(mod).updateCheck) {
 				try {
-					const updateJSON = await (await fetch(getManifestFromModID(mod).updateCheck!)).json()
+					const updateJSON = await (await fetch(getManifestFromModID(mod).updateCheck! + "?t=" + Date.now())).json()
 
 					let changelog = updateJSON.changelog
 
@@ -524,6 +537,13 @@
 
 <Modal alert bind:open={cannotFindHITMAN3} modalHeading="Can't find HITMAN3.exe" primaryButtonText="OK" on:submit={() => (cannotFindHITMAN3 = false)}>
 	<p>The framework wasn't installed correctly. Please re-read the installation instructions.</p>
+</Modal>
+
+<Modal alert bind:open={fileInModFolder} modalHeading="File in Mods folder" primaryButtonText="OK" on:submit={() => (fileInModFolder = false)}>
+	<p>
+		There's a file in the Mods folder. You should be using the Add a Mod button in the mod manager to manage your mods - not doing so exposes you to several risks, including your computer's
+		security.
+	</p>
 </Modal>
 
 <Modal alert bind:open={invalidModOpen} modalHeading="Invalid mod" primaryButtonText="OK" on:submit={() => (invalidModOpen = false)}>
