@@ -23,6 +23,7 @@ require("clarify")
 const gameHashes = {
 	"7e662b4e79d090d4d3ace188a4311e89": Platform.epic,
 	"768d99bd0b69eaec97753dc326412ceb": Platform.epic, // ansel unlock
+	"5ccf26521759936226ac1a699c6470b6": Platform.epic, // ansel unlock + no collision
 	"a6bcd7ba2587b589764fe00ef6942f7a": Platform.steam,
 	// cb394df8fc4776cfb5093126f23f55a6: Platform.steam, // ansel unlock
 
