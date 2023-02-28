@@ -2,108 +2,149 @@
 	"$schema": "http://json-schema.org/draft-07/schema#",
 	"allOf": [
 		{
-			"type": "object",
 			"properties": {
-				"id": {
-					"type": "string"
-				},
-				"name": {
-					"type": "string"
-				},
-				"description": {
-					"type": "string"
-				},
 				"authors": {
-					"type": "array",
+					"description": "A list of the mod's authors.",
 					"items": {
 						"type": "string"
-					}
+					},
+					"type": "array"
 				},
-				"version": {
+				"description": {
+					"description": "A description of the mod.",
 					"type": "string"
 				},
 				"frameworkVersion": {
+					"description": "The version of the framework this mod has been tested against/designed for.",
 					"type": "string"
 				},
-				"updateCheck": {
+				"id": {
+					"description": "An ID for the mod. Should follow capitalised reverse URI style (AuthorName.ModName). Don't include special characters; numbers, underscores and full stops are OK.",
+					"type": "string"
+				},
+				"name": {
+					"description": "The name of the mod.",
 					"type": "string"
 				},
 				"options": {
-					"type": "array",
+					"description": "Settings for the mod that can be enabled and disabled in the Mod Manager. Also, conditional options allow for certain elements of the mod to be automatically enabled/disabled based on, for example, other mods being installed.",
 					"items": {
-						"allOf": [
+						"anyOf": [
 							{
-								"anyOf": [
+								"allOf": [
 									{
-										"type": "object",
 										"properties": {
-											"name": {
-												"type": "string"
-											},
-											"type": {
-												"const": "checkbox"
-											},
 											"enabledByDefault": {
+												"description": "Whether the option should be preselected upon installing the mod. Preselected options should deliver the \"advertised experience\". Mods with many settings should have the user select their own settings, or provide a conservative default.",
 												"type": "boolean"
 											},
-											"tooltip": {
+											"image": {
+												"description": "A thumbnail image for the option. Will appear when the user hovers over the option in the Mod Manager.",
 												"type": "string"
 											},
-											"image": {
-												"type": "string"
-											}
-										},
-										"required": ["name", "type"]
-									},
-									{
-										"type": "object",
-										"properties": {
 											"name": {
+												"description": "The name of the option. Should not be duplicated. Will appear in the Mod Manager.",
+												"type": "string"
+											},
+											"tooltip": {
+												"description": "A tooltip for the option. Will appear when the user hovers over the option in the Mod Manager.",
 												"type": "string"
 											},
 											"type": {
-												"const": "select"
-											},
-											"group": {
-												"type": "string"
-											},
-											"enabledByDefault": {
-												"type": "boolean"
-											},
-											"tooltip": {
-												"type": "string"
-											},
-											"image": {
+												"description": "The type of the option. Checkbox options appear as checkboxes in the Mod Manager.",
+												"enum": [
+													"checkbox"
+												],
 												"type": "string"
 											}
 										},
-										"required": ["name", "type", "group"]
+										"type": "object"
 									},
 									{
-										"type": "object",
-										"properties": {
-											"name": {
-												"type": "string"
-											},
-											"type": {
-												"const": "conditional"
-											},
-											"condition": {
-												"type": "string"
-											}
-										},
-										"required": ["name", "type", "condition"]
+										"$ref": "#/definitions/ManifestOptionData"
 									}
 								]
 							},
 							{
-								"$ref": "#/definitions/ManifestOptionData"
+								"allOf": [
+									{
+										"properties": {
+											"enabledByDefault": {
+												"description": "Whether the option should be preselected upon installing the mod. Preselected options should deliver the \"advertised experience\". Mods with many settings should have the user select their own settings, or provide a conservative default.",
+												"type": "boolean"
+											},
+											"group": {
+												"description": "The name of the group the option is part of. Will appear in the Mod Manager. Should not include a colon.",
+												"type": "string"
+											},
+											"image": {
+												"description": "A thumbnail image for the option. Will appear when the user hovers over the option in the Mod Manager.",
+												"type": "string"
+											},
+											"name": {
+												"description": "The name of the option. Will appear in the Mod Manager. Select option names should not include a colon.",
+												"type": "string"
+											},
+											"tooltip": {
+												"description": "A tooltip for the option. Will appear when the user hovers over the option in the Mod Manager.",
+												"type": "string"
+											},
+											"type": {
+												"description": "The type of the option. Select options appear as radio buttons in the Mod Manager under a heading (the group name).",
+												"enum": [
+													"select"
+												],
+												"type": "string"
+											}
+										},
+										"type": "object"
+									},
+									{
+										"$ref": "#/definitions/ManifestOptionData"
+									}
+								]
+							},
+							{
+								"allOf": [
+									{
+										"properties": {
+											"condition": {
+												"description": "A condition which will enable the option when met. Passed the framework config under the `config` global object. Refer to the Filtrex documentation at https://github.com/m93a/filtrex#expressions for syntax.",
+												"type": "string"
+											},
+											"name": {
+												"description": "The name of the option. Should not be duplicated. Purely for internal reference; conditional options are not shown to the user.",
+												"type": "string"
+											},
+											"type": {
+												"description": "The type of the option. Conditional options are enabled whenever a condition is met and disabled otherwise. They do not appear in the Mod Manager.",
+												"enum": [
+													"conditional"
+												],
+												"type": "string"
+											}
+										},
+										"type": "object"
+									},
+									{
+										"$ref": "#/definitions/ManifestOptionData"
+									}
+								]
 							}
 						]
-					}
+					},
+					"type": "array"
+				},
+				"updateCheck": {
+					"description": "A link to an update JSON (must be HTTPS). Information on this can be found in the Mod Updates documentation page.",
+					"type": "string"
+				},
+				"version": {
+					"description": "The mod's version, using semantic versioning (X.Y.Z) - this means that new features increment the second number, fixes increment the third number and only huge changes that could break compatibility should increment the first number.",
+					"type": "string"
 				}
 			},
-			"required": ["id", "name", "description", "authors", "version", "frameworkVersion"]
+			"type": "object"
 		},
 		{
 			"$ref": "#/definitions/ManifestOptionData"
@@ -111,104 +152,142 @@
 	],
 	"definitions": {
 		"ManifestOptionData": {
-			"type": "object",
 			"properties": {
-				"contentFolders": {
-					"type": "array",
-					"items": {
-						"type": "string"
-					}
-				},
 				"blobsFolders": {
-					"type": "array",
+					"description": "Folders with blobs that will be crawled and automatically deployed.",
 					"items": {
 						"type": "string"
-					}
-				},
-				"localisation": {
-					"type": "object",
-					"properties": {
-						"english": {
-							"type": "object"
-						},
-						"french": {
-							"type": "object"
-						},
-						"italian": {
-							"type": "object"
-						},
-						"german": {
-							"type": "object"
-						},
-						"spanish": {
-							"type": "object"
-						},
-						"russian": {
-							"type": "object"
-						},
-						"chineseSimplified": {
-							"type": "object"
-						},
-						"chineseTraditional": {
-							"type": "object"
-						},
-						"japanese": {
-							"type": "object"
-						}
 					},
-					"required": ["english", "french", "italian", "german", "spanish", "russian", "chineseSimplified", "chineseTraditional", "japanese"]
+					"type": "array"
 				},
-				"localisationOverrides": {
-					"type": "object",
-					"patternProperties": {
-						"^.*$": {
-							"type": "object",
-							"properties": {
-								"english": {
-									"type": "object"
-								},
-								"french": {
-									"type": "object"
-								},
-								"italian": {
-									"type": "object"
-								},
-								"german": {
-									"type": "object"
-								},
-								"spanish": {
-									"type": "object"
-								},
-								"russian": {
-									"type": "object"
-								},
-								"chineseSimplified": {
-									"type": "object"
-								},
-								"chineseTraditional": {
-									"type": "object"
-								},
-								"japanese": {
-									"type": "object"
-								}
-							},
-							"required": ["english", "french", "italian", "german", "spanish", "russian", "chineseSimplified", "chineseTraditional", "japanese"]
-						}
-					}
+				"contentFolders": {
+					"description": "Folders with content files that will be crawled and automatically deployed.",
+					"items": {
+						"type": "string"
+					},
+					"type": "array"
 				},
-				"localisedLines": {
-					"type": "object"
-				},
-				"packagedefinition": {
-					"type": "array",
+				"dependencies": {
+					"description": "RuntimeIDs that will be ported to chunk0 or to a provided chunk.",
 					"items": {
 						"anyOf": [
 							{
-								"type": "object",
 								"properties": {
-									"type": {
+									"portFromChunk1": {
+										"type": "boolean"
+									},
+									"runtimeID": {
 										"type": "string"
 									},
+									"toChunk": {
+										"type": "number"
+									}
+								},
+								"type": "object"
+							},
+							{
+								"type": "string"
+							}
+						]
+					},
+					"type": "array"
+				},
+				"incompatibilities": {
+					"description": "Mod IDs (possibly accompanied by version ranges) that this mod will not function with.\nClients with these mods enabled will be prevented from using this mod.",
+					"items": {
+						"anyOf": [
+							{
+								"items": [
+									{
+										"type": "string"
+									},
+									{
+										"type": "string"
+									}
+								],
+								"maxItems": 2,
+								"minItems": 2,
+								"type": "array"
+							},
+							{
+								"type": "string"
+							}
+						]
+					},
+					"type": "array"
+				},
+				"loadAfter": {
+					"description": "Mod IDs (possibly accompanied by version ranges) this mod should load after.\nUsed in automatic sorting by the Mod Manager GUI.",
+					"items": {
+						"anyOf": [
+							{
+								"items": [
+									{
+										"type": "string"
+									},
+									{
+										"type": "string"
+									}
+								],
+								"maxItems": 2,
+								"minItems": 2,
+								"type": "array"
+							},
+							{
+								"type": "string"
+							}
+						]
+					},
+					"type": "array"
+				},
+				"loadBefore": {
+					"description": "Mod IDs (possibly accompanied by version ranges) this mod should load before.\nUsed in automatic sorting by the Mod Manager GUI.",
+					"items": {
+						"anyOf": [
+							{
+								"items": [
+									{
+										"type": "string"
+									},
+									{
+										"type": "string"
+									}
+								],
+								"maxItems": 2,
+								"minItems": 2,
+								"type": "array"
+							},
+							{
+								"type": "string"
+							}
+						]
+					},
+					"type": "array"
+				},
+				"localisation": {
+					"$ref": "#/definitions/{english:{[k:string]:string;};french:{[k:string]:string;};italian:{[k:string]:string;};german:{[k:string]:string;};spanish:{[k:string]:string;};russian:{[k:string]:string;};chineseSimplified:{[k:string]:string;};chineseTraditional:{[k:string]:string;};japanese:{[k:string]:string;};}",
+					"description": "Localisation for each supported language."
+				},
+				"localisationOverrides": {
+					"additionalProperties": {
+						"$ref": "#/definitions/{english:{[k:string]:string;};french:{[k:string]:string;};italian:{[k:string]:string;};german:{[k:string]:string;};spanish:{[k:string]:string;};russian:{[k:string]:string;};chineseSimplified:{[k:string]:string;};chineseTraditional:{[k:string]:string;};japanese:{[k:string]:string;};}_1"
+					},
+					"description": "Overridden localisation from the game files.",
+					"type": "object"
+				},
+				"localisedLines": {
+					"additionalProperties": {
+						"type": "string"
+					},
+					"description": "LINE files to create from localisation IDs.",
+					"type": "object"
+				},
+				"packagedefinition": {
+					"description": "Partitions and paths to add to packagedefinition.\nCustom chunks (partitions) are supported but discouraged; their support is very minimal and will cause compatibility problems",
+					"items": {
+						"anyOf": [
+							{
+								"properties": {
 									"name": {
 										"type": "string"
 									},
@@ -217,87 +296,212 @@
 									},
 									"partitionType": {
 										"type": "string"
+									},
+									"type": {
+										"enum": [
+											"partition"
+										],
+										"type": "string"
 									}
 								},
-								"required": ["type", "name", "parent", "partitionType"]
+								"type": "object"
 							},
 							{
-								"type": "object",
 								"properties": {
-									"type": {
-										"type": "string"
-									},
 									"partition": {
+										"description": "The partition to add the entity/scene under.",
 										"type": "string"
 									},
 									"path": {
 										"type": "string"
+									},
+									"type": {
+										"enum": [
+											"entity"
+										],
+										"type": "string"
 									}
 								},
-								"required": ["type", "partition", "path"]
+								"type": "object"
 							}
 						]
-					}
+					},
+					"type": "array"
 				},
-				"thumbs": {
-					"type": "array",
-					"items": {
-						"type": "string"
-					}
-				},
-				"dependencies": {
-					"type": "array",
+				"requirements": {
+					"description": "Mod IDs (possibly accompanied by version ranges) that this mod depends on to function.\nClients without these mods enabled will be prevented from using this mod.",
 					"items": {
 						"anyOf": [
 							{
-								"type": "string"
-							},
-							{
-								"type": "object",
-								"properties": {
-									"runtimeID": {
+								"items": [
+									{
 										"type": "string"
 									},
-									"toChunk": {
-										"type": "number"
+									{
+										"type": "string"
 									}
-								},
-								"required": ["runtimeID", "toChunk"]
+								],
+								"maxItems": 2,
+								"minItems": 2,
+								"type": "array"
+							},
+							{
+								"type": "string"
 							}
 						]
-					}
-				},
-				"supportedPlatforms": {
-					"type": "array",
-					"items": {
-						"type": "string"
-					}
-				},
-				"requirements": {
-					"type": "array",
-					"items": {
-						"type": "string"
-					}
-				},
-				"loadBefore": {
-					"type": "array",
-					"items": {
-						"type": "string"
-					}
-				},
-				"loadAfter": {
-					"type": "array",
-					"items": {
-						"type": "string"
-					}
+					},
+					"type": "array"
 				},
 				"scripts": {
-					"type": "array",
+					"description": "Paths to TypeScript files that can alter deployment of the mod.\nThe first item is considered to be the entry point; it must export the necessary functions.\nAny additional files are transpiled but not used directly; they can be imported from the entry point.",
 					"items": {
 						"type": "string"
-					}
+					},
+					"type": "array"
+				},
+				"supportedPlatforms": {
+					"description": "Platforms that this mod supports.\nAll other platforms will be prevented from using this mod.\nUse this when a mod uses features that only some platforms support, such as Ghost Mode and Steam.",
+					"items": {
+						"$ref": "#/definitions/Platform"
+					},
+					"type": "array"
+				},
+				"thumbs": {
+					"description": "Commands to add to thumbs.dat after [Hitman5].",
+					"items": {
+						"type": "string"
+					},
+					"type": "array"
 				}
-			}
+			},
+			"type": "object"
+		},
+		"Platform": {
+			"enum": [
+				"epic",
+				"microsoft",
+				"steam"
+			],
+			"type": "string"
+		},
+		"{english:{[k:string]:string;};french:{[k:string]:string;};italian:{[k:string]:string;};german:{[k:string]:string;};spanish:{[k:string]:string;};russian:{[k:string]:string;};chineseSimplified:{[k:string]:string;};chineseTraditional:{[k:string]:string;};japanese:{[k:string]:string;};}": {
+			"properties": {
+				"chineseSimplified": {
+					"additionalProperties": {
+						"type": "string"
+					},
+					"type": "object"
+				},
+				"chineseTraditional": {
+					"additionalProperties": {
+						"type": "string"
+					},
+					"type": "object"
+				},
+				"english": {
+					"additionalProperties": {
+						"type": "string"
+					},
+					"type": "object"
+				},
+				"french": {
+					"additionalProperties": {
+						"type": "string"
+					},
+					"type": "object"
+				},
+				"german": {
+					"additionalProperties": {
+						"type": "string"
+					},
+					"type": "object"
+				},
+				"italian": {
+					"additionalProperties": {
+						"type": "string"
+					},
+					"type": "object"
+				},
+				"japanese": {
+					"additionalProperties": {
+						"type": "string"
+					},
+					"type": "object"
+				},
+				"russian": {
+					"additionalProperties": {
+						"type": "string"
+					},
+					"type": "object"
+				},
+				"spanish": {
+					"additionalProperties": {
+						"type": "string"
+					},
+					"type": "object"
+				}
+			},
+			"type": "object"
+		},
+		"{english:{[k:string]:string;};french:{[k:string]:string;};italian:{[k:string]:string;};german:{[k:string]:string;};spanish:{[k:string]:string;};russian:{[k:string]:string;};chineseSimplified:{[k:string]:string;};chineseTraditional:{[k:string]:string;};japanese:{[k:string]:string;};}_1": {
+			"properties": {
+				"chineseSimplified": {
+					"additionalProperties": {
+						"type": "string"
+					},
+					"type": "object"
+				},
+				"chineseTraditional": {
+					"additionalProperties": {
+						"type": "string"
+					},
+					"type": "object"
+				},
+				"english": {
+					"additionalProperties": {
+						"type": "string"
+					},
+					"type": "object"
+				},
+				"french": {
+					"additionalProperties": {
+						"type": "string"
+					},
+					"type": "object"
+				},
+				"german": {
+					"additionalProperties": {
+						"type": "string"
+					},
+					"type": "object"
+				},
+				"italian": {
+					"additionalProperties": {
+						"type": "string"
+					},
+					"type": "object"
+				},
+				"japanese": {
+					"additionalProperties": {
+						"type": "string"
+					},
+					"type": "object"
+				},
+				"russian": {
+					"additionalProperties": {
+						"type": "string"
+					},
+					"type": "object"
+				},
+				"spanish": {
+					"additionalProperties": {
+						"type": "string"
+					},
+					"type": "object"
+				}
+			},
+			"type": "object"
 		}
 	}
 }
+

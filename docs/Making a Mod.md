@@ -20,6 +20,10 @@ Then, put a file called `manifest.json` in it. Paste the following into it:
 
 ```jsonc
 {
+	// This $schema key isn't necessary, but having it will allow you to automatically see all the available options
+	// in VS Code (or any other competent editor, sorry Notepad++) and see documentation for them just by
+	// hovering, so you don't need to refer to this page too often.
+	"$schema": "https://raw.githubusercontent.com/atampy25/simple-mod-framework/main/Mod%20Manager/src/lib/manifest-schema.json",
   "version": "1.0.0",
   "id": "YourNameOrUserName.FirstMod",
   "name": "Your First Mod",

@@ -27,39 +27,72 @@ export enum OptionType {
 }
 
 export type Manifest = {
+	/** An ID for the mod. Should follow capitalised reverse URI style (AuthorName.ModName). Don't include special characters; numbers, underscores and full stops are OK. */
 	id: ModID
 
+	/** The name of the mod. */
 	name: string
+
+	/** A description of the mod. */
 	description: string
+
+	/** A list of the mod's authors. */
 	authors: string[]
 
+	/** The mod's version, using semantic versioning (X.Y.Z) - this means that new features increment the second number, fixes increment the third number and only huge changes that could break compatibility should increment the first number.  */
 	version: string
+
+	/** The version of the framework this mod has been tested against/designed for. */
 	frameworkVersion: string
+
+	/** A link to an update JSON (must be HTTPS). Information on this can be found in the Mod Updates documentation page. */
 	updateCheck?: string
 
+	/** Settings for the mod that can be enabled and disabled in the Mod Manager. Also, conditional options allow for certain elements of the mod to be automatically enabled/disabled based on, for example, other mods being installed. */
 	options?: ((
 		| {
+				/** The name of the option. Should not be duplicated. Will appear in the Mod Manager. */
 				name: string
+
+				/** The type of the option. Checkbox options appear as checkboxes in the Mod Manager. */
 				type: OptionType.checkbox
 
+				/** Whether the option should be preselected upon installing the mod. Preselected options should deliver the "advertised experience". Mods with many settings should have the user select their own settings, or provide a conservative default. */
 				enabledByDefault?: boolean
 
+				/** A tooltip for the option. Will appear when the user hovers over the option in the Mod Manager. */
 				tooltip?: string
+
+				/** A thumbnail image for the option. Will appear when the user hovers over the option in the Mod Manager. */
 				image?: string
 		  }
 		| {
+				/** The name of the option. Will appear in the Mod Manager. Select option names should not include a colon. */
 				name: string
+
+				/** The type of the option. Select options appear as radio buttons in the Mod Manager under a heading (the group name). */
 				type: OptionType.select
 
+				/** The name of the group the option is part of. Will appear in the Mod Manager. Should not include a colon. */
 				group: string
+
+				/** Whether the option should be preselected upon installing the mod. Preselected options should deliver the "advertised experience". Mods with many settings should have the user select their own settings, or provide a conservative default. */
 				enabledByDefault?: boolean
 
+				/** A tooltip for the option. Will appear when the user hovers over the option in the Mod Manager. */
 				tooltip?: string
+
+				/** A thumbnail image for the option. Will appear when the user hovers over the option in the Mod Manager. */
 				image?: string
 		  }
 		| {
+			/** The name of the option. Should not be duplicated. Purely for internal reference; conditional options are not shown to the user. */
 				name: string
+
+				/** The type of the option. Conditional options are enabled whenever a condition is met and disabled otherwise. They do not appear in the Mod Manager. */
 				type: OptionType.conditional
+
+				/** A condition which will enable the option when met. Passed the framework config under the `config` global object. Refer to the Filtrex documentation at https://github.com/m93a/filtrex#expressions for syntax. */
 				condition: string
 		  }
 	) &
@@ -105,6 +138,7 @@ export interface ManifestOptionData {
 		  }
 		| {
 				type: "entity"
+				/** The partition to add the entity/scene under. */
 				partition: string
 				path: string
 		  }
@@ -125,7 +159,7 @@ export interface ManifestOptionData {
 
 	/** Platforms that this mod supports.
 	 * All other platforms will be prevented from using this mod.
-	 * Only use this when a mod uses features that only one platform supports, such as Ghost Mode and Steam. */
+	 * Use this when a mod uses features that only some platforms support, such as Ghost Mode and Steam. */
 	supportedPlatforms?: Platform[]
 
 	/** Mod IDs (possibly accompanied by version ranges) that this mod depends on to function.

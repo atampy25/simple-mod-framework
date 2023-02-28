@@ -2,6 +2,11 @@ Each mod contains a manifest. Manifests have the following format:
 
 ```jsonc
 {
+	// This key isn't necessary, but having it will allow you to automatically see all the available options
+	// in VS Code (or any other competent editor, sorry Notepad++) and see documentation for them just by
+	// hovering, so you don't need to refer to this page too often.
+	"$schema": "https://raw.githubusercontent.com/atampy25/simple-mod-framework/main/Mod%20Manager/src/lib/manifest-schema.json",
+
 	/* -------------------------------------- Required data -------------------------------------- */
 	"id": "Atampy26.ExampleMod", // Unique ID; recommended to use reverse URI style (Author.Mod)
 	"name": "Example Mod",
@@ -11,7 +16,7 @@ Each mod contains a manifest. Manifests have the following format:
 	"frameworkVersion": "2.15.1", // The framework version the mod is designed for
 
 	/* -------------------------------------- Optional data -------------------------------------- */
-	"updateCheck": "https://hitman-resources.netlify.app/framework/updates/exampleMod.json", // A JSON (see Mod Updates) that will be checked for updates (MUST BE HTTPS) - contact Atampy26 for hosting on hitman-resources.netlify.app
+	"updateCheck": "https://hitman-resources.netlify.app/framework/updates/exampleMod.json", // A JSON (see Mod Updates) that will be checked for updates (MUST BE HTTPS)
 
 	/* ------- This data can be used in mod options as well as on the top level (optional) ------- */
 	"contentFolders": ["content"], // Folders next to the manifest to use for the mod content
