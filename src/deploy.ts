@@ -716,6 +716,8 @@ export default async function deploy(
 
 							fs.removeSync(path.join(process.cwd(), "qn-update"))
 
+							entityContent = LosslessJSON.parse(fs.readFileSync(content.path, "utf8"))
+
 							await logger.warn(
 								`Optimised an entity.json file from ${instruction.id}. This should improve the speed of deploys from now on. Consider contacting the mod developer to run this process on their end rather than the user's computer.`
 							)
@@ -758,6 +760,8 @@ export default async function deploy(
 							)
 
 							fs.removeSync(path.join(process.cwd(), "qn-update"))
+
+							entityContent = LosslessJSON.parse(fs.readFileSync(content.path, "utf8"))
 
 							await logger.warn(
 								`Optimised an entity.json file from ${instruction.id} to use the latest QuickEntity version. Consider contacting the mod developer to run this process on their end rather than the user's computer.`
@@ -951,6 +955,8 @@ export default async function deploy(
 								path.join(process.cwd(), "qn-update", "PatchedQuickEntityJSON-qn31.json"),
 								content.path
 							)
+
+							fs.removeSync(path.join(process.cwd(), "qn-update"))
 
 							entityContent = LosslessJSON.parse(fs.readFileSync(content.path, "utf8"))
 							entityContent.path = contentIdentifier
