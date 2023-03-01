@@ -83,12 +83,6 @@ core.config.platform = fs.existsSync(path.join(core.config.retailPath, "Runtime"
 	? gameHashes[md5File.sync(path.join(core.config.retailPath, "..", "MicrosoftGame.Config"))]
 	: gameHashes[md5File.sync(path.join(core.config.runtimePath, "..", "Retail", "HITMAN3.exe"))] // Platform detection
 
-if (typeof core.config.platform === "undefined") {
-	void core.logger.error(
-		"Could not detect a workable game copy! If the game has recently updated, the framework will also need an update. If you're using a cracked version, that sounds like a you problem."
-	)
-}
-
 let sentryTransaction = {
 	startChild(...args) {
 		return {
@@ -139,6 +133,12 @@ process.on("SIGINT", () => void core.logger.error("Received SIGINT signal"))
 process.on("SIGTERM", () => void core.logger.error("Received SIGTERM signal"))
 
 async function doTheThing() {
+	if (typeof core.config.platform === "undefined") {
+		await core.logger.error(
+			"Could not detect a workable game copy! If the game has recently updated, the framework will also need an update. If you're using a cracked version, that sounds like a you problem."
+		)
+	}
+
 	const startedDate = DateTime.now()
 
 	if (core.config.reportErrors) {
