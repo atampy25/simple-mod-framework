@@ -84,7 +84,7 @@
 		window.fs
 			.readdirSync(window.path.join("..", "Mods"))
 			.map((a) => window.path.resolve(window.path.join("..", "Mods", a)))
-			.some((a) => window.fs.statSync(a).isFile())
+			.some((a) => window.isFile(a))
 	) {
 		fileInModFolder = true
 	}

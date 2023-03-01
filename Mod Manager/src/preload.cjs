@@ -1,6 +1,7 @@
 const { contextBridge, ipcRenderer, shell } = require("electron")
 
 contextBridge.exposeInMainWorld("fs", require("fs-extra"))
+contextBridge.exposeInMainWorld("isFile", path => require("fs-extra").statSync(path).isFile())
 contextBridge.exposeInMainWorld("originalFs", require("original-fs"))
 contextBridge.exposeInMainWorld("path", require("path"))
 contextBridge.exposeInMainWorld("klaw", require("klaw-sync"))

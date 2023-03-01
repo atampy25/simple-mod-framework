@@ -15,6 +15,7 @@ declare global {
 	interface Window {
 		ipc: any
 		fs: typeof fs
+		isFile: (path: string) => boolean,
 		originalFs: typeof originalFs
 		path: typeof path
 		klaw: typeof klaw
