@@ -10,7 +10,7 @@ import merge from "lodash.mergewith"
 import semver from "semver"
 import { cloneDeep } from "lodash"
 
-export const FrameworkVersion = "2.16.1"
+export const FrameworkVersion = "2.16.2"
 
 const validateManifest = new Ajv().compile(manifestSchema)
 
