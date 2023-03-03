@@ -851,8 +851,8 @@ export default async function deploy(
 						if (content.source === "disk") {
 							await logger.info(`Optimising entity.patch.json file ${contentIdentifier}`)
 
-							const tempRPKG = await getRPKGOfHash(entityContent.tempHash)
-							const tbluRPKG = await getRPKGOfHash(entityContent.tbluHash)
+							const tempRPKG = await rpkgInstance.getRPKGOfHash(entityContent.tempHash)
+							const tbluRPKG = await rpkgInstance.getRPKGOfHash(entityContent.tbluHash)
 
 							fs.ensureDirSync("qn-update")
 
