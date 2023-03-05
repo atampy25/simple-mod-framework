@@ -42,7 +42,9 @@ export function getConfig() {
 						{
 							modOptions: {
 								[mod]: [
-									...manifest.options.filter((a) => (a.type === "checkbox" || a.type === "select" ? a.enabledByDefault : false)).map((a) => (a.type === "select" ? `${a.group}:${a.name}` : a.name))
+									...manifest.options
+										.filter((a) => (a.type === "checkbox" || a.type === "select" ? a.enabledByDefault : false))
+										.map((a) => (a.type === "select" ? `${a.group}:${a.name}` : a.name))
 								]
 							}
 						},
@@ -91,7 +93,10 @@ export function getConfig() {
 					) {
 						if (
 							!manifest.options
-								.find((a) => (a.type === "checkbox" && a.name === config.modOptions[manifest.id][i]) || (a.type === "select" && `${a.group}:${a.name}` === config.modOptions[manifest.id][i]))!
+								.find(
+									(a) =>
+										(a.type === "checkbox" && a.name === config.modOptions[manifest.id][i]) || (a.type === "select" && `${a.group}:${a.name}` === config.modOptions[manifest.id][i])
+								)!
 								.requirements!.every((a) => config.loadOrder.includes(a))
 						) {
 							config.modOptions[manifest.id].splice(i, 1)
@@ -136,124 +141,164 @@ export function mergeConfig(configToMerge: Partial<Config>) {
 export function sortMods() {
 	const config = getConfig()
 
-	// "You are without a doubt the worst sorting algorithm I've ever heard of."
-	// "But you have heard of me."
-	let doAnotherCycle = true
-	let cycle = 0
-	while (doAnotherCycle && cycle < 100) {
-		cycle++
-		doAnotherCycle = false
+	config.loadOrder = config.loadOrder.sort((a, b) => {
+		// RPKG mod sort order does not matter; they're always deployed before framework mods anyway
+		if (!(modIsFramework(a) && modIsFramework(b))) {
+			return 0
+		}
 
-		console.log(`Cycle ${cycle}:`)
+		const manifestA = getManifestFromModID(a)
+		const manifestB = getManifestFromModID(b)
 
-		config.loadOrder = ["dummy-1", ...config.loadOrder.filter((a) => a !== "dummy-1" && a !== "dummy-2"), "dummy-2"]
-		let modsToSort = JSON.parse(JSON.stringify(config.loadOrder)).filter((a) => a !== "dummy-1" && a !== "dummy-2")
+		const modALoadBefore: (string | [string, string])[] = []
 
-		modSorting: while (modsToSort.length) {
-			for (const mod of modsToSort) {
-				if (modIsFramework(mod)) {
-					const modManifest = cloneDeep(getManifestFromModID(mod))
+		if (manifestA.loadBefore) {
+			modALoadBefore.push(...manifestA.loadBefore)
+		}
 
-					modManifest.options || (modManifest.options = [])
-
-					modManifest.loadBefore || (modManifest.loadBefore = [])
-					modManifest.loadBefore.push(
-						modManifest.options
-							.filter(
-								(a) =>
-									config.modOptions[modManifest.id].includes(a.name) ||
-									config.modOptions[modManifest.id].includes(`${a.group}:${a.name}`) ||
-									(a.type === OptionType.conditional &&
-										compileExpression(a.condition, { customProp: useDotAccessOperatorAndOptionalChaining })({
-											config
-										}))
-							)
-							.map((a) => a.loadBefore)
-							.filter((a) => a)
-							.flat(1)
+		if (manifestA.options) {
+			modALoadBefore.push(
+				...(manifestA.options
+					.filter(
+						(x) =>
+							config.modOptions[a].includes(x.name) ||
+							config.modOptions[a].includes(`${x.group}:${x.name}`) ||
+							(x.type === OptionType.conditional &&
+								compileExpression(x.condition, { customProp: useDotAccessOperatorAndOptionalChaining })({
+									config
+								}))
 					)
+					.map((a) => a.loadBefore)
+					.filter((a) => a)
+					.flat(1) as (string | [string, string])[])
+			)
+		}
 
-					modManifest.loadAfter || (modManifest.loadAfter = [])
-					modManifest.loadAfter.push(
-						modManifest.options
-							.filter(
-								(a) =>
-									config.modOptions[modManifest.id].includes(a.name) ||
-									config.modOptions[modManifest.id].includes(`${a.group}:${a.name}`) ||
-									(a.type === OptionType.conditional &&
-										compileExpression(a.condition, { customProp: useDotAccessOperatorAndOptionalChaining })({
-											config
-										}))
-							)
-							.map((a) => a.loadAfter)
-							.filter((a) => a)
-							.flat(1)
+		const modBLoadBefore: (string | [string, string])[] = []
+
+		if (manifestB.loadBefore) {
+			modBLoadBefore.push(...manifestB.loadBefore)
+		}
+
+		if (manifestB.options) {
+			modBLoadBefore.push(
+				...(manifestB.options
+					.filter(
+						(x) =>
+							config.modOptions[b].includes(x.name) ||
+							config.modOptions[b].includes(`${x.group}:${x.name}`) ||
+							(x.type === OptionType.conditional &&
+								compileExpression(x.condition, { customProp: useDotAccessOperatorAndOptionalChaining })({
+									config
+								}))
 					)
+					.map((a) => a.loadBefore)
+					.filter((a) => a!)
+					.flat(1) as (string | [string, string])[])
+			)
+		}
 
-					for (let modToLoadBefore of modManifest.loadBefore) {
-						if (typeof modToLoadBefore[0] === "string") {
-							// has version requirement
-							if (config.loadOrder.includes(modToLoadBefore[0]) && semver.satisfies(getManifestFromModID(modToLoadBefore[0]).version, modToLoadBefore[1])) {
-								// version requirement satisfied
-								modToLoadBefore = modToLoadBefore[0] // load before that mod
-							} else {
-								continue // do not consider this requirement
-							}
-						}
+		const modALoadAfter: (string | [string, string])[] = []
 
-						// Move the mod to just before where the other mod is
+		if (manifestA.loadAfter) {
+			modALoadAfter.push(...manifestA.loadAfter)
+		}
 
-						if (config.loadOrder.includes(modToLoadBefore) && config.loadOrder.indexOf(modToLoadBefore) < config.loadOrder.indexOf(mod)) {
-							if (config.loadOrder.indexOf(modToLoadBefore) - 1 === 0) {
-								config.loadOrder = config.loadOrder.filter((a) => a !== mod)
-								config.loadOrder.unshift(mod)
-							} else {
-								config.loadOrder.splice(config.loadOrder.indexOf(modToLoadBefore) - 1, 0, config.loadOrder.splice(config.loadOrder.indexOf(mod), 1)[0])
-							}
-							console.log(`Moved ${mod} to before ${modToLoadBefore}`, config.loadOrder)
-							modsToSort = modsToSort.filter((a) => a !== mod)
-							doAnotherCycle = true
-							continue modSorting
-						}
-					}
+		if (manifestA.options) {
+			modALoadAfter.push(
+				...(manifestA.options
+					.filter(
+						(x) =>
+							config.modOptions[a].includes(x.name) ||
+							config.modOptions[a].includes(`${x.group}:${x.name}`) ||
+							(x.type === OptionType.conditional &&
+								compileExpression(x.condition, { customProp: useDotAccessOperatorAndOptionalChaining })({
+									config
+								}))
+					)
+					.map((a) => a.loadAfter)
+					.filter((a) => a)
+					.flat(1) as (string | [string, string])[])
+			)
+		}
 
-					for (let modToLoadAfter of modManifest.loadAfter) {
-						if (typeof modToLoadAfter[0] === "string") {
-							// has version requirement
-							if (config.loadOrder.includes(modToLoadAfter[0]) && semver.satisfies(getManifestFromModID(modToLoadAfter[0]).version, modToLoadAfter[1])) {
-								// version requirement satisfied
-								modToLoadAfter = modToLoadAfter[0] // load after that mod
-							} else {
-								continue // do not consider this requirement
-							}
-						}
+		const modBLoadAfter: (string | [string, string])[] = []
 
-						// Move the mod to just after where the other mod is
+		if (manifestB.loadAfter) {
+			modBLoadAfter.push(...manifestB.loadAfter)
+		}
 
-						if (config.loadOrder.includes(modToLoadAfter) && config.loadOrder.indexOf(modToLoadAfter) > config.loadOrder.indexOf(mod)) {
-							config.loadOrder.splice(config.loadOrder.indexOf(modToLoadAfter) + 1, 0, config.loadOrder.splice(config.loadOrder.indexOf(mod), 1)[0])
-							console.log(`Moved ${mod} to after ${modToLoadAfter}`, config.loadOrder)
-							modsToSort = modsToSort.filter((a) => a !== mod)
-							doAnotherCycle = true
-							continue modSorting
-						}
-					}
+		if (manifestB.options) {
+			modBLoadAfter.push(
+				...(manifestB.options
+					.filter(
+						(x) =>
+							config.modOptions[b].includes(x.name) ||
+							config.modOptions[b].includes(`${x.group}:${x.name}`) ||
+							(x.type === OptionType.conditional &&
+								compileExpression(x.condition, { customProp: useDotAccessOperatorAndOptionalChaining })({
+									config
+								}))
+					)
+					.map((a) => a.loadAfter)
+					.filter((a) => a!)
+					.flat(1) as (string | [string, string])[])
+			)
+		}
+
+		for (const loadBefore of modALoadBefore) {
+			if (typeof loadBefore === "string") {
+				if (loadBefore === b) {
+					return -1
 				}
-
-				modsToSort = modsToSort.filter((a) => a !== mod)
-				continue modSorting
+			} else if (loadBefore[0] === b) {
+				if (semver.satisfies(manifestB.version, loadBefore[1])) {
+					return -1
+				}
 			}
 		}
-	}
 
-	config.loadOrder = config.loadOrder.filter((a) => a !== "dummy-1" && a !== "dummy-2")
+		for (const loadAfter of modALoadAfter) {
+			if (typeof loadAfter === "string") {
+				if (loadAfter === b) {
+					return 1
+				}
+			} else if (loadAfter[0] === b) {
+				if (semver.satisfies(manifestB.version, loadAfter[1])) {
+					return 1
+				}
+			}
+		}
 
-	if (cycle < 100) {
-		setConfig(config)
-		return true
-	} else {
-		return false
-	}
+		for (const loadBefore of modBLoadBefore) {
+			if (typeof loadBefore === "string") {
+				if (loadBefore === a) {
+					return 1
+				}
+			} else if (loadBefore[0] === a) {
+				if (semver.satisfies(manifestB.version, loadBefore[1])) {
+					return 1
+				}
+			}
+		}
+
+		for (const loadAfter of modBLoadAfter) {
+			if (typeof loadAfter === "string") {
+				if (loadAfter === a) {
+					return -1
+				}
+			} else if (loadAfter[0] === a) {
+				if (semver.satisfies(manifestB.version, loadAfter[1])) {
+					return -1
+				}
+			}
+		}
+
+		return 0
+	})
+
+	setConfig(config)
+	return true
 }
 
 export function alterModManifest(modID: string, data: Partial<Manifest>) {
