@@ -201,9 +201,9 @@
 
 		window.fs.emptyDirSync("./staging")
 
-		window.fs.writeFileSync("./temp.zip", chunksAll)
+		window.fs.writeFileSync("./tempArchive", chunksAll)
 
-		new window.AdmZip("./temp.zip", { fs: window.originalFs }).extractAllTo("./staging")
+		window.child_process.execSync(`"..\\Third-Party\\7z.exe" x "./tempArchive" -aoa -y -o"./staging"`)
 
 		window.fs.removeSync("./staging/Mods")
 		window.fs.removeSync("./staging/cleanPackageDefinition.txt")
@@ -232,7 +232,7 @@
 		window.originalFs.copyFileSync("./temp.asar", "./resources/app.asar")
 
 		window.fs.removeSync("./staging")
-		window.fs.removeSync("./temp.zip")
+		window.fs.removeSync("./tempArchive")
 		window.fs.removeSync("./temp.asar")
 
 		updatingFramework = false
@@ -339,15 +339,20 @@
 
 		window.fs.emptyDirSync("./staging")
 
-		window.fs.writeFileSync("./temp.zip", chunksAll)
+		window.fs.writeFileSync("./tempArchive", chunksAll)
 
-		new window.AdmZip("./temp.zip").extractAllTo("./staging")
+		window.child_process.execSync(`"..\\Third-Party\\7z.exe" x "./tempArchive" -aoa -y -o"./staging"`)
+
+		if (window.klaw("./staging", { depthLimit: 0, nodir: true }).length) {
+			window.alert("Error: mod update ZIP has files in the root!")
+			throw new Error("Mod update ZIP has files in the root!")
+		}
 
 		window.fs.removeSync(getModFolder(updatingMod!.id))
 
 		window.fs.copySync("./staging", "../Mods")
 		window.fs.removeSync("./staging")
-		window.fs.removeSync("./temp.zip")
+		window.fs.removeSync("./tempArchive")
 
 		updatingMod = null
 

@@ -86,8 +86,8 @@ app.on("window-all-closed", () => {
 })
 
 ipcMain.on("deploy", () => {
+	//                                                                                    just to make sure
 	let deployProcess = require("child_process").spawn("Deploy.exe --useConsoleLogging", ["--useConsoleLogging"], {
-		// just to make sure
 		shell: true,
 		cwd: ".."
 	})
@@ -117,7 +117,7 @@ ipcMain.on("modFileOpenDialog", () => {
 		dialog.showOpenDialogSync({
 			title: "Add a mod file",
 			buttonLabel: "Select",
-			filters: [{ name: "Mod Files", extensions: ["zip", "rpkg"] }],
+			filters: [{ name: "Mod Files", extensions: ["zip", "7z", "rar", "rpkg"] }],
 			properties: ["openFile", "dontAddToRecent"]
 		})
 	)

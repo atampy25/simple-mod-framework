@@ -5,7 +5,6 @@ contextBridge.exposeInMainWorld("isFile", path => require("fs-extra").statSync(p
 contextBridge.exposeInMainWorld("originalFs", require("original-fs"))
 contextBridge.exposeInMainWorld("path", require("path"))
 contextBridge.exposeInMainWorld("klaw", require("klaw-sync"))
-contextBridge.exposeInMainWorld("AdmZip", require("adm-zip"))
 contextBridge.exposeInMainWorld("Buffer", {
 	isBuffer: Buffer.isBuffer,
 	from: Buffer.from
@@ -26,3 +25,4 @@ contextBridge.exposeInMainWorld("ipc", {
 })
 contextBridge.exposeInMainWorld("openExternalLink", shell.openExternal)
 contextBridge.exposeInMainWorld("sanitizeHtml", require("sanitize-html"))
+contextBridge.exposeInMainWorld("child_process", require("child_process"))

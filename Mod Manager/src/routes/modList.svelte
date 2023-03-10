@@ -99,7 +99,7 @@
 			} else {
 				window.fs.emptyDirSync("./staging")
 
-				new window.AdmZip(modFilePath).extractAllTo("./staging")
+				window.child_process.execSync(`"..\\Third-Party\\7z.exe" x "${modFilePath}" -aoa -y -o"./staging"`)
 
 				if (window.fs.readdirSync("./staging").length == 1 && window.fs.readdirSync("./staging").every((a) => a.endsWith(".rpkg"))) {
 					modFilePath = window.path.resolve(window.path.join("./staging", window.fs.readdirSync("./staging")[0]))
@@ -430,7 +430,7 @@
 
 <Modal passiveModal open={frameworkModExtractionInProgress} modalHeading="Installing the mod" preventCloseOnClickOutside>The mod is being installed - please wait.</Modal>
 
-<Modal alert bind:open={invalidFrameworkZipModalOpen} modalHeading="Invalid framework ZIP" primaryButtonText="OK" shouldSubmitOnEnter={false}>
+<Modal alert bind:open={invalidFrameworkZipModalOpen} modalHeading="Invalid framework ZIP" primaryButtonText="OK" shouldSubmitOnEnter={false} on:submit={() => (invalidFrameworkZipModalOpen = false)}>
 	<p>The framework ZIP file contains files in the root directory. Contact the mod author.</p>
 </Modal>
 
