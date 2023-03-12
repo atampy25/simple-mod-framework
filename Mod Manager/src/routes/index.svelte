@@ -351,6 +351,9 @@
 		window.fs.removeSync(getModFolder(updatingMod!.id))
 
 		window.fs.copySync("./staging", "../Mods")
+
+		window.originalFs.writeFileSync(window.path.join("..", "Mods", window.fs.readdirSync("./staging")[0], "manifest.json:SMFExtractionTag"), "Extracted via SMF")
+
 		window.fs.removeSync("./staging")
 		window.fs.removeSync("./tempArchive")
 

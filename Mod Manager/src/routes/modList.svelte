@@ -130,6 +130,8 @@
 					} else {
 						window.fs.copySync("./staging", "../Mods")
 
+						window.originalFs.writeFileSync(window.path.join("..", "Mods", window.fs.readdirSync("./staging")[0], "manifest.json:SMFExtractionTag"), "Extracted via SMF")
+
 						window.fs.removeSync("./staging")
 
 						window.location.reload()
@@ -154,16 +156,26 @@
 		rpkgModExtractionInProgress = false
 	}
 
-	let displayZonedModsDialog = false
-	const zonedMods: string[] = []
+	let displayExtractedModsDialog = false
+	const extractedMods: string[] = []
+
+	// If no mods have the tag (likely updated from older SMF)
+	if (getAllMods().filter((a) => modIsFramework(a)).every((a) => !window.originalFs.existsSync(window.path.join(getModFolder(a), "manifest.json:SMFExtractionTag")))) {
+		for (const mod of getAllMods().filter((a) => modIsFramework(a))) {
+			const modFolder = getModFolder(mod)
+
+			// Assume every mod has been installed correctly
+			window.originalFs.writeFileSync(window.path.join(modFolder, "manifest.json:SMFExtractionTag"), "Extracted via SMF")
+		}
+	}
 
 	for (const mod of getAllMods().filter((a) => modIsFramework(a))) {
 		const modFolder = getModFolder(mod)
 
-		if (window.originalFs.existsSync(window.path.join(modFolder, "manifest.json:Zone.Identifier"))) {
-			zonedMods.push(getManifestFromModID(mod).name)
-			displayZonedModsDialog = true
-			window.originalFs.unlinkSync(window.path.join(modFolder, "manifest.json:Zone.Identifier")) // Will prevent the message from being shown again for the same mod
+		if (!window.originalFs.existsSync(window.path.join(modFolder, "manifest.json:SMFExtractionTag"))) {
+			extractedMods.push(getManifestFromModID(mod).name)
+			displayExtractedModsDialog = true
+			window.originalFs.writeFileSync(window.path.join(modFolder, "manifest.json:SMFExtractionTag"), "Extracted via SMF") // Will prevent the message from being shown again for the same mod
 		}
 	}
 
@@ -445,6 +457,8 @@
 	on:click:button--primary={() => {
 		window.fs.copySync("./staging", "../Mods")
 
+		window.originalFs.writeFileSync(window.path.join("..", "Mods", window.fs.readdirSync("./staging")[0], "manifest.json:SMFExtractionTag"), "Extracted via SMF")
+
 		window.fs.removeSync("./staging")
 
 		window.location.reload()
@@ -459,17 +473,17 @@
 
 <Modal
 	alert
-	bind:open={displayZonedModsDialog}
-	modalHeading="Incorrectly installed mod{zonedMods.length > 1 ? 's' : ''}"
+	bind:open={displayExtractedModsDialog}
+	modalHeading="Incorrectly installed mod{extractedMods.length > 1 ? 's' : ''}"
 	primaryButtonText="OK"
 	shouldSubmitOnEnter={false}
-	on:submit={() => (displayZonedModsDialog = false)}
+	on:submit={() => (displayExtractedModsDialog = false)}
 >
 	<p>
-		The mod{zonedMods.length > 1 ? "s" : ""}
-		{zonedMods.slice(0, -1).length ? zonedMods.slice(0, -1).join(", ") + " and " + zonedMods[zonedMods.length - 1] : zonedMods[0]}
-		{zonedMods.length > 1 ? "were" : "was"} installed by extracting the ZIP file directly to the Mods folder. That's not how you're meant to install mods; doing things this way could pose risks as
-		it bypasses the framework's checks for mod validity and safety. Instead, use the Add a Mod button to add any mods you want. This message won't be shown again for {zonedMods.length > 1
+		The mod{extractedMods.length > 1 ? "s" : ""}
+		{extractedMods.slice(0, -1).length ? extractedMods.slice(0, -1).join(", ") + " and " + extractedMods[extractedMods.length - 1] : extractedMods[0]}
+		{extractedMods.length > 1 ? "were" : "was"} installed by extracting the ZIP file directly to the Mods folder. That's not how you're meant to install mods; doing things this way could pose risks as
+		it bypasses the framework's checks for mod validity and safety. Instead, use the Add a Mod button to add any mods you want. This message won't be shown again for {extractedMods.length > 1
 			? "these mods"
 			: "this mod"}.
 	</p>
