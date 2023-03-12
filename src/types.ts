@@ -369,6 +369,8 @@ export interface Config {
 	reportErrors?: boolean
 	errorReportingID?: string | null
 
+	developerMode: boolean
+
 	loadOrder: string[]
 	modOptions: {
 		[k: string]: string[]

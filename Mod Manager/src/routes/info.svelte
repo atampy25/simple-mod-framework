@@ -33,6 +33,31 @@
 				<Button
 					kind="primary"
 					on:click={() => {
+						if (getConfig().developerMode) {
+							mergeConfig({
+								developerMode: false
+							})
+
+							forceUpdate = Math.random()
+						} else {
+							mergeConfig({
+								developerMode: true
+							})
+
+							forceUpdate = Math.random()
+						}
+					}}
+				>
+					{forceUpdate && getConfig().developerMode ? "Disable" : "Enable"} developer mode
+				</Button>
+			</div>
+		</div>
+		<br />
+		<div in:fade={{ delay: 2000 }}>
+			<div class="flex gap-4 items-center">
+				<Button
+					kind="primary"
+					on:click={() => {
 						if (getConfig().reportErrors) {
 							mergeConfig({
 								reportErrors: false,

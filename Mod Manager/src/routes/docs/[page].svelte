@@ -82,10 +82,10 @@
 
 <style global>
 	.shiki {
-		@apply rounded-md p-4;
+		@apply rounded-md p-4 pt-6;
 	}
 
-	.line:not(:first-child) {
+	.line {
 		@apply block -mt-2;
 	}
 

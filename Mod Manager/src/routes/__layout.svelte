@@ -4,7 +4,8 @@
 	import { onMount } from "svelte"
 
 	import Icon from "svelte-fa"
-	import { faCog, faEdit, faHome, faInfoCircle, faList } from "@fortawesome/free-solid-svg-icons"
+	import { faBook, faCog, faEdit, faHome, faInfoCircle, faList } from "@fortawesome/free-solid-svg-icons"
+	import { getConfig } from "$lib/utils"
 
 	let ready: boolean = false
 	onMount(() => (ready = true))
@@ -22,9 +23,14 @@
 			<a href="/settings" sveltekit:reload class="text-white">
 				<Icon icon={faCog} />
 			</a>
-			<a href="/authoring" sveltekit:reload class="text-white">
-				<Icon icon={faEdit} />
-			</a>
+			{#if getConfig().developerMode}
+				<a href="/authoring" sveltekit:reload class="text-white">
+					<Icon icon={faEdit} />
+				</a>
+				<a href="/docs/Index.md" class="text-white">
+					<Icon icon={faBook} />
+				</a>
+			{/if}
 			<a href="/info" sveltekit:reload class="text-white">
 				<Icon icon={faInfoCircle} />
 			</a>

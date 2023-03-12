@@ -25,6 +25,7 @@
 	let cannotFindGameConfig = false
 	let cannotFindHITMAN3 = false
 	let errorReportingPrompt = false
+	let developerModePrompt = false
 
 	let invalidModOpen = false
 	let invalidModText = ""
@@ -77,6 +78,10 @@
 	if (!cannotFindConfig && !cannotFindRuntime && !cannotFindRetail && !cannotFindGameConfig && !cannotFindHITMAN3) {
 		if (typeof getConfig().reportErrors == "undefined") {
 			errorReportingPrompt = true
+		}
+
+		if (typeof getConfig().developerMode == "undefined") {
+			developerModePrompt = true
 		}
 	}
 
@@ -389,10 +394,12 @@
 		<div class="inline" in:fade={{ delay: 800 }}>
 			<Button kind="primary" icon={Settings} href="/settings" sveltekit:reload>Configure mods</Button>
 		</div>
-		<div class="inline" in:fade={{ delay: 800 }}>
-			<Button kind="primary" icon={Edit} href="/authoring" sveltekit:reload>Author mods</Button>
-		</div>
-		<div class="inline" in:fade={{ delay: 1200 }}>
+		{#if getConfig().developerMode}
+			<div class="inline" in:fade={{ delay: 800 }}>
+				<Button kind="primary" icon={Edit} href="/authoring" sveltekit:reload>Author mods</Button>
+			</div>
+		{/if}
+		<div class="inline" in:fade={{ delay: getConfig().developerMode ? 1200 : 800 }}>
 			<Button kind="primary" icon={Info} href="/info" sveltekit:reload>More information</Button>
 		</div>
 		<p class="mt-4" in:fade={{ delay: 1600 }}>Need help using mods? Consult the pinned post on the Nexus Mods page.</p>
@@ -595,6 +602,33 @@
 		<br />
 		<br />
 		It is recommended you enable this; it helps with resolving problems and improving the framework's features.
+	</p>
+</Modal>
+
+<Modal
+	bind:open={developerModePrompt}
+	modalHeading="Developer mode"
+	primaryButtonText="I'm a mod developer"
+	secondaryButtonText="I'm a mod user"
+	on:click:button--secondary={() => {
+		mergeConfig({
+			developerMode: false
+		})
+
+		developerModePrompt = false
+	}}
+	on:submit={() => {
+		mergeConfig({
+			developerMode: true
+		})
+
+		developerModePrompt = false
+	}}
+>
+	<p>
+		Would you like to enable developer mode? Developer mode improves the experience if you're planning on creating mods; otherwise, you can leave it disabled.
+		<br />
+		This can be changed later in the information page.
 	</p>
 </Modal>
 

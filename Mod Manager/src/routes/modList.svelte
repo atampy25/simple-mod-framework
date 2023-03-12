@@ -159,23 +159,25 @@
 	let displayExtractedModsDialog = false
 	const extractedMods: string[] = []
 
-	// If no mods have the tag (likely updated from older SMF)
-	if (getAllMods().filter((a) => modIsFramework(a)).every((a) => !window.originalFs.existsSync(window.path.join(getModFolder(a), "manifest.json:SMFExtractionTag")))) {
+	if (!getConfig().developerMode) {
+		// If no mods have the tag (likely updated from older SMF)
+		if (getAllMods().filter((a) => modIsFramework(a)).every((a) => !window.originalFs.existsSync(window.path.join(getModFolder(a), "manifest.json:SMFExtractionTag")))) {
+			for (const mod of getAllMods().filter((a) => modIsFramework(a))) {
+				const modFolder = getModFolder(mod)
+
+				// Assume every mod has been installed correctly
+				window.originalFs.writeFileSync(window.path.join(modFolder, "manifest.json:SMFExtractionTag"), "Extracted via SMF")
+			}
+		}
+
 		for (const mod of getAllMods().filter((a) => modIsFramework(a))) {
 			const modFolder = getModFolder(mod)
 
-			// Assume every mod has been installed correctly
-			window.originalFs.writeFileSync(window.path.join(modFolder, "manifest.json:SMFExtractionTag"), "Extracted via SMF")
-		}
-	}
-
-	for (const mod of getAllMods().filter((a) => modIsFramework(a))) {
-		const modFolder = getModFolder(mod)
-
-		if (!window.originalFs.existsSync(window.path.join(modFolder, "manifest.json:SMFExtractionTag"))) {
-			extractedMods.push(getManifestFromModID(mod).name)
-			displayExtractedModsDialog = true
-			window.originalFs.writeFileSync(window.path.join(modFolder, "manifest.json:SMFExtractionTag"), "Extracted via SMF") // Will prevent the message from being shown again for the same mod
+			if (!window.originalFs.existsSync(window.path.join(modFolder, "manifest.json:SMFExtractionTag"))) {
+				extractedMods.push(getManifestFromModID(mod).name)
+				displayExtractedModsDialog = true
+				window.originalFs.writeFileSync(window.path.join(modFolder, "manifest.json:SMFExtractionTag"), "Extracted via SMF") // Will prevent the message from being shown again for the same mod
+			}
 		}
 	}
 
@@ -486,7 +488,8 @@
 		it bypasses the framework's checks for mod validity and safety. Instead, use the Add a Mod button to add any mods you want. This message won't be shown again for {extractedMods.length > 1
 			? "these mods"
 			: "this mod"}.
-	</p>
+		<br /><br />
+		If you're seeing this after creating a new mod yourself, you should enable developer mode in the information page - it'll improve your experience and let you use the mod authoring tools in the Mod Manager.</p>
 </Modal>
 
 <Modal alert bind:open={uploadLogFailedModalOpen} modalHeading="Couldn't upload log" primaryButtonText="OK" shouldSubmitOnEnter={false} on:submit={() => (uploadLogFailedModalOpen = false)}>

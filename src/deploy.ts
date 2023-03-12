@@ -718,9 +718,13 @@ export default async function deploy(
 
 							entityContent = LosslessJSON.parse(fs.readFileSync(content.path, "utf8"))
 
-							await logger.warn(
-								`Optimised an entity.json file from ${instruction.id}. This should improve the speed of deploys from now on. Consider contacting the mod developer to run this process on their end rather than the user's computer.`
-							)
+							if (!config.developerMode) {
+								await logger.warn(
+									`Optimised an entity.json file from ${instruction.id}. This should improve the speed of deploys from now on. Consider contacting the mod developer to run this process on their end rather than the user's computer.`
+								)
+							} else {
+								await logger.warn(`Automatically upgraded an entity.json file from ${instruction.id} to the latest QuickEntity version.`)
+							}
 						} else {
 							await logger.warn(`Mod ${instruction.id} emits a virtual QuickEntity JSON with a version less than 3.1 using scripting. This should not be the case.`)
 						}
@@ -763,9 +767,13 @@ export default async function deploy(
 
 							entityContent = LosslessJSON.parse(fs.readFileSync(content.path, "utf8"))
 
-							await logger.warn(
-								`Optimised an entity.json file from ${instruction.id} to use the latest QuickEntity version. Consider contacting the mod developer to run this process on their end rather than the user's computer.`
-							)
+							if (!config.developerMode) {
+								await logger.warn(
+									`Optimised an entity.json file from ${instruction.id}. This should improve the speed of deploys from now on. Consider contacting the mod developer to run this process on their end rather than the user's computer.`
+								)
+							} else {
+								await logger.warn(`Automatically upgraded an entity.json file from ${instruction.id} to the latest QuickEntity version.`)
+							}
 						} else {
 							await logger.warn(`Mod ${instruction.id} emits a virtual QuickEntity JSON with a version less than 3.1 using scripting. This should not be the case.`)
 						}
@@ -961,9 +969,13 @@ export default async function deploy(
 							entityContent = LosslessJSON.parse(fs.readFileSync(content.path, "utf8"))
 							entityContent.path = contentIdentifier
 
-							await logger.warn(
-								`Optimised an entity.patch.json file from ${instruction.id}. This should improve the speed of deploys from now on. Consider contacting the mod developer to run this process on their end rather than the user's computer.`
-							)
+							if (!config.developerMode) {
+								await logger.warn(
+									`Optimised an entity.patch.json file from ${instruction.id}. This should improve the speed of deploys from now on. Consider contacting the mod developer to run this process on their end rather than the user's computer.`
+								)
+							} else {
+								await logger.warn(`Automatically upgraded an entity.patch.json file from ${instruction.id} to the latest QuickEntity version.`)
+							}
 						} else {
 							await logger.warn(`Mod ${instruction.id} emits a virtual QuickEntity patch JSON with a patch version less than 6 using scripting. This should not be the case.`)
 						}

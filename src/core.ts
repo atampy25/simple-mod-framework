@@ -26,30 +26,20 @@ const rpkgInstance = new RPKGInstance()
 
 const config: Config = json5.parse(fs.readFileSync(path.join(process.cwd(), "config.json"), "utf8"))
 
-if (typeof config.outputConfigToAppDataOnDeploy === "undefined") {
-	config.outputConfigToAppDataOnDeploy = true
-	fs.writeFileSync(path.join(process.cwd(), "config.json"), json5.stringify(config))
-} // Backwards compatibility - output config to appdata on deploy
-
-if (typeof config.retailPath === "undefined") {
-	config.retailPath = "..\\Retail"
-	fs.writeFileSync(path.join(process.cwd(), "config.json"), json5.stringify(config))
-} // Backwards compatibility - retail path
-
 if (config.runtimePath === "..\\Runtime" && fs.existsSync(path.join(config.retailPath, "Runtime", "chunk0.rpkg"))) {
 	config.runtimePath = "..\\Retail\\Runtime"
 	fs.writeFileSync(path.join(process.cwd(), "config.json"), json5.stringify(config))
 	fs.copyFileSync(path.join(process.cwd(), "cleanMicrosoftThumbs.dat"), path.join(process.cwd(), "cleanThumbs.dat"))
 } // Automatically set runtime path and fix clean thumbs if using microsoft platform
 
-if (fs.existsSync(path.join(config.retailPath, "Runtime", "chunk0.rpkg"))) {
-	fs.copyFileSync(path.join(process.cwd(), "cleanMicrosoftThumbs.dat"), path.join(process.cwd(), "cleanThumbs.dat"))
-} // This is just to auto-fix some installs that only partially worked due to a GUI bug
-
 if (typeof config.reportErrors === "undefined") {
 	config.reportErrors = false
 	config.errorReportingID = null
 } // Do not report errors if no preference is set
+
+if (typeof config.developerMode === "undefined") {
+	config.developerMode = false
+} // Assume user is not a developer if no preference is set
 
 config.runtimePath = path.resolve(process.cwd(), config.runtimePath)
 config.retailPath = path.resolve(process.cwd(), config.retailPath)
