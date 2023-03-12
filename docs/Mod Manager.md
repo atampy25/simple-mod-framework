@@ -27,4 +27,4 @@ MyAmazingMod.framework.zip
 
 In essence, **zip the folder, not its contents**. Bundling multiple modules through multiple folders isn't recommended - you should use mod options (see [Manifest](Manifest.md)).
 
-Alternative archive formats (including RAR and 7z) are supported, though ZIP is still usually the easiest for people to work with. If your mod is big, though, distributing it as a 7z file is probably a good idea.
+Alternative archive formats (including RAR and 7z) are supported, though ZIP is still usually the easiest for people to work with (and RAR is usually the worst). If your mod is big, though, distributing it as a 7z file is probably a good idea.

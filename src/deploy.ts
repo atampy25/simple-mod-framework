@@ -1712,8 +1712,6 @@ export default async function deploy(
 					(doneHashes.filter((a) => a.id === (typeof dependency === "string" ? dependency : dependency.runtimeID) && a.chunk === (dependency.toChunk || 0)).every((a) => !a.portChunk1) &&
 						dependency.portFromChunk1)
 				) {
-					await logger.debug(`Extracting dependency ${typeof dependency === "string" ? dependency : dependency.runtimeID}`)
-
 					doneHashes.push({
 						id: typeof dependency === "string" ? dependency : dependency.runtimeID,
 						chunk: dependency.toChunk || 0,
@@ -1721,13 +1719,31 @@ export default async function deploy(
 					})
 
 					// If cache hit
-					if (fs.existsSync(path.join(process.cwd(), "cache", winPathEscape(instruction.cacheFolder), path.join("dependencies", typeof dependency === "string" ? dependency : dependency.runtimeID)))) {
+					if (
+						fs.existsSync(
+							path.join(
+								process.cwd(),
+								"cache",
+								winPathEscape(instruction.cacheFolder),
+								path.join("dependencies", typeof dependency === "string" ? `${dependency}-0-0` : `${dependency.runtimeID}-${dependency.toChunk || 0}-${dependency.portFromChunk1 ? 1 : 0}`)
+							)
+						)
+					) {
+						await logger.debug(`Copying dependency ${typeof dependency === "string" ? dependency : dependency.runtimeID} from cache`)
+
 						rust_utils.stageDependenciesFrom(
-							path.join(process.cwd(), "cache", winPathEscape(instruction.cacheFolder), path.join("dependencies", typeof dependency === "string" ? dependency : dependency.runtimeID)),
+							path.join(
+								process.cwd(),
+								"cache",
+								winPathEscape(instruction.cacheFolder),
+								path.join("dependencies", typeof dependency === "string" ? `${dependency}-0-0` : `${dependency.runtimeID}-${dependency.toChunk || 0}-${dependency.portFromChunk1 ? 1 : 0}`)
+							),
 							`chunk${dependency.toChunk || 0}`
 						)
 					} else {
 						// no cache yet
+
+						await logger.debug(`Extracting dependency ${typeof dependency === "string" ? dependency : dependency.runtimeID}`)
 
 						fs.emptyDirSync(path.join(process.cwd(), "temp"))
 
@@ -1737,7 +1753,11 @@ export default async function deploy(
 							}" -output_path temp`
 						)
 
-						await copyToCache(instruction.cacheFolder, path.join(process.cwd(), "temp"), path.join("dependencies", typeof dependency === "string" ? dependency : dependency.runtimeID))
+						await copyToCache(
+							instruction.cacheFolder,
+							path.join(process.cwd(), "temp"),
+							path.join("dependencies", typeof dependency === "string" ? `${dependency}-0-0` : `${dependency.runtimeID}-${dependency.toChunk || 0}-${dependency.portFromChunk1 ? 1 : 0}`)
+						)
 
 						rust_utils.stageDependenciesFrom("temp", `chunk${dependency.toChunk || 0}`)
 
