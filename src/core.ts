@@ -84,7 +84,7 @@ const logger = args["--useConsoleLogging"]
 						child_process.execSync("pause", {
 							// @ts-expect-error This code works and I'm not going to question it
 							shell: true,
-							stdio: [0, 1, 2]
+							stdio: "inherit"
 						})
 					}
 				}
@@ -98,7 +98,7 @@ const logger = args["--useConsoleLogging"]
 						child_process.execSync("pause", {
 							// @ts-expect-error This code works and I'm not going to question it
 							shell: true,
-							stdio: [0, 1, 2]
+							stdio: "inherit"
 						})
 					}
 				}
@@ -112,7 +112,7 @@ const logger = args["--useConsoleLogging"]
 						child_process.execSync("pause", {
 							// @ts-expect-error This code works and I'm not going to question it
 							shell: true,
-							stdio: [0, 1, 2]
+							stdio: "inherit"
 						})
 					}
 				}
@@ -126,7 +126,7 @@ const logger = args["--useConsoleLogging"]
 						child_process.execSync("pause", {
 							// @ts-expect-error This code works and I'm not going to question it
 							shell: true,
-							stdio: [0, 1, 2]
+							stdio: "inherit"
 						})
 					}
 				}
@@ -143,7 +143,7 @@ const logger = args["--useConsoleLogging"]
 					child_process.execSync("pause", {
 						// @ts-expect-error This code works and I'm not going to question it
 						shell: true,
-						stdio: [0, 1, 2]
+						stdio: "inherit"
 					})
 
 					if (exitAfter) {

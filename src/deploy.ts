@@ -7,7 +7,7 @@ import type { DeployInstruction, Manifest, ManifestOptionData, ModScript } from 
 import { ModuleKind, ScriptTarget } from "typescript"
 import { compileExpression, useDotAccessOperatorAndOptionalChaining } from "filtrex"
 import { config, logger, rpkgInstance } from "./core-singleton"
-import { copyFromCache, copyToCache, extractOrCopyToTemp, getQuickEntityFromPatchVersion, getQuickEntityFromVersion, hexflip, winPathEscape } from "./utils"
+import { copyFromCache, copyToCache, extractOrCopyToTemp, getQuickEntityFromPatchVersion, getQuickEntityFromVersion, hexflip } from "./utils"
 
 import { OptionType } from "./types"
 import Piscina from "piscina"
@@ -33,7 +33,7 @@ const deepMerge = function (x: any, y: any) {
 
 const execCommand = function (command: string) {
 	void logger.verbose(`Executing command ${command}`)
-	child_process.execSync(command)
+	child_process.execSync(command, { stdio: [ "pipe", "inherit", "inherit" ] })
 }
 
 const callRPKGFunction = async function (command: string) {
@@ -1724,8 +1724,8 @@ export default async function deploy(
 							path.join(
 								process.cwd(),
 								"cache",
-								winPathEscape(instruction.cacheFolder),
-								path.join("dependencies", typeof dependency === "string" ? `${dependency}-0-0` : `${dependency.runtimeID}-${dependency.toChunk || 0}-${dependency.portFromChunk1 ? 1 : 0}`)
+								"global",
+								path.join("dependencies", typeof dependency === "string" ? `${dependency}-0` : `${dependency.runtimeID}-${dependency.portFromChunk1 ? 1 : 0}`)
 							)
 						)
 					) {
@@ -1735,8 +1735,8 @@ export default async function deploy(
 							path.join(
 								process.cwd(),
 								"cache",
-								winPathEscape(instruction.cacheFolder),
-								path.join("dependencies", typeof dependency === "string" ? `${dependency}-0-0` : `${dependency.runtimeID}-${dependency.toChunk || 0}-${dependency.portFromChunk1 ? 1 : 0}`)
+								"global",
+								path.join("dependencies", typeof dependency === "string" ? `${dependency}-0` : `${dependency.runtimeID}-${dependency.portFromChunk1 ? 1 : 0}`)
 							),
 							`chunk${dependency.toChunk || 0}`
 						)
@@ -1754,9 +1754,9 @@ export default async function deploy(
 						)
 
 						await copyToCache(
-							instruction.cacheFolder,
+							"global",
 							path.join(process.cwd(), "temp"),
-							path.join("dependencies", typeof dependency === "string" ? `${dependency}-0-0` : `${dependency.runtimeID}-${dependency.toChunk || 0}-${dependency.portFromChunk1 ? 1 : 0}`)
+							path.join("dependencies", typeof dependency === "string" ? `${dependency}-0` : `${dependency.runtimeID}-${dependency.portFromChunk1 ? 1 : 0}`)
 						)
 
 						rust_utils.stageDependenciesFrom("temp", `chunk${dependency.toChunk || 0}`)

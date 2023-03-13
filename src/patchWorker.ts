@@ -17,7 +17,10 @@ require("clarify")
 const execCommand = function (command: string) {
 	void logger.verbose(`Executing command ${command}`)
 	return new Promise((resolve, reject) => {
-		child_process.exec(command).on("close", resolve)
+		const x = child_process.exec(command)
+		x.stdout?.pipe(process.stdout)
+		x.stderr?.pipe(process.stderr)
+		x.on("close", resolve)
 	})
 }
 
