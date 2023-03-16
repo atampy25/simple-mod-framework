@@ -13,13 +13,11 @@
 	export let manifest: Manifest = {} as Manifest
 	export let rpkgModName: string = ""
 
-	export let darken: boolean = false
-
 	let modWarnings: Promise<{ title: string; subtitle: string; trace: string }[]>
 	setTimeout(() => (modWarnings = getAllModWarnings()), 100)
 </script>
 
-<Tile style={darken ? "filter: brightness(0.75); transition: 250ms filter" : "transition: 250ms filter"}>
+<Tile style="transition: 250ms filter">
 	<div class="flex flex-row items-center gap-8">
 		<div class="flex-grow">
 			{#if isFrameworkMod}

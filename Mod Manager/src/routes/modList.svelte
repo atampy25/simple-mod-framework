@@ -2,7 +2,7 @@
 	import { scale } from "svelte/transition"
 	import { flip } from "svelte/animate"
 
-	import SortableList from "svelte-sortable-list"
+	import SortableList from "$lib/SortableList.svelte"
 	import json5 from "json5"
 	import { Button, CodeSnippet, InlineNotification, Modal, Search } from "carbon-components-svelte"
 
@@ -273,6 +273,7 @@
 			<SortableList
 				list={enabledMods}
 				key="value"
+				disable={enabledModFilter?.length > 0}
 				on:sort={(event) => {
 					mergeConfig({
 						loadOrder: event.detail.map((a) => a.value)
@@ -282,38 +283,39 @@
 				}}
 				let:item
 			>
-				<div class="cursor-grab">
-					<Mod
-						isFrameworkMod={modIsFramework(item.value)}
-						manifest={modIsFramework(item.value) ? getManifestFromModID(item.value) : undefined}
-						rpkgModName={!modIsFramework(item.value) ? item.value : undefined}
-						darken={!((modIsFramework(item.value) ? getManifestFromModID(item.value).name : item.value) + (modIsFramework(item.value) ? getManifestFromModID(item.value).description : "")).toLowerCase().includes(enabledModFilter.toLowerCase())}
-					>
-						{#if modIsFramework(item.value) && getManifestFromModID(item.value)?.options?.filter((a) => a.type != OptionType.conditional)?.length}
-							<Button
-								kind="ghost"
-								icon={Settings}
-								iconDescription="Adjust this mod's settings"
-								on:click={() => {
-									goto(`/settings?mod=${getManifestFromModID(item.value).id}`)
-								}}
-							/>
-						{/if}
-						<Button
-							kind="danger"
-							icon={SubtractAlt}
-							on:click={() => {
-								mergeConfig({
-									loadOrder: getConfig().loadOrder.filter((a) => a != item.value)
-								})
-								forceModListsUpdate = Math.random()
-							}}
+				{#if ((modIsFramework(item.value) ? getManifestFromModID(item.value).name : item.value) + (modIsFramework(item.value) ? getManifestFromModID(item.value).description : "")).toLowerCase().includes(enabledModFilter.toLowerCase())}
+					<div title={enabledModFilter?.length > 0 ? 'Clear the filter to reorder your mods' : ''} class="{enabledModFilter?.length > 0 ? 'cursor-not-allowed' : 'cursor-grab'}">
+						<Mod
+							isFrameworkMod={modIsFramework(item.value)}
+							manifest={modIsFramework(item.value) ? getManifestFromModID(item.value) : undefined}
+							rpkgModName={!modIsFramework(item.value) ? item.value : undefined}
 						>
-							Disable
-						</Button>
-					</Mod>
-					<br />
-				</div>
+							{#if modIsFramework(item.value) && getManifestFromModID(item.value)?.options?.filter((a) => a.type != OptionType.conditional)?.length}
+								<Button
+									kind="ghost"
+									icon={Settings}
+									iconDescription="Adjust this mod's settings"
+									on:click={() => {
+										goto(`/settings?mod=${getManifestFromModID(item.value).id}`)
+									}}
+								/>
+							{/if}
+							<Button
+								kind="danger"
+								icon={SubtractAlt}
+								on:click={() => {
+									mergeConfig({
+										loadOrder: getConfig().loadOrder.filter((a) => a != item.value)
+									})
+									forceModListsUpdate = Math.random()
+								}}
+							>
+								Disable
+							</Button>
+						</Mod>
+						<br />
+					</div>
+				{/if}
 			</SortableList>
 		</div>
 	</div>
