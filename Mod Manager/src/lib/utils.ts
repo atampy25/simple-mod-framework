@@ -422,16 +422,14 @@ const modWarnings: {
 
 let startedGettingModWarnings = false
 
-export async function getAllModWarnings() {
+export async function getAllModWarnings(): Promise<Record<string, { title: string; subtitle: string; trace: string; type: string }[]>> {
 	if (!(startedGettingModWarnings || window.fs.existsSync("./warnings.json"))) {
 		startedGettingModWarnings = true
 
 		const allWarnings = []
 
 		for (const mod of getAllMods().filter((a) => modIsFramework(a))) {
-			const fileWarnings: Record<string, any[]> = {}
-
-			const filesToCheck: string[][] = []
+			const fileWarnings: Record<string, { title: string; subtitle: string; trace: string; type: string }[]> = {}
 
 			for (const file of window.klaw(getModFolder(mod), { nodir: true }).map((a) => a.path)) {
 				fileWarnings[file] = []
@@ -447,7 +445,7 @@ export async function getAllModWarnings() {
 				}
 			}
 
-			allWarnings.push([mod, Object.values(fileWarnings)])
+			allWarnings.push([mod, Object.values(fileWarnings).flat()])
 		}
 
 		await window.fs.writeJSON("./warnings.json", Object.fromEntries(await Promise.all(allWarnings)))

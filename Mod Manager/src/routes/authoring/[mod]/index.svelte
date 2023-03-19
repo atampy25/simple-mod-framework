@@ -60,7 +60,7 @@
 	let frameworkVersionInputChanged = false
 	let updateURLInputChanged = false
 
-	let modWarningsPromise: Promise<Record<string, { title: string; subtitle: string; trace: string }[]>> = null!
+	let modWarningsPromise: Promise<Record<string, { title: string; subtitle: string; trace: string; type: string }[]>> = null!
 	$: $page.params.mod ? setTimeout(() => (modWarningsPromise = getAllModWarnings()), 500) : []
 </script>
 
