@@ -223,6 +223,7 @@
 									mergeConfig({
 										loadOrder: [...getConfig().loadOrder, item.value]
 									})
+									changed = true
 									forceModListsUpdate = Math.random()
 								}}
 							>
@@ -307,6 +308,7 @@
 									mergeConfig({
 										loadOrder: getConfig().loadOrder.filter((a) => a != item.value)
 									})
+									changed = true
 									forceModListsUpdate = Math.random()
 								}}
 							>

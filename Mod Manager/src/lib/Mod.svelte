@@ -13,7 +13,7 @@
 	export let manifest: Manifest = {} as Manifest
 	export let rpkgModName: string = ""
 
-	let modWarnings: Promise<{ title: string; subtitle: string; trace: string }[]>
+	let modWarnings: Promise<Record<string, { title: string; subtitle: string; trace: string; type: string }[]>>
 	setTimeout(() => (modWarnings = getAllModWarnings()), 100)
 </script>
 
@@ -101,24 +101,26 @@
 				</div>
 			{:else if isFrameworkMod && modWarnings}
 				{#await modWarnings then warnings}
-					{#if warnings[manifest.id].some((a) => a.type == "error")}
-						<div
-							tabindex="0"
-							aria-pressed="false"
-							class="bx--btn bx--btn--ghost btn-error bx--btn--icon-only bx--tooltip__trigger bx--tooltip--a11y bx--btn--icon-only--bottom bx--tooltip--align-center"
-						>
-							<span class="bx--assistive-text">This mod will likely cause issues; contact the mod developer</span>
-							<Error color="black" />
-						</div>
-					{:else if warnings[manifest.id].some((a) => a.type == "warning")}
-						<div
-							tabindex="0"
-							aria-pressed="false"
-							class="bx--btn bx--btn--ghost bx--btn--icon-only bx--tooltip__trigger bx--tooltip--a11y bx--btn--icon-only--bottom bx--tooltip--align-center"
-						>
-							<span class="bx--assistive-text">This mod may cause issues; contact the mod developer</span>
-							<WarningAlt color="black" />
-						</div>
+					{#if warnings[manifest.id]}
+						{#if warnings[manifest.id].some((a) => a.type == "error")}
+							<div
+								tabindex="0"
+								aria-pressed="false"
+								class="bx--btn bx--btn--ghost btn-error bx--btn--icon-only bx--tooltip__trigger bx--tooltip--a11y bx--btn--icon-only--bottom bx--tooltip--align-center"
+							>
+								<span class="bx--assistive-text">This mod will likely cause issues; contact the mod developer</span>
+								<Error color="black" />
+							</div>
+						{:else if warnings[manifest.id].some((a) => a.type == "warning")}
+							<div
+								tabindex="0"
+								aria-pressed="false"
+								class="bx--btn bx--btn--ghost bx--btn--icon-only bx--tooltip__trigger bx--tooltip--a11y bx--btn--icon-only--bottom bx--tooltip--align-center"
+							>
+								<span class="bx--assistive-text">This mod may cause issues; contact the mod developer</span>
+								<WarningAlt color="black" />
+							</div>
+						{/if}
 					{/if}
 				{/await}
 			{/if}
