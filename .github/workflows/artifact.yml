@@ -12,19 +12,23 @@ jobs:
         with:
           fetch-depth: 0
 
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
       - name: Cache
         id: cache
         uses: actions/cache@v2.1.6
         with:
           path: node_modules
-          key: buildCachev23
+          key: buildCachev24
 
       - name: Cache
         id: cache2
         uses: actions/cache@v2.1.6
         with:
           path: Mod Manager/node_modules
-          key: buildCache2v17
+          key: buildCache2v18
 
       - name: Install dependencies
         if: steps.cache.outputs.cache-hit != 'true'
@@ -41,7 +45,7 @@ jobs:
           robocopy ./piscina ./node_modules/piscina /COPYALL /E /is /it; if ($lastexitcode -lt 8) { $global:LASTEXITCODE = $null }
           tsc
           copy ./src/smf-rust.node ./compiled/smf-rust.node
-          pkg package.json --targets node14-win-x64 --output Deploy.exe --compress Brotli
+          pkg package.json --targets node18-win-x64 --output Deploy.exe --compress Brotli
 
       - name: Download RPKG
         uses: aochmann/actions-download-artifact@5709392f11b5937bd316e52687ad87f7deced5f5
