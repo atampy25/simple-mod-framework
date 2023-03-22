@@ -327,6 +327,14 @@ export const getModFolder = memoize(function (id: string) {
 		: window.path.join("..", "Mods", id) // Mod is an RPKG mod, use folder name
 
 	if (!folder) {
+		window.alert(`The mod ${id} couldn't be located! This will likely cause issues in parts of the framework. If you deleted a mod folder, use the Delete Mod option next time.`)
+
+		if (getConfig().loadOrder.includes(id)) {
+			mergeConfig({
+				loadOrder: getConfig().loadOrder.filter(a=>a!=id)
+			})
+		}
+
 		throw new Error(`Couldn't find mod ${id}`)
 	}
 

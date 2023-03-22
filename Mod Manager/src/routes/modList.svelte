@@ -77,6 +77,8 @@
 
 	let invalidFrameworkZipModalOpen = false
 
+	let invalidModModalOpen = false
+
 	let modFilePath = ""
 
 	let rpkgModName: string
@@ -112,6 +114,20 @@
 					if (window.klaw("./staging", { depthLimit: 0, nodir: true }).length) {
 						frameworkModExtractionInProgress = false
 						invalidFrameworkZipModalOpen = true
+						return
+					}
+
+					if (!window.fs.readdirSync("./staging").every((a) => window.fs.existsSync(window.path.join("./staging", a, "manifest.json")))) {
+						frameworkModExtractionInProgress = false
+						invalidModModalOpen = true
+						return
+					}
+
+					try {
+						window.fs.readdirSync("./staging").forEach((a) => json5.parse(window.fs.readFileSync(window.path.join("./staging", a, "manifest.json"), "utf8")))
+					} catch {
+						frameworkModExtractionInProgress = false
+						invalidModModalOpen = true
 						return
 					}
 
@@ -450,6 +466,10 @@
 
 <Modal alert bind:open={invalidFrameworkZipModalOpen} modalHeading="Invalid framework ZIP" primaryButtonText="OK" shouldSubmitOnEnter={false} on:submit={() => (invalidFrameworkZipModalOpen = false)}>
 	<p>The framework ZIP file contains files in the root directory. Contact the mod author.</p>
+</Modal>
+
+<Modal alert bind:open={invalidModModalOpen} modalHeading="What" primaryButtonText="OK" shouldSubmitOnEnter={false} on:submit={() => (invalidModModalOpen = false)}>
+	<p>This doesn't look like a mod? Make sure you select a mod ZIP, and that the mod is either a framework mod or RPKG mod.</p>
 </Modal>
 
 <Modal
