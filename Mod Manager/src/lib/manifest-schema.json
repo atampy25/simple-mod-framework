@@ -20,7 +20,8 @@
 				},
 				"id": {
 					"description": "An ID for the mod. Should follow capitalised reverse URI style (AuthorName.ModName). Don't include special characters; numbers, underscores and full stops are OK.",
-					"type": "string"
+					"type": "string",
+					"pattern": "^(?!(?:CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(?:\\.[^.]*)?$)[^<>:\"\\/\\\\|?*\\x00-\\x1F]*[^<>:\"\\/\\\\|?*\\x00-\\x1F .]$"
 				},
 				"name": {
 					"description": "The name of the mod.",

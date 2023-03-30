@@ -69,9 +69,6 @@
 	let modNameInputModal: TextInputModal
 	let modNameInputModalOpen = false
 
-	let modChunkInputModal: TextInputModal
-	let modChunkInputModalOpen = false
-
 	let rpkgModExtractionInProgress = false
 	let frameworkModExtractionInProgress = false
 
@@ -81,8 +78,8 @@
 
 	let modFilePath = ""
 
+	let rpkgsToInstall: { path: string; chunk: string }[]
 	let rpkgModName: string
-	let rpkgModChunk: string
 
 	let frameworkModScriptsWarningOpen = false
 
@@ -103,10 +100,9 @@
 
 				window.child_process.execSync(`"..\\Third-Party\\7z.exe" x "${modFilePath}" -aoa -y -o"./staging"`)
 
-				if (window.fs.readdirSync("./staging").length == 1 && window.fs.readdirSync("./staging").every((a) => a.endsWith(".rpkg"))) {
-					modFilePath = window.path.resolve(window.path.join("./staging", window.fs.readdirSync("./staging")[0]))
-					modNameInputModalOpen = true
-				} else {
+				const stagingFileList = window.klaw("./staging", { nodir: true })
+
+				if (window.fs.readdirSync("./staging").every((a) => window.fs.existsSync(window.path.join("./staging", a, "manifest.json")))) {
 					// framework mod
 
 					frameworkModExtractionInProgress = true
@@ -114,12 +110,6 @@
 					if (window.klaw("./staging", { depthLimit: 0, nodir: true }).length) {
 						frameworkModExtractionInProgress = false
 						invalidFrameworkZipModalOpen = true
-						return
-					}
-
-					if (!window.fs.readdirSync("./staging").every((a) => window.fs.existsSync(window.path.join("./staging", a, "manifest.json")))) {
-						frameworkModExtractionInProgress = false
-						invalidModModalOpen = true
 						return
 					}
 
@@ -154,6 +144,27 @@
 
 						frameworkModExtractionInProgress = false
 					}
+				} else {
+					rpkgsToInstall = []
+
+					if (stagingFileList.some((a) => a.path.endsWith(".rpkg"))) {
+						for (const file of stagingFileList.filter((a) => a.path.endsWith(".rpkg"))) {
+							let result = [...file.path.matchAll(/(chunk[0-9]*(?:patch.*)?)\.rpkg/g)]
+							result = [...result[result.length - 1][result[result.length - 1].length - 1].matchAll(/(chunk[0-9]*)/g)]
+							let chunk = result[result.length - 1][result[result.length - 1].length - 1]
+
+							if (!chunk) {
+								chunk = "chunk0"
+							}
+
+							rpkgsToInstall.push({ path: file.path, chunk })
+						}
+					} else {
+						invalidModModalOpen = true
+						return
+					}
+
+					modNameInputModalOpen = true
 				}
 			}
 		})
@@ -162,8 +173,10 @@
 	async function installRPKGMod() {
 		rpkgModExtractionInProgress = true
 
-		window.fs.ensureDirSync(window.path.join("..", "Mods", rpkgModName, rpkgModChunk))
-		window.fs.copyFileSync(modFilePath, window.path.join("..", "Mods", rpkgModName, rpkgModChunk, window.path.basename(modFilePath)))
+		for (const file of rpkgsToInstall) {
+			window.fs.ensureDirSync(window.path.join("..", "Mods", rpkgModName, file.chunk))
+			window.fs.copyFileSync(file.path, window.path.join("..", "Mods", rpkgModName, file.chunk, window.path.basename(file.path)))
+		}
 
 		window.fs.removeSync("./staging")
 
@@ -177,7 +190,11 @@
 
 	if (!getConfig().developerMode) {
 		// If no mods have the tag (likely updated from older SMF)
-		if (getAllMods().filter((a) => modIsFramework(a)).every((a) => !window.originalFs.existsSync(window.path.join(getModFolder(a), "manifest.json:SMFExtractionTag")))) {
+		if (
+			getAllMods()
+				.filter((a) => modIsFramework(a))
+				.every((a) => !window.originalFs.existsSync(window.path.join(getModFolder(a), "manifest.json:SMFExtractionTag")))
+		) {
 			for (const mod of getAllMods().filter((a) => modIsFramework(a))) {
 				const modFolder = getModFolder(mod)
 
@@ -224,7 +241,9 @@
 		</div>
 		<br />
 		<div class="h-[90vh] overflow-y-auto">
-			{#each disabledMods.filter((a) => ((modIsFramework(a.value) ? getManifestFromModID(a.value).name : a.value) + (modIsFramework(a.value) ? getManifestFromModID(a.value).description : "")).toLowerCase().includes(availableModFilter.toLowerCase())) as item (item.value)}
+			{#each disabledMods.filter((a) => ((modIsFramework(a.value) ? getManifestFromModID(a.value).name : a.value) + (modIsFramework(a.value) ? getManifestFromModID(a.value).description : ""))
+					.toLowerCase()
+					.includes(availableModFilter.toLowerCase())) as item (item.value)}
 				<div animate:flip={{ duration: 300 }}>
 					<div transition:scale>
 						<Mod
@@ -304,7 +323,9 @@
 						isFrameworkMod={modIsFramework(item.value)}
 						manifest={modIsFramework(item.value) ? getManifestFromModID(item.value) : undefined}
 						rpkgModName={!modIsFramework(item.value) ? item.value : undefined}
-						darken={!((modIsFramework(item.value) ? getManifestFromModID(item.value).name : item.value) + (modIsFramework(item.value) ? getManifestFromModID(item.value).description : "")).toLowerCase().includes(enabledModFilter.toLowerCase())}
+						darken={!((modIsFramework(item.value) ? getManifestFromModID(item.value).name : item.value) + (modIsFramework(item.value) ? getManifestFromModID(item.value).description : ""))
+							.toLowerCase()
+							.includes(enabledModFilter.toLowerCase())}
 					>
 						{#if modIsFramework(item.value) && getManifestFromModID(item.value)?.options?.filter((a) => a.type != OptionType.conditional)?.length}
 							<Button
@@ -424,37 +445,20 @@
 
 <TextInputModal
 	bind:this={modNameInputModal}
-	showingModal={modNameInputModalOpen}
+	bind:showingModal={modNameInputModalOpen}
 	modalText="Mod name"
 	modalPlaceholder="Amazing RPKG Mod"
 	on:close={() => {
+		modNameInputModalOpen = false
+
 		rpkgModName = modNameInputModal.value
 
-		try {
-			var result = [...modFilePath.matchAll(/(chunk[0-9]*(?:patch.*)?)\.rpkg/g)]
-			result = [...result[result.length - 1][result[result.length - 1].length - 1].matchAll(/(chunk[0-9]*)/g)]
-			rpkgModChunk = result[result.length - 1][result[result.length - 1].length - 1]
-
-			if (!rpkgModChunk) {
-				throw new Error()
-			}
-
+		if (!rpkgModName.match(/^(?!(?:CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(?:\.[^.]*)?$)[^<>:"\/\\|?*\x00-\x1F]*[^<>:"\/\\|?*\x00-\x1F .]$/iu)) {
+			window.alert("That's not a valid folder name and so cannot be used for an RPKG mod name. Please try another.")
+			setTimeout(() => (modNameInputModalOpen = true), 100)
+		} else {
 			installRPKGMod()
-		} catch {
-			modChunkInputModalOpen = true
 		}
-	}}
-/>
-
-<TextInputModal
-	bind:this={modChunkInputModal}
-	showingModal={modChunkInputModalOpen}
-	modalText="Mod chunk (if it advises you to name it chunk0patch3 or the file is named chunk0patchX, for example, then it's chunk0)"
-	modalPlaceholder="chunk0"
-	on:close={() => {
-		rpkgModChunk = modChunkInputModal.value
-
-		installRPKGMod()
 	}}
 />
 
@@ -506,12 +510,15 @@
 	<p>
 		The mod{extractedMods.length > 1 ? "s" : ""}
 		{extractedMods.slice(0, -1).length ? extractedMods.slice(0, -1).join(", ") + " and " + extractedMods[extractedMods.length - 1] : extractedMods[0]}
-		{extractedMods.length > 1 ? "were" : "was"} installed by extracting the ZIP file directly to the Mods folder. That's not how you're meant to install mods; doing things this way could pose risks as
-		it bypasses the framework's checks for mod validity and safety. Instead, use the Add a Mod button to add any mods you want. This message won't be shown again for {extractedMods.length > 1
+		{extractedMods.length > 1 ? "were" : "was"} installed by extracting the ZIP file directly to the Mods folder. That's not how you're meant to install mods; doing things this way could pose risks
+		as it bypasses the framework's checks for mod validity and safety. Instead, use the Add a Mod button to add any mods you want. This message won't be shown again for {extractedMods.length > 1
 			? "these mods"
 			: "this mod"}.
-		<br /><br />
-		If you're seeing this after creating a new mod yourself, you should enable developer mode in the information page - it'll improve your experience and let you use the mod authoring tools in the Mod Manager.</p>
+		<br />
+		<br />
+		If you're seeing this after creating a new mod yourself, you should enable developer mode in the information page - it'll improve your experience and let you use the mod authoring tools in the
+		Mod Manager.
+	</p>
 </Modal>
 
 <Modal alert bind:open={uploadLogFailedModalOpen} modalHeading="Couldn't upload log" primaryButtonText="OK" shouldSubmitOnEnter={false} on:submit={() => (uploadLogFailedModalOpen = false)}>
