@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { scale } from "svelte/transition"
+	import { scale, fade } from "svelte/transition"
 	import { flip } from "svelte/animate"
 
 	import SortableList from "svelte-sortable-list"
@@ -43,6 +43,7 @@
 
 	let changed = false
 
+	let showDropHint = false
 	let dependencyCycleModalOpen = false
 	let frameworkDeployModalOpen = false
 	let deployOutput = ""
@@ -66,6 +67,26 @@
 		deployFinished = true
 	})
 
+	document.addEventListener('drop', event => {
+		event.preventDefault()
+		event.stopPropagation()
+		showDropHint = false
+		let modFile: any = event.dataTransfer?.files[0]
+		if(!modFile) return
+		modFilePath = modFile.path
+		addMod()
+	})
+	document.addEventListener('dragover', event => {
+		event.preventDefault()
+		event.stopPropagation()
+	})
+	document.addEventListener('dragenter', event => {
+		if((event.dataTransfer?.items?.length ?? 0) > 0 && event.dataTransfer?.items[0]?.kind === 'file') showDropHint = true
+	})
+	document.addEventListener('dragleave', event => {
+		if(event.relatedTarget == null) showDropHint = false
+	})
+
 	let modNameInputModal: TextInputModal
 	let modNameInputModalOpen = false
 
@@ -84,6 +105,83 @@
 	let frameworkModScriptsWarningOpen = false
 
 	async function addMod() {
+		if (modFilePath.endsWith(".rpkg")) {
+			modNameInputModalOpen = true
+		} else {
+			window.fs.emptyDirSync("./staging")
+
+			window.child_process.execSync(`"..\\Third-Party\\7z.exe" x "${modFilePath}" -aoa -y -o"./staging"`)
+
+			const stagingFileList = window.klaw("./staging", { nodir: true })
+
+			if (window.fs.readdirSync("./staging").every((a) => window.fs.existsSync(window.path.join("./staging", a, "manifest.json")))) {
+				// framework mod
+
+				frameworkModExtractionInProgress = true
+
+				if (window.klaw("./staging", { depthLimit: 0, nodir: true }).length) {
+					frameworkModExtractionInProgress = false
+					invalidFrameworkZipModalOpen = true
+					return
+				}
+
+				try {
+					window.fs.readdirSync("./staging").forEach((a) => json5.parse(window.fs.readFileSync(window.path.join("./staging", a, "manifest.json"), "utf8")))
+				} catch {
+					frameworkModExtractionInProgress = false
+					invalidModModalOpen = true
+					return
+				}
+
+				if (
+					window.fs
+						.readdirSync("./staging")
+						.some(
+							(a) =>
+								json5.parse(window.fs.readFileSync(window.path.join("./staging", a, "manifest.json"), "utf8")).scripts ||
+								json5.parse(window.fs.readFileSync(window.path.join("./staging", a, "manifest.json"), "utf8")).options?.some((b) => b.scripts)
+						)
+				) {
+					frameworkModExtractionInProgress = false
+
+					frameworkModScriptsWarningOpen = true
+				} else {
+					window.fs.copySync("./staging", "../Mods")
+
+					window.originalFs.writeFileSync(window.path.join("..", "Mods", window.fs.readdirSync("./staging")[0], "manifest.json:SMFExtractionTag"), "Extracted via SMF")
+
+					window.fs.removeSync("./staging")
+
+					window.location.reload()
+
+					frameworkModExtractionInProgress = false
+				}
+			} else {
+				rpkgsToInstall = []
+
+				if (stagingFileList.some((a) => a.path.endsWith(".rpkg"))) {
+					for (const file of stagingFileList.filter((a) => a.path.endsWith(".rpkg"))) {
+						let result = [...file.path.matchAll(/(chunk[0-9]*(?:patch.*)?)\.rpkg/g)]
+						result = [...result[result.length - 1][result[result.length - 1].length - 1].matchAll(/(chunk[0-9]*)/g)]
+						let chunk = result[result.length - 1][result[result.length - 1].length - 1]
+
+						if (!chunk) {
+							chunk = "chunk0"
+						}
+
+						rpkgsToInstall.push({ path: file.path, chunk })
+					}
+				} else {
+					invalidModModalOpen = true
+					return
+				}
+
+				modNameInputModalOpen = true
+			}
+		}
+	}
+
+	function openAddModDialog() {
 		window.ipc.send("modFileOpenDialog")
 
 		window.ipc.receive("modFileOpenDialogResult", (modFilePopupResult: string[] | undefined) => {
@@ -93,80 +191,7 @@
 
 			modFilePath = modFilePopupResult[0]
 
-			if (modFilePath.endsWith(".rpkg")) {
-				modNameInputModalOpen = true
-			} else {
-				window.fs.emptyDirSync("./staging")
-
-				window.child_process.execSync(`"..\\Third-Party\\7z.exe" x "${modFilePath}" -aoa -y -o"./staging"`)
-
-				const stagingFileList = window.klaw("./staging", { nodir: true })
-
-				if (window.fs.readdirSync("./staging").every((a) => window.fs.existsSync(window.path.join("./staging", a, "manifest.json")))) {
-					// framework mod
-
-					frameworkModExtractionInProgress = true
-
-					if (window.klaw("./staging", { depthLimit: 0, nodir: true }).length) {
-						frameworkModExtractionInProgress = false
-						invalidFrameworkZipModalOpen = true
-						return
-					}
-
-					try {
-						window.fs.readdirSync("./staging").forEach((a) => json5.parse(window.fs.readFileSync(window.path.join("./staging", a, "manifest.json"), "utf8")))
-					} catch {
-						frameworkModExtractionInProgress = false
-						invalidModModalOpen = true
-						return
-					}
-
-					if (
-						window.fs
-							.readdirSync("./staging")
-							.some(
-								(a) =>
-									json5.parse(window.fs.readFileSync(window.path.join("./staging", a, "manifest.json"), "utf8")).scripts ||
-									json5.parse(window.fs.readFileSync(window.path.join("./staging", a, "manifest.json"), "utf8")).options?.some((b) => b.scripts)
-							)
-					) {
-						frameworkModExtractionInProgress = false
-
-						frameworkModScriptsWarningOpen = true
-					} else {
-						window.fs.copySync("./staging", "../Mods")
-
-						window.originalFs.writeFileSync(window.path.join("..", "Mods", window.fs.readdirSync("./staging")[0], "manifest.json:SMFExtractionTag"), "Extracted via SMF")
-
-						window.fs.removeSync("./staging")
-
-						window.location.reload()
-
-						frameworkModExtractionInProgress = false
-					}
-				} else {
-					rpkgsToInstall = []
-
-					if (stagingFileList.some((a) => a.path.endsWith(".rpkg"))) {
-						for (const file of stagingFileList.filter((a) => a.path.endsWith(".rpkg"))) {
-							let result = [...file.path.matchAll(/(chunk[0-9]*(?:patch.*)?)\.rpkg/g)]
-							result = [...result[result.length - 1][result[result.length - 1].length - 1].matchAll(/(chunk[0-9]*)/g)]
-							let chunk = result[result.length - 1][result[result.length - 1].length - 1]
-
-							if (!chunk) {
-								chunk = "chunk0"
-							}
-
-							rpkgsToInstall.push({ path: file.path, chunk })
-						}
-					} else {
-						invalidModModalOpen = true
-						return
-					}
-
-					modNameInputModalOpen = true
-				}
-			}
+			addMod()
 		})
 	}
 
@@ -233,7 +258,7 @@
 				kind="primary"
 				icon={Add}
 				on:click={() => {
-					addMod()
+					openAddModDialog()
 				}}
 			>
 				Add a Mod
@@ -357,6 +382,12 @@
 		</div>
 	</div>
 </div>
+
+{#if showDropHint}
+	<div transition:fade={{ duration: 100 }} class="w-screen h-screen absolute top-0 left-0 bg-black/90 flex flex-col gap-4 justify-center items-center">
+		<h1 class="font-bold">Drop to install</h1>
+	</div>
+{/if}
 
 <Modal
 	danger
