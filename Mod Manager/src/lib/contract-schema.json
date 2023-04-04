@@ -630,7 +630,6 @@
 		},
 		"MissionType": {
 			"description": "Possible mission `Metadata.Type` values.",
-			"enum": ["arcade", "campaign", "creation", "elusive", "escalation", "evergreen", "featured", "mission", "orbis", "sniper", "tutorial", "usercreated", "vsrace", "flashback", "sarajevosix"],
 			"type": "string"
 		},
 		"Record<string,IContextListener<any>>": {
