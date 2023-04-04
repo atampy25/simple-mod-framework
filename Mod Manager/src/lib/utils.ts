@@ -498,6 +498,29 @@ export function validateModFolder(modFolder: string): [boolean, string] {
 		}
 	}
 
+	const groups: Record<string, [number, number]> = {}
+
+	for (const option of manifest.options || []) {
+		if (option.type === OptionType.select) {
+			groups[option.group] ??= [0, 0]
+			groups[option.group][0] = groups[option.group][0] + 1
+
+			if (option.enabledByDefault) {
+				groups[option.group][1] = groups[option.group][1] + 1
+			}
+		}
+	}
+
+	for (const [group, [members, enabledByDefault]] of Object.entries(groups)) {
+		if (members === 1) {
+			return [false, `Option group "${group}" has only one member`]
+		}
+
+		if (enabledByDefault > 1) {
+			return [false, `Option group "${group}" has more than one member enabled by default`]
+		}
+	}
+
 	for (const file of window.klaw(modFolder, { nodir: true }).map((a) => a.path)) {
 		if (
 			file.endsWith("entity.json") ||
