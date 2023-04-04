@@ -32,6 +32,8 @@
 
 	let fileInModFolder = false
 
+	let mustRedownloadFrameworkModalOpen = false
+
 	try {
 		getConfig()
 	} catch {
@@ -113,6 +115,10 @@
 	if (window.originalFs.existsSync("../config.json:Zone.Identifier")) {
 		installedViaZIP = true
 		window.originalFs.unlinkSync("../config.json:Zone.Identifier")
+	}
+
+	if (!window.nodeVersion.startsWith("18")) {
+		mustRedownloadFrameworkModalOpen = true
 	}
 
 	let latestGithubRelease = checkForUpdates()
@@ -527,6 +533,14 @@
 	<p>
 		There's a file in the Mods folder. You should be using the Add a Mod button in the mod manager to manage your mods - not doing so exposes you to several risks, including your computer's
 		security.
+	</p>
+</Modal>
+
+<Modal alert bind:open={mustRedownloadFrameworkModalOpen} modalHeading="Reinstall the framework" primaryButtonText="OK" on:submit={() => (mustRedownloadFrameworkModalOpen = false)}>
+	<p>
+		The framework needs to be reinstalled due to a change in its internals which can't be automatically updated. Please download the Release.zip file from
+		<code>https://github.com/atampy25/simple-mod-framework/releases/latest</code>
+		and extract it over the existing framework files, overwriting everything except for config.json.
 	</p>
 </Modal>
 

@@ -26,3 +26,4 @@ contextBridge.exposeInMainWorld("ipc", {
 contextBridge.exposeInMainWorld("openExternalLink", shell.openExternal)
 contextBridge.exposeInMainWorld("sanitizeHtml", require("sanitize-html"))
 contextBridge.exposeInMainWorld("child_process", require("child_process"))
+contextBridge.exposeInMainWorld("nodeVersion", process.versions.node)

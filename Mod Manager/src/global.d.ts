@@ -15,7 +15,7 @@ declare global {
 	interface Window {
 		ipc: any
 		fs: typeof fs
-		isFile: (path: string) => boolean,
+		isFile: (path: string) => boolean
 		originalFs: typeof originalFs
 		path: typeof path
 		klaw: typeof klaw
@@ -23,5 +23,6 @@ declare global {
 		openExternalLink: typeof electron["shell"]["openExternal"]
 		sanitizeHtml: typeof sanitizeHtml
 		child_process: typeof child_process
+		nodeVersion: string
 	}
 }
