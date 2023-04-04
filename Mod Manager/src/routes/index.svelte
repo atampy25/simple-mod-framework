@@ -4,7 +4,7 @@
 
 	import { Button, InlineLoading, Modal, ProgressBar } from "carbon-components-svelte"
 
-	import { getAllMods, getConfig, getManifestFromModID, modIsFramework, getModFolder, mergeConfig, FrameworkVersion, getAllModWarnings } from "$lib/utils"
+	import { getAllMods, getConfig, getManifestFromModID, modIsFramework, getModFolder, mergeConfig, FrameworkVersion } from "$lib/utils"
 
 	import { v4 } from "uuid"
 	import { marked } from "marked"
@@ -366,22 +366,6 @@
 
 		window.location.reload()
 	}
-
-	let modDiagnosticsComplete = false
-	let removeModDiagnosticsElemYet = false
-
-	if (!$page.url.searchParams.get("doNotRunDiagnostics")) {
-		setTimeout(async () => {
-			window.fs.removeSync("./warnings.json")
-
-			await getAllModWarnings()
-			modDiagnosticsComplete = true
-			setTimeout(() => (removeModDiagnosticsElemYet = true), 1000)
-		}, 1000)
-	} else {
-		modDiagnosticsComplete = true
-		removeModDiagnosticsElemYet = true
-	}
 </script>
 
 <div class="w-full h-full overflow-y-auto flex items-center justify-center gap-96">
@@ -517,21 +501,6 @@
 			{/await}
 		</div>
 	</div>
-	{#if !removeModDiagnosticsElemYet}
-		<div in:fade out:fade={{ duration: 1000 }}>
-			<div class="flex items-center gap-16">
-				<h1 class="flex-grow">Running mod diagnostics - don't leave this page...</h1>
-				<div>
-					{#if !modDiagnosticsComplete}
-						<InlineLoading />
-					{:else}
-						<InlineLoading status="finished" />
-					{/if}
-				</div>
-			</div>
-			<p>We're checking all the mods you have installed for possible issues. This shouldn't take too long.</p>
-		</div>
-	{/if}
 </div>
 
 <Modal alert bind:open={cannotFindConfig} modalHeading="Can't find config.json" primaryButtonText="OK" on:submit={() => (cannotFindConfig = false)}>

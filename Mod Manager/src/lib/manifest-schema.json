@@ -16,7 +16,8 @@
 				},
 				"frameworkVersion": {
 					"description": "The version of the framework this mod has been tested against/designed for.",
-					"type": "string"
+					"type": "string",
+					"pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$"
 				},
 				"id": {
 					"description": "An ID for the mod. Should follow capitalised reverse URI style (AuthorName.ModName). Don't include special characters; numbers, underscores and full stops are OK.",
@@ -53,9 +54,7 @@
 											},
 											"type": {
 												"description": "The type of the option. Checkbox options appear as checkboxes in the Mod Manager.",
-												"enum": [
-													"checkbox"
-												],
+												"enum": ["checkbox"],
 												"type": "string"
 											}
 										},
@@ -92,9 +91,7 @@
 											},
 											"type": {
 												"description": "The type of the option. Select options appear as radio buttons in the Mod Manager under a heading (the group name).",
-												"enum": [
-													"select"
-												],
+												"enum": ["select"],
 												"type": "string"
 											}
 										},
@@ -119,9 +116,7 @@
 											},
 											"type": {
 												"description": "The type of the option. Conditional options are enabled whenever a condition is met and disabled otherwise. They do not appear in the Mod Manager.",
-												"enum": [
-													"conditional"
-												],
+												"enum": ["conditional"],
 												"type": "string"
 											}
 										},
@@ -142,7 +137,8 @@
 				},
 				"version": {
 					"description": "The mod's version, using semantic versioning (X.Y.Z) - this means that new features increment the second number, fixes increment the third number and only huge changes that could break compatibility should increment the first number.",
-					"type": "string"
+					"type": "string",
+					"pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$"
 				}
 			},
 			"type": "object"
@@ -203,7 +199,8 @@
 										"type": "string"
 									},
 									{
-										"type": "string"
+										"type": "string",
+										"pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$"
 									}
 								],
 								"maxItems": 2,
@@ -227,7 +224,8 @@
 										"type": "string"
 									},
 									{
-										"type": "string"
+										"type": "string",
+										"pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$"
 									}
 								],
 								"maxItems": 2,
@@ -251,7 +249,8 @@
 										"type": "string"
 									},
 									{
-										"type": "string"
+										"type": "string",
+										"pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$"
 									}
 								],
 								"maxItems": 2,
@@ -299,9 +298,7 @@
 										"type": "string"
 									},
 									"type": {
-										"enum": [
-											"partition"
-										],
+										"enum": ["partition"],
 										"type": "string"
 									}
 								},
@@ -317,9 +314,7 @@
 										"type": "string"
 									},
 									"type": {
-										"enum": [
-											"entity"
-										],
+										"enum": ["entity"],
 										"type": "string"
 									}
 								},
@@ -378,11 +373,7 @@
 			"type": "object"
 		},
 		"Platform": {
-			"enum": [
-				"epic",
-				"microsoft",
-				"steam"
-			],
+			"enum": ["epic", "microsoft", "steam"],
 			"type": "string"
 		},
 		"{english:{[k:string]:string;};french:{[k:string]:string;};italian:{[k:string]:string;};german:{[k:string]:string;};spanish:{[k:string]:string;};russian:{[k:string]:string;};chineseSimplified:{[k:string]:string;};chineseTraditional:{[k:string]:string;};japanese:{[k:string]:string;};}": {
@@ -505,4 +496,3 @@
 		}
 	}
 }
-

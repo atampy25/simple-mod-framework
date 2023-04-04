@@ -6,7 +6,7 @@
 	import json5 from "json5"
 	import { Button, CodeSnippet, InlineNotification, Modal, Search } from "carbon-components-svelte"
 
-	import { getAllMods, getConfig, mergeConfig, getManifestFromModID, modIsFramework, getModFolder, sortMods } from "$lib/utils"
+	import { getAllMods, getConfig, mergeConfig, getManifestFromModID, modIsFramework, getModFolder, sortMods, validateModFolder } from "$lib/utils"
 	import Mod from "$lib/Mod.svelte"
 	import TextInputModal from "$lib/TextInputModal.svelte"
 	import { goto } from "$app/navigation"
@@ -67,24 +67,24 @@
 		deployFinished = true
 	})
 
-	document.addEventListener('drop', event => {
+	document.addEventListener("drop", (event) => {
 		event.preventDefault()
 		event.stopPropagation()
 		showDropHint = false
 		let modFile: any = event.dataTransfer?.files[0]
-		if(!modFile) return
+		if (!modFile) return
 		modFilePath = modFile.path
 		addMod()
 	})
-	document.addEventListener('dragover', event => {
+	document.addEventListener("dragover", (event) => {
 		event.preventDefault()
 		event.stopPropagation()
 	})
-	document.addEventListener('dragenter', event => {
-		if((event.dataTransfer?.items?.length ?? 0) > 0 && event.dataTransfer?.items[0]?.kind === 'file') showDropHint = true
+	document.addEventListener("dragenter", (event) => {
+		if ((event.dataTransfer?.items?.length ?? 0) > 0 && event.dataTransfer?.items[0]?.kind === "file") showDropHint = true
 	})
-	document.addEventListener('dragleave', event => {
-		if(event.relatedTarget == null) showDropHint = false
+	document.addEventListener("dragleave", (event) => {
+		if (event.relatedTarget == null) showDropHint = false
 	})
 
 	let modNameInputModal: TextInputModal
@@ -96,6 +96,9 @@
 	let invalidFrameworkZipModalOpen = false
 
 	let invalidModModalOpen = false
+
+	let invalidFrameworkModModalOpen = false
+	let modValidationError = ""
 
 	let modFilePath = ""
 
@@ -131,6 +134,16 @@
 					frameworkModExtractionInProgress = false
 					invalidModModalOpen = true
 					return
+				}
+
+				for (const modFolder of window.fs.readdirSync("./staging").map((a) => window.path.join("./staging", a))) {
+					const modValidation = validateModFolder(modFolder)
+					if (!modValidation[0]) {
+						frameworkModExtractionInProgress = false
+						invalidFrameworkModModalOpen = true
+						modValidationError = modValidation[1]
+						return
+					}
 				}
 
 				if (
@@ -501,8 +514,13 @@
 	<p>The framework ZIP file contains files in the root directory. Contact the mod author.</p>
 </Modal>
 
-<Modal alert bind:open={invalidModModalOpen} modalHeading="What" primaryButtonText="OK" shouldSubmitOnEnter={false} on:submit={() => (invalidModModalOpen = false)}>
+<Modal alert bind:open={invalidModModalOpen} modalHeading="Not a mod" primaryButtonText="OK" shouldSubmitOnEnter={false} on:submit={() => (invalidModModalOpen = false)}>
 	<p>This doesn't look like a mod? Make sure you select a mod ZIP, and that the mod is either a framework mod or RPKG mod.</p>
+</Modal>
+
+<Modal alert bind:open={invalidFrameworkModModalOpen} modalHeading="Invalid mod" primaryButtonText="OK" shouldSubmitOnEnter={false} on:submit={() => (invalidFrameworkModModalOpen = false)}>
+	<p>The mod you're trying to install is invalid. Contact the mod author.</p>
+	<span class="mt-1 text-xs text-neutral-300">{modValidationError}</span>
 </Modal>
 
 <Modal

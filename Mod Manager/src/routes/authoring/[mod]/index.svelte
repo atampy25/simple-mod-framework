@@ -5,7 +5,7 @@
 	import { Button, ClickableTile, InlineLoading, InlineNotification, TextInput } from "carbon-components-svelte"
 	import { page } from "$app/stores"
 
-	import { alterModManifest, FrameworkVersion, getAllModWarnings, getManifestFromModID, getModFolder, setModManifest } from "$lib/utils"
+	import { alterModManifest, FrameworkVersion, getManifestFromModID, getModFolder, setModManifest, validateModFolder } from "$lib/utils"
 	import TextInputModal from "$lib/TextInputModal.svelte"
 
 	import Edit from "carbon-icons-svelte/lib/Edit.svelte"
@@ -60,8 +60,11 @@
 	let frameworkVersionInputChanged = false
 	let updateURLInputChanged = false
 
-	let modWarningsPromise: Promise<Record<string, { title: string; subtitle: string; trace: string; type: string }[]>> = null!
-	$: $page.params.mod ? setTimeout(() => (modWarningsPromise = getAllModWarnings()), 500) : []
+	let modValidation = [true, ""]
+
+	$: if ($page.params.mod) {
+		modValidation = validateModFolder(getModFolder(manifest.id))
+	}
 </script>
 
 <div class="flex gap-4 items-center justify-center">
@@ -256,82 +259,14 @@
 
 <div class="flex items-center justify-center w-full mt-8">
 	<div>
-		<div class="flex gap-4 items-center justify-center">
-			<h1 class="text-center" transition:scale>Tips and Warnings</h1>
-		</div>
-
-		<br />
-
 		<div class="{window.screen.height <= 1080 ? 'max-h-[42vh]' : 'max-h-[45vh]'} pr-4 overflow-y-auto">
-			{#if modWarningsPromise}
-				{#await modWarningsPromise}
-					<div class="flex items-center">
-						<p class="flex-grow">Checking the mod...</p>
-						<div>
-							<InlineLoading />
-						</div>
+			{#if !modValidation[0]}
+				<InlineNotification hideCloseButton lowContrast kind="error">
+					<div slot="title" class="text-lg">Invalid mod</div>
+					<div slot="subtitle">
+						{modValidation[1]}
 					</div>
-				{:then warnings}
-					{#each warnings[manifest.id] as { title, subtitle, trace, type }}
-						{#if type == "error"}
-							<InlineNotification hideCloseButton lowContrast kind="error">
-								<div slot="title" class="text-lg">
-									{title}
-								</div>
-								<div slot="subtitle">
-									{@html subtitle}
-									<br />
-									<br />
-									This error originated from the file at:
-									<br />
-									<code class="h">{window.path.resolve(getModFolder(manifest.id), trace)}</code>
-								</div>
-							</InlineNotification>
-						{:else if type == "warning" || type == "warning-suppressed"}
-							<InlineNotification hideCloseButton lowContrast kind="warning">
-								<div slot="title" class="text-lg">
-									{title}
-								</div>
-								<div slot="subtitle">
-									{@html subtitle}
-									<br />
-									<br />
-									This warning originated from the file at:
-									<br />
-									<code class="h">{window.path.resolve(getModFolder(manifest.id), trace)}</code>
-								</div>
-							</InlineNotification>
-						{:else if type == "info"}
-							<InlineNotification hideCloseButton lowContrast kind="info">
-								<div slot="title" class="text-lg">
-									{title}
-								</div>
-								<div slot="subtitle">
-									{@html subtitle}
-									<br />
-									<br />
-									This message originated from the file at:
-									<br />
-									<code class="h">{window.path.resolve(getModFolder(manifest.id), trace)}</code>
-								</div>
-							</InlineNotification>
-						{/if}
-					{/each}
-				{:catch}
-					<div class="flex items-center">
-						<p class="flex-grow">Couldn't get mod warnings</p>
-						<div>
-							<InlineLoading status="error" />
-						</div>
-					</div>
-				{/await}
-			{:else}
-				<div class="flex items-center">
-					<p class="flex-grow">Checking the mod...</p>
-					<div>
-						<InlineLoading />
-					</div>
-				</div>
+				</InlineNotification>
 			{/if}
 		</div>
 	</div>

@@ -1,0 +1,823 @@
+{
+	"credit": "Auto-generated from Peacock types",
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"definitions": {
+		"GameChanger": {
+			"properties": {
+				"Description": {
+					"type": "string"
+				},
+				"Icon": {
+					"type": "string"
+				},
+				"Id": {
+					"type": "string"
+				},
+				"IsHidden": {
+					"type": "boolean"
+				},
+				"IsPrestigeObjective": {
+					"type": "boolean"
+				},
+				"LongDescription": {
+					"type": "string"
+				},
+				"Name": {
+					"type": "string"
+				},
+				"Objectives": {
+					"items": {
+						"$ref": "#/definitions/MissionManifestObjective"
+					},
+					"type": "array"
+				},
+				"ObjectivesCategory": {
+					"type": "string"
+				},
+				"Resource": {
+					"items": {
+						"type": "string"
+					},
+					"type": "array"
+				},
+				"TileImage": {
+					"type": "string"
+				}
+			},
+			"required": ["Description", "Id", "Name"],
+			"type": "object"
+		},
+		"GroupObjectiveDisplayOrderItem": {
+			"properties": {
+				"Id": {
+					"type": "string"
+				},
+				"IsNew": {
+					"type": "boolean"
+				}
+			},
+			"required": ["Id"],
+			"type": "object"
+		},
+		"HUDTemplate": {
+			"description": "Data structure for an objective's HUD template.",
+			"properties": {
+				"display": {
+					"anyOf": [
+						{
+							"properties": {
+								"$loc": {
+									"properties": {
+										"data": {
+											"type": "string"
+										},
+										"key": {
+											"type": "string"
+										}
+									},
+									"required": ["data", "key"],
+									"type": "object"
+								}
+							},
+							"required": ["$loc"],
+							"type": "object"
+						},
+						{
+							"type": "string"
+						}
+					]
+				},
+				"iconType": {
+					"type": "number"
+				}
+			},
+			"required": ["display"],
+			"type": "object"
+		},
+		"MissionManifestMetadata": {
+			"properties": {
+				"AllowNonTargetKills": {
+					"type": "boolean"
+				},
+				"BriefingVideo": {
+					"anyOf": [
+						{
+							"items": {
+								"properties": {
+									"Mode": {
+										"type": "string"
+									},
+									"VideoId": {
+										"type": "string"
+									}
+								},
+								"required": ["Mode", "VideoId"],
+								"type": "object"
+							},
+							"type": "array"
+						},
+						{
+							"type": "string"
+						}
+					]
+				},
+				"CharacterLoadoutData": {},
+				"CharacterSetup": {
+					"items": {
+						"properties": {
+							"Characters": {
+								"items": [
+									{
+										"properties": {
+											"Id": {
+												"type": "string"
+											},
+											"MandatoryLoadout": {
+												"items": {
+													"type": "string"
+												},
+												"type": "array"
+											},
+											"Name": {
+												"type": "string"
+											}
+										},
+										"required": ["Id", "Name"],
+										"type": "object"
+									}
+								],
+								"maxItems": 1,
+								"minItems": 1,
+								"type": "array"
+							},
+							"Mode": {
+								"type": "string"
+							}
+						},
+						"required": ["Characters", "Mode"],
+						"type": "object"
+					},
+					"type": "array"
+				},
+				"CodeName_Hint": {
+					"type": "string"
+				},
+				"CpdId": {
+					"type": "string"
+				},
+				"CreationTimestamp": {
+					"type": "string"
+				},
+				"CreatorUserId": {
+					"type": "string"
+				},
+				"DebriefingVideo": {
+					"type": "string"
+				},
+				"Description": {
+					"type": "string"
+				},
+				"Difficulty": {
+					"type": "string"
+				},
+				"Drops": {
+					"items": {
+						"type": "string"
+					},
+					"type": "array"
+				},
+				"EndConditions": {
+					"properties": {
+						"PointLimit": {
+							"type": "number"
+						}
+					},
+					"type": "object"
+				},
+				"Enginemodes": {
+					"items": {
+						"type": "string"
+					},
+					"type": "array"
+				},
+				"Entitlements": {
+					"items": {
+						"type": "string"
+					},
+					"type": "array"
+				},
+				"GameVersion": {
+					"type": "string"
+				},
+				"Gamemodes": {
+					"items": {
+						"type": "string"
+					},
+					"type": "array"
+				},
+				"GroupDefinition": {
+					"description": "Data for a group contract.",
+					"properties": {
+						"Order": {
+							"description": "The contracts in this group, ordered by their position in the group.",
+							"items": {
+								"type": "string"
+							},
+							"type": "array"
+						},
+						"Type": {
+							"$ref": "#/definitions/MissionType",
+							"description": "The contract group type."
+						}
+					},
+					"required": ["Order", "Type"],
+					"type": "object"
+				},
+				"GroupObjectiveDisplayOrder": {
+					"items": {
+						"$ref": "#/definitions/GroupObjectiveDisplayOrderItem"
+					},
+					"type": "array"
+				},
+				"GroupTitle": {
+					"type": "string"
+				},
+				"Id": {
+					"type": "string"
+				},
+				"InGroup": {
+					"type": "string"
+				},
+				"IsEvergreenSafehouse": {
+					"type": "boolean"
+				},
+				"IsFeatured": {
+					"type": "boolean"
+				},
+				"IsPublished": {
+					"type": "boolean"
+				},
+				"IsVersus": {
+					"type": "boolean"
+				},
+				"LastUpdate": {
+					"type": "string"
+				},
+				"Location": {
+					"type": "string"
+				},
+				"NonTargetKillPenaltyEnabled": {
+					"type": "boolean"
+				},
+				"NoticedTargetStreakPenaltyMax": {
+					"type": "number"
+				},
+				"Opportunities": {
+					"items": {
+						"type": "string"
+					},
+					"type": "array"
+				},
+				"PublicId": {
+					"type": "string"
+				},
+				"Release": {
+					"anyOf": [
+						{
+							"additionalProperties": true,
+							"properties": {},
+							"type": "object"
+						},
+						{
+							"type": "string"
+						}
+					]
+				},
+				"RequiredUnlockable": {
+					"type": "string"
+				},
+				"ScenePath": {
+					"type": "string"
+				},
+				"ServerVersion": {
+					"type": "string"
+				},
+				"SpawnSelectionType": {
+					"type": "string"
+				},
+				"Subtype": {
+					"type": "string"
+				},
+				"TargetExpiration": {
+					"type": "number"
+				},
+				"TargetExpirationReduced": {
+					"type": "number"
+				},
+				"TargetLifeTime": {
+					"type": "number"
+				},
+				"TileImage": {
+					"anyOf": [
+						{
+							"items": {
+								"properties": {
+									"Image": {
+										"type": "string"
+									},
+									"Mode": {
+										"type": "string"
+									}
+								},
+								"required": ["Image", "Mode"],
+								"type": "object"
+							},
+							"type": "array"
+						},
+						{
+							"type": "string"
+						}
+					]
+				},
+				"Title": {
+					"type": "string"
+				},
+				"Type": {
+					"$ref": "#/definitions/MissionType"
+				},
+				"UseContractProgressionData": {
+					"type": "boolean"
+				},
+				"UserData": {
+					"description": "Useless property."
+				}
+			},
+			"required": ["Id", "Location", "ScenePath", "Title", "Type"],
+			"type": "object"
+		},
+		"MissionManifestObjective": {
+			"properties": {
+				"Activation": {
+					"properties": {
+						"$eq": {
+							"items": {
+								"type": ["string", "boolean"]
+							},
+							"type": "array"
+						}
+					},
+					"type": "object"
+				},
+				"AllowEtRestartOnSuccess": {
+					"description": "Allow Elusive Target Arcade contracts to be restarted if this objective is already successfully completed.",
+					"type": "boolean"
+				},
+				"BriefingName": {
+					"type": "string"
+				},
+				"BriefingText": {
+					"anyOf": [
+						{
+							"properties": {
+								"$loc": {
+									"properties": {
+										"data": {
+											"anyOf": [
+												{
+													"items": {
+														"type": "number"
+													},
+													"type": "array"
+												},
+												{
+													"type": "string"
+												}
+											]
+										},
+										"key": {
+											"type": "string"
+										}
+									},
+									"required": ["data", "key"],
+									"type": "object"
+								}
+							},
+							"required": ["$loc"],
+							"type": "object"
+						},
+						{
+							"type": "string"
+						}
+					]
+				},
+				"Category": {
+					"type": "string"
+				},
+				"CombinedDisplayInHud": {
+					"type": "boolean"
+				},
+				"Definition": {
+					"properties": {
+						"Constants": {
+							"$ref": "#/definitions/Record<string,unknown>"
+						},
+						"Context": {
+							"$ref": "#/definitions/Record<string,unknown>"
+						},
+						"ContextListeners": {
+							"$ref": "#/definitions/Record<string,IContextListener<any>>"
+						},
+						"Scope": {
+							"type": "string"
+						},
+						"States": {
+							"$ref": "#/definitions/Record<string,unknown>"
+						},
+						"display": {
+							"properties": {
+								"iconType": {
+									"type": "number"
+								}
+							},
+							"type": "object"
+						}
+					},
+					"type": "object"
+				},
+				"DisplayAsKillObjective": {
+					"type": "boolean"
+				},
+				"ExcludeFromScoring": {
+					"type": "boolean"
+				},
+				"FailedEvent": {
+					"properties": {
+						"EventName": {
+							"type": "string"
+						},
+						"EventValues": {
+							"properties": {
+								"RepositoryId": {
+									"description": "A repository ID (really just a UUID v4).",
+									"type": "string"
+								}
+							},
+							"type": "object"
+						}
+					},
+					"required": ["EventName"],
+					"type": "object"
+				},
+				"ForceShowOnLoadingScreen": {
+					"type": "boolean"
+				},
+				"GameChangerName": {
+					"type": "string"
+				},
+				"HUDTemplate": {
+					"$ref": "#/definitions/HUDTemplate"
+				},
+				"Id": {
+					"type": "string"
+				},
+				"IgnoreIfInactive": {
+					"type": "boolean"
+				},
+				"Image": {
+					"type": "string"
+				},
+				"IsHidden": {
+					"type": "boolean"
+				},
+				"IsPrestigeObjective": {
+					"type": "boolean"
+				},
+				"LongBriefingText": {
+					"anyOf": [
+						{
+							"properties": {
+								"$loc": {
+									"properties": {
+										"data": {
+											"anyOf": [
+												{
+													"items": {
+														"type": "number"
+													},
+													"type": "array"
+												},
+												{
+													"type": "string"
+												}
+											]
+										},
+										"key": {
+											"type": "string"
+										}
+									},
+									"required": ["data", "key"],
+									"type": "object"
+								}
+							},
+							"required": ["$loc"],
+							"type": "object"
+						},
+						{
+							"type": "string"
+						}
+					]
+				},
+				"ObjectiveType": {
+					"type": "string"
+				},
+				"OnActive": {
+					"properties": {
+						"IfCompleted": {
+							"properties": {
+								"State": {
+									"type": "string"
+								},
+								"Visible": {
+									"type": "boolean"
+								}
+							},
+							"type": "object"
+						},
+						"IfFailed": {
+							"properties": {
+								"State": {
+									"type": "string"
+								},
+								"Visible": {
+									"type": "boolean"
+								}
+							},
+							"type": "object"
+						},
+						"IfInProgress": {
+							"properties": {
+								"State": {
+									"type": "string"
+								},
+								"Visible": {
+									"type": "boolean"
+								}
+							},
+							"type": "object"
+						}
+					},
+					"type": "object"
+				},
+				"OnInactive": {
+					"properties": {
+						"IfCompleted": {
+							"properties": {
+								"State": {
+									"type": "string"
+								}
+							},
+							"type": "object"
+						}
+					},
+					"type": "object"
+				},
+				"Primary": {
+					"type": "boolean"
+				},
+				"ResetEvent": {
+					"type": "null"
+				},
+				"Scope": {
+					"type": "string"
+				},
+				"ShowInHud": {
+					"type": "boolean"
+				},
+				"SuccessEvent": {
+					"properties": {
+						"EventName": {
+							"type": "string"
+						},
+						"EventValues": {
+							"properties": {
+								"RepositoryId": {
+									"description": "A repository ID (really just a UUID v4).",
+									"type": "string"
+								}
+							},
+							"required": ["RepositoryId"],
+							"type": "object"
+						}
+					},
+					"required": ["EventName", "EventValues"],
+					"type": "object"
+				},
+				"TargetConditions": {
+					"items": {
+						"$ref": "#/definitions/TargetCondition"
+					},
+					"type": "array"
+				},
+				"Type": {
+					"type": "string"
+				},
+				"_comment": {
+					"type": "string"
+				}
+			},
+			"required": ["Id"],
+			"type": "object"
+		},
+		"MissionType": {
+			"description": "Possible mission `Metadata.Type` values.",
+			"enum": ["arcade", "campaign", "creation", "elusive", "escalation", "evergreen", "featured", "mission", "orbis", "sniper", "tutorial", "usercreated", "vsrace", "flashback"],
+			"type": "string"
+		},
+		"Record<string,IContextListener<any>>": {
+			"type": "object"
+		},
+		"Record<string,any>": {
+			"type": "object"
+		},
+		"Record<string,unknown>": {
+			"type": "object"
+		},
+		"TargetCondition": {
+			"properties": {
+				"HardCondition": {
+					"type": "boolean"
+				},
+				"KillMethod": {
+					"type": "string"
+				},
+				"ObjectiveId": {
+					"type": "string"
+				},
+				"RepositoryId": {
+					"description": "A repository ID (really just a UUID v4).",
+					"type": "string"
+				},
+				"Type": {
+					"type": "string"
+				}
+			},
+			"required": ["Type"],
+			"type": "object"
+		},
+		"VRQualityDefinition": {
+			"description": "Data structure for a mission manifest's `Data.VR` bricks property.",
+			"properties": {
+				"Bricks": {
+					"items": {
+						"type": "string"
+					},
+					"type": "array"
+				},
+				"Quality": {
+					"type": "string"
+				}
+			},
+			"required": ["Bricks", "Quality"],
+			"type": "object"
+		}
+	},
+	"description": "A mission's manifest is what defines how a specific contract plays.",
+	"properties": {
+		"Data": {
+			"properties": {
+				"Bricks": {
+					"items": {
+						"type": "string"
+					},
+					"type": "array"
+				},
+				"DevOnlyBricks": {
+					"items": {
+						"type": "string"
+					},
+					"type": "array"
+				},
+				"EnableExits": {
+					"properties": {
+						"$eq": {
+							"items": {
+								"type": ["string", "boolean"]
+							},
+							"type": "array"
+						}
+					},
+					"type": "object"
+				},
+				"EnableSaving": {
+					"type": "boolean"
+				},
+				"EngineModesBricks": {
+					"items": {},
+					"type": "array"
+				},
+				"EngineModessBricks": {
+					"description": "IOI typo.",
+					"type": "null"
+				},
+				"Entrances": {
+					"items": {
+						"type": "string"
+					},
+					"type": "array"
+				},
+				"GameChangerReferences": {
+					"items": {
+						"$ref": "#/definitions/GameChanger"
+					},
+					"type": "array"
+				},
+				"GameChangers": {
+					"items": {
+						"type": "string"
+					},
+					"type": "array"
+				},
+				"GameDifficulties": {
+					"items": {
+						"properties": {
+							"Bricks": {
+								"items": {
+									"type": "string"
+								},
+								"type": "array"
+							},
+							"Difficulty": {
+								"type": "string"
+							}
+						},
+						"required": ["Bricks", "Difficulty"],
+						"type": "object"
+					},
+					"type": "array"
+				},
+				"GameModesBricks": {
+					"items": {},
+					"type": "array"
+				},
+				"MandatoryLoadout": {
+					"items": {},
+					"type": "array"
+				},
+				"Objectives": {
+					"items": {
+						"$ref": "#/definitions/MissionManifestObjective"
+					},
+					"type": "array"
+				},
+				"RecommendedLoadout": {
+					"items": {},
+					"type": "array"
+				},
+				"Stashpoints": {
+					"items": {
+						"type": "string"
+					},
+					"type": "array"
+				},
+				"VR": {
+					"items": {
+						"$ref": "#/definitions/VRQualityDefinition"
+					},
+					"type": "array"
+				}
+			},
+			"required": ["Bricks"],
+			"type": "object"
+		},
+		"Metadata": {
+			"$ref": "#/definitions/MissionManifestMetadata"
+		},
+		"Peacock": {
+			"properties": {
+				"noAgencyPickupsActive": {
+					"type": "boolean"
+				},
+				"noCarriedWeapon": {
+					"type": "boolean"
+				},
+				"noGear": {
+					"type": "boolean"
+				}
+			},
+			"type": "object"
+		},
+		"UserData": {
+			"anyOf": [
+				{
+					"items": {},
+					"type": "array"
+				},
+				{
+					"$ref": "#/definitions/Record<string,any>"
+				}
+			]
+		}
+	},
+	"required": ["Data", "Metadata"],
+	"type": "object"
+}

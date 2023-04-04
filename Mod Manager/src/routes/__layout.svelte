@@ -14,7 +14,7 @@
 {#if ready}
 	<div class="flex flex-row h-screen w-screen">
 		<div class="bg-neutral-900 w-16 h-full flex flex-col gap-16 items-center justify-center">
-			<a href="/?doNotRunDiagnostics=1" sveltekit:reload class="text-white">
+			<a href="/" sveltekit:reload class="text-white">
 				<Icon icon={faHome} />
 			</a>
 			<a href="/modList" sveltekit:reload class="text-white">

@@ -1,18 +1,113 @@
 import { OptionType, type Config, type Manifest } from "../../../src/types"
 import { compileExpression, useDotAccessOperatorAndOptionalChaining } from "filtrex"
-import { xxhash3 } from "hash-wasm"
 
 import Ajv from "ajv"
 import json5 from "json5"
 import manifestSchema from "$lib/manifest-schema.json"
+import entitySchema from "$lib/entity-schema.json"
+import entityPatchSchema from "$lib/entity-patch-schema.json"
+import contractSchema from "$lib/contract-schema.json"
 import memoize from "lodash.memoize"
 import merge from "lodash.mergewith"
 import semver from "semver"
-import { cloneDeep } from "lodash"
 
 export const FrameworkVersion = "2.19.0"
 
-const validateManifest = new Ajv().compile(manifestSchema)
+const validateManifest = new Ajv({ strict: false }).compile(manifestSchema)
+
+const validateEntity = new Ajv({ strict: false }).compile(entitySchema)
+const validateEntityPatch = new Ajv({ strict: false }).compile(entityPatchSchema)
+const validateRepository = new Ajv({ strict: false }).compile({
+	$schema: "http://json-schema.org/draft-07/schema#",
+	type: "object",
+	patternProperties: {
+		"^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$": {
+			type: "object"
+		}
+	},
+	additionalProperties: false
+})
+const validateUnlockables = new Ajv({ strict: false }).compile({
+	$schema: "http://json-schema.org/draft-07/schema#",
+	type: "object",
+	patternProperties: {
+		"^.*$": {
+			type: "object"
+		}
+	},
+	additionalProperties: false
+})
+const validateContract = new Ajv({ strict: false }).compile(contractSchema)
+const validateJSONPatch = new Ajv({ strict: false }).compile({
+	$schema: "http://json-schema.org/draft-07/schema#",
+	type: "object",
+	properties: {
+		file: {
+			type: "string"
+		},
+		type: {
+			type: "string"
+		},
+		patch: {
+			type: "array",
+			items: {
+				oneOf: [
+					{
+						additionalProperties: false,
+						required: ["value", "op", "path"],
+						properties: {
+							path: {
+								type: "string"
+							},
+							op: {
+								description: "The operation to perform.",
+								type: "string",
+								enum: ["add", "replace", "test"]
+							},
+							value: {
+								description: "The value to add, replace or test."
+							}
+						}
+					},
+					{
+						additionalProperties: false,
+						required: ["op", "path"],
+						properties: {
+							path: {
+								type: "string"
+							},
+							op: {
+								description: "The operation to perform.",
+								type: "string",
+								enum: ["remove"]
+							}
+						}
+					},
+					{
+						additionalProperties: false,
+						required: ["from", "op", "path"],
+						properties: {
+							path: {
+								type: "string"
+							},
+							op: {
+								description: "The operation to perform.",
+								type: "string",
+								enum: ["move", "copy"]
+							},
+							from: {
+								type: "string",
+								description: "A JSON Pointer path pointing to the location to move/copy from."
+							}
+						}
+					}
+				]
+			}
+		}
+	},
+	additionalProperties: false,
+	required: ["file", "patch"]
+})
 
 export function getConfig() {
 	const config: Config = json5.parse(String(window.fs.readFileSync("../config.json", "utf8")))
@@ -42,9 +137,7 @@ export function getConfig() {
 						{
 							modOptions: {
 								[mod]: [
-									...manifest.options
-										.filter((a) => (a.type === "checkbox" || a.type === "select" ? a.enabledByDefault : false))
-										.map((a) => (a.type === "select" ? `${a.group}:${a.name}` : a.name))
+									...manifest.options.filter((a) => (a.type === "checkbox" || a.type === "select" ? a.enabledByDefault : false)).map((a) => (a.type === "select" ? `${a.group}:${a.name}` : a.name))
 								]
 							}
 						},
@@ -93,10 +186,7 @@ export function getConfig() {
 					) {
 						if (
 							!manifest.options
-								.find(
-									(a) =>
-										(a.type === "checkbox" && a.name === config.modOptions[manifest.id][i]) || (a.type === "select" && `${a.group}:${a.name}` === config.modOptions[manifest.id][i])
-								)!
+								.find((a) => (a.type === "checkbox" && a.name === config.modOptions[manifest.id][i]) || (a.type === "select" && `${a.group}:${a.name}` === config.modOptions[manifest.id][i]))!
 								.requirements!.every((a) => config.loadOrder.includes(a))
 						) {
 							config.modOptions[manifest.id].splice(i, 1)
@@ -331,7 +421,7 @@ export const getModFolder = memoize(function (id: string) {
 
 		if (getConfig().loadOrder.includes(id)) {
 			mergeConfig({
-				loadOrder: getConfig().loadOrder.filter(a=>a!=id)
+				loadOrder: getConfig().loadOrder.filter((a) => a != id)
 			})
 		}
 
@@ -373,93 +463,78 @@ export const getAllMods = memoize(function () {
 		)
 })
 
-const modWarnings: {
-	title: string
-	subtitle: string
-	check: (fileToCheck: string) => Promise<boolean>
-	type: "error" | "warning" | "warning-suppressed" | "info"
-}[] = [
-	{
-		title: "Invalid manifest",
-		subtitle: `
-			The manifest of this mod is invalid.<br><br>
-			You should resolve this - this <b>will</b> cause issues.
-		`,
-		check: async (fileToCheck) => {
-			if (window.path.basename(fileToCheck) === "manifest.json") {
-				try {
-					const manifest = json5.parse(await window.fs.readFile(fileToCheck, "utf8"))
-					if (!manifest) return true
-					if (!validateManifest(manifest)) return true
-				} catch {
-					return true
-				}
-			}
-
-			return false
-		},
-		type: "error"
-	},
-	{
-		title: "Invalid JSON file",
-		subtitle: `
-			There is an invalid JSON file of a framework filetype present in the mod.<br><br>
-			You should resolve this - this <b>will</b> cause issues.
-		`,
-		check: async (fileToCheck) => {
-			if (
-				fileToCheck.endsWith("entity.json") ||
-				fileToCheck.endsWith("entity.patch.json") ||
-				fileToCheck.endsWith("repository.json") ||
-				fileToCheck.endsWith("unlockables.json") ||
-				fileToCheck.endsWith("JSON.patch.json") ||
-				fileToCheck.endsWith("contract.json")
-			) {
-				try {
-					if (!(await window.fs.readJSON(fileToCheck))) return true
-				} catch {
-					return true
-				}
-			}
-
-			return false
-		},
-		type: "error"
+export function validateModFolder(modFolder: string): [boolean, string] {
+	if (!window.fs.existsSync(window.path.join(modFolder, "manifest.json"))) {
+		return [false, "No manifest"]
 	}
-]
 
-let startedGettingModWarnings = false
+	try {
+		json5.parse(window.fs.readFileSync(window.path.join(modFolder, "manifest.json"), "utf8"))
+	} catch {
+		return [false, "Invalid manifest by invalid JSON"]
+	}
 
-export async function getAllModWarnings(): Promise<Record<string, { title: string; subtitle: string; trace: string; type: string }[]>> {
-	if (!(startedGettingModWarnings || window.fs.existsSync("./warnings.json"))) {
-		startedGettingModWarnings = true
+	if (!validateManifest(json5.parse(window.fs.readFileSync(window.path.join(modFolder, "manifest.json"), "utf8")))) {
+		return [false, "Invalid manifest by non-matching schema"]
+	}
 
-		const allWarnings = []
+	const manifest: Manifest = json5.parse(window.fs.readFileSync(window.path.join(modFolder, "manifest.json"), "utf8"))
 
-		for (const mod of getAllMods().filter((a) => modIsFramework(a))) {
-			const fileWarnings: Record<string, { title: string; subtitle: string; trace: string; type: string }[]> = {}
-
-			for (const file of window.klaw(getModFolder(mod), { nodir: true }).map((a) => a.path)) {
-				fileWarnings[file] = []
-				for (const warning of modWarnings) {
-					if (await warning.check(file)) {
-						fileWarnings[file].push({
-							title: warning.title,
-							subtitle: warning.subtitle,
-							trace: file,
-							type: warning.type
-						})
-					}
-				}
-			}
-
-			allWarnings.push([mod, Object.values(fileWarnings).flat()])
+	for (const contentFolder of [...(manifest.contentFolders || []), ...(manifest.options || []).flatMap((a) => a.contentFolders || [])]) {
+		if (!window.fs.existsSync(window.path.resolve(modFolder, contentFolder))) {
+			return [false, `Invalid content folder "${contentFolder}" by nonexistent path`]
 		}
 
-		await window.fs.writeJSON("./warnings.json", Object.fromEntries(await Promise.all(allWarnings)))
-	} else if (startedGettingModWarnings) {
-		while (!window.fs.existsSync("./warnings.json")) await new Promise((r) => setTimeout(r, 1000))
+		for (const chunkFolder of window.fs.readdirSync(window.path.resolve(modFolder, contentFolder))) {
+			if (!chunkFolder.match(/chunk([0-9]*)/)) {
+				return [false, `Invalid chunk folder "${chunkFolder}" in "${contentFolder}"`]
+			}
+		}
 	}
 
-	return window.fs.readJSONSync("./warnings.json")
+	for (const blobsFolder of [...(manifest.blobsFolders || []), ...(manifest.options || []).flatMap((a) => a.blobsFolders || [])]) {
+		if (!window.fs.existsSync(window.path.resolve(modFolder, blobsFolder))) {
+			return [false, `Invalid blobs folder "${blobsFolder}" by nonexistent path`]
+		}
+	}
+
+	for (const file of window.klaw(modFolder, { nodir: true }).map((a) => a.path)) {
+		if (
+			file.endsWith("entity.json") ||
+			file.endsWith("entity.patch.json") ||
+			file.endsWith("repository.json") ||
+			file.endsWith("unlockables.json") ||
+			file.endsWith("JSON.patch.json") ||
+			file.endsWith("contract.json")
+		) {
+			try {
+				const fileContents = window.fs.readJSONSync(file)
+
+				switch (file.split(".").slice(1).join(".")) {
+					case "entity.json":
+						if (fileContents.quickEntityVersion === 3.1 && !validateEntity(fileContents)) return [false, `Invalid file ${file} by non-matching schema`]
+						break
+					case "entity.patch.json":
+						if (fileContents.patchVersion === 6 && !validateEntityPatch(fileContents)) return [false, `Invalid file ${file} by non-matching schema`]
+						break
+					case "repository.json":
+						if (!validateRepository(fileContents)) return [false, `Invalid file ${file} by non-matching schema`]
+						break
+					case "unlockables.json":
+						if (!validateUnlockables(fileContents)) return [false, `Invalid file ${file} by non-matching schema`]
+						break
+					case "contract.json":
+						if (!validateContract(fileContents)) return [false, `Invalid file ${file} by non-matching schema`]
+						break
+					case "JSON.patch.json":
+						if (!validateJSONPatch(fileContents)) return [false, `Invalid file ${file} by non-matching schema`]
+						break
+				}
+			} catch {
+				return [false, `Invalid file ${file} by invalid JSON`]
+			}
+		}
+	}
+
+	return [true, ""]
 }

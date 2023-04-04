@@ -1,0 +1,500 @@
+{
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"$ref": "#/definitions/Entity",
+	"definitions": {
+		"Entity": {
+			"type": "object",
+			"properties": {
+				"tempHash": {
+					"type": "string",
+					"description": "The hash of the TEMP file of this entity."
+				},
+				"tbluHash": {
+					"type": "string",
+					"description": "The hash of the TBLU file of this entity."
+				},
+				"rootEntity": {
+					"type": "string",
+					"description": "The root sub-entity of this entity."
+				},
+				"entities": {
+					"type": "object",
+					"description": "The sub-entities of this entity.",
+					"additionalProperties": {
+						"$ref": "#/definitions/SubEntity"
+					}
+				},
+				"propertyOverrides": {
+					"type": "array",
+					"description": "Properties on other entities (local or external) to override when this entity is loaded.",
+					"markdownDescription": "Properties on other entities (local or external) to override when this entity is loaded.\n\nOverriding a local entity would be a rather pointless maneuver given that you could just actually change it in the entity instead of using an override.",
+					"items": {
+						"$ref": "#/definitions/PropertyOverride"
+					}
+				},
+				"overrideDeletes": {
+					"type": "array",
+					"description": "Entities (external or local) to delete (including their organisational children) when this entity is loaded.",
+					"markdownDescription": "Entities (external or local) to delete (including their organisational children) when this entity is loaded.\n\nDeleting a local entity would be a rather pointless maneuver given that you could just actually remove it from this entity instead of using an override.",
+					"items": {
+						"$ref": "#/definitions/Ref"
+					}
+				},
+				"pinConnectionOverrides": {
+					"type": "array",
+					"description": "Pin (event) connections (between entities, external or local) to add when this entity is loaded.",
+					"items": {
+						"$ref": "#/definitions/PinConnectionOverride"
+					}
+				},
+				"pinConnectionOverrideDeletes": {
+					"type": "array",
+					"items": {
+						"$ref": "#/definitions/PinConnectionOverrideDelete"
+					}
+				},
+				"externalScenes": {
+					"type": "array",
+					"description": "The external scenes that this entity references.",
+					"items": {
+						"type": "string"
+					}
+				},
+				"subType": {
+					"$ref": "#/definitions/SubType"
+				},
+				"quickEntityVersion": {
+					"type": "number",
+					"description": "The QuickEntity format version of this entity.",
+					"const": 3.1
+				},
+				"extraFactoryDependencies": {
+					"type": "array",
+					"description": "Extra resource dependencies that should be added to the entity's factory when converted to the game's format.",
+					"items": {
+						"$ref": "#/definitions/Dependency"
+					}
+				},
+				"extraBlueprintDependencies": {
+					"type": "array",
+					"description": "Extra resource dependencies that should be added to the entity's blueprint when converted to the game's format.",
+					"items": {
+						"$ref": "#/definitions/Dependency"
+					}
+				},
+				"comments": {
+					"type": "array",
+					"items": {
+						"$ref": "#/definitions/CommentEntity"
+					}
+				}
+			},
+			"required": [
+				"tempHash",
+				"tbluHash",
+				"rootEntity",
+				"entities",
+				"propertyOverrides",
+				"overrideDeletes",
+				"pinConnectionOverrides",
+				"pinConnectionOverrideDeletes",
+				"externalScenes",
+				"subType",
+				"quickEntityVersion",
+				"extraFactoryDependencies",
+				"extraBlueprintDependencies",
+				"comments"
+			],
+			"additionalProperties": false
+		},
+		"SubEntity": {
+			"type": "object",
+			"properties": {
+				"parent": {
+					"$ref": "#/definitions/Ref",
+					"description": "The \"logical\" parent of the entity.",
+					"markdownDescription": "The \"logical\" or \"organisational\" parent of the entity, used for tree organisation in graphical editors.\n\nHas no effect on the entity in game."
+				},
+				"name": {
+					"type": "string",
+					"description": "The name of the entity."
+				},
+				"factory": {
+					"type": "string",
+					"description": "The factory of the entity."
+				},
+				"factoryFlag": {
+					"type": "string",
+					"description": "The factory's flag.",
+					"markdownDescription": "The factory's flag.\n\nYou can leave this out if it's 1F.",
+					"default": "1F"
+				},
+				"blueprint": {
+					"type": "string",
+					"description": "The blueprint of the entity."
+				},
+				"editorOnly": {
+					"type": "boolean",
+					"description": "Whether the entity is only loaded in IO's editor.",
+					"markdownDescription": "Whether the entity is only loaded in IO's editor.\n\nSetting this to true will remove the entity from the game as well as all of its organisational (but not coordinate) children.",
+					"default": false
+				},
+				"properties": {
+					"type": "object",
+					"description": "Properties of the entity.",
+					"additionalProperties": {
+						"$ref": "#/definitions/Property"
+					}
+				},
+				"platformSpecificProperties": {
+					"type": "object",
+					"description": "Properties to apply conditionally to the entity based on platform.",
+					"additionalProperties": {
+						"type": "object",
+						"additionalProperties": {
+							"$ref": "#/definitions/Property"
+						}
+					}
+				},
+				"events": {
+					"type": "object",
+					"description": "Inputs on entities to trigger when events occur.",
+					"additionalProperties": {
+						"type": "object",
+						"additionalProperties": {
+							"type": "array",
+							"items": {
+								"$ref": "#/definitions/RefMaybeConstantValue"
+							}
+						}
+					}
+				},
+				"inputCopying": {
+					"type": "object",
+					"description": "Inputs on entities to trigger when this entity is given inputs.",
+					"additionalProperties": {
+						"type": "object",
+						"additionalProperties": {
+							"type": "array",
+							"items": {
+								"$ref": "#/definitions/RefMaybeConstantValue"
+							}
+						}
+					}
+				},
+				"outputCopying": {
+					"type": "object",
+					"description": "Events to propagate on other entities.",
+					"additionalProperties": {
+						"type": "object",
+						"additionalProperties": {
+							"type": "array",
+							"items": {
+								"$ref": "#/definitions/RefMaybeConstantValue"
+							}
+						}
+					}
+				},
+				"propertyAliases": {
+					"type": "object",
+					"description": "Properties on other entities that can be accessed from this entity.",
+					"additionalProperties": {
+						"type": "array",
+						"items": {
+							"$ref": "#/definitions/PropertyAlias"
+						}
+					}
+				},
+				"exposedEntities": {
+					"type": "object",
+					"description": "Entities that can be accessed from this entity.",
+					"additionalProperties": {
+						"$ref": "#/definitions/ExposedEntity"
+					}
+				},
+				"exposedInterfaces": {
+					"type": "object",
+					"description": "Interfaces implemented by other entities that can be accessed from this entity.",
+					"additionalProperties": {
+						"type": "string"
+					}
+				},
+				"subsets": {
+					"type": "object",
+					"description": "The subsets that this entity belongs to.",
+					"additionalProperties": {
+						"type": "array",
+						"items": {
+							"type": "string"
+						}
+					}
+				}
+			},
+			"required": ["parent", "name", "factory", "blueprint"],
+			"additionalProperties": false,
+			"default": {
+				"parent": "fffffffffffffffe",
+				"name": "New Entity",
+				"factory": "[modules:/zentity.class].pc_entitytype",
+				"blueprint": "[modules:/zentity.class].pc_entityblueprint"
+			}
+		},
+		"Ref": {
+			"anyOf": [
+				{
+					"$ref": "#/definitions/FullRef"
+				},
+				{
+					"type": "string"
+				},
+				{
+					"type": "null"
+				}
+			],
+			"default": ""
+		},
+		"FullRef": {
+			"type": "object",
+			"properties": {
+				"ref": {
+					"type": "string"
+				},
+				"externalScene": {
+					"type": ["string", "null"]
+				},
+				"exposedEntity": {
+					"type": "string"
+				}
+			},
+			"required": ["ref", "externalScene"],
+			"additionalProperties": false,
+			"default": {
+				"ref": "",
+				"externalScene": null
+			}
+		},
+		"Property": {
+			"type": "object",
+			"properties": {
+				"type": {
+					"type": "string"
+				},
+				"value": {},
+				"postInit": {
+					"type": "boolean",
+					"default": false
+				}
+			},
+			"required": ["type", "value"],
+			"additionalProperties": false,
+			"default": {
+				"type": "",
+				"value": ""
+			}
+		},
+		"RefMaybeConstantValue": {
+			"anyOf": [
+				{
+					"$ref": "#/definitions/RefWithConstantValue"
+				},
+				{
+					"$ref": "#/definitions/Ref"
+				}
+			]
+		},
+		"RefWithConstantValue": {
+			"type": "object",
+			"properties": {
+				"ref": {
+					"$ref": "#/definitions/Ref"
+				},
+				"value": {
+					"$ref": "#/definitions/SimpleProperty"
+				}
+			},
+			"required": ["ref", "value"],
+			"additionalProperties": false
+		},
+		"SimpleProperty": {
+			"type": "object",
+			"properties": {
+				"type": {
+					"type": "string"
+				},
+				"value": {}
+			},
+			"required": ["type", "value"],
+			"additionalProperties": false
+		},
+		"PropertyAlias": {
+			"type": "object",
+			"properties": {
+				"originalProperty": {
+					"type": "string"
+				},
+				"originalEntity": {
+					"$ref": "#/definitions/Ref"
+				}
+			},
+			"required": ["originalProperty", "originalEntity"],
+			"additionalProperties": false,
+			"default": {
+				"originalProperty": "",
+				"originalEntity": ""
+			}
+		},
+		"ExposedEntity": {
+			"type": "object",
+			"properties": {
+				"isArray": {
+					"type": "boolean"
+				},
+				"refersTo": {
+					"type": "array",
+					"items": {
+						"$ref": "#/definitions/Ref"
+					}
+				}
+			},
+			"required": ["isArray", "refersTo"],
+			"additionalProperties": false,
+			"default": {
+				"isArray": false,
+				"refersTo": []
+			}
+		},
+		"PropertyOverride": {
+			"type": "object",
+			"properties": {
+				"entities": {
+					"type": "array",
+					"items": {
+						"$ref": "#/definitions/Ref"
+					}
+				},
+				"properties": {
+					"type": "object",
+					"additionalProperties": {
+						"$ref": "#/definitions/OverriddenProperty"
+					}
+				}
+			},
+			"required": ["entities", "properties"],
+			"additionalProperties": false,
+			"default": {
+				"entities": [],
+				"properties": {}
+			}
+		},
+		"OverriddenProperty": {
+			"type": "object",
+			"properties": {
+				"type": {
+					"type": "string"
+				},
+				"value": {}
+			},
+			"required": ["type", "value"],
+			"additionalProperties": false
+		},
+		"PinConnectionOverride": {
+			"type": "object",
+			"properties": {
+				"fromEntity": {
+					"$ref": "#/definitions/Ref",
+					"description": "The entity that will trigger the input on the other entity.",
+					"markdownDescription": "The entity that will trigger the input on the other entity.\n\nIf this references a local entity, you can simply use an event on the entity itself."
+				},
+				"fromPin": {
+					"type": "string",
+					"description": "The name of the event on the fromEntity that will trigger the input on the toEntity."
+				},
+				"toEntity": {
+					"$ref": "#/definitions/Ref",
+					"description": "The entity whose input will be triggered."
+				},
+				"toPin": {
+					"type": "string",
+					"description": "The name of the input on the toEntity that will be triggered by the event on the fromEntity."
+				},
+				"value": {}
+			},
+			"required": ["fromEntity", "fromPin", "toEntity", "toPin"],
+			"additionalProperties": false
+		},
+		"PinConnectionOverrideDelete": {
+			"type": "object",
+			"properties": {
+				"fromEntity": {
+					"$ref": "#/definitions/Ref",
+					"description": "The entity that triggers the input on the other entity."
+				},
+				"fromPin": {
+					"type": "string",
+					"description": "The name of the event on the fromEntity that will no longer trigger the input on the toEntity."
+				},
+				"toEntity": {
+					"$ref": "#/definitions/Ref",
+					"description": "The entity whose input is triggered."
+				},
+				"toPin": {
+					"type": "string",
+					"description": "The name of the input on the toEntity that will no longer be triggered by the event on the fromEntity."
+				},
+				"value": {
+					"$ref": "#/definitions/SimpleProperty"
+				}
+			},
+			"required": ["fromEntity", "fromPin", "toEntity", "toPin"],
+			"additionalProperties": false
+		},
+		"SubType": {
+			"type": "string",
+			"description": "The type of this entity.",
+			"enum": ["brick", "scene", "template"]
+		},
+		"Dependency": {
+			"anyOf": [
+				{
+					"$ref": "#/definitions/DependencyWithFlag"
+				},
+				{
+					"type": "string"
+				}
+			]
+		},
+		"DependencyWithFlag": {
+			"type": "object",
+			"properties": {
+				"resource": {
+					"type": "string"
+				},
+				"flag": {
+					"type": "string"
+				}
+			},
+			"required": ["resource", "flag"],
+			"additionalProperties": false,
+			"default": {
+				"resource": "",
+				"flag": "1F"
+			}
+		},
+		"CommentEntity": {
+			"type": "object",
+			"properties": {
+				"parent": {
+					"$ref": "#/definitions/Ref"
+				},
+				"name": {
+					"type": "string"
+				},
+				"text": {
+					"type": "string"
+				}
+			},
+			"required": ["parent", "name", "text"],
+			"additionalProperties": false
+		}
+	}
+}

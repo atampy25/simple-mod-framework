@@ -1,0 +1,1260 @@
+{
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"type": "object",
+	"properties": {
+		"tempHash": {
+			"type": "string"
+		},
+		"tbluHash": {
+			"type": "string"
+		},
+		"patch": {
+			"type": "array",
+			"items": {
+				"$ref": "#/definitions/PatchOperation"
+			}
+		},
+		"patchVersion": {
+			"type": "number",
+			"const": 6
+		}
+	},
+	"required": ["tempHash", "tbluHash", "patch", "patchVersion"],
+	"definitions": {
+		"PatchOperation": {
+			"anyOf": [
+				{
+					"properties": {
+						"SetRootEntity": {
+							"type": "string"
+						}
+					},
+					"required": ["SetRootEntity"],
+					"type": "object"
+				},
+				{
+					"properties": {
+						"SetSubType": {
+							"$ref": "#/definitions/SubType"
+						}
+					},
+					"required": ["SetSubType"],
+					"type": "object"
+				},
+				{
+					"properties": {
+						"AddEntity": {
+							"items": [
+								{
+									"type": "string"
+								},
+								{
+									"$ref": "#/definitions/SubEntity"
+								}
+							],
+							"maxItems": 2,
+							"minItems": 2,
+							"type": "array"
+						}
+					},
+					"required": ["AddEntity"],
+					"type": "object"
+				},
+				{
+					"properties": {
+						"RemoveEntityByID": {
+							"type": "string"
+						}
+					},
+					"required": ["RemoveEntityByID"],
+					"type": "object"
+				},
+				{
+					"properties": {
+						"SubEntityOperation": {
+							"items": [
+								{
+									"type": "string"
+								},
+								{
+									"$ref": "#/definitions/SubEntityOperation"
+								}
+							],
+							"maxItems": 2,
+							"minItems": 2,
+							"type": "array"
+						}
+					},
+					"required": ["SubEntityOperation"],
+					"type": "object"
+				},
+				{
+					"properties": {
+						"AddPropertyOverride": {
+							"$ref": "#/definitions/PropertyOverride"
+						}
+					},
+					"required": ["AddPropertyOverride"],
+					"type": "object"
+				},
+				{
+					"properties": {
+						"RemovePropertyOverride": {
+							"$ref": "#/definitions/PropertyOverride"
+						}
+					},
+					"required": ["RemovePropertyOverride"],
+					"type": "object"
+				},
+				{
+					"properties": {
+						"AddPropertyOverrideConnection": {
+							"$ref": "#/definitions/PropertyOverrideConnection"
+						}
+					},
+					"required": ["AddPropertyOverrideConnection"],
+					"type": "object"
+				},
+				{
+					"properties": {
+						"RemovePropertyOverrideConnection": {
+							"$ref": "#/definitions/PropertyOverrideConnection"
+						}
+					},
+					"required": ["RemovePropertyOverrideConnection"],
+					"type": "object"
+				},
+				{
+					"properties": {
+						"AddOverrideDelete": {
+							"$ref": "#/definitions/Ref"
+						}
+					},
+					"required": ["AddOverrideDelete"],
+					"type": "object"
+				},
+				{
+					"properties": {
+						"RemoveOverrideDelete": {
+							"$ref": "#/definitions/Ref"
+						}
+					},
+					"required": ["RemoveOverrideDelete"],
+					"type": "object"
+				},
+				{
+					"properties": {
+						"AddPinConnectionOverride": {
+							"$ref": "#/definitions/PinConnectionOverride"
+						}
+					},
+					"required": ["AddPinConnectionOverride"],
+					"type": "object"
+				},
+				{
+					"properties": {
+						"RemovePinConnectionOverride": {
+							"$ref": "#/definitions/PinConnectionOverride"
+						}
+					},
+					"required": ["RemovePinConnectionOverride"],
+					"type": "object"
+				},
+				{
+					"properties": {
+						"AddPinConnectionOverrideDelete": {
+							"$ref": "#/definitions/PinConnectionOverrideDelete"
+						}
+					},
+					"required": ["AddPinConnectionOverrideDelete"],
+					"type": "object"
+				},
+				{
+					"properties": {
+						"RemovePinConnectionOverrideDelete": {
+							"$ref": "#/definitions/PinConnectionOverrideDelete"
+						}
+					},
+					"required": ["RemovePinConnectionOverrideDelete"],
+					"type": "object"
+				},
+				{
+					"properties": {
+						"AddExternalScene": {
+							"type": "string"
+						}
+					},
+					"required": ["AddExternalScene"],
+					"type": "object"
+				},
+				{
+					"properties": {
+						"RemoveExternalScene": {
+							"type": "string"
+						}
+					},
+					"required": ["RemoveExternalScene"],
+					"type": "object"
+				},
+				{
+					"properties": {
+						"AddExtraFactoryDependency": {
+							"$ref": "#/definitions/Dependency"
+						}
+					},
+					"required": ["AddExtraFactoryDependency"],
+					"type": "object"
+				},
+				{
+					"properties": {
+						"RemoveExtraFactoryDependency": {
+							"$ref": "#/definitions/Dependency"
+						}
+					},
+					"required": ["RemoveExtraFactoryDependency"],
+					"type": "object"
+				},
+				{
+					"properties": {
+						"AddExtraBlueprintDependency": {
+							"$ref": "#/definitions/Dependency"
+						}
+					},
+					"required": ["AddExtraBlueprintDependency"],
+					"type": "object"
+				},
+				{
+					"properties": {
+						"RemoveExtraBlueprintDependency": {
+							"$ref": "#/definitions/Dependency"
+						}
+					},
+					"required": ["RemoveExtraBlueprintDependency"],
+					"type": "object"
+				},
+				{
+					"properties": {
+						"AddComment": {
+							"$ref": "#/definitions/CommentEntity"
+						}
+					},
+					"required": ["AddComment"],
+					"type": "object"
+				},
+				{
+					"properties": {
+						"RemoveComment": {
+							"$ref": "#/definitions/CommentEntity"
+						}
+					},
+					"required": ["RemoveComment"],
+					"type": "object"
+				}
+			]
+		},
+		"ArrayPatchOperation": {
+			"anyOf": [
+				{
+					"properties": {
+						"RemoveItemByValue": {}
+					},
+					"required": ["RemoveItemByValue"],
+					"type": "object"
+				},
+				{
+					"properties": {
+						"AddItemAfter": {
+							"items": [{}, {}],
+							"maxItems": 2,
+							"minItems": 2,
+							"type": "array"
+						}
+					},
+					"required": ["AddItemAfter"],
+					"type": "object"
+				},
+				{
+					"properties": {
+						"AddItemBefore": {
+							"items": [{}, {}],
+							"maxItems": 2,
+							"minItems": 2,
+							"type": "array"
+						}
+					},
+					"required": ["AddItemBefore"],
+					"type": "object"
+				},
+				{
+					"properties": {
+						"AddItem": {}
+					},
+					"required": ["AddItem"],
+					"type": "object"
+				}
+			]
+		},
+		"CommentEntity": {
+			"properties": {
+				"name": {
+					"type": "string"
+				},
+				"parent": {
+					"$ref": "#/definitions/Ref"
+				},
+				"text": {
+					"type": "string"
+				}
+			},
+			"required": ["name", "parent", "text"],
+			"type": "object"
+		},
+		"Dependency": {
+			"anyOf": [
+				{
+					"$ref": "#/definitions/DependencyWithFlag"
+				},
+				{
+					"type": "string"
+				}
+			]
+		},
+		"DependencyWithFlag": {
+			"properties": {
+				"flag": {
+					"type": "string"
+				},
+				"resource": {
+					"type": "string"
+				}
+			},
+			"required": ["flag", "resource"],
+			"type": "object"
+		},
+		"ExposedEntity": {
+			"properties": {
+				"isArray": {
+					"type": "boolean"
+				},
+				"refersTo": {
+					"items": {
+						"$ref": "#/definitions/Ref"
+					},
+					"type": "array"
+				}
+			},
+			"required": ["isArray", "refersTo"],
+			"type": "object"
+		},
+		"FullRef": {
+			"properties": {
+				"exposedEntity": {
+					"type": "string"
+				},
+				"externalScene": {
+					"type": "string"
+				},
+				"ref": {
+					"type": "string"
+				}
+			},
+			"required": ["externalScene", "ref"],
+			"type": "object"
+		},
+		"OverriddenProperty": {
+			"properties": {
+				"type": {
+					"type": "string"
+				},
+				"value": {}
+			},
+			"required": ["type", "value"],
+			"type": "object"
+		},
+		"PinConnectionOverride": {
+			"properties": {
+				"fromEntity": {
+					"$ref": "#/definitions/Ref"
+				},
+				"fromPin": {
+					"type": "string"
+				},
+				"toEntity": {
+					"$ref": "#/definitions/Ref"
+				},
+				"toPin": {
+					"type": "string"
+				},
+				"value": {}
+			},
+			"required": ["fromEntity", "fromPin", "toEntity", "toPin"],
+			"type": "object"
+		},
+		"PinConnectionOverrideDelete": {
+			"properties": {
+				"fromEntity": {
+					"$ref": "#/definitions/Ref"
+				},
+				"fromPin": {
+					"type": "string"
+				},
+				"toEntity": {
+					"$ref": "#/definitions/Ref"
+				},
+				"toPin": {
+					"type": "string"
+				},
+				"value": {
+					"$ref": "#/definitions/SimpleProperty"
+				}
+			},
+			"required": ["fromEntity", "fromPin", "toEntity", "toPin"],
+			"type": "object"
+		},
+		"Property": {
+			"properties": {
+				"postInit": {
+					"type": "boolean"
+				},
+				"type": {
+					"type": "string"
+				},
+				"value": {}
+			},
+			"required": ["type", "value"],
+			"type": "object"
+		},
+		"PropertyAlias": {
+			"properties": {
+				"originalEntity": {
+					"$ref": "#/definitions/Ref"
+				},
+				"originalProperty": {
+					"type": "string"
+				}
+			},
+			"required": ["originalEntity", "originalProperty"],
+			"type": "object"
+		},
+		"PropertyOverride": {
+			"properties": {
+				"entities": {
+					"items": {
+						"$ref": "#/definitions/Ref"
+					},
+					"type": "array"
+				},
+				"properties": {
+					"$ref": "#/definitions/Record<string,OverriddenProperty>"
+				}
+			},
+			"required": ["entities", "properties"],
+			"type": "object"
+		},
+		"PropertyOverrideConnection": {
+			"properties": {
+				"entity": {
+					"$ref": "#/definitions/Ref"
+				},
+				"propertyName": {
+					"type": "string"
+				},
+				"propertyOverride": {
+					"$ref": "#/definitions/OverriddenProperty"
+				}
+			},
+			"required": ["entity", "propertyName", "propertyOverride"],
+			"type": "object"
+		},
+		"Record<string,ExposedEntity>": {
+			"type": "object"
+		},
+		"Record<string,OverriddenProperty>": {
+			"type": "object"
+		},
+		"Record<string,Property>": {
+			"type": "object"
+		},
+		"Record<string,PropertyAlias>": {
+			"type": "object"
+		},
+		"Record<string,Record<string,Property>>": {
+			"type": "object"
+		},
+		"Record<string,Record<string,RefMaybeConstantValue[]>>": {
+			"type": "object"
+		},
+		"Record<string,String>": {
+			"type": "object"
+		},
+		"Record<string,String[]>": {
+			"type": "object"
+		},
+		"Ref": {
+			"anyOf": [
+				{
+					"$ref": "#/definitions/FullRef"
+				},
+				{
+					"type": "string"
+				}
+			]
+		},
+		"RefMaybeConstantValue": {
+			"anyOf": [
+				{
+					"$ref": "#/definitions/FullRef"
+				},
+				{
+					"$ref": "#/definitions/RefWithConstantValue"
+				},
+				{
+					"type": "string"
+				}
+			]
+		},
+		"RefWithConstantValue": {
+			"properties": {
+				"ref": {
+					"$ref": "#/definitions/Ref"
+				},
+				"value": {
+					"$ref": "#/definitions/SimpleProperty"
+				}
+			},
+			"required": ["ref", "value"],
+			"type": "object"
+		},
+		"SimpleProperty": {
+			"properties": {
+				"type": {
+					"type": "string"
+				},
+				"value": {}
+			},
+			"required": ["type", "value"],
+			"type": "object"
+		},
+		"SubEntity": {
+			"properties": {
+				"blueprint": {
+					"type": "string"
+				},
+				"editorOnly": {
+					"type": "boolean"
+				},
+				"events": {
+					"$ref": "#/definitions/Record<string,Record<string,RefMaybeConstantValue[]>>"
+				},
+				"exposedEntities": {
+					"$ref": "#/definitions/Record<string,ExposedEntity>"
+				},
+				"exposedInterfaces": {
+					"$ref": "#/definitions/Record<string,String>"
+				},
+				"factory": {
+					"type": "string"
+				},
+				"factoryFlag": {
+					"type": "string"
+				},
+				"inputCopying": {
+					"$ref": "#/definitions/Record<string,Record<string,RefMaybeConstantValue[]>>"
+				},
+				"name": {
+					"type": "string"
+				},
+				"outputCopying": {
+					"$ref": "#/definitions/Record<string,Record<string,RefMaybeConstantValue[]>>"
+				},
+				"parent": {
+					"$ref": "#/definitions/Ref"
+				},
+				"platformSpecificProperties": {
+					"$ref": "#/definitions/Record<string,Record<string,Property>>"
+				},
+				"properties": {
+					"$ref": "#/definitions/Record<string,Property>"
+				},
+				"propertyAliases": {
+					"$ref": "#/definitions/Record<string,PropertyAlias>"
+				},
+				"subsets": {
+					"$ref": "#/definitions/Record<string,String[]>"
+				}
+			},
+			"required": ["blueprint", "factory", "name", "parent"],
+			"type": "object"
+		},
+		"SubEntityOperation": {
+			"anyOf": [
+				{
+					"properties": {
+						"SetParent": {
+							"$ref": "#/definitions/Ref"
+						}
+					},
+					"required": ["SetParent"],
+					"type": "object"
+				},
+				{
+					"properties": {
+						"SetName": {
+							"type": "string"
+						}
+					},
+					"required": ["SetName"],
+					"type": "object"
+				},
+				{
+					"properties": {
+						"SetFactory": {
+							"type": "string"
+						}
+					},
+					"required": ["SetFactory"],
+					"type": "object"
+				},
+				{
+					"properties": {
+						"SetFactoryFlag": {
+							"type": "string"
+						}
+					},
+					"required": ["SetFactoryFlag"],
+					"type": "object"
+				},
+				{
+					"properties": {
+						"SetBlueprint": {
+							"type": "string"
+						}
+					},
+					"required": ["SetBlueprint"],
+					"type": "object"
+				},
+				{
+					"properties": {
+						"SetEditorOnly": {
+							"type": "boolean"
+						}
+					},
+					"required": ["SetEditorOnly"],
+					"type": "object"
+				},
+				{
+					"properties": {
+						"AddProperty": {
+							"items": [
+								{
+									"type": "string"
+								},
+								{
+									"$ref": "#/definitions/Property"
+								}
+							],
+							"maxItems": 2,
+							"minItems": 2,
+							"type": "array"
+						}
+					},
+					"required": ["AddProperty"],
+					"type": "object"
+				},
+				{
+					"properties": {
+						"SetPropertyType": {
+							"items": [
+								{
+									"type": "string"
+								},
+								{
+									"type": "string"
+								}
+							],
+							"maxItems": 2,
+							"minItems": 2,
+							"type": "array"
+						}
+					},
+					"required": ["SetPropertyType"],
+					"type": "object"
+				},
+				{
+					"properties": {
+						"SetPropertyValue": {
+							"properties": {
+								"property_name": {
+									"type": "string"
+								},
+								"value": {}
+							},
+							"required": ["property_name", "value"],
+							"type": "object"
+						}
+					},
+					"required": ["SetPropertyValue"],
+					"type": "object"
+				},
+				{
+					"properties": {
+						"PatchArrayPropertyValue": {
+							"items": [
+								{
+									"type": "string"
+								},
+								{
+									"items": {
+										"$ref": "#/definitions/ArrayPatchOperation"
+									},
+									"type": "array"
+								}
+							],
+							"maxItems": 2,
+							"minItems": 2,
+							"type": "array"
+						}
+					},
+					"required": ["PatchArrayPropertyValue"],
+					"type": "object"
+				},
+				{
+					"properties": {
+						"SetPropertyPostInit": {
+							"items": [
+								{
+									"type": "string"
+								},
+								{
+									"type": "boolean"
+								}
+							],
+							"maxItems": 2,
+							"minItems": 2,
+							"type": "array"
+						}
+					},
+					"required": ["SetPropertyPostInit"],
+					"type": "object"
+				},
+				{
+					"properties": {
+						"RemovePropertyByName": {
+							"type": "string"
+						}
+					},
+					"required": ["RemovePropertyByName"],
+					"type": "object"
+				},
+				{
+					"properties": {
+						"AddPlatformSpecificProperty": {
+							"items": [
+								{
+									"type": "string"
+								},
+								{
+									"type": "string"
+								},
+								{
+									"$ref": "#/definitions/Property"
+								}
+							],
+							"maxItems": 3,
+							"minItems": 3,
+							"type": "array"
+						}
+					},
+					"required": ["AddPlatformSpecificProperty"],
+					"type": "object"
+				},
+				{
+					"properties": {
+						"SetPlatformSpecificPropertyType": {
+							"items": [
+								{
+									"type": "string"
+								},
+								{
+									"type": "string"
+								},
+								{
+									"type": "string"
+								}
+							],
+							"maxItems": 3,
+							"minItems": 3,
+							"type": "array"
+						}
+					},
+					"required": ["SetPlatformSpecificPropertyType"],
+					"type": "object"
+				},
+				{
+					"properties": {
+						"SetPlatformSpecificPropertyValue": {
+							"properties": {
+								"platform": {
+									"type": "string"
+								},
+								"property_name": {
+									"type": "string"
+								},
+								"value": {}
+							},
+							"required": ["platform", "property_name", "value"],
+							"type": "object"
+						}
+					},
+					"required": ["SetPlatformSpecificPropertyValue"],
+					"type": "object"
+				},
+				{
+					"properties": {
+						"PatchPlatformSpecificArrayPropertyValue": {
+							"items": [
+								{
+									"type": "string"
+								},
+								{
+									"type": "string"
+								},
+								{
+									"items": {
+										"$ref": "#/definitions/ArrayPatchOperation"
+									},
+									"type": "array"
+								}
+							],
+							"maxItems": 3,
+							"minItems": 3,
+							"type": "array"
+						}
+					},
+					"required": ["PatchPlatformSpecificArrayPropertyValue"],
+					"type": "object"
+				},
+				{
+					"properties": {
+						"SetPlatformSpecificPropertyPostInit": {
+							"items": [
+								{
+									"type": "string"
+								},
+								{
+									"type": "string"
+								},
+								{
+									"type": "boolean"
+								}
+							],
+							"maxItems": 3,
+							"minItems": 3,
+							"type": "array"
+						}
+					},
+					"required": ["SetPlatformSpecificPropertyPostInit"],
+					"type": "object"
+				},
+				{
+					"properties": {
+						"RemovePlatformSpecificPropertyByName": {
+							"items": [
+								{
+									"type": "string"
+								},
+								{
+									"type": "string"
+								}
+							],
+							"maxItems": 2,
+							"minItems": 2,
+							"type": "array"
+						}
+					},
+					"required": ["RemovePlatformSpecificPropertyByName"],
+					"type": "object"
+				},
+				{
+					"properties": {
+						"RemovePlatformSpecificPropertiesForPlatform": {
+							"type": "string"
+						}
+					},
+					"required": ["RemovePlatformSpecificPropertiesForPlatform"],
+					"type": "object"
+				},
+				{
+					"properties": {
+						"AddEventConnection": {
+							"items": [
+								{
+									"type": "string"
+								},
+								{
+									"type": "string"
+								},
+								{
+									"$ref": "#/definitions/RefMaybeConstantValue"
+								}
+							],
+							"maxItems": 3,
+							"minItems": 3,
+							"type": "array"
+						}
+					},
+					"required": ["AddEventConnection"],
+					"type": "object"
+				},
+				{
+					"properties": {
+						"RemoveEventConnection": {
+							"items": [
+								{
+									"type": "string"
+								},
+								{
+									"type": "string"
+								},
+								{
+									"$ref": "#/definitions/RefMaybeConstantValue"
+								}
+							],
+							"maxItems": 3,
+							"minItems": 3,
+							"type": "array"
+						}
+					},
+					"required": ["RemoveEventConnection"],
+					"type": "object"
+				},
+				{
+					"properties": {
+						"RemoveAllEventConnectionsForTrigger": {
+							"items": [
+								{
+									"type": "string"
+								},
+								{
+									"type": "string"
+								}
+							],
+							"maxItems": 2,
+							"minItems": 2,
+							"type": "array"
+						}
+					},
+					"required": ["RemoveAllEventConnectionsForTrigger"],
+					"type": "object"
+				},
+				{
+					"properties": {
+						"RemoveAllEventConnectionsForEvent": {
+							"type": "string"
+						}
+					},
+					"required": ["RemoveAllEventConnectionsForEvent"],
+					"type": "object"
+				},
+				{
+					"properties": {
+						"AddInputCopyConnection": {
+							"items": [
+								{
+									"type": "string"
+								},
+								{
+									"type": "string"
+								},
+								{
+									"$ref": "#/definitions/RefMaybeConstantValue"
+								}
+							],
+							"maxItems": 3,
+							"minItems": 3,
+							"type": "array"
+						}
+					},
+					"required": ["AddInputCopyConnection"],
+					"type": "object"
+				},
+				{
+					"properties": {
+						"RemoveInputCopyConnection": {
+							"items": [
+								{
+									"type": "string"
+								},
+								{
+									"type": "string"
+								},
+								{
+									"$ref": "#/definitions/RefMaybeConstantValue"
+								}
+							],
+							"maxItems": 3,
+							"minItems": 3,
+							"type": "array"
+						}
+					},
+					"required": ["RemoveInputCopyConnection"],
+					"type": "object"
+				},
+				{
+					"properties": {
+						"RemoveAllInputCopyConnectionsForTrigger": {
+							"items": [
+								{
+									"type": "string"
+								},
+								{
+									"type": "string"
+								}
+							],
+							"maxItems": 2,
+							"minItems": 2,
+							"type": "array"
+						}
+					},
+					"required": ["RemoveAllInputCopyConnectionsForTrigger"],
+					"type": "object"
+				},
+				{
+					"properties": {
+						"RemoveAllInputCopyConnectionsForInput": {
+							"type": "string"
+						}
+					},
+					"required": ["RemoveAllInputCopyConnectionsForInput"],
+					"type": "object"
+				},
+				{
+					"properties": {
+						"AddOutputCopyConnection": {
+							"items": [
+								{
+									"type": "string"
+								},
+								{
+									"type": "string"
+								},
+								{
+									"$ref": "#/definitions/RefMaybeConstantValue"
+								}
+							],
+							"maxItems": 3,
+							"minItems": 3,
+							"type": "array"
+						}
+					},
+					"required": ["AddOutputCopyConnection"],
+					"type": "object"
+				},
+				{
+					"properties": {
+						"RemoveOutputCopyConnection": {
+							"items": [
+								{
+									"type": "string"
+								},
+								{
+									"type": "string"
+								},
+								{
+									"$ref": "#/definitions/RefMaybeConstantValue"
+								}
+							],
+							"maxItems": 3,
+							"minItems": 3,
+							"type": "array"
+						}
+					},
+					"required": ["RemoveOutputCopyConnection"],
+					"type": "object"
+				},
+				{
+					"properties": {
+						"RemoveAllOutputCopyConnectionsForPropagate": {
+							"items": [
+								{
+									"type": "string"
+								},
+								{
+									"type": "string"
+								}
+							],
+							"maxItems": 2,
+							"minItems": 2,
+							"type": "array"
+						}
+					},
+					"required": ["RemoveAllOutputCopyConnectionsForPropagate"],
+					"type": "object"
+				},
+				{
+					"properties": {
+						"RemoveAllOutputCopyConnectionsForOutput": {
+							"type": "string"
+						}
+					},
+					"required": ["RemoveAllOutputCopyConnectionsForOutput"],
+					"type": "object"
+				},
+				{
+					"properties": {
+						"AddPropertyAliasConnection": {
+							"items": [
+								{
+									"type": "string"
+								},
+								{
+									"$ref": "#/definitions/PropertyAlias"
+								}
+							],
+							"maxItems": 2,
+							"minItems": 2,
+							"type": "array"
+						}
+					},
+					"required": ["AddPropertyAliasConnection"],
+					"type": "object"
+				},
+				{
+					"properties": {
+						"RemovePropertyAlias": {
+							"type": "string"
+						}
+					},
+					"required": ["RemovePropertyAlias"],
+					"type": "object"
+				},
+				{
+					"properties": {
+						"RemoveConnectionForPropertyAlias": {
+							"items": [
+								{
+									"type": "string"
+								},
+								{
+									"$ref": "#/definitions/PropertyAlias"
+								}
+							],
+							"maxItems": 2,
+							"minItems": 2,
+							"type": "array"
+						}
+					},
+					"required": ["RemoveConnectionForPropertyAlias"],
+					"type": "object"
+				},
+				{
+					"properties": {
+						"SetExposedEntity": {
+							"items": [
+								{
+									"type": "string"
+								},
+								{
+									"$ref": "#/definitions/ExposedEntity"
+								}
+							],
+							"maxItems": 2,
+							"minItems": 2,
+							"type": "array"
+						}
+					},
+					"required": ["SetExposedEntity"],
+					"type": "object"
+				},
+				{
+					"properties": {
+						"RemoveExposedEntity": {
+							"type": "string"
+						}
+					},
+					"required": ["RemoveExposedEntity"],
+					"type": "object"
+				},
+				{
+					"properties": {
+						"SetExposedInterface": {
+							"items": [
+								{
+									"type": "string"
+								},
+								{
+									"type": "string"
+								}
+							],
+							"maxItems": 2,
+							"minItems": 2,
+							"type": "array"
+						}
+					},
+					"required": ["SetExposedInterface"],
+					"type": "object"
+				},
+				{
+					"properties": {
+						"RemoveExposedInterface": {
+							"type": "string"
+						}
+					},
+					"required": ["RemoveExposedInterface"],
+					"type": "object"
+				},
+				{
+					"properties": {
+						"AddSubset": {
+							"items": [
+								{
+									"type": "string"
+								},
+								{
+									"type": "string"
+								}
+							],
+							"maxItems": 2,
+							"minItems": 2,
+							"type": "array"
+						}
+					},
+					"required": ["AddSubset"],
+					"type": "object"
+				},
+				{
+					"properties": {
+						"RemoveSubset": {
+							"items": [
+								{
+									"type": "string"
+								},
+								{
+									"type": "string"
+								}
+							],
+							"maxItems": 2,
+							"minItems": 2,
+							"type": "array"
+						}
+					},
+					"required": ["RemoveSubset"],
+					"type": "object"
+				},
+				{
+					"properties": {
+						"RemoveAllSubsetsFor": {
+							"type": "string"
+						}
+					},
+					"required": ["RemoveAllSubsetsFor"],
+					"type": "object"
+				}
+			]
+		},
+		"SubType": {
+			"enum": ["brick", "scene", "template"],
+			"type": "string"
+		}
+	}
+}
