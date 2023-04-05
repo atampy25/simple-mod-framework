@@ -202,13 +202,13 @@ export default async function deploy(
 			const scripts: string[][] = []
 
 			for (const contentFolder of manifest.contentFolders || []) {
-				if (contentFolder?.length && fs.existsSync(path.join(process.cwd(), "Mods", mod, contentFolder)) && fs.readdirSync(path.join(process.cwd(), "Mods", mod, contentFolder)).length) {
+				if (contentFolder?.length && fs.readdirSync(path.join(process.cwd(), "Mods", mod, contentFolder)).length) {
 					contentFolders.push(contentFolder)
 				}
 			}
 
 			for (const blobsFolder of manifest.blobsFolders || []) {
-				if (blobsFolder?.length && fs.existsSync(path.join(process.cwd(), "Mods", mod, blobsFolder)) && fs.readdirSync(path.join(process.cwd(), "Mods", mod, blobsFolder)).length) {
+				if (blobsFolder?.length && fs.readdirSync(path.join(process.cwd(), "Mods", mod, blobsFolder)).length) {
 					blobsFolders.push(blobsFolder)
 				}
 			}

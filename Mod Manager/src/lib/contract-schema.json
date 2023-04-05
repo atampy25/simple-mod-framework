@@ -827,6 +827,9 @@
 				},
 				{
 					"$ref": "#/definitions/Record<string,any>"
+				},
+				{
+					"type": "null"
 				}
 			]
 		}
