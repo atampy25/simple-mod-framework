@@ -231,7 +231,6 @@
 				}
 			},
 			"required": ["parent", "name", "factory", "blueprint"],
-			"additionalProperties": false,
 			"default": {
 				"parent": "fffffffffffffffe",
 				"name": "New Entity",
@@ -267,7 +266,6 @@
 				}
 			},
 			"required": ["ref", "externalScene"],
-			"additionalProperties": false,
 			"default": {
 				"ref": "",
 				"externalScene": null
@@ -286,7 +284,6 @@
 				}
 			},
 			"required": ["type", "value"],
-			"additionalProperties": false,
 			"default": {
 				"type": "",
 				"value": ""
@@ -337,7 +334,6 @@
 				}
 			},
 			"required": ["originalProperty", "originalEntity"],
-			"additionalProperties": false,
 			"default": {
 				"originalProperty": "",
 				"originalEntity": ""
@@ -357,7 +353,6 @@
 				}
 			},
 			"required": ["isArray", "refersTo"],
-			"additionalProperties": false,
 			"default": {
 				"isArray": false,
 				"refersTo": []
@@ -380,7 +375,6 @@
 				}
 			},
 			"required": ["entities", "properties"],
-			"additionalProperties": false,
 			"default": {
 				"entities": [],
 				"properties": {}
@@ -474,7 +468,6 @@
 				}
 			},
 			"required": ["resource", "flag"],
-			"additionalProperties": false,
 			"default": {
 				"resource": "",
 				"flag": "1F"
