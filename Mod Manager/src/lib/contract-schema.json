@@ -664,7 +664,7 @@
 			"type": "object"
 		},
 		"VRQualityDefinition": {
-			"description": "Data structure for a mission manifest's `Data.VR` bricks property.",
+			"description": "Data structure for a contract's `Data.VR` bricks property.",
 			"properties": {
 				"Bricks": {
 					"items": {
@@ -680,7 +680,7 @@
 			"type": "object"
 		}
 	},
-	"description": "A mission's manifest is what defines how a specific contract plays.",
+	"description": "A contract JSON is what defines how a specific contract plays.",
 	"properties": {
 		"Data": {
 			"properties": {
@@ -711,8 +711,15 @@
 					"type": "boolean"
 				},
 				"EngineModesBricks": {
-					"items": {},
-					"type": "array"
+					"anyOf": [
+						{
+							"items": {},
+							"type": "array"
+						},
+						{
+							"type": "null"
+						}
+					]
 				},
 				"EngineModessBricks": {
 					"description": "IOI typo.",
@@ -755,8 +762,15 @@
 					"type": "array"
 				},
 				"GameModesBricks": {
-					"items": {},
-					"type": "array"
+					"anyOf": [
+						{
+							"items": {},
+							"type": "array"
+						},
+						{
+							"type": "null"
+						}
+					]
 				},
 				"MandatoryLoadout": {
 					"items": {},
