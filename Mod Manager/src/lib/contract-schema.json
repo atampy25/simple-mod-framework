@@ -1,63 +1,79 @@
 {
-	"credit": "Auto-generated from Peacock types",
+	"credit": "Auto-generated from Peacock types; everything made nullable",
 	"$schema": "http://json-schema.org/draft-07/schema#",
 	"definitions": {
 		"GameChanger": {
 			"properties": {
 				"Description": {
-					"type": "string"
+					"type": "string",
+					"nullable": true
 				},
 				"Icon": {
-					"type": "string"
+					"type": "string",
+					"nullable": true
 				},
 				"Id": {
-					"type": "string"
+					"type": "string",
+					"nullable": true
 				},
 				"IsHidden": {
-					"type": "boolean"
+					"type": "boolean",
+					"nullable": true
 				},
 				"IsPrestigeObjective": {
-					"type": "boolean"
+					"type": "boolean",
+					"nullable": true
 				},
 				"LongDescription": {
-					"type": "string"
+					"type": "string",
+					"nullable": true
 				},
 				"Name": {
-					"type": "string"
+					"type": "string",
+					"nullable": true
 				},
 				"Objectives": {
 					"items": {
 						"$ref": "#/definitions/MissionManifestObjective"
 					},
-					"type": "array"
+					"type": "array",
+					"nullable": true
 				},
 				"ObjectivesCategory": {
-					"type": "string"
+					"type": "string",
+					"nullable": true
 				},
 				"Resource": {
 					"items": {
-						"type": "string"
+						"type": "string",
+						"nullable": true
 					},
-					"type": "array"
+					"type": "array",
+					"nullable": true
 				},
 				"TileImage": {
-					"type": "string"
+					"type": "string",
+					"nullable": true
 				}
 			},
 			"required": ["Description", "Id", "Name"],
-			"type": "object"
+			"type": "object",
+			"nullable": true
 		},
 		"GroupObjectiveDisplayOrderItem": {
 			"properties": {
 				"Id": {
-					"type": "string"
+					"type": "string",
+					"nullable": true
 				},
 				"IsNew": {
-					"type": "boolean"
+					"type": "boolean",
+					"nullable": true
 				}
 			},
 			"required": ["Id"],
-			"type": "object"
+			"type": "object",
+			"nullable": true
 		},
 		"HUDTemplate": {
 			"description": "Data structure for an objective's HUD template.",
@@ -69,35 +85,43 @@
 								"$loc": {
 									"properties": {
 										"data": {
-											"type": "string"
+											"type": "string",
+											"nullable": true
 										},
 										"key": {
-											"type": "string"
+											"type": "string",
+											"nullable": true
 										}
 									},
 									"required": ["data", "key"],
-									"type": "object"
+									"type": "object",
+									"nullable": true
 								}
 							},
 							"required": ["$loc"],
-							"type": "object"
+							"type": "object",
+							"nullable": true
 						},
 						{
-							"type": "string"
+							"type": "string",
+							"nullable": true
 						}
 					]
 				},
 				"iconType": {
-					"type": "number"
+					"type": "number",
+					"nullable": true
 				}
 			},
 			"required": ["display"],
-			"type": "object"
+			"type": "object",
+			"nullable": true
 		},
 		"MissionManifestMetadata": {
 			"properties": {
 				"AllowNonTargetKills": {
-					"type": "boolean"
+					"type": "boolean",
+					"nullable": true
 				},
 				"BriefingVideo": {
 					"anyOf": [
@@ -105,19 +129,24 @@
 							"items": {
 								"properties": {
 									"Mode": {
-										"type": "string"
+										"type": "string",
+										"nullable": true
 									},
 									"VideoId": {
-										"type": "string"
+										"type": "string",
+										"nullable": true
 									}
 								},
 								"required": ["Mode", "VideoId"],
-								"type": "object"
+								"type": "object",
+								"nullable": true
 							},
-							"type": "array"
+							"type": "array",
+							"nullable": true
 						},
 						{
-							"type": "string"
+							"type": "string",
+							"nullable": true
 						}
 					]
 				},
@@ -130,90 +159,117 @@
 									{
 										"properties": {
 											"Id": {
-												"type": "string"
+												"type": "string",
+												"nullable": true
 											},
 											"MandatoryLoadout": {
 												"items": {
-													"type": "string"
+													"type": "string",
+													"nullable": true
 												},
-												"type": "array"
+												"type": "array",
+												"nullable": true
 											},
 											"Name": {
-												"type": "string"
+												"type": "string",
+												"nullable": true
 											}
 										},
 										"required": ["Id", "Name"],
-										"type": "object"
+										"type": "object",
+										"nullable": true
 									}
 								],
 								"maxItems": 1,
 								"minItems": 1,
-								"type": "array"
+								"type": "array",
+								"nullable": true
 							},
 							"Mode": {
-								"type": "string"
+								"type": "string",
+								"nullable": true
 							}
 						},
 						"required": ["Characters", "Mode"],
-						"type": "object"
+						"type": "object",
+						"nullable": true
 					},
-					"type": "array"
+					"type": "array",
+					"nullable": true
 				},
 				"CodeName_Hint": {
-					"type": "string"
+					"type": "string",
+					"nullable": true
 				},
 				"CpdId": {
-					"type": "string"
+					"type": "string",
+					"nullable": true
 				},
 				"CreationTimestamp": {
-					"type": "string"
+					"type": "string",
+					"nullable": true
 				},
 				"CreatorUserId": {
-					"type": "string"
+					"type": "string",
+					"nullable": true
 				},
 				"DebriefingVideo": {
-					"type": "string"
+					"type": "string",
+					"nullable": true
 				},
 				"Description": {
-					"type": "string"
+					"type": "string",
+					"nullable": true
 				},
 				"Difficulty": {
-					"type": "string"
+					"type": "string",
+					"nullable": true
 				},
 				"Drops": {
 					"items": {
-						"type": "string"
+						"type": "string",
+						"nullable": true
 					},
-					"type": "array"
+					"type": "array",
+					"nullable": true
 				},
 				"EndConditions": {
 					"properties": {
 						"PointLimit": {
-							"type": "number"
+							"type": "number",
+							"nullable": true
 						}
 					},
-					"type": "object"
+					"type": "object",
+					"nullable": true
 				},
 				"Enginemodes": {
 					"items": {
-						"type": "string"
+						"type": "string",
+						"nullable": true
 					},
-					"type": "array"
+					"type": "array",
+					"nullable": true
 				},
 				"Entitlements": {
 					"items": {
-						"type": "string"
+						"type": "string",
+						"nullable": true
 					},
-					"type": "array"
+					"type": "array",
+					"nullable": true
 				},
 				"GameVersion": {
-					"type": "string"
+					"type": "string",
+					"nullable": true
 				},
 				"Gamemodes": {
 					"items": {
-						"type": "string"
+						"type": "string",
+						"nullable": true
 					},
-					"type": "array"
+					"type": "array",
+					"nullable": true
 				},
 				"GroupDefinition": {
 					"description": "Data for a group contract.",
@@ -221,9 +277,11 @@
 						"Order": {
 							"description": "The contracts in this group, ordered by their position in the group.",
 							"items": {
-								"type": "string"
+								"type": "string",
+								"nullable": true
 							},
-							"type": "array"
+							"type": "array",
+							"nullable": true
 						},
 						"Type": {
 							"$ref": "#/definitions/MissionType",
@@ -231,91 +289,117 @@
 						}
 					},
 					"required": ["Order", "Type"],
-					"type": "object"
+					"type": "object",
+					"nullable": true
 				},
 				"GroupObjectiveDisplayOrder": {
 					"items": {
 						"$ref": "#/definitions/GroupObjectiveDisplayOrderItem"
 					},
-					"type": "array"
+					"type": "array",
+					"nullable": true
 				},
 				"GroupTitle": {
-					"type": "string"
+					"type": "string",
+					"nullable": true
 				},
 				"Id": {
-					"type": "string"
+					"type": "string",
+					"nullable": true
 				},
 				"InGroup": {
-					"type": "string"
+					"type": "string",
+					"nullable": true
 				},
 				"IsEvergreenSafehouse": {
-					"type": "boolean"
+					"type": "boolean",
+					"nullable": true
 				},
 				"IsFeatured": {
-					"type": "boolean"
+					"type": "boolean",
+					"nullable": true
 				},
 				"IsPublished": {
-					"type": "boolean"
+					"type": "boolean",
+					"nullable": true
 				},
 				"IsVersus": {
-					"type": "boolean"
+					"type": "boolean",
+					"nullable": true
 				},
 				"LastUpdate": {
-					"type": "string"
+					"type": "string",
+					"nullable": true
 				},
 				"Location": {
-					"type": "string"
+					"type": "string",
+					"nullable": true
 				},
 				"NonTargetKillPenaltyEnabled": {
-					"type": "boolean"
+					"type": "boolean",
+					"nullable": true
 				},
 				"NoticedTargetStreakPenaltyMax": {
-					"type": "number"
+					"type": "number",
+					"nullable": true
 				},
 				"Opportunities": {
 					"items": {
-						"type": "string"
+						"type": "string",
+						"nullable": true
 					},
-					"type": "array"
+					"type": "array",
+					"nullable": true
 				},
 				"PublicId": {
-					"type": "string"
+					"type": "string",
+					"nullable": true
 				},
 				"Release": {
 					"anyOf": [
 						{
 							"additionalProperties": true,
 							"properties": {},
-							"type": "object"
+							"type": "object",
+							"nullable": true
 						},
 						{
-							"type": "string"
+							"type": "string",
+							"nullable": true
 						}
 					]
 				},
 				"RequiredUnlockable": {
-					"type": "string"
+					"type": "string",
+					"nullable": true
 				},
 				"ScenePath": {
-					"type": "string"
+					"type": "string",
+					"nullable": true
 				},
 				"ServerVersion": {
-					"type": "string"
+					"type": "string",
+					"nullable": true
 				},
 				"SpawnSelectionType": {
-					"type": "string"
+					"type": "string",
+					"nullable": true
 				},
 				"Subtype": {
-					"type": "string"
+					"type": "string",
+					"nullable": true
 				},
 				"TargetExpiration": {
-					"type": "number"
+					"type": "number",
+					"nullable": true
 				},
 				"TargetExpirationReduced": {
-					"type": "number"
+					"type": "number",
+					"nullable": true
 				},
 				"TargetLifeTime": {
-					"type": "number"
+					"type": "number",
+					"nullable": true
 				},
 				"TileImage": {
 					"anyOf": [
@@ -323,37 +407,45 @@
 							"items": {
 								"properties": {
 									"Image": {
-										"type": "string"
+										"type": "string",
+										"nullable": true
 									},
 									"Mode": {
-										"type": "string"
+										"type": "string",
+										"nullable": true
 									}
 								},
 								"required": ["Image", "Mode"],
-								"type": "object"
+								"type": "object",
+								"nullable": true
 							},
-							"type": "array"
+							"type": "array",
+							"nullable": true
 						},
 						{
-							"type": "string"
+							"type": "string",
+							"nullable": true
 						}
 					]
 				},
 				"Title": {
-					"type": "string"
+					"type": "string",
+					"nullable": true
 				},
 				"Type": {
 					"$ref": "#/definitions/MissionType"
 				},
 				"UseContractProgressionData": {
-					"type": "boolean"
+					"type": "boolean",
+					"nullable": true
 				},
 				"UserData": {
 					"description": "Useless property."
 				}
 			},
 			"required": ["Id", "Location", "ScenePath", "Title", "Type"],
-			"type": "object"
+			"type": "object",
+			"nullable": true
 		},
 		"MissionManifestObjective": {
 			"properties": {
@@ -363,17 +455,21 @@
 							"items": {
 								"type": ["string", "boolean"]
 							},
-							"type": "array"
+							"type": "array",
+							"nullable": true
 						}
 					},
-					"type": "object"
+					"type": "object",
+					"nullable": true
 				},
 				"AllowEtRestartOnSuccess": {
 					"description": "Allow Elusive Target Arcade contracts to be restarted if this objective is already successfully completed.",
-					"type": "boolean"
+					"type": "boolean",
+					"nullable": true
 				},
 				"BriefingName": {
-					"type": "string"
+					"type": "string",
+					"nullable": true
 				},
 				"BriefingText": {
 					"anyOf": [
@@ -385,36 +481,45 @@
 											"anyOf": [
 												{
 													"items": {
-														"type": "number"
+														"type": "number",
+														"nullable": true
 													},
-													"type": "array"
+													"type": "array",
+													"nullable": true
 												},
 												{
-													"type": "string"
+													"type": "string",
+													"nullable": true
 												}
 											]
 										},
 										"key": {
-											"type": "string"
+											"type": "string",
+											"nullable": true
 										}
 									},
 									"required": ["data", "key"],
-									"type": "object"
+									"type": "object",
+									"nullable": true
 								}
 							},
 							"required": ["$loc"],
-							"type": "object"
+							"type": "object",
+							"nullable": true
 						},
 						{
-							"type": "string"
+							"type": "string",
+							"nullable": true
 						}
 					]
 				},
 				"Category": {
-					"type": "string"
+					"type": "string",
+					"nullable": true
 				},
 				"CombinedDisplayInHud": {
-					"type": "boolean"
+					"type": "boolean",
+					"nullable": true
 				},
 				"Definition": {
 					"properties": {
@@ -428,7 +533,8 @@
 							"$ref": "#/definitions/Record<string,IContextListener<any>>"
 						},
 						"Scope": {
-							"type": "string"
+							"type": "string",
+							"nullable": true
 						},
 						"States": {
 							"$ref": "#/definitions/Record<string,unknown>"
@@ -436,61 +542,77 @@
 						"display": {
 							"properties": {
 								"iconType": {
-									"type": "number"
+									"type": "number",
+									"nullable": true
 								}
 							},
-							"type": "object"
+							"type": "object",
+							"nullable": true
 						}
 					},
-					"type": "object"
+					"type": "object",
+					"nullable": true
 				},
 				"DisplayAsKillObjective": {
-					"type": "boolean"
+					"type": "boolean",
+					"nullable": true
 				},
 				"ExcludeFromScoring": {
-					"type": "boolean"
+					"type": "boolean",
+					"nullable": true
 				},
 				"FailedEvent": {
 					"properties": {
 						"EventName": {
-							"type": "string"
+							"type": "string",
+							"nullable": true
 						},
 						"EventValues": {
 							"properties": {
 								"RepositoryId": {
 									"description": "A repository ID (really just a UUID v4).",
-									"type": "string"
+									"type": "string",
+									"nullable": true
 								}
 							},
-							"type": "object"
+							"type": "object",
+							"nullable": true
 						}
 					},
 					"required": ["EventName"],
-					"type": "object"
+					"type": "object",
+					"nullable": true
 				},
 				"ForceShowOnLoadingScreen": {
-					"type": "boolean"
+					"type": "boolean",
+					"nullable": true
 				},
 				"GameChangerName": {
-					"type": "string"
+					"type": "string",
+					"nullable": true
 				},
 				"HUDTemplate": {
 					"$ref": "#/definitions/HUDTemplate"
 				},
 				"Id": {
-					"type": "string"
+					"type": "string",
+					"nullable": true
 				},
 				"IgnoreIfInactive": {
-					"type": "boolean"
+					"type": "boolean",
+					"nullable": true
 				},
 				"Image": {
-					"type": "string"
+					"type": "string",
+					"nullable": true
 				},
 				"IsHidden": {
-					"type": "boolean"
+					"type": "boolean",
+					"nullable": true
 				},
 				"IsPrestigeObjective": {
-					"type": "boolean"
+					"type": "boolean",
+					"nullable": true
 				},
 				"LongBriefingText": {
 					"anyOf": [
@@ -502,182 +624,225 @@
 											"anyOf": [
 												{
 													"items": {
-														"type": "number"
+														"type": "number",
+														"nullable": true
 													},
-													"type": "array"
+													"type": "array",
+													"nullable": true
 												},
 												{
-													"type": "string"
+													"type": "string",
+													"nullable": true
 												}
 											]
 										},
 										"key": {
-											"type": "string"
+											"type": "string",
+											"nullable": true
 										}
 									},
 									"required": ["data", "key"],
-									"type": "object"
+									"type": "object",
+									"nullable": true
 								}
 							},
 							"required": ["$loc"],
-							"type": "object"
+							"type": "object",
+							"nullable": true
 						},
 						{
-							"type": "string"
+							"type": "string",
+							"nullable": true
 						}
 					]
 				},
 				"ObjectiveType": {
-					"type": "string"
+					"type": "string",
+					"nullable": true
 				},
 				"OnActive": {
 					"properties": {
 						"IfCompleted": {
 							"properties": {
 								"State": {
-									"type": "string"
+									"type": "string",
+									"nullable": true
 								},
 								"Visible": {
-									"type": "boolean"
+									"type": "boolean",
+									"nullable": true
 								}
 							},
-							"type": "object"
+							"type": "object",
+							"nullable": true
 						},
 						"IfFailed": {
 							"properties": {
 								"State": {
-									"type": "string"
+									"type": "string",
+									"nullable": true
 								},
 								"Visible": {
-									"type": "boolean"
+									"type": "boolean",
+									"nullable": true
 								}
 							},
-							"type": "object"
+							"type": "object",
+							"nullable": true
 						},
 						"IfInProgress": {
 							"properties": {
 								"State": {
-									"type": "string"
+									"type": "string",
+									"nullable": true
 								},
 								"Visible": {
-									"type": "boolean"
+									"type": "boolean",
+									"nullable": true
 								}
 							},
-							"type": "object"
+							"type": "object",
+							"nullable": true
 						}
 					},
-					"type": "object"
+					"type": "object",
+					"nullable": true
 				},
 				"OnInactive": {
 					"properties": {
 						"IfCompleted": {
 							"properties": {
 								"State": {
-									"type": "string"
+									"type": "string",
+									"nullable": true
 								}
 							},
-							"type": "object"
+							"type": "object",
+							"nullable": true
 						}
 					},
-					"type": "object"
+					"type": "object",
+					"nullable": true
 				},
 				"Primary": {
-					"type": "boolean"
-				},
-				"ResetEvent": {
-					"type": "null"
+					"type": "boolean",
+					"nullable": true
 				},
 				"Scope": {
-					"type": "string"
+					"type": "string",
+					"nullable": true
 				},
 				"ShowInHud": {
-					"type": "boolean"
+					"type": "boolean",
+					"nullable": true
 				},
 				"SuccessEvent": {
 					"properties": {
 						"EventName": {
-							"type": "string"
+							"type": "string",
+							"nullable": true
 						},
 						"EventValues": {
 							"properties": {
 								"RepositoryId": {
 									"description": "A repository ID (really just a UUID v4).",
-									"type": "string"
+									"type": "string",
+									"nullable": true
 								}
 							},
 							"required": ["RepositoryId"],
-							"type": "object"
+							"type": "object",
+							"nullable": true
 						}
 					},
 					"required": ["EventName", "EventValues"],
-					"type": "object"
+					"type": "object",
+					"nullable": true
 				},
 				"TargetConditions": {
 					"items": {
 						"$ref": "#/definitions/TargetCondition"
 					},
-					"type": "array"
+					"type": "array",
+					"nullable": true
 				},
 				"Type": {
-					"type": "string"
+					"type": "string",
+					"nullable": true
 				},
 				"_comment": {
-					"type": "string"
+					"type": "string",
+					"nullable": true
 				}
 			},
 			"required": ["Id"],
-			"type": "object"
+			"type": "object",
+			"nullable": true
 		},
 		"MissionType": {
 			"description": "Possible mission `Metadata.Type` values.",
-			"type": "string"
+			"type": "string",
+			"nullable": true
 		},
 		"Record<string,IContextListener<any>>": {
-			"type": "object"
+			"type": "object",
+			"nullable": true
 		},
 		"Record<string,any>": {
-			"type": "object"
+			"type": "object",
+			"nullable": true
 		},
 		"Record<string,unknown>": {
-			"type": "object"
+			"type": "object",
+			"nullable": true
 		},
 		"TargetCondition": {
 			"properties": {
 				"HardCondition": {
-					"type": "boolean"
+					"type": "boolean",
+					"nullable": true
 				},
 				"KillMethod": {
-					"type": "string"
+					"type": "string",
+					"nullable": true
 				},
 				"ObjectiveId": {
-					"type": "string"
+					"type": "string",
+					"nullable": true
 				},
 				"RepositoryId": {
 					"description": "A repository ID (really just a UUID v4).",
-					"type": "string"
+					"type": "string",
+					"nullable": true
 				},
 				"Type": {
-					"type": "string"
+					"type": "string",
+					"nullable": true
 				}
 			},
 			"required": ["Type"],
-			"type": "object"
+			"type": "object",
+			"nullable": true
 		},
 		"VRQualityDefinition": {
 			"description": "Data structure for a contract's `Data.VR` bricks property.",
 			"properties": {
 				"Bricks": {
 					"items": {
-						"type": "string"
+						"type": "string",
+						"nullable": true
 					},
-					"type": "array"
+					"type": "array",
+					"nullable": true
 				},
 				"Quality": {
-					"type": "string"
+					"type": "string",
+					"nullable": true
 				}
 			},
 			"required": ["Bricks", "Quality"],
-			"type": "object"
+			"type": "object",
+			"nullable": true
 		}
 	},
 	"description": "A contract JSON is what defines how a specific contract plays.",
@@ -686,15 +851,19 @@
 			"properties": {
 				"Bricks": {
 					"items": {
-						"type": "string"
+						"type": "string",
+						"nullable": true
 					},
-					"type": "array"
+					"type": "array",
+					"nullable": true
 				},
 				"DevOnlyBricks": {
 					"items": {
-						"type": "string"
+						"type": "string",
+						"nullable": true
 					},
-					"type": "array"
+					"type": "array",
+					"nullable": true
 				},
 				"EnableExits": {
 					"properties": {
@@ -702,105 +871,109 @@
 							"items": {
 								"type": ["string", "boolean"]
 							},
-							"type": "array"
+							"type": "array",
+							"nullable": true
 						}
 					},
-					"type": "object"
+					"type": "object",
+					"nullable": true
 				},
 				"EnableSaving": {
-					"type": "boolean"
+					"type": "boolean",
+					"nullable": true
 				},
 				"EngineModesBricks": {
-					"anyOf": [
-						{
-							"items": {},
-							"type": "array"
-						},
-						{
-							"type": "null"
-						}
-					]
-				},
-				"EngineModessBricks": {
-					"description": "IOI typo.",
-					"type": "null"
+					"items": {},
+					"type": "array",
+					"nullable": true
 				},
 				"Entrances": {
 					"items": {
-						"type": "string"
+						"type": "string",
+						"nullable": true
 					},
-					"type": "array"
+					"type": "array",
+					"nullable": true
 				},
 				"GameChangerReferences": {
 					"items": {
 						"$ref": "#/definitions/GameChanger"
 					},
-					"type": "array"
+					"type": "array",
+					"nullable": true
 				},
 				"GameChangers": {
 					"items": {
-						"type": "string"
+						"type": "string",
+						"nullable": true
 					},
-					"type": "array"
+					"type": "array",
+					"nullable": true
 				},
 				"GameDifficulties": {
 					"items": {
 						"properties": {
 							"Bricks": {
 								"items": {
-									"type": "string"
+									"type": "string",
+									"nullable": true
 								},
-								"type": "array"
+								"type": "array",
+								"nullable": true
 							},
 							"Difficulty": {
-								"type": "string"
+								"type": "string",
+								"nullable": true
 							}
 						},
 						"required": ["Bricks", "Difficulty"],
-						"type": "object"
+						"type": "object",
+						"nullable": true
 					},
-					"type": "array"
+					"type": "array",
+					"nullable": true
 				},
 				"GameModesBricks": {
-					"anyOf": [
-						{
-							"items": {},
-							"type": "array"
-						},
-						{
-							"type": "null"
-						}
-					]
+					"items": {},
+					"type": "array",
+					"nullable": true
 				},
 				"MandatoryLoadout": {
 					"items": {},
-					"type": "array"
+					"type": "array",
+					"nullable": true
 				},
 				"Objectives": {
 					"items": {
 						"$ref": "#/definitions/MissionManifestObjective"
 					},
-					"type": "array"
+					"type": "array",
+					"nullable": true
 				},
 				"RecommendedLoadout": {
 					"items": {},
-					"type": "array"
+					"type": "array",
+					"nullable": true
 				},
 				"Stashpoints": {
 					"items": {
-						"type": "string"
+						"type": "string",
+						"nullable": true
 					},
-					"type": "array"
+					"type": "array",
+					"nullable": true
 				},
 				"VR": {
 					"items": {
 						"$ref": "#/definitions/VRQualityDefinition"
 					},
-					"type": "array"
+					"type": "array",
+					"nullable": true
 				}
 			},
 			"required": ["Bricks"],
-			"type": "object"
+			"type": "object",
+			"nullable": true
 		},
 		"Metadata": {
 			"$ref": "#/definitions/MissionManifestMetadata"
@@ -808,32 +981,39 @@
 		"Peacock": {
 			"properties": {
 				"noAgencyPickupsActive": {
-					"type": "boolean"
+					"type": "boolean",
+					"nullable": true
 				},
 				"noCarriedWeapon": {
-					"type": "boolean"
+					"type": "boolean",
+					"nullable": true
 				},
 				"noGear": {
-					"type": "boolean"
+					"type": "boolean",
+					"nullable": true
 				}
 			},
-			"type": "object"
+			"type": "object",
+			"nullable": true
 		},
 		"UserData": {
 			"anyOf": [
 				{
 					"items": {},
-					"type": "array"
+					"type": "array",
+					"nullable": true
 				},
 				{
 					"$ref": "#/definitions/Record<string,any>"
 				},
 				{
-					"type": "null"
+					"type": "null",
+					"nullable": true
 				}
 			]
 		}
 	},
 	"required": ["Data", "Metadata"],
-	"type": "object"
+	"type": "object",
+	"nullable": true
 }
