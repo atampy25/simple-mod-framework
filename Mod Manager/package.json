@@ -30,6 +30,7 @@
 		"@fortawesome/free-solid-svg-icons": "^6.1.2",
 		"adm-zip": "^0.5.9",
 		"ajv": "^8.11.0",
+		"ansi-to-html": "^0.7.2",
 		"autoprefixer": "^10.4.8",
 		"axios": "^0.27.2",
 		"carbon-components-svelte": "^0.67.8",

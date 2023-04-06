@@ -5,6 +5,33 @@
 	import SortableList from "svelte-sortable-list"
 	import json5 from "json5"
 	import { Button, CodeSnippet, InlineNotification, Modal, Search } from "carbon-components-svelte"
+	import AnsiToHTML from "ansi-to-html"
+
+	const convertAnsi = new AnsiToHTML({
+		newline: true,
+		escapeXML: true,
+		colors: {
+			// Qualia by u/starlig-ht, slightly modified for background colour
+			"0": "#101010",
+			"1": "#EFA6A2",
+			"2": "#80C990",
+			"3": "#C8C874",
+			"4": "#A3B8EF",
+			"5": "#E6A3DC",
+			"6": "#50CACD",
+			"7": "#808080",
+			"8": "#878787",
+			"9": "#E0AF85",
+			"10": "#5ACCAF",
+			"11": "#C8C874",
+			"12": "#CCACED",
+			"13": "#F2A1C2",
+			"14": "#74C3E4",
+			"15": "#C0C0C0"
+		},
+		fg: "#f4f4f4",
+		bg: "#262626"
+	})
 
 	import { getAllMods, getConfig, mergeConfig, getManifestFromModID, modIsFramework, getModFolder, sortMods, validateModFolder } from "$lib/utils"
 	import Mod from "$lib/Mod.svelte"
@@ -56,10 +83,7 @@
 	window.ipc.receive("frameworkDeployOutput", (output: string) => {
 		deployOutput = output
 		setTimeout(() => {
-			document.getElementById("deployOutputCodeElement")?.scrollIntoView({
-				behavior: "smooth",
-				block: "end"
-			})
+			document.getElementById("deployOutputElement")?.children[0].scrollIntoView(false)
 		}, 100)
 	})
 
@@ -431,11 +455,14 @@
 <Modal passiveModal open={frameworkDeployModalOpen} modalHeading="Applying your mods" preventCloseOnClickOutside>
 	Your mods are being deployed. This may take a while - grab a coffee or something.
 	<br />
-	<pre class="mt-2 h-[10vh] overflow-y-auto whitespace-pre-wrap"><code id="deployOutputCodeElement">{deployOutput}</code></pre>
-	{#if deployOutput.split("\n").some((a) => a.startsWith("WARN")) || deployOutput.split("\n").some((a) => a.startsWith("ERROR"))}
+	<pre
+		class="mt-2 h-[10vh] overflow-y-auto whitespace-pre-wrap bg-neutral-800 p-2"
+		style="font-family: 'Fira Code', 'IBM Plex Mono', 'Menlo', 'DejaVu Sans Mono', 'Bitstream Vera Sans Mono', Courier, monospace; color-scheme: dark"
+		id="deployOutputElement">{@html convertAnsi.toHtml(deployOutput)}</pre>
+	{#if deployOutput.split(/\r?\n/).some((a) => a.startsWith("WARN")) || deployOutput.split(/\r?\n/).some((a) => a.startsWith("ERROR"))}
 		<br />
 		<div class="flex flex-row gap-2 flex-wrap max-h-[15vh] overflow-y-auto">
-			{#each deployOutput.split("\n").filter((a) => a.startsWith("WARN") || a.startsWith("ERROR")) as line}
+			{#each deployOutput.split(/\r?\n/).filter((a) => a.startsWith("WARN") || a.startsWith("ERROR")) as line}
 				<InlineNotification hideCloseButton lowContrast kind={line.startsWith("WARN") ? "warning" : "error"}>
 					<div slot="title" class="-mt-1 text-lg">
 						{line.startsWith("WARN") ? "Warning" : "Error"}
@@ -449,10 +476,20 @@
 	{#if deployFinished}
 		<br />
 		<div class="flex gap-4 items-center">
-			{#if deployOutput.includes("Deployed all mods successfully.") && !deployOutput.split("\n").some((a) => a.startsWith("WARN"))}
+			{#if deployOutput
+				.split(/\r?\n/)
+				.map((a) => a.trim())
+				.filter((a) => a.length)
+				.at(-1)
+				.match(/\tDone in .*\./) && !deployOutput.split(/\r?\n/).some((a) => a.startsWith("WARN"))}
 				<Button kind="primary" icon={Close} on:click={() => (frameworkDeployModalOpen = false)}>Close</Button>
 				<span class="text-green-300">Deploy successful</span>
-			{:else if deployOutput.includes("Deployed all mods successfully.") && deployOutput.split("\n").some((a) => a.startsWith("WARN"))}
+			{:else if deployOutput
+				.split(/\r?\n/)
+				.map((a) => a.trim())
+				.filter((a) => a.length)
+				.at(-1)
+				.match(/\tDone in .*\./) && deployOutput.split(/\r?\n/).some((a) => a.startsWith("WARN"))}
 				<Button kind="primary" icon={Close} on:click={() => (frameworkDeployModalOpen = false)}>Close</Button>
 				<span class="text-yellow-300">Potential issues in deployment</span>
 			{:else}

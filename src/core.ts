@@ -16,6 +16,8 @@ const args = arg({
 	"--useConsoleLogging": Boolean,
 	"--pauseAfterLogging": Boolean,
 	"--logLevel": [String]
+}, {
+	permissive: true
 })
 
 if (!args["--logLevel"]?.length) {

@@ -31,7 +31,7 @@ jobs:
         uses: actions/cache@v2.1.6
         with:
           path: Mod Manager/node_modules
-          key: buildCache2v18
+          key: buildCache2v19
 
       - name: Install dependencies
         if: steps.cache.outputs.cache-hit != 'true'
