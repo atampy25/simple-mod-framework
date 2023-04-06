@@ -21,7 +21,8 @@
 	<div class="flex flex-wrap gap-4">
 		{#each getAllMods()
 			.filter((a) => modIsFramework(a))
-			.map((a) => getManifestFromModID(a)) as manifest (manifest.id)}
+			.map((a) => getManifestFromModID(a))
+			.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: "base" })) as manifest (manifest.id)}
 			<Tile>
 				<div class="flex flex-row items-center gap-8">
 					<div class="flex-grow" style="max-width: 28rem">
