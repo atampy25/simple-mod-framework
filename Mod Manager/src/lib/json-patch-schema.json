@@ -1,0 +1,40 @@
+{
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"type": "object",
+	"properties": {
+		"file": { "type": "string" },
+		"type": { "type": "string" },
+		"patch": {
+			"type": "array",
+			"items": {
+				"oneOf": [
+					{
+						"additionalProperties": false,
+						"required": ["value", "op", "path"],
+						"properties": {
+							"path": { "type": "string" },
+							"op": { "description": "The operation to perform.", "type": "string", "enum": ["add", "replace", "test"] },
+							"value": { "description": "The value to add, replace or test." }
+						}
+					},
+					{
+						"additionalProperties": false,
+						"required": ["op", "path"],
+						"properties": { "path": { "type": "string" }, "op": { "description": "The operation to perform.", "type": "string", "enum": ["remove"] } }
+					},
+					{
+						"additionalProperties": false,
+						"required": ["from", "op", "path"],
+						"properties": {
+							"path": { "type": "string" },
+							"op": { "description": "The operation to perform.", "type": "string", "enum": ["move", "copy"] },
+							"from": { "type": "string", "description": "A JSON Pointer path pointing to the location to move/copy from." }
+						}
+					}
+				]
+			}
+		}
+	},
+	"additionalProperties": false,
+	"required": ["file", "patch"]
+}

@@ -6,7 +6,10 @@ import json5 from "json5"
 import manifestSchema from "$lib/manifest-schema.json"
 import entitySchema from "$lib/entity-schema.json"
 import entityPatchSchema from "$lib/entity-patch-schema.json"
+import repositorySchema from "$lib/repository-schema.json"
+import unlockablesSchema from "$lib/unlockables-schema.json"
 import contractSchema from "$lib/contract-schema.json"
+import jsonPatchSchema from "$lib/json-patch-schema.json"
 import memoize from "lodash.memoize"
 import merge from "lodash.mergewith"
 import semver from "semver"
@@ -17,97 +20,10 @@ const validateManifest = new Ajv({ strict: false }).compile(manifestSchema)
 
 const validateEntity = new Ajv({ strict: false }).compile(entitySchema)
 const validateEntityPatch = new Ajv({ strict: false }).compile(entityPatchSchema)
-const validateRepository = new Ajv({ strict: false }).compile({
-	$schema: "http://json-schema.org/draft-07/schema#",
-	type: "object",
-	patternProperties: {
-		"^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$": {
-			type: "object"
-		}
-	},
-	additionalProperties: false
-})
-const validateUnlockables = new Ajv({ strict: false }).compile({
-	$schema: "http://json-schema.org/draft-07/schema#",
-	type: "object",
-	patternProperties: {
-		"^.*$": {
-			type: "object"
-		}
-	},
-	additionalProperties: false
-})
+const validateRepository = new Ajv({ strict: false }).compile(repositorySchema)
+const validateUnlockables = new Ajv({ strict: false }).compile(unlockablesSchema)
 const validateContract = new Ajv({ strict: false }).compile(contractSchema)
-const validateJSONPatch = new Ajv({ strict: false }).compile({
-	$schema: "http://json-schema.org/draft-07/schema#",
-	type: "object",
-	properties: {
-		file: {
-			type: "string"
-		},
-		type: {
-			type: "string"
-		},
-		patch: {
-			type: "array",
-			items: {
-				oneOf: [
-					{
-						additionalProperties: false,
-						required: ["value", "op", "path"],
-						properties: {
-							path: {
-								type: "string"
-							},
-							op: {
-								description: "The operation to perform.",
-								type: "string",
-								enum: ["add", "replace", "test"]
-							},
-							value: {
-								description: "The value to add, replace or test."
-							}
-						}
-					},
-					{
-						additionalProperties: false,
-						required: ["op", "path"],
-						properties: {
-							path: {
-								type: "string"
-							},
-							op: {
-								description: "The operation to perform.",
-								type: "string",
-								enum: ["remove"]
-							}
-						}
-					},
-					{
-						additionalProperties: false,
-						required: ["from", "op", "path"],
-						properties: {
-							path: {
-								type: "string"
-							},
-							op: {
-								description: "The operation to perform.",
-								type: "string",
-								enum: ["move", "copy"]
-							},
-							from: {
-								type: "string",
-								description: "A JSON Pointer path pointing to the location to move/copy from."
-							}
-						}
-					}
-				]
-			}
-		}
-	},
-	additionalProperties: false,
-	required: ["file", "patch"]
-})
+const validateJSONPatch = new Ajv({ strict: false }).compile(jsonPatchSchema)
 
 export function getConfig() {
 	const config: Config = json5.parse(String(window.fs.readFileSync("../config.json", "utf8")))
