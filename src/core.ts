@@ -1,4 +1,4 @@
-const FrameworkVersion = "2.21.0"
+const FrameworkVersion = "2.21.1"
 const isDevBuild = false
 
 import * as Sentry from "@sentry/node"
@@ -12,13 +12,16 @@ import fs from "fs-extra"
 import json5 from "json5"
 import path from "path"
 
-const args = arg({
-	"--useConsoleLogging": Boolean,
-	"--pauseAfterLogging": Boolean,
-	"--logLevel": [String]
-}, {
-	permissive: true
-})
+const args = arg(
+	{
+		"--useConsoleLogging": Boolean,
+		"--pauseAfterLogging": Boolean,
+		"--logLevel": [String]
+	},
+	{
+		permissive: true
+	}
+)
 
 if (!args["--logLevel"]?.length) {
 	args["--logLevel"] = ["debug", "info", "warn", "error"]
