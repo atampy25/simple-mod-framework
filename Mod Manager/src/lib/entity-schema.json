@@ -104,8 +104,7 @@
 				"extraFactoryDependencies",
 				"extraBlueprintDependencies",
 				"comments"
-			],
-			"additionalProperties": false
+			]
 		},
 		"SubEntity": {
 			"type": "object",
@@ -309,8 +308,7 @@
 					"$ref": "#/definitions/SimpleProperty"
 				}
 			},
-			"required": ["ref", "value"],
-			"additionalProperties": false
+			"required": ["ref", "value"]
 		},
 		"SimpleProperty": {
 			"type": "object",
@@ -320,8 +318,7 @@
 				},
 				"value": {}
 			},
-			"required": ["type", "value"],
-			"additionalProperties": false
+			"required": ["type", "value"]
 		},
 		"PropertyAlias": {
 			"type": "object",
@@ -388,8 +385,7 @@
 				},
 				"value": {}
 			},
-			"required": ["type", "value"],
-			"additionalProperties": false
+			"required": ["type", "value"]
 		},
 		"PinConnectionOverride": {
 			"type": "object",
@@ -413,8 +409,7 @@
 				},
 				"value": {}
 			},
-			"required": ["fromEntity", "fromPin", "toEntity", "toPin"],
-			"additionalProperties": false
+			"required": ["fromEntity", "fromPin", "toEntity", "toPin"]
 		},
 		"PinConnectionOverrideDelete": {
 			"type": "object",
@@ -439,8 +434,7 @@
 					"$ref": "#/definitions/SimpleProperty"
 				}
 			},
-			"required": ["fromEntity", "fromPin", "toEntity", "toPin"],
-			"additionalProperties": false
+			"required": ["fromEntity", "fromPin", "toEntity", "toPin"]
 		},
 		"SubType": {
 			"type": "string",
@@ -486,8 +480,7 @@
 					"type": "string"
 				}
 			},
-			"required": ["parent", "name", "text"],
-			"additionalProperties": false
+			"required": ["parent", "name", "text"]
 		}
 	}
 }
