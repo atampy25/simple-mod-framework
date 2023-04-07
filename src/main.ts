@@ -4,16 +4,15 @@ global.THREE = require("./three-onlymath.min")
 import * as Sentry from "@sentry/node"
 import * as Tracing from "@sentry/tracing"
 
+import { DateTime, Duration, DurationLikeObject } from "luxon"
 import type { Span, Transaction } from "@sentry/tracing"
 
-import { DateTime } from "luxon"
 import { Platform } from "./types"
 import core from "./core-singleton"
 import deploy from "./deploy"
 import difference from "./difference"
 import discover from "./discover"
 import fs from "fs-extra"
-import json5 from "json5"
 import md5File from "md5-file"
 import path from "path"
 import { xxhash3 } from "hash-wasm"
@@ -127,6 +126,18 @@ function configureSentryScope(transaction: Span) {
 		Sentry.configureScope((scope) => {
 			scope.setSpan(transaction)
 		})
+}
+
+function toHuman(dur: Duration) {
+	const units: (keyof DurationLikeObject)[] = ["years", "months", "days", "hours", "minutes", "seconds", "milliseconds"]
+	const smallestIdx = units.indexOf("seconds")
+	const entries = Object.entries(
+		dur
+			.shiftTo(...units)
+			.normalize()
+			.toObject()
+	).filter(([_, amount], idx) => amount > 0 && idx <= smallestIdx)
+	return entries.map((a) => a[1] + a[0][0]).join("")
 }
 
 process.on("SIGINT", () => void core.logger.error("Received SIGINT signal"))
@@ -270,14 +281,7 @@ async function doTheThing() {
 	if (core.args["--useConsoleLogging"]) {
 		await core.logger.info("Deployed all mods successfully.")
 	} else {
-		await core.logger.info(
-			`Done ${DateTime.now()
-				.plus({
-					// @ts-expect-error TypeScript doesn't like date operations
-					milliseconds: DateTime.now() - startedDate
-				})
-				.toRelative()}.`
-		)
+		await core.logger.info(`Done in ${toHuman(startedDate.until(DateTime.now()).toDuration())}.`)
 	}
 
 	await core.cleanExit()
