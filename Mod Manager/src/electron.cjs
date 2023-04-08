@@ -86,7 +86,7 @@ app.on("window-all-closed", () => {
 })
 
 ipcMain.on("deploy", () => {
-	let deployProcess = require("child_process").spawn("Deploy.exe --colors", ["--colors"], {
+	let deployProcess = require("child_process").spawn("Deploy.exe --doNotPause --colors", ["--doNotPause --colors"], {
 		shell: true,
 		cwd: ".."
 	})

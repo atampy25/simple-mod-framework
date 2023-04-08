@@ -2,6 +2,7 @@
 ```powershell
 .\Deploy --useConsoleLogging # Whether to use Node.js console logging instead of the default fancy logging
 .\Deploy --pauseAfterLogging # Whether to pause execution after each log entry
+.\Deploy --doNotPause # Whether to never pause after errors
 .\Deploy --logLevel verbose --logLevel debug --logLevel info --logLevel warn --logLevel error # The log levels to enable
 ```
 

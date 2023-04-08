@@ -278,11 +278,7 @@ async function doTheThing() {
 		}
 	}
 
-	if (core.args["--useConsoleLogging"]) {
-		await core.logger.info("Deployed all mods successfully.")
-	} else {
-		await core.logger.info(`Done in ${toHuman(startedDate.until(DateTime.now()).toDuration())}.`)
-	}
+	await core.logger.info(`Done in ${toHuman(startedDate.until(DateTime.now()).toDuration())}.`)
 
 	await core.cleanExit()
 }

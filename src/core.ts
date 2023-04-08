@@ -16,6 +16,7 @@ const args = arg(
 	{
 		"--useConsoleLogging": Boolean,
 		"--pauseAfterLogging": Boolean,
+		"--doNotPause": Boolean,
 		"--logLevel": [String]
 	},
 	{
@@ -63,6 +64,18 @@ const logger = args["--useConsoleLogging"]
 			},
 			error: async function (text: string, exitAfter = true, mod?: string) {
 				console.log("ERROR", ...(mod ? [mod, text] : [text]))
+
+				if (mod) {
+					console.trace() // It's unimportant where framework errors come from
+				}
+
+				if (!args["--doNotPause"]) {
+					child_process.execSync("pause", {
+						// @ts-expect-error This code works and I'm not going to question it
+						shell: true,
+						stdio: "inherit"
+					})
+				}
 
 				if (exitAfter) {
 					if (config.reportErrors) {
@@ -145,11 +158,13 @@ const logger = args["--useConsoleLogging"]
 						console.trace() // It's unimportant where framework errors come from
 					}
 
-					child_process.execSync("pause", {
-						// @ts-expect-error This code works and I'm not going to question it
-						shell: true,
-						stdio: "inherit"
-					})
+					if (!args["--doNotPause"]) {
+						child_process.execSync("pause", {
+							// @ts-expect-error This code works and I'm not going to question it
+							shell: true,
+							stdio: "inherit"
+						})
+					}
 
 					if (exitAfter) {
 						if (config.reportErrors) {
