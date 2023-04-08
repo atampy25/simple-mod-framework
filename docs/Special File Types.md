@@ -77,9 +77,22 @@ The repository items mentioned in the file are automatically added/edited in the
 ## contract.json
 A contract JSON. The contract inside is automatically given a custom hash (determined by `smfContract` + the contract's UUID), added to the contracts ORES and placed in the staging folder. It supports editing existing game contracts.
 
+The top-level extension key `SMF` can be used to control certain aspects of how the contract is deployed:
+```jsonc
+{
+    "SMF": {
+        "destinations": {
+            "addToDestinations": true, // Whether the contract should automatically be added to the Destinations page
+            "narrativeContext": "Mission", // Mission or Campaign in the base game, defaults to Mission if omitted
+            "placeBefore": "735d005c-698e-5a3f-9a55-15e4fea0f816", // A contract ID to place this one before; cannot be used with placeAfter
+            "placeAfter": "735d005c-698e-5a3f-9a55-15e4fea0f816" // A contract ID to place this one after; cannot be used with placeBefore
+        }
+    }
+}
+
 ## JSON.patch.json
 Mutates the given JSON file with a patch. The content of the `JSON.patch.json` file follows the following format:
-```json
+```jsonc
 {
     "file": "004F4B738474CEAD", // The file to patch
     "type": "JSON", // The filetype of the file to patch (can be omitted, will assume JSON; if ORES, OREStool will be run and the result will be patched and rebuilt)

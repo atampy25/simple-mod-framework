@@ -33,7 +33,7 @@ const deepMerge = function (x: any, y: any) {
 
 const execCommand = function (command: string) {
 	void logger.verbose(`Executing command ${command}`)
-	child_process.execSync(command, { stdio: [ "pipe", "inherit", "inherit" ] })
+	child_process.execSync(command, { stdio: ["pipe", "inherit", "inherit"] })
 }
 
 const callRPKGFunction = async function (command: string) {
@@ -98,6 +98,13 @@ export default async function deploy(
 			text: string
 		}[]
 	> = {}
+
+	const contractsToAddToDestinations: {
+		id: string
+		before?: string
+		after?: string
+		context?: string
+	}[] = []
 
 	const deployInstructions: DeployInstruction[] = []
 
@@ -1097,6 +1104,17 @@ export default async function deploy(
 
 					entityContent = content.source === "disk" ? LosslessJSON.parse(fs.readFileSync(content.path, "utf8")) : LosslessJSON.parse(await content.content.text())
 
+					if (entityContent.SMF) {
+						if (entityContent.SMF.destinations?.addToDestinations) {
+							contractsToAddToDestinations.push({
+								id: entityContent.Metadata.Id,
+								before: entityContent.SMF.destinations.placeBefore,
+								after: entityContent.SMF.destinations.placeAfter,
+								context: entityContent.SMF.destinations.narrativeContext
+							})
+						}
+					}
+
 					lastServerSideStates["contracts"] ??= {}
 					lastServerSideStates["contracts"][entityContent.Metadata.Id] = entityContent
 
@@ -1952,6 +1970,75 @@ export default async function deploy(
 	if (config.outputToSeparateDirectory) {
 		fs.emptyDirSync(path.join(process.cwd(), "Output"))
 	} // Make output folder
+
+	/* ---------------------------------------------------------------------------------------------- */
+	/*                                      Contract destinations                                     */
+	/* ---------------------------------------------------------------------------------------------- */
+	if (contractsToAddToDestinations.length) {
+		const sentryContractDestinations = sentryTransaction.startChild({
+			op: "stage",
+			description: "Contract destinations"
+		})
+		configureSentryScope(sentryContractDestinations)
+
+		fs.emptyDirSync(path.join(process.cwd(), "temp"))
+
+		await extractOrCopyToTemp("chunk0", "004F4B738474CEAD", "JSON")
+
+		const registry = fs.readJSONSync(path.join(process.cwd(), "temp", "chunk0", "JSON", "004F4B738474CEAD.JSON"))
+
+		for (const { id, before, after, context } of contractsToAddToDestinations) {
+			await logger.debug(`Adding contract ${id} to Destinations`)
+
+			if (before) {
+				registry.Root.Children.splice(
+					registry.Root.Children.findIndex((a: { Id: string }) => a.Id === before),
+					0,
+					{
+						Id: id,
+						_comment: "Automatically added by SMF.",
+						NarrativeContext: context || "Mission",
+						Meta: {
+							Ui: {
+								Row: 3,
+								Col: 5
+							}
+						}
+					}
+				)
+			} else if (after) {
+				registry.Root.Children.splice(registry.Root.Children.findIndex((a: { Id: string }) => a.Id === after) + 1, 0, {
+					Id: id,
+					_comment: "Automatically added by SMF.",
+					NarrativeContext: context || "Mission",
+					Meta: {
+						Ui: {
+							Row: 3,
+							Col: 5
+						}
+					}
+				})
+			} else {
+				registry.Root.Children.push({
+					Id: id,
+					_comment: "Automatically added by SMF.",
+					NarrativeContext: context || "Mission",
+					Meta: {
+						Ui: {
+							Row: 3,
+							Col: 5
+						}
+					}
+				})
+			}
+		}
+
+		fs.ensureDirSync(path.join(process.cwd(), "staging", "chunk0"))
+
+		fs.writeJSONSync(path.join(process.cwd(), "staging", "chunk0", "JSON", "004F4B738474CEAD.JSON"), registry)
+
+		sentryContractDestinations.finish()
+	}
 
 	/* ---------------------------------------------------------------------------------------------- */
 	/*                                          WWEV patches                                          */

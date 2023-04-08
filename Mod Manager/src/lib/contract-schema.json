@@ -979,20 +979,16 @@
 		"Peacock": {
 			"properties": {
 				"noAgencyPickupsActive": {
-					"type": "boolean",
-					"nullable": true
+					"type": "boolean"
 				},
 				"noCarriedWeapon": {
-					"type": "boolean",
-					"nullable": true
+					"type": "boolean"
 				},
 				"noGear": {
-					"type": "boolean",
-					"nullable": true
+					"type": "boolean"
 				}
 			},
-			"type": "object",
-			"nullable": true
+			"type": "object"
 		},
 		"UserData": {
 			"anyOf": [
@@ -1005,10 +1001,83 @@
 					"$ref": "#/definitions/Record<string,any>"
 				},
 				{
-					"type": "null",
-					"nullable": true
+					"type": "null"
 				}
 			]
+		},
+		"SMF": {
+			"properties": {
+				"destinations": {
+					"anyOf": [
+						{
+							"type": "object",
+							"properties": {
+								"addToDestinations": {
+									"type": "boolean",
+									"description": "Whether to add the contract to Destinations."
+								}
+							},
+							"additionalProperties": false
+						},
+						{
+							"type": "object",
+							"properties": {
+								"addToDestinations": {
+									"type": "boolean",
+									"const": true,
+									"description": "Whether to add the contract to Destinations."
+								},
+								"narrativeContext": {
+									"type": "string",
+									"description": "The narrative context of the contract. In the base game, this is either Mission or Campaign."
+								}
+							},
+							"additionalProperties": false
+						},
+						{
+							"type": "object",
+							"properties": {
+								"addToDestinations": {
+									"type": "boolean",
+									"const": true,
+									"description": "Whether to add the contract to Destinations."
+								},
+								"narrativeContext": {
+									"type": "string",
+									"description": "The narrative context of the contract. In the base game, this is either Mission or Campaign."
+								},
+								"placeBefore": {
+									"type": "string",
+									"description": "The UUID of the contract this one should be placed before."
+								}
+							},
+							"additionalProperties": false
+						},
+						{
+							"type": "object",
+							"properties": {
+								"addToDestinations": {
+									"type": "boolean",
+									"const": true,
+									"description": "Whether to add the contract to Destinations."
+								},
+								"narrativeContext": {
+									"type": "string",
+									"description": "The narrative context of the contract. In the base game, this is either Mission or Campaign."
+								},
+								"placeAfter": {
+									"type": "string",
+									"description": "The UUID of the contract this one should be placed after."
+								}
+							},
+							"additionalProperties": false
+						}
+					],
+					"description": "How the contract should behave in relation to the Destinations page."
+				}
+			},
+			"description": "Simple Mod Framework-specific contract metadata.",
+			"type": "object"
 		}
 	},
 	"required": ["Data", "Metadata"],
