@@ -89,6 +89,7 @@ The top-level extension key `SMF` can be used to control certain aspects of how 
         }
     }
 }
+```
 
 ## JSON.patch.json
 Mutates the given JSON file with a patch. The content of the `JSON.patch.json` file follows the following format:
