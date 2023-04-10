@@ -333,33 +333,35 @@ export default async function discover(): Promise<{ [x: string]: { hash: string;
 								affected.push(path.basename(contentFilePath).split(".")[0].split("~")[0])
 								break
 							default: // Replaces a file with a raw file
-								fileToReplace = path.basename(contentFilePath).split(".")[0]
+								if (path.basename(contentFilePath).split(".").slice(1).join(".").length === 4) {
+									fileToReplace = path.basename(contentFilePath).split(".")[0]
 
-								if (baseGameEntityHashes.has(fileToReplace)) {
-									await logger.warn(
-										`Mod ${manifest.name} replaces a base game entity file (${fileToReplace}) with a raw file. This can cause compatibility issues, it makes the mod harder to work with and it requires more work when the game updates. Mod developers can fix this easily by using an entity.patch.json file.`
-									)
+									if (baseGameEntityHashes.has(fileToReplace)) {
+										await logger.warn(
+											`Mod ${manifest.name} replaces a base game entity file (${fileToReplace}) with a raw file. This can cause compatibility issues, it makes the mod harder to work with and it requires more work when the game updates. Mod developers can fix this easily by using an entity.patch.json file.`
+										)
+									}
+
+									if (fileToReplace === "00204D1AFD76AB13") {
+										await logger.warn(
+											`Mod ${manifest.name} replaces the repository file (${fileToReplace}) in its entirety. This can cause compatibility issues, it makes the mod harder to work with and it requires more work when the game updates. Mod developers can fix this easily by using a repository.json or JSON.patch.json file.`
+										)
+									}
+
+									if (fileToReplace === "0057C2C3941115CA") {
+										await logger.warn(
+											`Mod ${manifest.name} replaces the unlockables file (${fileToReplace}) in its entirety. This can cause compatibility issues, it makes the mod harder to work with and it requires more work when the game updates. Mod developers can fix this easily by using an unlockables.json or JSON.patch.json file.`
+										)
+									}
+
+									if (path.basename(contentFilePath).split(".")[1] === "WWEV") {
+										await logger.warn(
+											`Mod ${manifest.name} replaces a sound bank file in its entirety. This can cause compatibility issues, it makes the mod harder to work with and it can require more work when the game updates. Mod developers can fix this easily by using an sfx.wem file.`
+										)
+									}
+
+									affected.push(fileToReplace)
 								}
-
-								if (fileToReplace === "00204D1AFD76AB13") {
-									await logger.warn(
-										`Mod ${manifest.name} replaces the repository file (${fileToReplace}) in its entirety. This can cause compatibility issues, it makes the mod harder to work with and it requires more work when the game updates. Mod developers can fix this easily by using a repository.json or JSON.patch.json file.`
-									)
-								}
-
-								if (fileToReplace === "0057C2C3941115CA") {
-									await logger.warn(
-										`Mod ${manifest.name} replaces the unlockables file (${fileToReplace}) in its entirety. This can cause compatibility issues, it makes the mod harder to work with and it requires more work when the game updates. Mod developers can fix this easily by using an unlockables.json or JSON.patch.json file.`
-									)
-								}
-
-								if (path.basename(contentFilePath).split(".")[1] === "WWEV") {
-									await logger.warn(
-										`Mod ${manifest.name} replaces a sound bank file in its entirety. This can cause compatibility issues, it makes the mod harder to work with and it can require more work when the game updates. Mod developers can fix this easily by using an sfx.wem file.`
-									)
-								}
-
-								affected.push(fileToReplace)
 								break
 						}
 

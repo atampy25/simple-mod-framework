@@ -1510,12 +1510,14 @@ export default async function deploy(
 					break
 				}
 				default: // Copy the file to the staging directory; we don't cache these for obvious reasons
-					fs.writeFileSync(
-						content.source === "disk"
-							? path.join(process.cwd(), "staging", `chunk${content.chunk}`, path.basename(content.path))
-							: path.join(process.cwd(), "staging", `chunk${content.chunk}`, `${content.extraInformation.runtimeID!}.${content.extraInformation.fileType!}`),
-						content.source === "disk" ? fs.readFileSync(content.path) : Buffer.from(await content.content.arrayBuffer())
-					)
+					if ((content.source === "disk" ? path.basename(content.path).split(".").slice(1).join(".") : content.extraInformation.fileType!).length === 4) {
+						fs.writeFileSync(
+							content.source === "disk"
+								? path.join(process.cwd(), "staging", `chunk${content.chunk}`, path.basename(content.path))
+								: path.join(process.cwd(), "staging", `chunk${content.chunk}`, `${content.extraInformation.runtimeID!}.${content.extraInformation.fileType!}`),
+							content.source === "disk" ? fs.readFileSync(content.path) : Buffer.from(await content.content.arrayBuffer())
+						)
+					}
 					break
 			}
 
