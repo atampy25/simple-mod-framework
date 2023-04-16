@@ -1538,7 +1538,7 @@ export default async function deploy(
 						const hash = isValidHash(entityContent["hash"]) ? entityContent["hash"] : `00${md5(entityContent["hash"].toLowerCase()).slice(2, 16).toUpperCase()}`
 
 						execCommand(
-							`"Third-Party"\\HMLanguageTools" rebuild H3 RTLV "${contentFilePath}" "${path.join(
+							`"Third-Party\\HMLanguageTools" rebuild H3 RTLV "${contentFilePath}" "${path.join(
 								process.cwd(),
 								"temp",
 								`chunk${content.chunk}`,
@@ -1578,7 +1578,7 @@ export default async function deploy(
 						const hash = isValidHash(entityContent["hash"]) ? entityContent["hash"] : `00${md5(entityContent["hash"].toLowerCase()).slice(2, 16).toUpperCase()}`
 
 						execCommand(
-							`"Third-Party"\\HMLanguageTools" rebuild H3 LOCR "${contentFilePath}" "${path.join(
+							`"Third-Party\\HMLanguageTools" rebuild H3 LOCR "${contentFilePath}" "${path.join(
 								process.cwd(),
 								"temp",
 								`chunk${content.chunk}`,
