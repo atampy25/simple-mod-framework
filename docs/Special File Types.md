@@ -121,6 +121,12 @@ If the file is the REPO, it will be transformed to the format used by the `repos
 ## material.json
 An RPKG tool material JSON. Replaces a game material.
 
+## locr.json
+A LOCR file obtained from Anthony Fuller's HMLanguageTools.
+
+## rtlv.json
+An RTLV file obtained from Anthony Fuller's HMLanguageTools.
+
 ## texture.tga
 **Note:** The filename matters for this special type.
 
