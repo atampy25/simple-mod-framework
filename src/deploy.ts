@@ -41,6 +41,10 @@ const callRPKGFunction = async function (command: string) {
 	return await rpkgInstance.callFunction(command)
 }
 
+const isValidHash = function (hash: string) {
+	return /\b[a-fA-F0-9]{16}$\b/g.test(hash)
+}
+
 const RPKGHashCache: Record<string, string> = {}
 
 const getRPKGOfHash = async function (hash: string): Promise<string> {
@@ -614,7 +618,9 @@ export default async function deploy(
 				"material.json",
 				"texture.tga",
 				"sfx.wem",
-				"delta"
+				"delta",
+				"rtlv.json",
+				"locr.json"
 			].includes(content.type)
 				? sentryContentTransaction.startChild({
 						op: "stageContentFile",
@@ -1507,6 +1513,86 @@ export default async function deploy(
 						path.join(process.cwd(), "temp", `chunk${content.chunk}`, `${runtimeID}.${fileType}`),
 						path.join(process.cwd(), "staging", `chunk${content.chunk}`, `${runtimeID}.${fileType}`)
 					)
+					break
+				}
+				case "rtlv.json": {
+					await logger.debug(`Converting video subtitles ${contentIdentifier}`)
+
+					entityContent = content.source === "disk" ? JSON.parse(fs.readFileSync(content.path, "utf8")) : JSON.parse(await content.content.text())
+
+					if (
+						invalidatedData.some((a) => a.filePath === contentIdentifier) || // must redeploy, invalid cache
+						!(await copyFromCache(instruction.cacheFolder, path.join(`chunk${content.chunk}`, await xxhash3(contentIdentifier)), path.join(process.cwd(), "temp", `chunk${content.chunk}`))) // cache is not available
+					) {
+						fs.ensureDirSync(path.join(process.cwd(), "temp", `chunk${content.chunk}`))
+
+						let contentFilePath
+						if (content.source === "disk") {
+							contentFilePath = content.path
+						} else {
+							fs.ensureDirSync(path.join(process.cwd(), "virtual"))
+							fs.writeFileSync(path.join(process.cwd(), "virtual", "rtlv.json"), Buffer.from(await content.content.arrayBuffer()))
+							contentFilePath = path.join(process.cwd(), "virtual", "rtlv.json")
+						}
+
+						const hash = isValidHash(entityContent["hash"]) ? entityContent["hash"] : `00${md5(entityContent["hash"].toLowerCase()).slice(2, 16).toUpperCase()}`
+
+						execCommand(
+							`"Third-Party"\\HMLanguageTools" rebuild H3 RTLV "${contentFilePath}" "${path.join(
+								process.cwd(),
+								"temp",
+								`chunk${content.chunk}`,
+								`${hash}.RTLV`
+							)}" --metapath "${path.join(
+								process.cwd(),
+								"temp",
+								`chunk${content.chunk}`,
+								`${hash}.RTLV.meta.json`
+							)}"`
+						)
+
+						fs.removeSync(path.join(process.cwd(), "virtual"))
+					}
+					break
+				}
+				case "locr.json": {
+					await logger.debug(`Converting localisation ${contentIdentifier}`)
+
+					entityContent = content.source === "disk" ? JSON.parse(fs.readFileSync(content.path, "utf8")) : JSON.parse(await content.content.text())
+
+					if (
+						invalidatedData.some((a) => a.filePath === contentIdentifier) || // must redeploy, invalid cache
+						!(await copyFromCache(instruction.cacheFolder, path.join(`chunk${content.chunk}`, await xxhash3(contentIdentifier)), path.join(process.cwd(), "temp", `chunk${content.chunk}`))) // cache is not available
+					) {
+						fs.ensureDirSync(path.join(process.cwd(), "temp", `chunk${content.chunk}`))
+
+						let contentFilePath
+						if (content.source === "disk") {
+							contentFilePath = content.path
+						} else {
+							fs.ensureDirSync(path.join(process.cwd(), "virtual"))
+							fs.writeFileSync(path.join(process.cwd(), "virtual", "locr.json"), Buffer.from(await content.content.arrayBuffer()))
+							contentFilePath = path.join(process.cwd(), "virtual", "locr.json")
+						}
+
+						const hash = isValidHash(entityContent["hash"]) ? entityContent["hash"] : `00${md5(entityContent["hash"].toLowerCase()).slice(2, 16).toUpperCase()}`
+
+						execCommand(
+							`"Third-Party"\\HMLanguageTools" rebuild H3 LOCR "${contentFilePath}" "${path.join(
+								process.cwd(),
+								"temp",
+								`chunk${content.chunk}`,
+								`${hash}.LOCR`
+							)}" --metapath "${path.join(
+								process.cwd(),
+								"temp",
+								`chunk${content.chunk}`,
+								`${hash}.LOCR.meta.json`
+							)}"`
+						)
+
+						fs.removeSync(path.join(process.cwd(), "virtual"))
+					}
 					break
 				}
 				default: // Copy the file to the staging directory; we don't cache these for obvious reasons
