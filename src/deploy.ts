@@ -1519,6 +1519,7 @@ export default async function deploy(
 					await logger.debug(`Converting video subtitles ${contentIdentifier}`)
 
 					entityContent = content.source === "disk" ? JSON.parse(fs.readFileSync(content.path, "utf8")) : JSON.parse(await content.content.text())
+					const hash = isValidHash(entityContent["hash"]) ? entityContent["hash"] : `00${md5(entityContent["hash"].toLowerCase()).slice(2, 16).toUpperCase()}`
 
 					if (
 						invalidatedData.some((a) => a.filePath === contentIdentifier) || // must redeploy, invalid cache
@@ -1535,8 +1536,6 @@ export default async function deploy(
 							contentFilePath = path.join(process.cwd(), "virtual", "rtlv.json")
 						}
 
-						const hash = isValidHash(entityContent["hash"]) ? entityContent["hash"] : `00${md5(entityContent["hash"].toLowerCase()).slice(2, 16).toUpperCase()}`
-
 						execCommand(
 							`"Third-Party\\HMLanguageTools" rebuild H3 RTLV "${contentFilePath}" "${path.join(
 								process.cwd(),
@@ -1552,13 +1551,49 @@ export default async function deploy(
 						)
 
 						fs.removeSync(path.join(process.cwd(), "virtual"))
+
+						await copyToCache(instruction.cacheFolder, path.join(process.cwd(), "temp", `chunk${content.chunk}`), path.join(`chunk${content.chunk}`, await xxhash3(contentIdentifier)))
 					}
+
+					fs.ensureDirSync(path.join(process.cwd(), "staging", `chunk${content.chunk}`))
+
+					// Copy LOCR files
+					fs.copyFileSync(
+						path.join(
+							process.cwd(),
+							"temp",
+							`chunk${content.chunk}`,
+							`${hash}.RTLV`
+						),
+						path.join(
+							process.cwd(),
+							"staging",
+							`chunk${content.chunk}`,
+							`${hash}.RTLV`
+						)
+					)
+
+					fs.copyFileSync(
+						path.join(
+							process.cwd(),
+							"temp",
+							`chunk${content.chunk}`,
+							`${hash}.RTLV.meta.json`
+						),
+						path.join(
+							process.cwd(),
+							"staging",
+							`chunk${content.chunk}`,
+							`${hash}.RTLV.meta.json`
+						)
+					)
 					break
 				}
 				case "locr.json": {
 					await logger.debug(`Converting localisation ${contentIdentifier}`)
 
 					entityContent = content.source === "disk" ? JSON.parse(fs.readFileSync(content.path, "utf8")) : JSON.parse(await content.content.text())
+					const hash = isValidHash(entityContent["hash"]) ? entityContent["hash"] : `00${md5(entityContent["hash"].toLowerCase()).slice(2, 16).toUpperCase()}`
 
 					if (
 						invalidatedData.some((a) => a.filePath === contentIdentifier) || // must redeploy, invalid cache
@@ -1575,8 +1610,6 @@ export default async function deploy(
 							contentFilePath = path.join(process.cwd(), "virtual", "locr.json")
 						}
 
-						const hash = isValidHash(entityContent["hash"]) ? entityContent["hash"] : `00${md5(entityContent["hash"].toLowerCase()).slice(2, 16).toUpperCase()}`
-
 						execCommand(
 							`"Third-Party\\HMLanguageTools" rebuild H3 LOCR "${contentFilePath}" "${path.join(
 								process.cwd(),
@@ -1592,7 +1625,42 @@ export default async function deploy(
 						)
 
 						fs.removeSync(path.join(process.cwd(), "virtual"))
+
+						await copyToCache(instruction.cacheFolder, path.join(process.cwd(), "temp", `chunk${content.chunk}`), path.join(`chunk${content.chunk}`, await xxhash3(contentIdentifier)))
 					}
+
+					fs.ensureDirSync(path.join(process.cwd(), "staging", `chunk${content.chunk}`))
+
+					// Copy LOCR files
+					fs.copyFileSync(
+						path.join(
+							process.cwd(),
+							"temp",
+							`chunk${content.chunk}`,
+							`${hash}.LOCR`
+						),
+						path.join(
+							process.cwd(),
+							"staging",
+							`chunk${content.chunk}`,
+							`${hash}.LOCR`
+						)
+					)
+
+					fs.copyFileSync(
+						path.join(
+							process.cwd(),
+							"temp",
+							`chunk${content.chunk}`,
+							`${hash}.LOCR.meta.json`
+						),
+						path.join(
+							process.cwd(),
+							"staging",
+							`chunk${content.chunk}`,
+							`${hash}.LOCR.meta.json`
+						)
+					)
 					break
 				}
 				default: // Copy the file to the staging directory; we don't cache these for obvious reasons
