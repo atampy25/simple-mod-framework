@@ -5,7 +5,7 @@ import { logger } from "./core-singleton"
 
 const execCommand = function (command: string) {
 	void logger.verbose(`Executing QN 3.1 command ${command}`)
-	child_process.execSync(command, { stdio: [ "pipe", "inherit", "inherit" ] })
+	child_process.execSync(command, { stdio: [ "pipe", "pipe", "inherit" ] })
 }
 
 export async function convert(game: string, TEMP: string, TEMPmeta: string, TBLU: string, TBLUmeta: string, output: string) {
