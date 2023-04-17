@@ -466,3 +466,12 @@ export interface ModAPI {
 		error(message: string, exitAfter?: boolean): Promise<void>
 	}
 }
+
+export interface TonyToolsLOCR {
+	hash: string
+	languages: {
+		[lang: string]: {
+			[hash: string]: string
+		}
+	}
+}

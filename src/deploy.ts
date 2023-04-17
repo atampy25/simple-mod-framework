@@ -3,7 +3,7 @@ import * as rfc6902 from "rfc6902"
 import * as rust_utils from "./smf-rust"
 import * as ts from "./typescript"
 
-import type { DeployInstruction, Manifest, ManifestOptionData, ModScript } from "./types"
+import type { DeployInstruction, Manifest, ManifestOptionData, ModScript, TonyToolsLOCR } from "./types"
 import { ModuleKind, ScriptTarget } from "typescript"
 import { compileExpression, useDotAccessOperatorAndOptionalChaining } from "filtrex"
 import { config, logger, rpkgInstance } from "./core-singleton"
@@ -2294,24 +2294,32 @@ export default async function deploy(
 
 		if (invalidatedData.some((a) => a.data.affected.includes("00F5817876E691F1")) || !(await copyFromCache("global", path.join("LOCR", "manifest"), path.join(process.cwd(), "temp")))) {
 			// we need to re-deploy the localisation files OR the localisation files couldn't be copied from cache
+			fs.ensureDirSync(path.join(process.cwd(), "temp", "LOCR", `${localisationFileRPKG}.rpkg`))
 
-			await callRPKGFunction(`-extract_locr_to_json_from "${path.join(config.runtimePath, `${localisationFileRPKG}.rpkg`)}" -filter "00F5817876E691F1" -output_path temp`)
+			await callRPKGFunction(`-extract_from_rpkg "${path.join(config.runtimePath, `${localisationFileRPKG}.rpkg`)}" -filter "00F5817876E691F1" -output_path temp`)
+			await callRPKGFunction(`-hash_meta_to_json "${path.join(process.cwd(), "temp", `${localisationFileRPKG}.rpkg`, "LOCR", "00F5817876E691F1.LOCR.meta")}"`)
+			execCommand(`"Third-Party\\HMLanguageTools" convert H3 LOCR "${path.join(
+				process.cwd(),
+				"temp",
+				`${localisationFileRPKG}.rpkg`,
+				"LOCR",
+				"00F5817876E691F1.LOCR"
+			)}" "${path.join(
+				process.cwd(),
+				"temp",
+				"LOCR",
+				`${localisationFileRPKG}.rpkg`,
+				"00F5817876E691F1.LOCR.JSON"
+			)}"`)
 
 			fs.ensureDirSync(path.join(process.cwd(), "staging", "chunk0"))
 
-			const locrFileContent = JSON.parse(fs.readFileSync(path.join(process.cwd(), "temp", "LOCR", `${localisationFileRPKG}.rpkg`, "00F5817876E691F1.LOCR.JSON"), "utf8"))
-			const locrContent: Record<string, Record<string, string>> = {}
-
-			for (const localisationLanguage of locrFileContent) {
-				locrContent[localisationLanguage[0].Language] = {}
-				for (const localisationItem of localisationLanguage.slice(1)) {
-					locrContent[localisationLanguage[0].Language][`abc${localisationItem.StringHash}`] = localisationItem.String
-				}
-			}
+			const locrFileContent: TonyToolsLOCR = JSON.parse(fs.readFileSync(path.join(process.cwd(), "temp", "LOCR", `${localisationFileRPKG}.rpkg`, "00F5817876E691F1.LOCR.JSON"), "utf8"))
+			const locrContent: Record<string, Record<string, string>> = locrFileContent["languages"]
 
 			for (const item of localisation) {
 				const toMerge: Record<string, string> = {}
-				toMerge[`abc${crc32(item.locString.toUpperCase())}`] = item.text
+				toMerge[item.locString.toUpperCase()] = item.text
 
 				deepMerge(locrContent[languages[item.language]], toMerge)
 
@@ -2320,33 +2328,42 @@ export default async function deploy(
 				}
 			}
 
-			const locrToWrite: Array<Array<{ Language: string } | { StringHash: number; String: string }>> = []
+			const locrToWrite: TonyToolsLOCR = {
+				"hash": "00F5817876E691F1",
+				"languages": {}
+			}
 
 			for (const language of Object.keys(locrContent)) {
-				locrToWrite.push([
-					{
-						Language: language
-					}
-				])
-
-				for (const string of Object.keys(locrContent[language])) {
-					locrToWrite[locrToWrite.length - 1].push({
-						StringHash: parseInt(string.slice(3)),
-						String: locrContent[language][string]
-					})
-				}
+				locrToWrite.languages[language] = locrContent[language] ?? {}
 			}
+
+			// We empty the entire temp directory as (right now) we extract the raw files and convert the meta
+			fs.emptyDirSync(path.join(process.cwd(), "temp"))
+			fs.ensureDirSync(path.join(process.cwd(), "temp", "LOCR", `${localisationFileRPKG}.rpkg`))
 
 			fs.writeFileSync(path.join(process.cwd(), "temp", "LOCR", `${localisationFileRPKG}.rpkg`, "00F5817876E691F1.LOCR.JSON"), JSON.stringify(locrToWrite))
 
 			await copyToCache("global", path.join(process.cwd(), "temp"), path.join("LOCR", "manifest"))
 		}
 
-		await callRPKGFunction(`-rebuild_locr_from_json_from "${path.join(process.cwd(), "temp", "LOCR", `${localisationFileRPKG}.rpkg`)}"`) // Rebuild the LOCR
-		fs.copyFileSync(
-			path.join(process.cwd(), "temp", "LOCR", `${localisationFileRPKG}.rpkg`, "LOCR.rebuilt", "00F5817876E691F1.LOCR"),
-			path.join(process.cwd(), "staging", localisationFileRPKG.replace(/patch[0-9]*/gi, ""), "00F5817876E691F1.LOCR")
-		)
+		// Rebuild the LOCR
+		execCommand(`"Third-Party\\HMLanguageTools" rebuild H3 LOCR "${path.join(
+			process.cwd(),
+			"temp",
+			"LOCR",
+			`${localisationFileRPKG}.rpkg`,
+			"00F5817876E691F1.LOCR.JSON"
+		)}" "${path.join(
+			process.cwd(),
+			"staging",
+			localisationFileRPKG.replace(/patch[0-9]*/gi, ""),
+			"00F5817876E691F1.LOCR"
+		)}" --metapath "${path.join(
+			process.cwd(),
+			"staging",
+			localisationFileRPKG.replace(/patch[0-9]*/gi, ""),
+			"00F5817876E691F1.LOCR.meta.json"
+		)}"`)
 
 		fs.emptyDirSync(path.join(process.cwd(), "temp"))
 
@@ -2379,25 +2396,34 @@ export default async function deploy(
 
 			if (invalidatedData.some((a) => a.data.affected.includes(locrHash)) || !(await copyFromCache("global", path.join("LOCR", locrHash), path.join(process.cwd(), "temp")))) {
 				// we need to re-deploy the localisation files OR the localisation files couldn't be copied from cache
+				fs.ensureDirSync(path.join(process.cwd(), "temp", "LOCR", `${localisationFileRPKG}.rpkg`))
 
-				await callRPKGFunction(`-extract_locr_to_json_from "${path.join(config.runtimePath, `${localisationFileRPKG}.rpkg`)}" -filter "${locrHash}" -output_path temp`)
+				await callRPKGFunction(`-extract_from_rpkg "${path.join(config.runtimePath, `${localisationFileRPKG}.rpkg`)}" -filter "${locrHash}" -output_path temp`)
+				await callRPKGFunction(`-hash_meta_to_json "${path.join(process.cwd(), "temp", `${localisationFileRPKG}.rpkg`, "LOCR", `${locrHash}.LOCR.meta`)}"`)
+				execCommand(`"Third-Party\\HMLanguageTools" convert H3 LOCR "${path.join(
+					process.cwd(),
+					"temp",
+					`${localisationFileRPKG}.rpkg`,
+					"LOCR",
+					`${locrHash}.LOCR`
+				)}" "${path.join(
+					process.cwd(),
+					"temp",
+					"LOCR",
+					`${localisationFileRPKG}.rpkg`,
+					`${locrHash}.LOCR.JSON`
+				)}"`)
 
 				fs.ensureDirSync(path.join(process.cwd(), "staging", "chunk0"))
 
-				const locrFileContent = JSON.parse(fs.readFileSync(path.join(process.cwd(), "temp", "LOCR", `${localisationFileRPKG}.rpkg`, `${locrHash}.LOCR.JSON`), "utf8"))
-				const locrContent = {} as Record<string, Record<string, string>>
-
-				for (const localisationLanguage of locrFileContent) {
-					locrContent[localisationLanguage[0].Language] = {}
-					for (const localisationItem of localisationLanguage.slice(1)) {
-						locrContent[localisationLanguage[0].Language][`abc${localisationItem.StringHash}`] = localisationItem.String
-					}
-				}
+				const locrFileContent: TonyToolsLOCR = JSON.parse(fs.readFileSync(path.join(process.cwd(), "temp", "LOCR", `${localisationFileRPKG}.rpkg`, `${locrHash}.LOCR.JSON`), "utf8"))
+				const locrContent = locrFileContent["languages"]
 
 				for (const item of localisationOverrides[locrHash]) {
 					const toMerge = {} as Record<string, string>
 
-					toMerge[`abc${item.locString}`] = item.text
+					// TonyTools works with hashes
+					toMerge[`${parseInt(item.locString).toString(16)}`] = item.text
 
 					deepMerge(locrContent[languages[item.language]], toMerge)
 
@@ -2406,33 +2432,42 @@ export default async function deploy(
 					}
 				}
 
-				const locrToWrite: Array<Array<{ Language: string } | { StringHash: number; String: string }>> = []
-
-				for (const language of Object.keys(locrContent)) {
-					locrToWrite.push([
-						{
-							Language: language
-						}
-					])
-
-					for (const string of Object.keys(locrContent[language])) {
-						locrToWrite[locrToWrite.length - 1].push({
-							StringHash: parseInt(string.slice(3)),
-							String: locrContent[language][string]
-						})
-					}
+				const locrToWrite: TonyToolsLOCR = {
+					"hash": locrHash,
+					"languages": {}
 				}
 
+				for (const language of Object.keys(locrContent)) {
+					locrToWrite.languages[language] = locrContent[language] ?? {}
+				}
+
+				// We empty the entire temp directory as (right now) we extract the raw files and convert the meta
+				fs.emptyDirSync(path.join(process.cwd(), "temp"))
+				fs.ensureDirSync(path.join(process.cwd(), "temp", "LOCR", `${localisationFileRPKG}.rpkg`))
+	
 				fs.writeFileSync(path.join(process.cwd(), "temp", "LOCR", `${localisationFileRPKG}.rpkg`, `${locrHash}.LOCR.JSON`), JSON.stringify(locrToWrite))
 
 				await copyToCache("global", path.join(process.cwd(), "temp"), path.join("LOCR", locrHash))
 			}
-
-			await callRPKGFunction(`-rebuild_locr_from_json_from "${path.join(process.cwd(), "temp", "LOCR", `${localisationFileRPKG}.rpkg`)}"`) // Rebuild the LOCR
-			fs.copyFileSync(
-				path.join(process.cwd(), "temp", "LOCR", `${localisationFileRPKG}.rpkg`, "LOCR.rebuilt", `${locrHash}.LOCR`),
-				path.join(process.cwd(), "staging", localisationFileRPKG.replace(/patch[0-9]*/gi, ""), `${locrHash}.LOCR`)
-			)
+			
+			// Rebuild the LOCR
+			execCommand(`"Third-Party\\HMLanguageTools" rebuild H3 LOCR "${path.join(
+				process.cwd(),
+				"temp",
+				"LOCR",
+				`${localisationFileRPKG}.rpkg`,
+				`${locrHash}.LOCR.JSON`
+			)}" "${path.join(
+				process.cwd(),
+				"staging",
+				localisationFileRPKG.replace(/patch[0-9]*/gi, ""),
+				`${locrHash}.LOCR`
+			)}" --metapath "${path.join(
+				process.cwd(),
+				"staging",
+				localisationFileRPKG.replace(/patch[0-9]*/gi, ""),
+				`${locrHash}.LOCR.meta.json`
+			)}"`)
 
 			fs.emptyDirSync(path.join(process.cwd(), "temp"))
 		}
