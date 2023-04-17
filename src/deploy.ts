@@ -2297,11 +2297,11 @@ export default async function deploy(
 			fs.ensureDirSync(path.join(process.cwd(), "temp", "LOCR", `${localisationFileRPKG}.rpkg`))
 
 			await callRPKGFunction(`-extract_from_rpkg "${path.join(config.runtimePath, `${localisationFileRPKG}.rpkg`)}" -filter "00F5817876E691F1" -output_path temp`)
-			await callRPKGFunction(`-hash_meta_to_json "${path.join(process.cwd(), "temp", `${localisationFileRPKG}.rpkg`, "LOCR", "00F5817876E691F1.LOCR.meta")}"`)
+			await callRPKGFunction(`-hash_meta_to_json "${path.join(process.cwd(), "temp", `${localisationFileRPKG}`, "LOCR", "00F5817876E691F1.LOCR.meta")}"`)
 			execCommand(`"Third-Party\\HMLanguageTools" convert H3 LOCR "${path.join(
 				process.cwd(),
 				"temp",
-				`${localisationFileRPKG}.rpkg`,
+				`${localisationFileRPKG}`,
 				"LOCR",
 				"00F5817876E691F1.LOCR"
 			)}" "${path.join(
@@ -2399,11 +2399,11 @@ export default async function deploy(
 				fs.ensureDirSync(path.join(process.cwd(), "temp", "LOCR", `${localisationFileRPKG}.rpkg`))
 
 				await callRPKGFunction(`-extract_from_rpkg "${path.join(config.runtimePath, `${localisationFileRPKG}.rpkg`)}" -filter "${locrHash}" -output_path temp`)
-				await callRPKGFunction(`-hash_meta_to_json "${path.join(process.cwd(), "temp", `${localisationFileRPKG}.rpkg`, "LOCR", `${locrHash}.LOCR.meta`)}"`)
+				await callRPKGFunction(`-hash_meta_to_json "${path.join(process.cwd(), "temp", `${localisationFileRPKG}`, "LOCR", `${locrHash}.LOCR.meta`)}"`)
 				execCommand(`"Third-Party\\HMLanguageTools" convert H3 LOCR "${path.join(
 					process.cwd(),
 					"temp",
-					`${localisationFileRPKG}.rpkg`,
+					`${localisationFileRPKG}`,
 					"LOCR",
 					`${locrHash}.LOCR`
 				)}" "${path.join(
@@ -2449,7 +2449,7 @@ export default async function deploy(
 
 				await copyToCache("global", path.join(process.cwd(), "temp"), path.join("LOCR", locrHash))
 			}
-			
+
 			// Rebuild the LOCR
 			execCommand(`"Third-Party\\HMLanguageTools" rebuild H3 LOCR "${path.join(
 				process.cwd(),
