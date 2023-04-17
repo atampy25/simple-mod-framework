@@ -69,7 +69,10 @@ export async function extractOrCopyToTemp(rpkgOfFile: string, file: string, type
 	} else {
 		fs.ensureDirSync(path.join(process.cwd(), "temp", rpkgOfFile, type))
 		fs.copyFileSync(path.join(process.cwd(), "staging", stagingChunk, `${file}.${type}`), path.join(process.cwd(), "temp", rpkgOfFile, type, `${file}.${type}`)) // Use the staging one (for mod compat - one mod can extract, patch and build, then the next can patch that one instead)
-		fs.copyFileSync(path.join(process.cwd(), "staging", stagingChunk, `${file}.${type}.meta`), path.join(process.cwd(), "temp", rpkgOfFile, type, `${file}.${type}.meta`))
+
+		if (fs.existsSync(path.join(process.cwd(), "staging", stagingChunk, `${file}.${type}.meta`))) {
+			fs.copyFileSync(path.join(process.cwd(), "staging", stagingChunk, `${file}.${type}.meta`), path.join(process.cwd(), "temp", rpkgOfFile, type, `${file}.${type}.meta`))
+		}
 	}
 }
 
