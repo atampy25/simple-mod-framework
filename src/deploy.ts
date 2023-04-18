@@ -33,7 +33,7 @@ const deepMerge = function (x: any, y: any) {
 
 const execCommand = function (command: string) {
 	void logger.verbose(`Executing command ${command}`)
-	child_process.execSync(command, { stdio: ["pipe", "inherit", "inherit"] })
+	child_process.execSync(command, { stdio: ["pipe", "pipe", "inherit"] })
 }
 
 const callRPKGFunction = async function (command: string) {
@@ -795,7 +795,7 @@ export default async function deploy(
 					await logger.verbose("Cache check")
 					if (
 						invalidatedData.some((a) => a.filePath === contentIdentifier) || // must redeploy, invalid cache
-						!(await copyFromCache(instruction.cacheFolder, path.join(`chunk${content.chunk}`, await xxhash3(contentIdentifier)), path.join(process.cwd(), "staging", `chunk${content.chunk}`))) // cache is not available
+						!(await copyFromCache(instruction.cacheFolder, path.join(`chunk${content.chunk}`, `${contentIdentifier.slice(-15)}-${await xxhash3(contentIdentifier)}`), path.join(process.cwd(), "staging", `chunk${content.chunk}`))) // cache is not available
 					) {
 						let contentPath
 
@@ -856,7 +856,7 @@ export default async function deploy(
 						)
 						// Copy the binary files to the staging directory
 
-						await copyToCache(instruction.cacheFolder, path.join(process.cwd(), "temp"), path.join(`chunk${content.chunk}`, await xxhash3(contentIdentifier)))
+						await copyToCache(instruction.cacheFolder, path.join(process.cwd(), "temp"), path.join(`chunk${content.chunk}`, `${contentIdentifier.slice(-15)}-${await xxhash3(contentIdentifier)}`))
 						// Copy the binary files to the cache
 					}
 
@@ -1018,7 +1018,7 @@ export default async function deploy(
 
 					if (
 						invalidatedData.some((a) => a.filePath === contentIdentifier) || // must redeploy, invalid cache
-						!(await copyFromCache(instruction.cacheFolder, path.join(`chunk${content.chunk}`, await xxhash3(contentIdentifier)), path.join(process.cwd(), "temp", oresChunk))) // cache is not available
+						!(await copyFromCache(instruction.cacheFolder, path.join(`chunk${content.chunk}`, `${contentIdentifier.slice(-15)}-${await xxhash3(contentIdentifier)}`), path.join(process.cwd(), "temp", oresChunk))) // cache is not available
 					) {
 						await extractOrCopyToTemp(oresChunk, "0057C2C3941115CA", "ORES") // Extract the ORES to temp
 
@@ -1034,7 +1034,7 @@ export default async function deploy(
 						fs.rmSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "0057C2C3941115CA.ORES"))
 						execCommand(`"Third-Party\\OREStool.exe" "${path.join(process.cwd(), "temp", oresChunk, "ORES", "0057C2C3941115CA.ORES.json")}"`)
 
-						await copyToCache(instruction.cacheFolder, path.join(process.cwd(), "temp", oresChunk), path.join(`chunk${content.chunk}`, await xxhash3(contentIdentifier)))
+						await copyToCache(instruction.cacheFolder, path.join(process.cwd(), "temp", oresChunk), path.join(`chunk${content.chunk}`, `${contentIdentifier.slice(-15)}-${await xxhash3(contentIdentifier)}`))
 					}
 
 					execCommand(`"Third-Party\\OREStool.exe" "${path.join(process.cwd(), "temp", oresChunk, "ORES", "0057C2C3941115CA.ORES")}"`)
@@ -1053,7 +1053,7 @@ export default async function deploy(
 
 					if (
 						invalidatedData.some((a) => a.filePath === contentIdentifier) || // must redeploy, invalid cache
-						!(await copyFromCache(instruction.cacheFolder, path.join(`chunk${content.chunk}`, await xxhash3(contentIdentifier)), path.join(process.cwd(), "temp", repoRPKG))) // cache is not available
+						!(await copyFromCache(instruction.cacheFolder, path.join(`chunk${content.chunk}`, `${contentIdentifier.slice(-15)}-${await xxhash3(contentIdentifier)}`), path.join(process.cwd(), "temp", repoRPKG))) // cache is not available
 					) {
 						await extractOrCopyToTemp(repoRPKG, "00204D1AFD76AB13", "REPO") // Extract the REPO to temp
 
@@ -1098,7 +1098,7 @@ export default async function deploy(
 
 						fs.writeFileSync(path.join(process.cwd(), "temp", repoRPKG, "REPO", "00204D1AFD76AB13.REPO"), JSON.stringify(repoToWrite))
 
-						await copyToCache(instruction.cacheFolder, path.join(process.cwd(), "temp", repoRPKG), path.join(`chunk${content.chunk}`, await xxhash3(contentIdentifier)))
+						await copyToCache(instruction.cacheFolder, path.join(process.cwd(), "temp", repoRPKG), path.join(`chunk${content.chunk}`, `${contentIdentifier.slice(-15)}-${await xxhash3(contentIdentifier)}`))
 					}
 
 					fs.copyFileSync(path.join(process.cwd(), "temp", repoRPKG, "REPO", "00204D1AFD76AB13.REPO"), path.join(process.cwd(), "staging", "chunk0", "00204D1AFD76AB13.REPO"))
@@ -1152,7 +1152,7 @@ export default async function deploy(
 
 					if (
 						invalidatedData.some((a) => a.filePath === contentIdentifier) || // must redeploy, invalid cache
-						!(await copyFromCache(instruction.cacheFolder, path.join(`chunk${content.chunk}`, await xxhash3(contentIdentifier)), path.join(process.cwd(), "temp", rpkgOfFile))) // cache is not available
+						!(await copyFromCache(instruction.cacheFolder, path.join(`chunk${content.chunk}`, `${contentIdentifier.slice(-15)}-${await xxhash3(contentIdentifier)}`), path.join(process.cwd(), "temp", rpkgOfFile))) // cache is not available
 					) {
 						await extractOrCopyToTemp(rpkgOfFile, entityContent.file, fileType, `chunk${content.chunk}`) // Extract the JSON to temp
 
@@ -1190,7 +1190,7 @@ export default async function deploy(
 							fs.writeFileSync(path.join(process.cwd(), "temp", rpkgOfFile, fileType, `${entityContent.file}.${fileType}`), JSON.stringify(fileContent))
 						}
 
-						await copyToCache(instruction.cacheFolder, path.join(process.cwd(), "temp", rpkgOfFile), path.join(`chunk${content.chunk}`, await xxhash3(contentIdentifier)))
+						await copyToCache(instruction.cacheFolder, path.join(process.cwd(), "temp", rpkgOfFile), path.join(`chunk${content.chunk}`, `${contentIdentifier.slice(-15)}-${await xxhash3(contentIdentifier)}`))
 					}
 
 					if (contractsORESContent[entityContent.file]) {
@@ -1234,7 +1234,7 @@ export default async function deploy(
 
 					if (
 						invalidatedData.some((a) => a.filePath === contentIdentifier) || // must redeploy, invalid cache
-						!(await copyFromCache(instruction.cacheFolder, path.join(`chunk${content.chunk}`, await xxhash3(contentIdentifier)), path.join(process.cwd(), "temp", `chunk${content.chunk}`))) // cache is not available
+						!(await copyFromCache(instruction.cacheFolder, path.join(`chunk${content.chunk}`, `${contentIdentifier.slice(-15)}-${await xxhash3(contentIdentifier)}`), path.join(process.cwd(), "temp", `chunk${content.chunk}`))) // cache is not available
 					) {
 						fs.ensureDirSync(path.join(process.cwd(), "temp", `chunk${content.chunk}`))
 
@@ -1386,7 +1386,7 @@ export default async function deploy(
 							fs.removeSync(path.join(process.cwd(), "virtual"))
 						}
 
-						await copyToCache(instruction.cacheFolder, path.join(process.cwd(), "temp", `chunk${content.chunk}`), path.join(`chunk${content.chunk}`, await xxhash3(contentIdentifier)))
+						await copyToCache(instruction.cacheFolder, path.join(process.cwd(), "temp", `chunk${content.chunk}`), path.join(`chunk${content.chunk}`, `${contentIdentifier.slice(-15)}-${await xxhash3(contentIdentifier)}`))
 					}
 
 					fs.ensureDirSync(path.join(process.cwd(), "staging", `chunk${content.chunk}`))
@@ -1475,7 +1475,7 @@ export default async function deploy(
 
 					if (
 						invalidatedData.some((a) => a.filePath === contentIdentifier) || // must redeploy, invalid cache
-						!(await copyFromCache(instruction.cacheFolder, path.join(`chunk${content.chunk}`, await xxhash3(contentIdentifier)), path.join(process.cwd(), "temp", `chunk${content.chunk}`))) // cache is not available
+						!(await copyFromCache(instruction.cacheFolder, path.join(`chunk${content.chunk}`, `${contentIdentifier.slice(-15)}-${await xxhash3(contentIdentifier)}`), path.join(process.cwd(), "temp", `chunk${content.chunk}`))) // cache is not available
 					) {
 						fs.ensureDirSync(path.join(process.cwd(), "temp", `chunk${content.chunk}`))
 
@@ -1503,7 +1503,7 @@ export default async function deploy(
 
 						fs.removeSync(path.join(process.cwd(), "virtual"))
 
-						await copyToCache(instruction.cacheFolder, path.join(process.cwd(), "temp", `chunk${content.chunk}`), path.join(`chunk${content.chunk}`, await xxhash3(contentIdentifier)))
+						await copyToCache(instruction.cacheFolder, path.join(process.cwd(), "temp", `chunk${content.chunk}`), path.join(`chunk${content.chunk}`, `${contentIdentifier.slice(-15)}-${await xxhash3(contentIdentifier)}`))
 					}
 
 					fs.ensureDirSync(path.join(process.cwd(), "staging", `chunk${content.chunk}`))
@@ -1664,7 +1664,7 @@ export default async function deploy(
 					break
 				}
 				default: // Copy the file to the staging directory; we don't cache these for obvious reasons
-					if ((content.source === "disk" ? path.basename(content.path).split(".").slice(1).join(".") : content.extraInformation.fileType!).length === 4) {
+					if ((content.source === "disk" ? path.basename(content.path).split(".").slice(1).join(".") : content.extraInformation.fileType!).length === 4 || (content.source === "disk" ? path.basename(content.path).split(".").slice(1).join(".") : content.extraInformation.fileType!).endsWith("meta")) {
 						fs.writeFileSync(
 							content.source === "disk"
 								? path.join(process.cwd(), "staging", `chunk${content.chunk}`, path.basename(content.path))
