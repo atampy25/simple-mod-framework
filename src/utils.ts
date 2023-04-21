@@ -1,11 +1,8 @@
 import { config, logger, rpkgInstance } from "./core-singleton"
 
+import { freeDiskSpace } from "./smf-rust"
 import fs from "fs-extra"
 import path from "path"
-
-// eslint-disable-next-line
-const checkDiskSpace = require("check-disk-space").default
-const freeSpace = async () => Number((await checkDiskSpace(process.cwd())).free) / 1024 / 1024 / 1024
 
 const QuickEntity = {
 	"0.1": require("./quickentity1136"),
@@ -92,7 +89,7 @@ export async function copyFromCache(mod: string, cachePath: string, outputPath: 
 
 export async function copyToCache(mod: string, originalPath: string, cachePath: string) {
 	// do not cache if less than 5 GB remaining on disk
-	if (fs.existsSync(originalPath) && (await freeSpace()) > 5) {
+	if (fs.existsSync(originalPath) && (freeDiskSpace() / 1024 / 1024 / 1024) > 5) {
 		await logger.verbose(`Copy to cache: ${mod} ${originalPath} ${cachePath}`)
 
 		fs.emptyDirSync(path.join(process.cwd(), "cache", winPathEscape(mod), cachePath))
