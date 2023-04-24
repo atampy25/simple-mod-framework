@@ -2,12 +2,11 @@
 global.THREE = require("./three-onlymath.min")
 
 import * as Sentry from "@sentry/node"
-import * as Tracing from "@sentry/tracing"
+import type {Span, Transaction} from "@sentry/tracing"
 
-import { DateTime, Duration, DurationLikeObject } from "luxon"
-import type { Span, Transaction } from "@sentry/tracing"
+import {DateTime, Duration, DurationLikeObject} from "luxon"
 
-import { Platform } from "./types"
+import {Platform} from "./types"
 import core from "./core-singleton"
 import deploy from "./deploy"
 import difference from "./difference"
@@ -15,7 +14,7 @@ import discover from "./discover"
 import fs from "fs-extra"
 import md5File from "md5-file"
 import path from "path"
-import { xxhash3 } from "hash-wasm"
+import {xxhash3} from "hash-wasm"
 
 require("clarify")
 
@@ -144,11 +143,7 @@ process.on("SIGINT", () => void core.logger.error("Received SIGINT signal"))
 process.on("SIGTERM", () => void core.logger.error("Received SIGTERM signal"))
 
 async function doTheThing() {
-	if (typeof core.config.platform === "undefined") {
-		await core.logger.error(
-			"Could not detect a workable game copy! If the game has recently updated, the framework will also need an update. If you're using a cracked version, that sounds like a you problem."
-		)
-	}
+	core.config.platform = Platform.steam
 
 	const startedDate = DateTime.now()
 
