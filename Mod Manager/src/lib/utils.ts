@@ -387,21 +387,27 @@ export function validateModFolder(modFolder: string): [boolean, string] {
 	try {
 		json5.parse(window.fs.readFileSync(window.path.join(modFolder, "manifest.json"), "utf8"))
 	} catch {
-		return [false, "Invalid manifest by invalid JSON"]
+		return [false, "Invalid manifest due to invalid JSON"]
 	}
 
 	if (!validateManifest(json5.parse(window.fs.readFileSync(window.path.join(modFolder, "manifest.json"), "utf8")))) {
-		return [false, "Invalid manifest by non-matching schema"]
+		return [false, `Invalid manifest due to non-matching schema: ${new Ajv({ strict: false }).errorsText(validateManifest.errors)}`]
 	}
 
 	const manifest: Manifest = json5.parse(window.fs.readFileSync(window.path.join(modFolder, "manifest.json"), "utf8"))
 
 	for (const contentFolder of [...(manifest.contentFolders || []), ...(manifest.options || []).flatMap((a) => a.contentFolders || [])]) {
 		if (!window.fs.existsSync(window.path.resolve(modFolder, contentFolder))) {
-			return [false, `Invalid content folder "${contentFolder}" by nonexistent path`]
+			return [false, `Invalid content folder "${contentFolder}" due to nonexistent path`]
 		}
 
-		for (const chunkFolder of window.fs.readdirSync(window.path.resolve(modFolder, contentFolder))) {
+		const chunkFolders = window.fs.readdirSync(window.path.resolve(modFolder, contentFolder))
+
+		if (chunkFolders.length === 0) {
+			return [false, `Empty content folder "${contentFolder}"`]
+		}
+
+		for (const chunkFolder of chunkFolders) {
 			if (!chunkFolder.match(/chunk([0-9]*)/)) {
 				return [false, `Invalid chunk folder "${chunkFolder}" in "${contentFolder}"`]
 			}
@@ -410,7 +416,11 @@ export function validateModFolder(modFolder: string): [boolean, string] {
 
 	for (const blobsFolder of [...(manifest.blobsFolders || []), ...(manifest.options || []).flatMap((a) => a.blobsFolders || [])]) {
 		if (!window.fs.existsSync(window.path.resolve(modFolder, blobsFolder))) {
-			return [false, `Invalid blobs folder "${blobsFolder}" by nonexistent path`]
+			return [false, `Invalid blobs folder "${blobsFolder}" due to nonexistent path`]
+		}
+
+		if (window.fs.readdirSync(window.path.resolve(modFolder, blobsFolder)).length === 0) {
+			return [false, `Empty blobs folder "${blobsFolder}"`]
 		}
 	}
 
@@ -451,26 +461,28 @@ export function validateModFolder(modFolder: string): [boolean, string] {
 
 				switch (file.split(".").slice(1).join(".")) {
 					case "entity.json":
-						if (fileContents.quickEntityVersion === 3.1 && !validateEntity(fileContents)) return [false, `Invalid file ${file} by non-matching schema`]
+						if (fileContents.quickEntityVersion === 3.1 && !validateEntity(fileContents))
+							return [false, `Invalid file ${file} due to non-matching schema: ${new Ajv({ strict: false }).errorsText(validateEntity.errors)}`]
 						break
 					case "entity.patch.json":
-						if (fileContents.patchVersion === 6 && !validateEntityPatch(fileContents)) return [false, `Invalid file ${file} by non-matching schema`]
+						if (fileContents.patchVersion === 6 && !validateEntityPatch(fileContents))
+							return [false, `Invalid file ${file} due to non-matching schema: ${new Ajv({ strict: false }).errorsText(validateEntityPatch.errors)}`]
 						break
 					case "repository.json":
-						if (!validateRepository(fileContents)) return [false, `Invalid file ${file} by non-matching schema`]
+						if (!validateRepository(fileContents)) return [false, `Invalid file ${file} due to non-matching schema: ${new Ajv({ strict: false }).errorsText(validateRepository.errors)}`]
 						break
 					case "unlockables.json":
-						if (!validateUnlockables(fileContents)) return [false, `Invalid file ${file} by non-matching schema`]
+						if (!validateUnlockables(fileContents)) return [false, `Invalid file ${file} due to non-matching schema: ${new Ajv({ strict: false }).errorsText(validateUnlockables.errors)}`]
 						break
 					case "contract.json":
-						if (!validateContract(fileContents)) return [false, `Invalid file ${file} by non-matching schema`]
+						if (!validateContract(fileContents)) return [false, `Invalid file ${file} due to non-matching schema: ${new Ajv({ strict: false }).errorsText(validateContract.errors)}`]
 						break
 					case "JSON.patch.json":
-						if (!validateJSONPatch(fileContents)) return [false, `Invalid file ${file} by non-matching schema`]
+						if (!validateJSONPatch(fileContents)) return [false, `Invalid file ${file} due to non-matching schema: ${new Ajv({ strict: false }).errorsText(validateJSONPatch.errors)}`]
 						break
 				}
 			} catch {
-				return [false, `Invalid file ${file} by invalid JSON`]
+				return [false, `Invalid file ${file} due to invalid JSON`]
 			}
 		}
 	}
