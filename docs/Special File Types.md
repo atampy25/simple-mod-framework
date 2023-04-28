@@ -124,9 +124,6 @@ An RPKG tool material JSON. Replaces a game material.
 ## locr.json
 A LOCR file obtained from Anthony Fuller's HMLanguageTools.
 
-## rtlv.json
-An RTLV file obtained from Anthony Fuller's HMLanguageTools.
-
 ## texture.tga
 **Note:** The filename matters for this special type.
 

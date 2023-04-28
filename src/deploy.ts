@@ -619,7 +619,7 @@ export default async function deploy(
 				"texture.tga",
 				"sfx.wem",
 				"delta",
-				"rtlv.json",
+				//"rtlv.json",
 				"locr.json"
 			].includes(content.type)
 				? sentryContentTransaction.startChild({
@@ -1515,7 +1515,7 @@ export default async function deploy(
 					)
 					break
 				}
-				case "rtlv.json": {
+				/*case "rtlv.json": {
 					await logger.debug(`Converting video subtitles ${contentIdentifier}`)
 
 					entityContent = content.source === "disk" ? JSON.parse(fs.readFileSync(content.path, "utf8")) : JSON.parse(await content.content.text())
@@ -1588,7 +1588,7 @@ export default async function deploy(
 						)
 					)
 					break
-				}
+				}*/
 				case "locr.json": {
 					await logger.debug(`Converting localisation ${contentIdentifier}`)
 
