@@ -615,7 +615,6 @@ export default async function deploy(
 				"texture.tga",
 				"sfx.wem",
 				"delta",
-				//"rtlv.json",
 				"locr.json"
 			].includes(content.type)
 				? sentryContentTransaction.startChild({

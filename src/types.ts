@@ -370,6 +370,7 @@ export interface Config {
 	errorReportingID?: string | null
 
 	developerMode: boolean
+	knownMods: string[]
 
 	loadOrder: string[]
 	modOptions: {
