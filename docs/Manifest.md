@@ -38,6 +38,7 @@ Each mod contains a manifest. Manifests have the following format:
 	},
 	"localisationOverrides": {
 		// Allows you to override specific localisation in specific files
+		// NOTE: Localisation string hashes should be entered as decimal numbers, hex numbers from HMLanguageTools will NOT work
 		"00123456789ABCDE": {
 			"english": {
 				"123456789": "The framework is overriding this text"
