@@ -122,7 +122,9 @@ If the file is the REPO, it will be transformed to the format used by the `repos
 An RPKG tool material JSON. Replaces a game material.
 
 ## locr.json
-A LOCR file obtained from Anthony Fuller's HMLanguageTools.
+A LOCR file obtained from Anthony Fuller's HMLanguageTools. Will be converted to a LOCR file and placed in the staging folder (overriding any existing game file).
+
+For mod localisation, you should use the `localisation` key in the manifest; this filetype is useful in instances where it is necessary to completely override a localisation file or introduce a new localisation file.
 
 ## texture.tga
 **Note:** The filename matters for this special type.

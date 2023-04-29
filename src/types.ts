@@ -467,7 +467,7 @@ export interface ModAPI {
 	}
 }
 
-export interface TonyToolsLOCR {
+export interface HMLanguageToolsLOCR {
 	hash: string
 	languages: {
 		[lang: string]: {

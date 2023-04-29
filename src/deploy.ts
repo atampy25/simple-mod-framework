@@ -3,11 +3,11 @@ import * as rfc6902 from "rfc6902"
 import * as rust_utils from "./smf-rust"
 import * as ts from "./typescript"
 
-import type { DeployInstruction, Manifest, ManifestOptionData, ModScript, TonyToolsLOCR } from "./types"
+import type { DeployInstruction, HMLanguageToolsLOCR, Manifest, ManifestOptionData, ModScript } from "./types"
 import { ModuleKind, ScriptTarget } from "typescript"
 import { compileExpression, useDotAccessOperatorAndOptionalChaining } from "filtrex"
 import { config, logger, rpkgInstance } from "./core-singleton"
-import { copyFromCache, copyToCache, extractOrCopyToTemp, getQuickEntityFromPatchVersion, getQuickEntityFromVersion, hexflip } from "./utils"
+import { copyFromCache, copyToCache, extractOrCopyToTemp, getQuickEntityFromPatchVersion, getQuickEntityFromVersion, hexflip, isValidHash, normaliseToHash } from "./utils"
 
 import { OptionType } from "./types"
 import Piscina from "piscina"
@@ -39,10 +39,6 @@ const execCommand = function (command: string) {
 const callRPKGFunction = async function (command: string) {
 	await logger.verbose(`Executing RPKG function ${command}`)
 	return await rpkgInstance.callFunction(command)
-}
-
-const isValidHash = function (hash: string) {
-	return /\b[a-fA-F0-9]{16}$\b/g.test(hash)
 }
 
 const RPKGHashCache: Record<string, string> = {}
@@ -795,7 +791,11 @@ export default async function deploy(
 					await logger.verbose("Cache check")
 					if (
 						invalidatedData.some((a) => a.filePath === contentIdentifier) || // must redeploy, invalid cache
-						!(await copyFromCache(instruction.cacheFolder, path.join(`chunk${content.chunk}`, `${contentIdentifier.slice(-15)}-${await xxhash3(contentIdentifier)}`), path.join(process.cwd(), "staging", `chunk${content.chunk}`))) // cache is not available
+						!(await copyFromCache(
+							instruction.cacheFolder,
+							path.join(`chunk${content.chunk}`, `${contentIdentifier.slice(-15)}-${await xxhash3(contentIdentifier)}`),
+							path.join(process.cwd(), "staging", `chunk${content.chunk}`)
+						)) // cache is not available
 					) {
 						let contentPath
 
@@ -1018,7 +1018,11 @@ export default async function deploy(
 
 					if (
 						invalidatedData.some((a) => a.filePath === contentIdentifier) || // must redeploy, invalid cache
-						!(await copyFromCache(instruction.cacheFolder, path.join(`chunk${content.chunk}`, `${contentIdentifier.slice(-15)}-${await xxhash3(contentIdentifier)}`), path.join(process.cwd(), "temp", oresChunk))) // cache is not available
+						!(await copyFromCache(
+							instruction.cacheFolder,
+							path.join(`chunk${content.chunk}`, `${contentIdentifier.slice(-15)}-${await xxhash3(contentIdentifier)}`),
+							path.join(process.cwd(), "temp", oresChunk)
+						)) // cache is not available
 					) {
 						await extractOrCopyToTemp(oresChunk, "0057C2C3941115CA", "ORES") // Extract the ORES to temp
 
@@ -1034,7 +1038,11 @@ export default async function deploy(
 						fs.rmSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "0057C2C3941115CA.ORES"))
 						execCommand(`"Third-Party\\OREStool.exe" "${path.join(process.cwd(), "temp", oresChunk, "ORES", "0057C2C3941115CA.ORES.json")}"`)
 
-						await copyToCache(instruction.cacheFolder, path.join(process.cwd(), "temp", oresChunk), path.join(`chunk${content.chunk}`, `${contentIdentifier.slice(-15)}-${await xxhash3(contentIdentifier)}`))
+						await copyToCache(
+							instruction.cacheFolder,
+							path.join(process.cwd(), "temp", oresChunk),
+							path.join(`chunk${content.chunk}`, `${contentIdentifier.slice(-15)}-${await xxhash3(contentIdentifier)}`)
+						)
 					}
 
 					execCommand(`"Third-Party\\OREStool.exe" "${path.join(process.cwd(), "temp", oresChunk, "ORES", "0057C2C3941115CA.ORES")}"`)
@@ -1053,7 +1061,11 @@ export default async function deploy(
 
 					if (
 						invalidatedData.some((a) => a.filePath === contentIdentifier) || // must redeploy, invalid cache
-						!(await copyFromCache(instruction.cacheFolder, path.join(`chunk${content.chunk}`, `${contentIdentifier.slice(-15)}-${await xxhash3(contentIdentifier)}`), path.join(process.cwd(), "temp", repoRPKG))) // cache is not available
+						!(await copyFromCache(
+							instruction.cacheFolder,
+							path.join(`chunk${content.chunk}`, `${contentIdentifier.slice(-15)}-${await xxhash3(contentIdentifier)}`),
+							path.join(process.cwd(), "temp", repoRPKG)
+						)) // cache is not available
 					) {
 						await extractOrCopyToTemp(repoRPKG, "00204D1AFD76AB13", "REPO") // Extract the REPO to temp
 
@@ -1098,7 +1110,11 @@ export default async function deploy(
 
 						fs.writeFileSync(path.join(process.cwd(), "temp", repoRPKG, "REPO", "00204D1AFD76AB13.REPO"), JSON.stringify(repoToWrite))
 
-						await copyToCache(instruction.cacheFolder, path.join(process.cwd(), "temp", repoRPKG), path.join(`chunk${content.chunk}`, `${contentIdentifier.slice(-15)}-${await xxhash3(contentIdentifier)}`))
+						await copyToCache(
+							instruction.cacheFolder,
+							path.join(process.cwd(), "temp", repoRPKG),
+							path.join(`chunk${content.chunk}`, `${contentIdentifier.slice(-15)}-${await xxhash3(contentIdentifier)}`)
+						)
 					}
 
 					fs.copyFileSync(path.join(process.cwd(), "temp", repoRPKG, "REPO", "00204D1AFD76AB13.REPO"), path.join(process.cwd(), "staging", "chunk0", "00204D1AFD76AB13.REPO"))
@@ -1152,7 +1168,11 @@ export default async function deploy(
 
 					if (
 						invalidatedData.some((a) => a.filePath === contentIdentifier) || // must redeploy, invalid cache
-						!(await copyFromCache(instruction.cacheFolder, path.join(`chunk${content.chunk}`, `${contentIdentifier.slice(-15)}-${await xxhash3(contentIdentifier)}`), path.join(process.cwd(), "temp", rpkgOfFile))) // cache is not available
+						!(await copyFromCache(
+							instruction.cacheFolder,
+							path.join(`chunk${content.chunk}`, `${contentIdentifier.slice(-15)}-${await xxhash3(contentIdentifier)}`),
+							path.join(process.cwd(), "temp", rpkgOfFile)
+						)) // cache is not available
 					) {
 						await extractOrCopyToTemp(rpkgOfFile, entityContent.file, fileType, `chunk${content.chunk}`) // Extract the JSON to temp
 
@@ -1190,7 +1210,11 @@ export default async function deploy(
 							fs.writeFileSync(path.join(process.cwd(), "temp", rpkgOfFile, fileType, `${entityContent.file}.${fileType}`), JSON.stringify(fileContent))
 						}
 
-						await copyToCache(instruction.cacheFolder, path.join(process.cwd(), "temp", rpkgOfFile), path.join(`chunk${content.chunk}`, `${contentIdentifier.slice(-15)}-${await xxhash3(contentIdentifier)}`))
+						await copyToCache(
+							instruction.cacheFolder,
+							path.join(process.cwd(), "temp", rpkgOfFile),
+							path.join(`chunk${content.chunk}`, `${contentIdentifier.slice(-15)}-${await xxhash3(contentIdentifier)}`)
+						)
 					}
 
 					if (contractsORESContent[entityContent.file]) {
@@ -1234,7 +1258,11 @@ export default async function deploy(
 
 					if (
 						invalidatedData.some((a) => a.filePath === contentIdentifier) || // must redeploy, invalid cache
-						!(await copyFromCache(instruction.cacheFolder, path.join(`chunk${content.chunk}`, `${contentIdentifier.slice(-15)}-${await xxhash3(contentIdentifier)}`), path.join(process.cwd(), "temp", `chunk${content.chunk}`))) // cache is not available
+						!(await copyFromCache(
+							instruction.cacheFolder,
+							path.join(`chunk${content.chunk}`, `${contentIdentifier.slice(-15)}-${await xxhash3(contentIdentifier)}`),
+							path.join(process.cwd(), "temp", `chunk${content.chunk}`)
+						)) // cache is not available
 					) {
 						fs.ensureDirSync(path.join(process.cwd(), "temp", `chunk${content.chunk}`))
 
@@ -1386,7 +1414,11 @@ export default async function deploy(
 							fs.removeSync(path.join(process.cwd(), "virtual"))
 						}
 
-						await copyToCache(instruction.cacheFolder, path.join(process.cwd(), "temp", `chunk${content.chunk}`), path.join(`chunk${content.chunk}`, `${contentIdentifier.slice(-15)}-${await xxhash3(contentIdentifier)}`))
+						await copyToCache(
+							instruction.cacheFolder,
+							path.join(process.cwd(), "temp", `chunk${content.chunk}`),
+							path.join(`chunk${content.chunk}`, `${contentIdentifier.slice(-15)}-${await xxhash3(contentIdentifier)}`)
+						)
 					}
 
 					fs.ensureDirSync(path.join(process.cwd(), "staging", `chunk${content.chunk}`))
@@ -1475,7 +1507,11 @@ export default async function deploy(
 
 					if (
 						invalidatedData.some((a) => a.filePath === contentIdentifier) || // must redeploy, invalid cache
-						!(await copyFromCache(instruction.cacheFolder, path.join(`chunk${content.chunk}`, `${contentIdentifier.slice(-15)}-${await xxhash3(contentIdentifier)}`), path.join(process.cwd(), "temp", `chunk${content.chunk}`))) // cache is not available
+						!(await copyFromCache(
+							instruction.cacheFolder,
+							path.join(`chunk${content.chunk}`, `${contentIdentifier.slice(-15)}-${await xxhash3(contentIdentifier)}`),
+							path.join(process.cwd(), "temp", `chunk${content.chunk}`)
+						)) // cache is not available
 					) {
 						fs.ensureDirSync(path.join(process.cwd(), "temp", `chunk${content.chunk}`))
 
@@ -1503,7 +1539,11 @@ export default async function deploy(
 
 						fs.removeSync(path.join(process.cwd(), "virtual"))
 
-						await copyToCache(instruction.cacheFolder, path.join(process.cwd(), "temp", `chunk${content.chunk}`), path.join(`chunk${content.chunk}`, `${contentIdentifier.slice(-15)}-${await xxhash3(contentIdentifier)}`))
+						await copyToCache(
+							instruction.cacheFolder,
+							path.join(process.cwd(), "temp", `chunk${content.chunk}`),
+							path.join(`chunk${content.chunk}`, `${contentIdentifier.slice(-15)}-${await xxhash3(contentIdentifier)}`)
+						)
 					}
 
 					fs.ensureDirSync(path.join(process.cwd(), "staging", `chunk${content.chunk}`))
@@ -1515,85 +1555,12 @@ export default async function deploy(
 					)
 					break
 				}
-				/*case "rtlv.json": {
-					await logger.debug(`Converting video subtitles ${contentIdentifier}`)
-
-					entityContent = content.source === "disk" ? JSON.parse(fs.readFileSync(content.path, "utf8")) : JSON.parse(await content.content.text())
-					const hash = isValidHash(entityContent["hash"]) ? entityContent["hash"] : `00${md5(entityContent["hash"].toLowerCase()).slice(2, 16).toUpperCase()}`
-
-					if (
-						invalidatedData.some((a) => a.filePath === contentIdentifier) || // must redeploy, invalid cache
-						!(await copyFromCache(instruction.cacheFolder, path.join(`chunk${content.chunk}`, await xxhash3(contentIdentifier)), path.join(process.cwd(), "temp", `chunk${content.chunk}`))) // cache is not available
-					) {
-						fs.ensureDirSync(path.join(process.cwd(), "temp", `chunk${content.chunk}`))
-
-						let contentFilePath
-						if (content.source === "disk") {
-							contentFilePath = content.path
-						} else {
-							fs.ensureDirSync(path.join(process.cwd(), "virtual"))
-							fs.writeFileSync(path.join(process.cwd(), "virtual", "rtlv.json"), Buffer.from(await content.content.arrayBuffer()))
-							contentFilePath = path.join(process.cwd(), "virtual", "rtlv.json")
-						}
-
-						execCommand(
-							`"Third-Party\\HMLanguageTools" rebuild H3 RTLV "${contentFilePath}" "${path.join(
-								process.cwd(),
-								"temp",
-								`chunk${content.chunk}`,
-								`${hash}.RTLV`
-							)}" --metapath "${path.join(
-								process.cwd(),
-								"temp",
-								`chunk${content.chunk}`,
-								`${hash}.RTLV.meta.json`
-							)}"`
-						)
-
-						fs.removeSync(path.join(process.cwd(), "virtual"))
-
-						await copyToCache(instruction.cacheFolder, path.join(process.cwd(), "temp", `chunk${content.chunk}`), path.join(`chunk${content.chunk}`, await xxhash3(contentIdentifier)))
-					}
-
-					fs.ensureDirSync(path.join(process.cwd(), "staging", `chunk${content.chunk}`))
-
-					// Copy LOCR files
-					fs.copyFileSync(
-						path.join(
-							process.cwd(),
-							"temp",
-							`chunk${content.chunk}`,
-							`${hash}.RTLV`
-						),
-						path.join(
-							process.cwd(),
-							"staging",
-							`chunk${content.chunk}`,
-							`${hash}.RTLV`
-						)
-					)
-
-					fs.copyFileSync(
-						path.join(
-							process.cwd(),
-							"temp",
-							`chunk${content.chunk}`,
-							`${hash}.RTLV.meta.json`
-						),
-						path.join(
-							process.cwd(),
-							"staging",
-							`chunk${content.chunk}`,
-							`${hash}.RTLV.meta.json`
-						)
-					)
-					break
-				}*/
 				case "locr.json": {
-					await logger.debug(`Converting localisation ${contentIdentifier}`)
+					await logger.debug(`Converting localisation file ${contentIdentifier}`)
 
 					entityContent = content.source === "disk" ? JSON.parse(fs.readFileSync(content.path, "utf8")) : JSON.parse(await content.content.text())
-					const hash = isValidHash(entityContent["hash"]) ? entityContent["hash"] : `00${md5(entityContent["hash"].toLowerCase()).slice(2, 16).toUpperCase()}`
+
+					const hash = normaliseToHash(entityContent["hash"])
 
 					if (
 						invalidatedData.some((a) => a.filePath === contentIdentifier) || // must redeploy, invalid cache
@@ -1611,12 +1578,7 @@ export default async function deploy(
 						}
 
 						execCommand(
-							`"Third-Party\\HMLanguageTools" rebuild H3 LOCR "${contentFilePath}" "${path.join(
-								process.cwd(),
-								"temp",
-								`chunk${content.chunk}`,
-								`${hash}.LOCR`
-							)}" --metapath "${path.join(
+							`"Third-Party\\HMLanguageTools" rebuild H3 LOCR "${contentFilePath}" "${path.join(process.cwd(), "temp", `chunk${content.chunk}`, `${hash}.LOCR`)}" --metapath "${path.join(
 								process.cwd(),
 								"temp",
 								`chunk${content.chunk}`,
@@ -1632,39 +1594,15 @@ export default async function deploy(
 					fs.ensureDirSync(path.join(process.cwd(), "staging", `chunk${content.chunk}`))
 
 					// Copy LOCR files
-					fs.copyFileSync(
-						path.join(
-							process.cwd(),
-							"temp",
-							`chunk${content.chunk}`,
-							`${hash}.LOCR`
-						),
-						path.join(
-							process.cwd(),
-							"staging",
-							`chunk${content.chunk}`,
-							`${hash}.LOCR`
-						)
-					)
-
-					fs.copyFileSync(
-						path.join(
-							process.cwd(),
-							"temp",
-							`chunk${content.chunk}`,
-							`${hash}.LOCR.meta.json`
-						),
-						path.join(
-							process.cwd(),
-							"staging",
-							`chunk${content.chunk}`,
-							`${hash}.LOCR.meta.json`
-						)
-					)
+					fs.copyFileSync(path.join(process.cwd(), "temp", `chunk${content.chunk}`, `${hash}.LOCR`), path.join(process.cwd(), "staging", `chunk${content.chunk}`, `${hash}.LOCR`))
+					fs.copyFileSync(path.join(process.cwd(), "temp", `chunk${content.chunk}`, `${hash}.LOCR.meta.json`), path.join(process.cwd(), "staging", `chunk${content.chunk}`, `${hash}.LOCR.meta.json`))
 					break
 				}
 				default: // Copy the file to the staging directory; we don't cache these for obvious reasons
-					if ((content.source === "disk" ? path.basename(content.path).split(".").slice(1).join(".") : content.extraInformation.fileType!).length === 4 || (content.source === "disk" ? path.basename(content.path).split(".").slice(1).join(".") : content.extraInformation.fileType!).endsWith("meta")) {
+					if (
+						(content.source === "disk" ? path.basename(content.path).split(".").slice(1).join(".") : content.extraInformation.fileType!).length === 4 ||
+						(content.source === "disk" ? path.basename(content.path).split(".").slice(1).join(".") : content.extraInformation.fileType!).endsWith("meta")
+					) {
 						fs.writeFileSync(
 							content.source === "disk"
 								? path.join(process.cwd(), "staging", `chunk${content.chunk}`, path.basename(content.path))
@@ -2298,23 +2236,20 @@ export default async function deploy(
 
 			await callRPKGFunction(`-extract_from_rpkg "${path.join(config.runtimePath, `${localisationFileRPKG}.rpkg`)}" -filter "00F5817876E691F1" -output_path temp`)
 			await callRPKGFunction(`-hash_meta_to_json "${path.join(process.cwd(), "temp", `${localisationFileRPKG}`, "LOCR", "00F5817876E691F1.LOCR.meta")}"`)
-			execCommand(`"Third-Party\\HMLanguageTools" convert H3 LOCR "${path.join(
-				process.cwd(),
-				"temp",
-				`${localisationFileRPKG}`,
-				"LOCR",
-				"00F5817876E691F1.LOCR"
-			)}" "${path.join(
-				process.cwd(),
-				"temp",
-				"LOCR",
-				`${localisationFileRPKG}.rpkg`,
-				"00F5817876E691F1.LOCR.JSON"
-			)}"`)
+
+			execCommand(
+				`"Third-Party\\HMLanguageTools" convert H3 LOCR "${path.join(process.cwd(), "temp", `${localisationFileRPKG}`, "LOCR", "00F5817876E691F1.LOCR")}" "${path.join(
+					process.cwd(),
+					"temp",
+					"LOCR",
+					`${localisationFileRPKG}.rpkg`,
+					"00F5817876E691F1.LOCR.JSON"
+				)}"`
+			)
 
 			fs.ensureDirSync(path.join(process.cwd(), "staging", "chunk0"))
 
-			const locrFileContent: TonyToolsLOCR = JSON.parse(fs.readFileSync(path.join(process.cwd(), "temp", "LOCR", `${localisationFileRPKG}.rpkg`, "00F5817876E691F1.LOCR.JSON"), "utf8"))
+			const locrFileContent: HMLanguageToolsLOCR = JSON.parse(fs.readFileSync(path.join(process.cwd(), "temp", "LOCR", `${localisationFileRPKG}.rpkg`, "00F5817876E691F1.LOCR.JSON"), "utf8"))
 			const locrContent: Record<string, Record<string, string>> = locrFileContent["languages"]
 
 			for (const item of localisation) {
@@ -2328,9 +2263,9 @@ export default async function deploy(
 				}
 			}
 
-			const locrToWrite: TonyToolsLOCR = {
-				"hash": "00F5817876E691F1",
-				"languages": {}
+			const locrToWrite: HMLanguageToolsLOCR = {
+				hash: "00F5817876E691F1",
+				languages: {}
 			}
 
 			for (const language of Object.keys(locrContent)) {
@@ -2347,23 +2282,14 @@ export default async function deploy(
 		}
 
 		// Rebuild the LOCR
-		execCommand(`"Third-Party\\HMLanguageTools" rebuild H3 LOCR "${path.join(
-			process.cwd(),
-			"temp",
-			"LOCR",
-			`${localisationFileRPKG}.rpkg`,
-			"00F5817876E691F1.LOCR.JSON"
-		)}" "${path.join(
-			process.cwd(),
-			"staging",
-			localisationFileRPKG.replace(/patch[0-9]*/gi, ""),
-			"00F5817876E691F1.LOCR"
-		)}" --metapath "${path.join(
-			process.cwd(),
-			"staging",
-			localisationFileRPKG.replace(/patch[0-9]*/gi, ""),
-			"00F5817876E691F1.LOCR.meta.json"
-		)}"`)
+		execCommand(
+			`"Third-Party\\HMLanguageTools" rebuild H3 LOCR "${path.join(process.cwd(), "temp", "LOCR", `${localisationFileRPKG}.rpkg`, "00F5817876E691F1.LOCR.JSON")}" "${path.join(
+				process.cwd(),
+				"staging",
+				localisationFileRPKG.replace(/patch[0-9]*/gi, ""),
+				"00F5817876E691F1.LOCR"
+			)}" --metapath "${path.join(process.cwd(), "staging", localisationFileRPKG.replace(/patch[0-9]*/gi, ""), "00F5817876E691F1.LOCR.meta.json")}"`
+		)
 
 		fs.emptyDirSync(path.join(process.cwd(), "temp"))
 
@@ -2400,30 +2326,27 @@ export default async function deploy(
 
 				await callRPKGFunction(`-extract_from_rpkg "${path.join(config.runtimePath, `${localisationFileRPKG}.rpkg`)}" -filter "${locrHash}" -output_path temp`)
 				await callRPKGFunction(`-hash_meta_to_json "${path.join(process.cwd(), "temp", `${localisationFileRPKG}`, "LOCR", `${locrHash}.LOCR.meta`)}"`)
-				execCommand(`"Third-Party\\HMLanguageTools" convert H3 LOCR "${path.join(
-					process.cwd(),
-					"temp",
-					`${localisationFileRPKG}`,
-					"LOCR",
-					`${locrHash}.LOCR`
-				)}" "${path.join(
-					process.cwd(),
-					"temp",
-					"LOCR",
-					`${localisationFileRPKG}.rpkg`,
-					`${locrHash}.LOCR.JSON`
-				)}"`)
+
+				execCommand(
+					`"Third-Party\\HMLanguageTools" convert H3 LOCR "${path.join(process.cwd(), "temp", `${localisationFileRPKG}`, "LOCR", `${locrHash}.LOCR`)}" "${path.join(
+						process.cwd(),
+						"temp",
+						"LOCR",
+						`${localisationFileRPKG}.rpkg`,
+						`${locrHash}.LOCR.JSON`
+					)}"`
+				)
 
 				fs.ensureDirSync(path.join(process.cwd(), "staging", "chunk0"))
 
-				const locrFileContent: TonyToolsLOCR = JSON.parse(fs.readFileSync(path.join(process.cwd(), "temp", "LOCR", `${localisationFileRPKG}.rpkg`, `${locrHash}.LOCR.JSON`), "utf8"))
+				const locrFileContent: HMLanguageToolsLOCR = JSON.parse(fs.readFileSync(path.join(process.cwd(), "temp", "LOCR", `${localisationFileRPKG}.rpkg`, `${locrHash}.LOCR.JSON`), "utf8"))
 				const locrContent = locrFileContent["languages"]
 
 				for (const item of localisationOverrides[locrHash]) {
 					const toMerge = {} as Record<string, string>
 
-					// TonyTools works with hashes
-					toMerge[`${parseInt(item.locString).toString(16)}`] = item.text
+					// HMLanguageTools uses hexadecimal format for localisation strings
+					toMerge[parseInt(item.locString).toString(16)] = item.text
 
 					deepMerge(locrContent[languages[item.language]], toMerge)
 
@@ -2432,9 +2355,9 @@ export default async function deploy(
 					}
 				}
 
-				const locrToWrite: TonyToolsLOCR = {
-					"hash": locrHash,
-					"languages": {}
+				const locrToWrite: HMLanguageToolsLOCR = {
+					hash: locrHash,
+					languages: {}
 				}
 
 				for (const language of Object.keys(locrContent)) {
@@ -2444,30 +2367,21 @@ export default async function deploy(
 				// We empty the entire temp directory as (right now) we extract the raw files and convert the meta
 				fs.emptyDirSync(path.join(process.cwd(), "temp"))
 				fs.ensureDirSync(path.join(process.cwd(), "temp", "LOCR", `${localisationFileRPKG}.rpkg`))
-	
+
 				fs.writeFileSync(path.join(process.cwd(), "temp", "LOCR", `${localisationFileRPKG}.rpkg`, `${locrHash}.LOCR.JSON`), JSON.stringify(locrToWrite))
 
 				await copyToCache("global", path.join(process.cwd(), "temp"), path.join("LOCR", locrHash))
 			}
 
 			// Rebuild the LOCR
-			execCommand(`"Third-Party\\HMLanguageTools" rebuild H3 LOCR "${path.join(
-				process.cwd(),
-				"temp",
-				"LOCR",
-				`${localisationFileRPKG}.rpkg`,
-				`${locrHash}.LOCR.JSON`
-			)}" "${path.join(
-				process.cwd(),
-				"staging",
-				localisationFileRPKG.replace(/patch[0-9]*/gi, ""),
-				`${locrHash}.LOCR`
-			)}" --metapath "${path.join(
-				process.cwd(),
-				"staging",
-				localisationFileRPKG.replace(/patch[0-9]*/gi, ""),
-				`${locrHash}.LOCR.meta.json`
-			)}"`)
+			execCommand(
+				`"Third-Party\\HMLanguageTools" rebuild H3 LOCR "${path.join(process.cwd(), "temp", "LOCR", `${localisationFileRPKG}.rpkg`, `${locrHash}.LOCR.JSON`)}" "${path.join(
+					process.cwd(),
+					"staging",
+					localisationFileRPKG.replace(/patch[0-9]*/gi, ""),
+					`${locrHash}.LOCR`
+				)}" --metapath "${path.join(process.cwd(), "staging", localisationFileRPKG.replace(/patch[0-9]*/gi, ""), `${locrHash}.LOCR.meta.json`)}"`
+			)
 
 			fs.emptyDirSync(path.join(process.cwd(), "temp"))
 		}
