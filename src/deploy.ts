@@ -9,6 +9,7 @@ import { compileExpression, useDotAccessOperatorAndOptionalChaining } from "filt
 import { config, logger, rpkgInstance } from "./core-singleton"
 import { copyFromCache, copyToCache, extractOrCopyToTemp, getQuickEntityFromPatchVersion, getQuickEntityFromVersion, hexflip, isValidHash, normaliseToHash } from "./utils"
 
+import { createPatch as createQESPatch } from "quickentity-script"
 import { OptionType } from "./types"
 import Piscina from "piscina"
 import type { Transaction } from "@sentry/tracing"
@@ -408,6 +409,9 @@ export default async function deploy(
 										`-extract_from_rpkg "${path.join(config.runtimePath, `${rpkg}.rpkg`)}" -filter "${hash}" -output_path ${path.join(process.cwd(), "scriptTempFolder")}`
 									)
 								}
+							},
+							quickentityScript: {
+								createPatch: createQESPatch
 							},
 							utils: {
 								execCommand,

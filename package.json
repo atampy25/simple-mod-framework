@@ -26,6 +26,7 @@
     "md5-file": "^5.0.0",
     "minimist": "^1.2.6",
     "promisify-child-process": "^4.1.1",
+    "quickentity-script": "^1.0.4",
     "rfc6902": "^5.0.1",
     "semver": "^7.3.8",
     "tslib": "^2.4.0",
