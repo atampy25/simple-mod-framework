@@ -14,6 +14,7 @@ import semver from "semver"
 import { xxhash3 } from "hash-wasm"
 import { ModuleKind, ScriptTarget } from "typescript"
 import { compileExpression, useDotAccessOperatorAndOptionalChaining } from "filtrex"
+import { normaliseToHash } from "./utils"
 
 const deepMerge = function (x: any, y: any) {
 	return mergeWith(x, y, (orig, src) => {
@@ -331,6 +332,11 @@ export default async function discover(): Promise<{ [x: string]: { hash: string;
 							case "delta": // Depends on and edits the patched file
 								dependencies.push(path.basename(contentFilePath).split(".")[0].split("~")[0])
 								affected.push(path.basename(contentFilePath).split(".")[0].split("~")[0])
+								break
+							case "locr.json": // Depends on nothing, edits the LOCR file
+								entityContent = LosslessJSON.parse(fs.readFileSync(contentFilePath, "utf8"))
+
+								affected.push(normaliseToHash(entityContent.hash))
 								break
 							default: // Replaces a file with a raw file
 								if (path.basename(contentFilePath).split(".").slice(1).join(".").length === 4) {

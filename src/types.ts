@@ -370,6 +370,7 @@ export interface Config {
 	errorReportingID?: string | null
 
 	developerMode: boolean
+	knownMods: string[]
 
 	loadOrder: string[]
 	modOptions: {
@@ -464,5 +465,14 @@ export interface ModAPI {
 		 * This will by default exit the program. It is recommended to leave exitAfter enabled (which it is by default); exitAfter is only used internally for certain errors.
 		 * If there is an error that is not critical (not deserving of exiting the program), use warn instead. */
 		error(message: string, exitAfter?: boolean): Promise<void>
+	}
+}
+
+export interface HMLanguageToolsLOCR {
+	hash: string
+	languages: {
+		[lang: string]: {
+			[hash: string]: string
+		}
 	}
 }

@@ -185,7 +185,9 @@
 				} else {
 					window.fs.copySync("./staging", "../Mods")
 
-					window.originalFs.writeFileSync(window.path.join("..", "Mods", window.fs.readdirSync("./staging")[0], "manifest.json:SMFExtractionTag"), "Extracted via SMF")
+					mergeConfig({
+						knownMods: [...getConfig().knownMods, json5.parse(window.fs.readFileSync(window.path.join("..", "Mods", window.fs.readdirSync("./staging")[0], "manifest.json"), "utf8")).id]
+					})
 
 					window.fs.removeSync("./staging")
 
@@ -240,6 +242,8 @@
 			window.fs.copyFileSync(file.path, window.path.join("..", "Mods", rpkgModName, file.chunk, window.path.basename(file.path)))
 		}
 
+		mergeConfig({ knownMods: [...getConfig().knownMods, rpkgModName] })
+
 		window.fs.removeSync("./staging")
 
 		window.location.reload()
@@ -251,27 +255,18 @@
 	const extractedMods: string[] = []
 
 	if (!getConfig().developerMode) {
-		// If no mods have the tag (likely updated from older SMF)
-		if (
-			getAllMods()
-				.filter((a) => modIsFramework(a))
-				.every((a) => !window.originalFs.existsSync(window.path.join(getModFolder(a), "manifest.json:SMFExtractionTag")))
-		) {
-			for (const mod of getAllMods().filter((a) => modIsFramework(a))) {
-				const modFolder = getModFolder(mod)
-
-				// Assume every mod has been installed correctly
-				window.originalFs.writeFileSync(window.path.join(modFolder, "manifest.json:SMFExtractionTag"), "Extracted via SMF")
-			}
+		// If no mods are known
+		if (getConfig().knownMods.length == 0) {
+			// Assume all mods are installed correctly
+			mergeConfig({ knownMods: getAllMods() })
 		}
 
-		for (const mod of getAllMods().filter((a) => modIsFramework(a))) {
-			const modFolder = getModFolder(mod)
-
-			if (!window.originalFs.existsSync(window.path.join(modFolder, "manifest.json:SMFExtractionTag"))) {
+		for (const mod of getAllMods()) {
+			if (!getConfig().knownMods.includes(mod)) {
 				extractedMods.push(getManifestFromModID(mod).name)
 				displayExtractedModsDialog = true
-				window.originalFs.writeFileSync(window.path.join(modFolder, "manifest.json:SMFExtractionTag"), "Extracted via SMF") // Will prevent the message from being shown again for the same mod
+
+				mergeConfig({ knownMods: [...getConfig().knownMods, mod] })
 			}
 		}
 	}
@@ -435,6 +430,8 @@
 	on:click:button--secondary={() => (deleteModModalOpen = false)}
 	on:submit={() => {
 		window.fs.removeSync(getModFolder(deleteModInProgress))
+		mergeConfig({ knownMods: getConfig().knownMods.filter((a) => a != deleteModInProgress) })
+
 		deleteModModalOpen = false
 		window.location.reload()
 	}}
@@ -571,7 +568,7 @@
 	on:click:button--primary={() => {
 		window.fs.copySync("./staging", "../Mods")
 
-		window.originalFs.writeFileSync(window.path.join("..", "Mods", window.fs.readdirSync("./staging")[0], "manifest.json:SMFExtractionTag"), "Extracted via SMF")
+		mergeConfig({ knownMods: [...getConfig().knownMods, json5.parse(window.fs.readFileSync(window.path.join("..", "Mods", window.fs.readdirSync("./staging")[0], "manifest.json"), "utf8")).id] })
 
 		window.fs.removeSync("./staging")
 

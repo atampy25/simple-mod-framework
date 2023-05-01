@@ -35,13 +35,15 @@
 					on:click={() => {
 						if (getConfig().developerMode) {
 							mergeConfig({
-								developerMode: false
+								developerMode: false,
+								knownMods: []
 							})
 
 							forceUpdate = Math.random()
 						} else {
 							mergeConfig({
-								developerMode: true
+								developerMode: true,
+								knownMods: []
 							})
 
 							forceUpdate = Math.random()
