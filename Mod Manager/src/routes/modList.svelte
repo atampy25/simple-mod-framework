@@ -185,7 +185,7 @@
 				} else {
 					window.fs.copySync("./staging", "../Mods")
 
-					mergeConfig({ knownMods: [...getConfig().knownMods, json5.parse(window.path.join("..", "Mods", window.fs.readdirSync("./staging")[0])).id] })
+					mergeConfig({ knownMods: [...getConfig().knownMods, json5.parse(String(window.fs.readFileSync(window.path.join("..", "Mods", window.fs.readdirSync("./staging")[0])))).id] })
 
 					window.fs.removeSync("./staging")
 
@@ -566,7 +566,7 @@
 	on:click:button--primary={() => {
 		window.fs.copySync("./staging", "../Mods")
 
-		mergeConfig({ knownMods: [...getConfig().knownMods, json5.parse(window.path.join("..", "Mods", window.fs.readdirSync("./staging")[0])).id] })
+		mergeConfig({ knownMods: [...getConfig().knownMods, json5.parse(String(window.fs.readFileSync(window.path.join("..", "Mods", window.fs.readdirSync("./staging")[0])))).id] })
 
 		window.fs.removeSync("./staging")
 
