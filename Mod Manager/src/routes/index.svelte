@@ -257,7 +257,7 @@
 
 	let modUpdates = checkForModUpdates()
 
-	async function checkForModUpdates(): Promise<any> {
+	async function checkForModUpdates(): Promise<[string, { version: string; changelog: string; url: string }][]> {
 		let modUpdateJSONs = []
 
 		for (let mod of getAllMods()) {
@@ -316,7 +316,6 @@
 		version: string
 		url: string
 		changelog: string
-		managedFilesAndFolders: string[]
 	} | null = null
 	let modDownloadProgress = 0
 	let modDownloadSize = 0
@@ -456,6 +455,8 @@
 					</div>
 				</div>
 			{:then updates}
+				{@const upToDateMods = updates.filter(([modID, update]) => update && !semver.lt(getManifestFromModID(modID).version, update.version))}
+
 				{#each updates.filter(([modID, update]) => !update) as [modID] (modID)}
 					<div class="flex items-center">
 						<p class="flex-grow">Couldn't check {getManifestFromModID(modID).name} for updates</p>
@@ -464,12 +465,19 @@
 						</div>
 					</div>
 				{/each}
-				{#each updates.filter(([modID, update]) => update && !semver.lt(getManifestFromModID(modID).version, update.version)) as [modID, update] (modID)}
+				{#if upToDateMods.length < 6}
+					{#each upToDateMods as [modID, update] (modID)}
+						<div class="flex items-center">
+							<p class="flex-grow">{getManifestFromModID(modID).name} is up to date</p>
+							<Checkmark />
+						</div>
+					{/each}
+				{:else}
 					<div class="flex items-center">
-						<p class="flex-grow">{getManifestFromModID(modID).name} is up to date</p>
+						<p class="flex-grow">{upToDateMods.length != updates.length ? upToDateMods.length : "All"} mods are up to date</p>
 						<Checkmark />
 					</div>
-				{/each}
+				{/if}
 				{#each updates.filter(([modID, update]) => update && semver.lt(getManifestFromModID(modID).version, update.version)) as [modID, update] (modID)}
 					<div class="my-4">
 						<div class="flex items-center">
@@ -553,8 +561,9 @@
 <Modal alert bind:open={installedViaZIP} modalHeading="Installed via alternate means" primaryButtonText="OK" on:submit={() => (installedViaZIP = false)}>
 	<p>
 		The framework has been installed via alternate means (likely by extracting a ZIP file). This could be because you installed the framework before the installer EXE existed (in which case you
-		can safely ignore this warning), or because you deliberately downloaded a ZIP file version from a site other than Nexus Mods. In that case, while it might not affect the functioning of the
-		framework, it's still best to use the officially supported installer available on Nexus Mods.
+		can safely ignore this warning), because you manually updated the framework (which is also OK, though the auto-updater is more convenient when possible), or because you deliberately downloaded
+		a ZIP file version from a site other than Nexus Mods. In that case, while it might not affect the functioning of the framework, it's still best to use the officially supported installer
+		available on Nexus Mods.
 	</p>
 </Modal>
 
