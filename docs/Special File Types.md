@@ -121,6 +121,9 @@ If the file is the REPO, it will be transformed to the format used by the `repos
 ## material.json
 An RPKG tool material JSON. Replaces a game material.
 
+## rtlv.json
+An RTLV file obtained from Anthony Fuller's HMLanguageTools. Will be converted to an RTLV file and placed in the staging folder (overriding any existing game file).
+
 ## locr.json
 A LOCR file obtained from Anthony Fuller's HMLanguageTools. Will be converted to a LOCR file and placed in the staging folder (overriding any existing game file).
 
