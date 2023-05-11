@@ -2,13 +2,17 @@ Creating a mod with the framework is very simple - just add a manifest file and 
 
 ## Setting up
 
+First, if you haven't already, you should enable developer mode. In theory, since you're looking at the documentation, you should already have developer mode enabled - the in-app viewer is the preferred way to access the framework's documentation. If you're looking at this through GitHub or by manually opening the Info folder, you can enable developer mode and gain a documentation viewer as well as a few other things by going to the Info page and clicking "Enable developer mode".
+
+Once that's sorted, you should also install some kind of editor - using Notepad to edit code/configuration files is torture. Visual Studio Code is recommended; it has a lot of useful features available right out of the box, like auto-formatting, syntax highlighting, telling you where errors are and allowing for autocomplete/in-editor documentation/meaningful errors using the schema. Notepad++ is a popular editor, but it's only slightly better than Notepad (which would be assumed from the name) and is without a doubt worse than VS Code for editing SMF mods.
+
 ### Recommended: the GitHub template
 
 If you plan on updating your mod after its release, or you'd like the ability to quickly set up a new mod, or you'd like to collaborate with others, or you'd like to track your changes for easy debugging, there's a GitHub template for mods that handles everything for you - it'll automatically increment the version and generate changelogs, among other things.
 
 The only prerequisite is knowledge of Git/GitHub, which is generally something you should have when you're working with mods anyway.
 
-You can find the template at `https://github.com/atampy25/smf-mod`. Follow the instructions in the README, then clone the mod to your Mods folder.
+You can find the template at `https://github.com/atampy25/smf-mod`. Follow the instructions in the README, cloning the mod repository as a sub-directory of your Mods folder.
 
 ### Manually setting up a mod folder
 
@@ -20,9 +24,9 @@ Then, put a file called `manifest.json` in it. Paste the following into it:
 
 ```jsonc
 {
-	// This $schema key isn't necessary, but having it will allow you to automatically see all the available options
-	// in VS Code (or any other competent editor, sorry Notepad++) and see documentation for them just by
-	// hovering, so you don't need to refer to this page too often.
+	// This $schema key isn't *necessary*, but having it will allow you to automatically
+	// see all the available options in VS Code and see documentation for them just by
+	// hovering, so you don't need to refer to the Manifest page too often.
 	"$schema": "https://raw.githubusercontent.com/atampy25/simple-mod-framework/main/Mod%20Manager/src/lib/manifest-schema.json",
   "version": "1.0.0",
   "id": "YourNameOrUserName.FirstMod",
