@@ -325,19 +325,12 @@ export default async function discover(): Promise<{ [x: string]: { hash: string;
 							case "texture.tga": // Depends on nothing, edits the texture files
 								affected.push(...path.basename(contentFilePath).split(".")[0].split("~"))
 								break
-							case "sfx.wem": // Depends on and edits the patched WWEV
-								dependencies.push(path.basename(contentFilePath).split(".")[0].split("~")[0])
-								affected.push(path.basename(contentFilePath).split(".")[0].split("~")[0])
-								break
-							case "delta": // Depends on and edits the patched file
+							case "sfx.wem": // Depends on and edits the patched WWEV (HASH~index)
+							case "delta": // Depends on and edits the patched file (HASH~filetype)
 								dependencies.push(path.basename(contentFilePath).split(".")[0].split("~")[0])
 								affected.push(path.basename(contentFilePath).split(".")[0].split("~")[0])
 								break
 							case "rtlv.json": // Depends on nothing, edits the RTLV file
-								entityContent = LosslessJSON.parse(fs.readFileSync(contentFilePath, "utf-8"))
-
-								affected.push(normaliseToHash(entityContent.hash))
-								break
 							case "locr.json": // Depends on nothing, edits the LOCR file
 								entityContent = LosslessJSON.parse(fs.readFileSync(contentFilePath, "utf8"))
 
