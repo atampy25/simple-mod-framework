@@ -7,7 +7,7 @@ import type { DeployInstruction, HMLanguageToolsLOCR, Manifest, ManifestOptionDa
 import { ModuleKind, ScriptTarget } from "typescript"
 import { compileExpression, useDotAccessOperatorAndOptionalChaining } from "filtrex"
 import { config, logger, rpkgInstance } from "./core-singleton"
-import { copyFromCache, copyToCache, extractOrCopyToTemp, getQuickEntityFromPatchVersion, getQuickEntityFromVersion, hexflip, isValidHash, normaliseToHash } from "./utils"
+import { copyFromCache, copyToCache, extractOrCopyToTemp, getQuickEntityFromPatchVersion, getQuickEntityFromVersion, hexflip, normaliseToHash } from "./utils"
 
 import { OptionType } from "./types"
 import Piscina from "piscina"
@@ -1552,6 +1552,49 @@ export default async function deploy(
 						path.join(process.cwd(), "temp", `chunk${content.chunk}`, `${runtimeID}.${fileType}`),
 						path.join(process.cwd(), "staging", `chunk${content.chunk}`, `${runtimeID}.${fileType}`)
 					)
+					break
+				}
+				case "rtlv.json": {
+					await logger.debug(`Converting video subtitle file ${contentIdentifier}`)
+
+					entityContent = content.source === "disk" ? JSON.parse(fs.readFileSync(content.path, "utf8")) : JSON.parse(await content.content.text())
+
+					const hash = normaliseToHash(entityContent["hash"])
+
+					if (
+						invalidatedData.some((a) => a.filePath === contentIdentifier) || // must redeploy, invalid cache
+						!(await copyFromCache(instruction.cacheFolder, path.join(`chunk${content.chunk}`, await xxhash3(contentIdentifier)), path.join(process.cwd(), "temp", `chunk${content.chunk}`))) // cache is not available
+					) {
+						fs.ensureDirSync(path.join(process.cwd(), "temp", `chunk${content.chunk}`))
+
+						let contentFilePath
+						if (content.source === "disk") {
+							contentFilePath = content.path
+						} else {
+							fs.ensureDirSync(path.join(process.cwd(), "virtual"))
+							fs.writeFileSync(path.join(process.cwd(), "virtual", "rtlv.json"), Buffer.from(await content.content.arrayBuffer()))
+							contentFilePath = path.join(process.cwd(), "virtual", "rtlv.json")
+						}
+
+						execCommand(
+							`"Third-Party\\HMLanguageTools" rebuild H3 RTLV "${contentFilePath}" "${path.join(process.cwd(), "temp", `chunk${content.chunk}`, `${hash}.RTLV`)}" --metapath "${path.join(
+								process.cwd(),
+								"temp",
+								`chunk${content.chunk}`,
+								`${hash}.RTLV.meta.json`
+							)}"`
+						)
+
+						fs.removeSync(path.join(process.cwd(), "virtual"))
+
+						await copyToCache(instruction.cacheFolder, path.join(process.cwd(), "temp", `chunk${content.chunk}`), path.join(`chunk${content.chunk}`, await xxhash3(contentIdentifier)))
+					}
+
+					fs.ensureDirSync(path.join(process.cwd(), "staging", `chunk${content.chunk}`))
+
+					// Copy LOCR files
+					fs.copyFileSync(path.join(process.cwd(), "temp", `chunk${content.chunk}`, `${hash}.RTLV`), path.join(process.cwd(), "staging", `chunk${content.chunk}`, `${hash}.RTLV`))
+					fs.copyFileSync(path.join(process.cwd(), "temp", `chunk${content.chunk}`, `${hash}.RTLV.meta.json`), path.join(process.cwd(), "staging", `chunk${content.chunk}`, `${hash}.RTLV.meta.json`))
 					break
 				}
 				case "locr.json": {
