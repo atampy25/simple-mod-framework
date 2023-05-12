@@ -185,70 +185,90 @@
 	let frameworkExtracting = false
 
 	async function startFrameworkUpdate() {
-		const response = await fetch("https://github.com/atampy25/simple-mod-framework/releases/latest/download/Release.zip")
-		const reader = response.body!.getReader()
+		let chunksAll
 
-		frameworkDownloadSize = +response.headers.get("Content-Length")!
+		try {
+			const response = await fetch("https://github.com/atampy25/simple-mod-framework/releases/latest/download/Release.zip")
+			const reader = response.body!.getReader()
 
-		let receivedLength = 0
-		let chunks = []
-		while (true) {
-			const { done, value } = await reader.read()
+			frameworkDownloadSize = +response.headers.get("Content-Length")!
 
-			if (done) {
-				break
+			let receivedLength = 0
+			let chunks = []
+			while (true) {
+				const { done, value } = await reader.read()
+
+				if (done) {
+					break
+				}
+
+				chunks.push(value)
+				receivedLength += value.length
+
+				frameworkDownloadProgress = receivedLength
 			}
 
-			chunks.push(value)
-			receivedLength += value.length
-
-			frameworkDownloadProgress = receivedLength
+			chunksAll = new Uint8Array(receivedLength)
+			let position = 0
+			for (let chunk of chunks) {
+				chunksAll.set(chunk, position)
+				position += chunk.length
+			}
+		} catch (e) {
+			window.alert("Couldn't download the update! Check your internet connection.\n\n" + e)
+			updatingFramework = false
+			return
 		}
 
-		let chunksAll = new Uint8Array(receivedLength)
-		let position = 0
-		for (let chunk of chunks) {
-			chunksAll.set(chunk, position)
-			position += chunk.length
+		try {
+			frameworkExtracting = true
+
+			window.fs.emptyDirSync("./staging")
+
+			window.fs.writeFileSync("./tempArchive", chunksAll)
+
+			window.child_process.execSync(`"..\\Third-Party\\7z.exe" x "./tempArchive" -aoa -y -o"./staging"`)
+
+			window.fs.removeSync("./staging/Mods")
+			window.fs.removeSync("./staging/cleanPackageDefinition.txt")
+			window.fs.removeSync("./staging/cleanThumbs.dat")
+			window.fs.removeSync("./staging/config.json")
+			window.fs.removeSync("./staging/Mod Manager/chrome_100_percent.pak")
+			window.fs.removeSync("./staging/Mod Manager/chrome_200_percent.pak")
+			window.fs.removeSync("./staging/Mod Manager/d3dcompiler_47.dll")
+			window.fs.removeSync("./staging/Mod Manager/ffmpeg.dll")
+			window.fs.removeSync("./staging/Mod Manager/icudtl.dat")
+			window.fs.removeSync("./staging/Mod Manager/libEGL.dll")
+			window.fs.removeSync("./staging/Mod Manager/libGLESv2.dll")
+			window.fs.removeSync("./staging/Mod Manager/Mod Manager.exe")
+			window.fs.removeSync("./staging/Mod Manager/locales")
+			window.fs.removeSync("./staging/Mod Manager/resources.pak")
+			window.fs.removeSync("./staging/Mod Manager/snapshot_blob.bin")
+			window.fs.removeSync("./staging/Mod Manager/v8_context_snapshot.bin")
+			window.fs.removeSync("./staging/Mod Manager/vk_swiftshader.dll")
+			window.fs.removeSync("./staging/Mod Manager/vk_swiftshader_icd.json")
+			window.fs.removeSync("./staging/Mod Manager/vulkan_1.dll")
+		} catch (e) {
+			window.alert("Couldn't extract the update! You may want to report this to Atampy26 on Hitman Forum.\n\n" + e)
+			updatingFramework = false
+			return
 		}
 
-		frameworkExtracting = true
+		try {
+			window.fs.removeSync("../Load Order Manager")
 
-		window.fs.emptyDirSync("./staging")
+			window.originalFs.renameSync("./staging/Mod Manager/resources/app.asar", "./temp.asar")
+			window.originalFs.cpSync("./staging", "..", { recursive: true })
+			window.originalFs.copyFileSync("./temp.asar", "./resources/app.asar")
 
-		window.fs.writeFileSync("./tempArchive", chunksAll)
-
-		window.child_process.execSync(`"..\\Third-Party\\7z.exe" x "./tempArchive" -aoa -y -o"./staging"`)
-
-		window.fs.removeSync("./staging/Mods")
-		window.fs.removeSync("./staging/cleanPackageDefinition.txt")
-		window.fs.removeSync("./staging/cleanThumbs.dat")
-		window.fs.removeSync("./staging/config.json")
-		window.fs.removeSync("./staging/Mod Manager/chrome_100_percent.pak")
-		window.fs.removeSync("./staging/Mod Manager/chrome_200_percent.pak")
-		window.fs.removeSync("./staging/Mod Manager/d3dcompiler_47.dll")
-		window.fs.removeSync("./staging/Mod Manager/ffmpeg.dll")
-		window.fs.removeSync("./staging/Mod Manager/icudtl.dat")
-		window.fs.removeSync("./staging/Mod Manager/libEGL.dll")
-		window.fs.removeSync("./staging/Mod Manager/libGLESv2.dll")
-		window.fs.removeSync("./staging/Mod Manager/Mod Manager.exe")
-		window.fs.removeSync("./staging/Mod Manager/locales")
-		window.fs.removeSync("./staging/Mod Manager/resources.pak")
-		window.fs.removeSync("./staging/Mod Manager/snapshot_blob.bin")
-		window.fs.removeSync("./staging/Mod Manager/v8_context_snapshot.bin")
-		window.fs.removeSync("./staging/Mod Manager/vk_swiftshader.dll")
-		window.fs.removeSync("./staging/Mod Manager/vk_swiftshader_icd.json")
-		window.fs.removeSync("./staging/Mod Manager/vulkan_1.dll")
-
-		window.fs.removeSync("../Load Order Manager")
-
-		window.originalFs.renameSync("./staging/Mod Manager/resources/app.asar", "./temp.asar")
-		window.originalFs.cpSync("./staging", "..", { recursive: true })
-		window.originalFs.copyFileSync("./temp.asar", "./resources/app.asar")
-
-		window.fs.removeSync("./staging")
-		window.fs.removeSync("./tempArchive")
-		window.fs.removeSync("./temp.asar")
+			window.fs.removeSync("./staging")
+			window.fs.removeSync("./tempArchive")
+			window.fs.removeSync("./temp.asar")
+		} catch (e) {
+			window.alert("Couldn't apply the update! You may want to report this to Atampy26 on Hitman Forum.\n\n" + e)
+			updatingFramework = false
+			return
+		}
 
 		updatingFramework = false
 
@@ -322,52 +342,66 @@
 	let modExtracting = false
 
 	async function startModUpdate() {
-		const response = await fetch(updatingMod!.url)
-		const reader = response.body!.getReader()
+		let chunksAll
 
-		modDownloadSize = +response.headers.get("Content-Length")!
+		try {
+			const response = await fetch(updatingMod!.url)
+			const reader = response.body!.getReader()
 
-		let receivedLength = 0
-		let chunks = []
-		while (true) {
-			const { done, value } = await reader.read()
+			modDownloadSize = +response.headers.get("Content-Length")!
 
-			if (done) {
-				break
+			let receivedLength = 0
+			let chunks = []
+			while (true) {
+				const { done, value } = await reader.read()
+
+				if (done) {
+					break
+				}
+
+				chunks.push(value)
+				receivedLength += value.length
+
+				modDownloadProgress = receivedLength
 			}
 
-			chunks.push(value)
-			receivedLength += value.length
-
-			modDownloadProgress = receivedLength
+			chunksAll = new Uint8Array(receivedLength)
+			let position = 0
+			for (let chunk of chunks) {
+				chunksAll.set(chunk, position)
+				position += chunk.length
+			}
+		} catch (e) {
+			window.alert("Couldn't download the mod update! Check your internet connection, or contact the mod author for help.\n\n" + e)
+			updatingMod = null
+			return
 		}
 
-		let chunksAll = new Uint8Array(receivedLength)
-		let position = 0
-		for (let chunk of chunks) {
-			chunksAll.set(chunk, position)
-			position += chunk.length
+		try {
+			modExtracting = true
+
+			window.fs.emptyDirSync("./staging")
+
+			window.fs.writeFileSync("./tempArchive", chunksAll)
+
+			window.child_process.execSync(`"..\\Third-Party\\7z.exe" x "./tempArchive" -aoa -y -o"./staging"`)
+
+			if (window.klaw("./staging", { depthLimit: 0, nodir: true }).length) {
+				window.alert("Error: mod update ZIP has files in the root!")
+				throw new Error("Mod update ZIP has files in the root!")
+			}
+
+			window.fs.removeSync(getModFolder(updatingMod!.id))
+
+			window.fs.copySync("./staging", "../Mods")
+
+			window.fs.removeSync("./staging")
+			window.fs.removeSync("./tempArchive")
+		} catch (e) {
+			window.alert("Couldn't extract and apply the mod update! Contact the mod author for help.\n\n" + e)
+			updatingMod = null
+			return
 		}
-
-		modExtracting = true
-
-		window.fs.emptyDirSync("./staging")
-
-		window.fs.writeFileSync("./tempArchive", chunksAll)
-
-		window.child_process.execSync(`"..\\Third-Party\\7z.exe" x "./tempArchive" -aoa -y -o"./staging"`)
-
-		if (window.klaw("./staging", { depthLimit: 0, nodir: true }).length) {
-			window.alert("Error: mod update ZIP has files in the root!")
-			throw new Error("Mod update ZIP has files in the root!")
-		}
-
-		window.fs.removeSync(getModFolder(updatingMod!.id))
-
-		window.fs.copySync("./staging", "../Mods")
-
-		window.fs.removeSync("./staging")
-		window.fs.removeSync("./tempArchive")
 
 		updatingMod = null
 
