@@ -1,12 +1,18 @@
 <script lang="ts">
 	import { FrameworkVersion, getConfig, mergeConfig } from "$lib/utils"
 
-	import { Button, Checkbox } from "carbon-components-svelte"
+	import { Button, Checkbox, ToastNotification } from "carbon-components-svelte"
 
 	import { fade } from "svelte/transition"
 	import { v4 } from "uuid"
 
 	let forceUpdate = Math.random()
+
+	const { rm } = window.originalFs
+	const { join: joinPaths } = window.path
+
+	let cacheClearedSuccessfully = false
+	let cacheClearError: any = null
 </script>
 
 <div class="w-full h-full flex items-center justify-center">
@@ -52,6 +58,31 @@
 				>
 					{forceUpdate && getConfig().developerMode ? "Disable" : "Enable"} developer mode
 				</Button>
+				<Button
+					on:click={() => {
+						rm(
+							joinPaths(
+								'..',
+								'cache'
+							),
+							{
+								recursive: true,
+								force: true
+							},
+							error => {
+								if(error) {
+									cacheClearError = error
+									setInterval(() => cacheClearError = null, 6000)
+									return
+								}
+								cacheClearedSuccessfully = true
+								setInterval(() => cacheClearedSuccessfully = false, 4000)
+							}
+						)
+					}}
+					kind="secondary">
+					Clear Cache
+				</Button>
 			</div>
 		</div>
 		<br />
@@ -85,6 +116,21 @@
 			</div>
 		</div>
 	</div>
+</div>
+
+<div class="absolute top-5 right-5 flex flex-col">
+	{#if cacheClearedSuccessfully}
+		<ToastNotification
+			kind="success"
+			title="Cache cleared"
+			subtitle="The cache has successfully been cleared." />
+	{/if}
+	{#if cacheClearError != null}
+		<ToastNotification
+			kind="error"
+			title="Failed to clear cache"
+			subtitle={cacheClearError.message} />
+	{/if}
 </div>
 
 <style>
