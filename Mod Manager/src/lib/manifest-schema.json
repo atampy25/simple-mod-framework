@@ -151,6 +151,9 @@
 	"definitions": {
 		"ManifestOptionData": {
 			"properties": {
+				"blobsFolder": false,
+				"contentFolder": false,
+				"runtimePackages": false,
 				"blobsFolders": {
 					"description": "Folders with blobs that will be crawled and automatically deployed.",
 					"items": {
