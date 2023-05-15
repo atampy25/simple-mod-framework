@@ -18,6 +18,7 @@
 	import Checkmark from "carbon-icons-svelte/lib/Checkmark.svelte"
 	import Download from "carbon-icons-svelte/lib/Download.svelte"
 	import Edit from "carbon-icons-svelte/lib/Edit.svelte"
+	import Asterisk from "carbon-icons-svelte/lib/Asterisk.svelte"
 
 	let cannotFindConfig = false
 	let cannotFindRuntime = false
@@ -277,7 +278,7 @@
 
 	let modUpdates = checkForModUpdates()
 
-	async function checkForModUpdates(): Promise<[string, { version: string; changelog: string; url: string }][]> {
+	async function checkForModUpdates(): Promise<[string, { version: string; changelog: string; url: string; check_url: string } | false][]> {
 		let modUpdateJSONs = []
 
 		for (let mod of getAllMods()) {
@@ -321,7 +322,19 @@
 							.join("\n")
 					}
 
-					modUpdateJSONs.push([mod, { version: updateJSON.version, changelog, url: updateJSON.url }])
+					if (!changelog) {
+						throw new Error()
+					}
+
+					if (!updateJSON.url) {
+						throw new Error()
+					}
+
+					if (!semver.valid(updateJSON.version, { loose: false })) {
+						throw new Error()
+					}
+
+					modUpdateJSONs.push([mod, { ...updateJSON, changelog, check_url: getManifestFromModID(mod).updateCheck! }])
 				} catch {
 					modUpdateJSONs.push([mod, false])
 				}
@@ -407,6 +420,8 @@
 
 		window.location.reload()
 	}
+
+	const trustedHosts = new Set(["github.com", "raw.githubusercontent.com", "dropbox.com", "dl.dropboxusercontent.com", "drive.google.com", "hitman-resources.netlify.app"])
 </script>
 
 <div class="w-full h-full overflow-y-auto flex items-center justify-center gap-96">
@@ -441,7 +456,7 @@
 				{#if semver.lt(FrameworkVersion, release.tag_name)}
 					<div class="flex items-center">
 						<h3 class="flex-grow">
-							{({ patch: "Framework patch available", minor: "Minor framework update available", major: "Major framework update available" })[
+							{{ patch: "Framework patch available", minor: "Minor framework update available", major: "Major framework update available" }[
 								semver.diff(FrameworkVersion, release.tag_name)
 							] || "Update available"}
 						</h3>
@@ -491,12 +506,24 @@
 			{:then updates}
 				{@const upToDateMods = updates.filter(([modID, update]) => update && !semver.lt(getManifestFromModID(modID).version, update.version))}
 
-				{#each updates.filter(([modID, update]) => !update) as [modID] (modID)}
+				{#each updates.filter(([modID, update]) => !update) as [modID, update] (modID)}
 					<div class="flex items-center">
 						<p class="flex-grow">Couldn't check {getManifestFromModID(modID).name} for updates</p>
 						<div>
 							<InlineLoading status="error" />
 						</div>
+					</div>
+				{/each}
+				{#each updates.filter(([modID, update]) => update && (!trustedHosts.has(new URL(update.check_url).hostname) || !trustedHosts.has(new URL(update.url).hostname))) as [modID, update]}
+					<div class="flex items-center">
+						<p class="flex-grow">The author of {getManifestFromModID(modID).name} may be able to find which IPs have their mod downloaded</p>
+						<Asterisk />
+					</div>
+				{/each}
+				{#each updates.filter(([modID, update]) => update && Object.keys(update).length !== 4) as [modID, update]}
+					<div class="flex items-center">
+						<p class="flex-grow">{getManifestFromModID(modID).name} has an unused update key</p>
+						<Asterisk />
 					</div>
 				{/each}
 				{#if upToDateMods.length < 6}
