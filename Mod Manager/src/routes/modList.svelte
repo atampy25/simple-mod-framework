@@ -456,15 +456,15 @@
 		class="mt-2 h-[10vh] overflow-y-auto whitespace-pre-wrap bg-neutral-800 p-2"
 		style="font-family: 'Fira Code', 'IBM Plex Mono', 'Menlo', 'DejaVu Sans Mono', 'Bitstream Vera Sans Mono', Courier, monospace; color-scheme: dark"
 		id="deployOutputElement">{@html convertAnsi.toHtml(deployOutput)}</pre>
-	{#if deployOutput.split(/\r?\n/).some((a) => a.startsWith("WARN")) || deployOutput.split(/\r?\n/).some((a) => a.startsWith("ERROR"))}
+	{#if deployOutput.split(/\r?\n/).some((a) => a.match(/.*WARN.*?\t/)) || deployOutput.split(/\r?\n/).some((a) => a.match(/.*ERROR.*?\t/))}
 		<br />
 		<div class="flex flex-row gap-2 flex-wrap max-h-[15vh] overflow-y-auto">
-			{#each deployOutput.split(/\r?\n/).filter((a) => a.startsWith("WARN") || a.startsWith("ERROR")) as line}
-				<InlineNotification hideCloseButton lowContrast kind={line.startsWith("WARN") ? "warning" : "error"}>
+			{#each deployOutput.split(/\r?\n/).filter((a) => a.match(/.*WARN.*?\t/) || a.match(/.*ERROR.*?\t/)) as line}
+				<InlineNotification hideCloseButton lowContrast kind={line.includes("WARN") ? "warning" : "error"}>
 					<div slot="title" class="-mt-1 text-lg">
-						{line.startsWith("WARN") ? "Warning" : "Error"}
+						{line.includes("WARN") ? "Warning" : "Error"}
 					</div>
-					<div slot="subtitle">{line.replace("WARN ", "").replace("ERROR ", "")}</div>
+					<div slot="subtitle">{line.replace(/.*WARN.*?\t/, "").replace(/.*ERROR.*?\t/, "")}</div>
 				</InlineNotification>
 			{/each}
 		</div>

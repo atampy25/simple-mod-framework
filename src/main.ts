@@ -281,7 +281,7 @@ async function doTheThing() {
 		}
 	}
 
-	await core.logger.info(`Done in ${toHuman(startedDate.until(DateTime.now()).toDuration())}`)
+	await core.logger.info(`Done in ${toHuman(startedDate.until(DateTime.now()).toDuration()) || "less than a second"}`)
 
 	await core.cleanExit()
 }
