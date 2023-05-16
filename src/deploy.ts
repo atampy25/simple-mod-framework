@@ -41,18 +41,18 @@ const callRPKGFunction = async function (command: string) {
 	return await rpkgInstance.callFunction(command)
 }
 
-const RPKGHashCache: Record<string, string> = {}
+const RPKGHashCache: Record<string, [string, boolean]> = {}
 
 const getRPKGOfHash = async function (hash: string): Promise<string> {
 	await logger.verbose(`Getting RPKG of hash ${hash}`)
 
 	if (RPKGHashCache[hash]) {
 		await logger.verbose(`Returning RPKG of hash ${hash} from cache`)
-		return RPKGHashCache[hash]
+		return RPKGHashCache[hash][0]
 	} else {
 		try {
 			const x = await rpkgInstance.getRPKGOfHash(hash)
-			RPKGHashCache[hash] = x
+			RPKGHashCache[hash] = [x, false]
 			return x
 		} catch {
 			await logger.error(`Couldn't find ${hash} in the game files! Make sure your game is up-to-date and you've installed the framework in the right place.`)
@@ -70,6 +70,10 @@ export default async function deploy(
 		data: { hash: string; dependencies: string[]; affected: string[] }
 	}[]
 ) {
+	if (fs.existsSync(path.join(process.cwd(), "cache", "rpkgHashCache.json"))) {
+		Object.assign(RPKGHashCache, Object.fromEntries(Object.entries(JSON.parse(fs.readFileSync(path.join(process.cwd(), "cache", "rpkgHashCache.json"), "utf8"))).map((a) => [a[0], [a[1], false]])))
+	}
+
 	const allRPKGTypes: Record<string, "base" | "patch"> = {}
 
 	const WWEVpatches: Record<
@@ -678,8 +682,8 @@ export default async function deploy(
 						await logger.error("Improper QuickEntity JSON; couldn't find the version!")
 					}
 
-					RPKGHashCache[entityContent.tempHash] = `chunk${content.chunk}`
-					RPKGHashCache[entityContent.tbluHash] = `chunk${content.chunk}`
+					RPKGHashCache[entityContent.tempHash] = [`chunk${content.chunk}`, true]
+					RPKGHashCache[entityContent.tbluHash] = [`chunk${content.chunk}`, true]
 
 					if (+entityContent.quickEntityVersion.value < 3) {
 						if (content.source === "disk") {
@@ -855,7 +859,11 @@ export default async function deploy(
 						)
 						// Copy the binary files to the staging directory
 
-						await copyToCache(instruction.cacheFolder, path.join(process.cwd(), "temp"), path.join(`chunk${content.chunk}`, `${path.basename(contentIdentifier).slice(-15)}-${await xxhash3(contentIdentifier)}`))
+						await copyToCache(
+							instruction.cacheFolder,
+							path.join(process.cwd(), "temp"),
+							path.join(`chunk${content.chunk}`, `${path.basename(contentIdentifier).slice(-15)}-${await xxhash3(contentIdentifier)}`)
+						)
 						// Copy the binary files to the cache
 					}
 
@@ -2575,6 +2583,17 @@ export default async function deploy(
 
 	fs.removeSync(path.join(process.cwd(), "staging"))
 	fs.removeSync(path.join(process.cwd(), "temp"))
+
+	fs.writeFileSync(
+		path.join(process.cwd(), "cache", "rpkgHashCache.json"),
+		JSON.stringify(
+			Object.fromEntries(
+				Object.entries(RPKGHashCache)
+					.filter((a) => !a[1][0])
+					.map((a) => [a[0], a[1][0]])
+			)
+		)
+	)
 
 	return { lastServerSideStates }
 }

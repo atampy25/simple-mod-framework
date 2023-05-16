@@ -514,7 +514,7 @@
 						</div>
 					</div>
 				{/each}
-				{#each updates.filter(([modID, update]) => update && (!trustedHosts.has(new URL(update.check_url).hostname) || !trustedHosts.has(new URL(update.url).hostname))) as [modID, update]}
+				{#each updates.filter(([modID, update]) => update && (!(trustedHosts.has(new URL(update.check_url).hostname) || new URL(update.check_url).hostname.split(".").slice(1).join(".") === "github.io") || !(trustedHosts.has(new URL(update.url).hostname) || new URL(update.url).hostname.split(".").slice(1).join(".") === "github.io"))) as [modID, update]}
 					<div class="flex items-center">
 						<p class="flex-grow">The author of {getManifestFromModID(modID).name} may be able to find which IPs have their mod downloaded</p>
 						<Asterisk />
