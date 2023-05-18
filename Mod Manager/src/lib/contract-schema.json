@@ -863,9 +863,7 @@
 					"type": "array",
 					"nullable": true
 				},
-				"EnableExits": {
-					"nullable": true
-				},
+				"EnableExits": {},
 				"EnableSaving": {
 					"type": "boolean",
 					"nullable": true
