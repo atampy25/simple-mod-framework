@@ -347,7 +347,7 @@ export default async function deploy(
 			const deployInstruction: DeployInstruction = {
 				id: manifest.id,
 				name: manifest.name,
-				cacheFolder: mod,
+				cacheFolder: manifest.id,
 				manifestSources: {
 					localisation: manifest.localisation,
 					localisationOverrides: manifest.localisationOverrides,

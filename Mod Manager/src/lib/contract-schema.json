@@ -864,16 +864,6 @@
 					"nullable": true
 				},
 				"EnableExits": {
-					"properties": {
-						"$eq": {
-							"items": {
-								"type": ["string", "boolean"]
-							},
-							"type": "array",
-							"nullable": true
-						}
-					},
-					"type": "object",
 					"nullable": true
 				},
 				"EnableSaving": {

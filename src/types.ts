@@ -191,7 +191,7 @@ export interface DeployInstruction {
 	/** Mod's friendly name. Should be the mod's name as defined in the manifest. */
 	name: string
 
-	/** Cache folder. Should be the mod's folder name in Mods. */
+	/** Cache folder. Should be the mod's ID. */
 	cacheFolder: string
 
 	manifestSources: {
