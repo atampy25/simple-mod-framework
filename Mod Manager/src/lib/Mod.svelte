@@ -7,7 +7,7 @@
 	import { FrameworkVersion, getConfig, getModFolder, validateModFolder } from "./utils"
 
 	import semver from "semver"
-	import { goto } from '$app/navigation'
+	import { goto } from "$app/navigation"
 
 	export let isFrameworkMod: boolean
 
@@ -103,17 +103,20 @@
 				</div>
 			{:else if isFrameworkMod && modValidation}
 				{#if !modValidation[0]}
-					<button
+					<div
 						on:click={() => {
-							if(getConfig().developerMode) goto(`/authoring/${manifest.id}`)
+							if (getConfig().developerMode) {
+								goto(`/authoring/${manifest.id}`)
+							}
 						}}
 						tabindex="0"
 						aria-pressed="false"
 						class="bx--btn bx--btn--ghost btn-error bx--btn--icon-only bx--tooltip__trigger bx--tooltip--a11y bx--btn--icon-only--bottom bx--tooltip--align-center"
+						style="cursor: pointer"
 					>
-						<span class="bx--assistive-text">This mod will likely cause issues; {getConfig().developerMode ? 'click to see more information' : 'contact the mod developer'}</span>
+						<span class="bx--assistive-text">This mod will likely cause issues; {getConfig().developerMode ? "click to see more information" : "contact the mod developer"}</span>
 						<Error color="black" />
-					</button>
+					</div>
 				{/if}
 			{/if}
 			<slot />
