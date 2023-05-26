@@ -371,6 +371,7 @@ export const getManifestFromModID = memoize(function (id: string, dummy = 1): Ma
 export const getAllMods = memoize(function () {
 	return window.fs
 		.readdirSync(window.path.join("..", "Mods"))
+		.filter((a) => a !== "Managed by SMF, do not touch")
 		.map((a) => window.path.resolve(window.path.join("..", "Mods", a)))
 		.map((a) =>
 			window.fs.existsSync(window.path.join(a, "manifest.json"))

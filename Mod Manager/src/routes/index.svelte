@@ -94,7 +94,7 @@
 
 	if (
 		window.fs
-			.readdirSync(window.path.join("..", "Mods"))
+			.readdirSync(window.path.join("..", "Mods")).filter(a=>a!="Managed by SMF, do not touch")
 			.map((a) => window.path.resolve(window.path.join("..", "Mods", a)))
 			.some((a) => window.isFile(a))
 	) {
@@ -107,7 +107,7 @@
 		} catch {
 			invalidModText =
 				window.fs
-					.readdirSync(window.path.join("..", "Mods"))
+					.readdirSync(window.path.join("..", "Mods")).filter(a=>a!="Managed by SMF, do not touch")
 					.map((a) => window.path.resolve(window.path.join("..", "Mods", a)))
 					.find((a) => window.fs.existsSync(window.path.join(a, "manifest.json")) && !json5.parse(window.fs.readFileSync(window.path.join(a, "manifest.json"), "utf8")).id)
 					?.split(window.path.sep)

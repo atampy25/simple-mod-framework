@@ -4,7 +4,7 @@
 
 	import SortableList from "svelte-sortable-list"
 	import json5 from "json5"
-	import { Button, CodeSnippet, InlineNotification, Modal, Search } from "carbon-components-svelte"
+	import { Button, CodeSnippet, InlineNotification, Modal, ProgressBar, Search } from "carbon-components-svelte"
 	import AnsiToHTML from "ansi-to-html"
 
 	const convertAnsi = new AnsiToHTML({
@@ -48,6 +48,7 @@
 	import CloudUpload from "carbon-icons-svelte/lib/CloudUpload.svelte"
 	import Filter from "carbon-icons-svelte/lib/Filter.svelte"
 	import { OptionType } from "../../../src/types"
+	import { page } from "$app/stores"
 
 	let enabledMods: { value: string }[] = [],
 		disabledMods: { value: string }[] = []
@@ -191,7 +192,7 @@
 
 					window.fs.removeSync("./staging")
 
-					window.location.reload()
+					window.location.href = "/modList"
 
 					frameworkModExtractionInProgress = false
 				}
@@ -277,6 +278,62 @@
 
 	let availableModFilter = ""
 	let enabledModFilter = ""
+
+	let autoInstallDownloading = false
+	let autoInstallDownloadProgress = 0
+	let autoInstallDownloadSize = 0
+	let autoInstallModName = ""
+	let autoInstallModalOpen = false
+
+	$: if ($page.url.searchParams.get("urlScheme")) {
+		;(async () => {
+			let chunksAll
+
+			try {
+				autoInstallDownloading = true
+
+				const response = await fetch($page.url.searchParams.get("urlScheme")!)
+				const reader = response.body!.getReader()
+
+				autoInstallDownloadSize = +response.headers.get("Content-Length")!
+
+				let receivedLength = 0
+				let chunks = []
+				while (true) {
+					const { done, value } = await reader.read()
+
+					if (done) {
+						break
+					}
+
+					chunks.push(value)
+					receivedLength += value.length
+
+					autoInstallDownloadProgress = receivedLength
+				}
+
+				chunksAll = new Uint8Array(receivedLength)
+				let position = 0
+				for (let chunk of chunks) {
+					chunksAll.set(chunk, position)
+					position += chunk.length
+				}
+			} catch (e) {
+				window.alert("Couldn't download the mod! Check your internet connection, or contact the mod author for help.\n\n" + e)
+				autoInstallDownloading = false
+				return
+			}
+
+			window.fs.writeFileSync("./tempArchive", chunksAll)
+
+			window.fs.emptyDirSync("./staging")
+			window.child_process.execSync(`"..\\Third-Party\\7z.exe" x "./tempArchive" -aoa -y -o"./staging"`)
+
+			autoInstallDownloading = false
+			autoInstallModName = json5.parse(window.fs.readFileSync(window.path.join("./staging", window.fs.readdirSync("./staging")[0], "manifest.json"), "utf8")).name
+			autoInstallModalOpen = true
+		})()
+	}
 </script>
 
 <div class="grid grid-cols-2 gap-4 w-full mb-16">
@@ -572,7 +629,7 @@
 
 		window.fs.removeSync("./staging")
 
-		window.location.reload()
+		window.location.href = "/modList"
 	}}
 >
 	<p>
@@ -613,6 +670,28 @@
 	<CodeSnippet code={uploadedLogURL} />
 	<br />
 	<div class="mb-6" />
+</Modal>
+
+<Modal passiveModal open={autoInstallDownloading} modalHeading={"Downloading the mod"} preventCloseOnClickOutside>
+	<div class="mb-2">The mod is currently being downloaded - please wait.</div>
+	<br />
+	<ProgressBar kind="inline" value={autoInstallDownloadProgress} max={autoInstallDownloadSize} labelText="Downloading..." />
+</Modal>
+
+<Modal
+	bind:open={autoInstallModalOpen}
+	modalHeading="Installing {autoInstallModName}"
+	primaryButtonText="OK"
+	secondaryButtonText="Cancel"
+	shouldSubmitOnEnter={false}
+	on:click:button--secondary={() => (autoInstallModalOpen = false)}
+	on:click:button--primary={() => {
+		autoInstallModalOpen = false
+		modFilePath = "./tempArchive"
+		addMod()
+	}}
+>
+	<p>The mod {autoInstallModName} has been downloaded via a link - would you like to install it?</p>
 </Modal>
 
 <style>

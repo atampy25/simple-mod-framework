@@ -54,9 +54,16 @@ export default async function discover(): Promise<{ [x: string]: { hash: string;
 			)
 		) {
 			// Find mod with ID in Mods folder, set the current mod to that folder
-			mod = fs
+			const foundMod = fs
 				.readdirSync(path.join(process.cwd(), "Mods"))
 				.find((a) => fs.existsSync(path.join(process.cwd(), "Mods", a, "manifest.json")) && json5.parse(fs.readFileSync(path.join(process.cwd(), "Mods", a, "manifest.json"), "utf8")).id === mod)
+
+			if (!foundMod) {
+				await logger.error(`Could not resolve mod ${mod} to its folder in Mods!`)
+				return null as unknown as Promise<{ [x: string]: { hash: string; dependencies: string[]; affected: string[] } }>
+			}
+
+			mod = foundMod
 		} // Essentially, if the mod isn't an RPKG mod, it is referenced by its ID, so this finds the mod folder with the right ID
 
 		await logger.verbose(`Beginning mod discovery of ${mod}`)
@@ -325,12 +332,14 @@ export default async function discover(): Promise<{ [x: string]: { hash: string;
 							case "texture.tga": // Depends on nothing, edits the texture files
 								affected.push(...path.basename(contentFilePath).split(".")[0].split("~"))
 								break
-							case "sfx.wem": // Depends on and edits the patched WWEV (HASH~index)
+							case "sfx.wem":
+							// Depends on and edits the patched WWEV (HASH~index)
 							case "delta": // Depends on and edits the patched file (HASH~filetype)
 								dependencies.push(path.basename(contentFilePath).split(".")[0].split("~")[0])
 								affected.push(path.basename(contentFilePath).split(".")[0].split("~")[0])
 								break
-							case "rtlv.json": // Depends on nothing, edits the RTLV file
+							case "rtlv.json":
+							// Depends on nothing, edits the RTLV file
 							case "locr.json": // Depends on nothing, edits the LOCR file
 								entityContent = LosslessJSON.parse(fs.readFileSync(contentFilePath, "utf8"))
 

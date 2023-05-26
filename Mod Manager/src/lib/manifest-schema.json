@@ -9,10 +9,12 @@
 					"items": {
 						"type": "string"
 					},
+					"minItems": 1,
 					"type": "array"
 				},
 				"description": {
 					"description": "A description of the mod.",
+					"minLength": 1,
 					"type": "string"
 				},
 				"frameworkVersion": {
@@ -21,12 +23,13 @@
 					"pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$"
 				},
 				"id": {
-					"description": "An ID for the mod. Should follow capitalised reverse URI style (AuthorName.ModName). Don't include special characters; numbers, underscores and full stops are OK.",
+					"description": "An ID for the mod. Should follow capitalised reverse URI style (AuthorName.ModName). Don't include special characters; numbers and underscores are OK, though words should be separated by CamelCase.",
 					"type": "string",
-					"pattern": "^(?!(?:CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(?:\\.[^.]*)?$)[^<>:\"\\/\\\\|?*\\x00-\\x1F]*[^<>:\"\\/\\\\|?*\\x00-\\x1F .]$"
+					"pattern": "^[a-zA-Z0-9_-]+\\.[a-zA-Z0-9_-]+$"
 				},
 				"name": {
 					"description": "The name of the mod.",
+					"minLength": 1,
 					"type": "string"
 				},
 				"options": {
@@ -43,15 +46,18 @@
 											},
 											"image": {
 												"description": "A thumbnail image for the option. Will appear when the user hovers over the option in the Mod Manager.",
-												"type": "string"
+												"type": "string",
+												"minLength": 1
 											},
 											"name": {
 												"description": "The name of the option. Should not be duplicated. Will appear in the Mod Manager.",
-												"type": "string"
+												"type": "string",
+												"minLength": 1
 											},
 											"tooltip": {
 												"description": "A tooltip for the option. Will appear when the user hovers over the option in the Mod Manager.",
-												"type": "string"
+												"type": "string",
+												"minLength": 1
 											},
 											"type": {
 												"description": "The type of the option. Checkbox options appear as checkboxes in the Mod Manager.",
@@ -59,6 +65,7 @@
 												"type": "string"
 											}
 										},
+										"required": ["type", "name"],
 										"type": "object"
 									},
 									{
@@ -76,19 +83,23 @@
 											},
 											"group": {
 												"description": "The name of the group the option is part of. Will appear in the Mod Manager. Should not include a colon.",
-												"type": "string"
+												"type": "string",
+												"minLength": 1
 											},
 											"image": {
 												"description": "A thumbnail image for the option. Will appear when the user hovers over the option in the Mod Manager.",
-												"type": "string"
+												"type": "string",
+												"minLength": 1
 											},
 											"name": {
 												"description": "The name of the option. Will appear in the Mod Manager. Select option names should not include a colon.",
-												"type": "string"
+												"type": "string",
+												"minLength": 1
 											},
 											"tooltip": {
 												"description": "A tooltip for the option. Will appear when the user hovers over the option in the Mod Manager.",
-												"type": "string"
+												"type": "string",
+												"minLength": 1
 											},
 											"type": {
 												"description": "The type of the option. Select options appear as radio buttons in the Mod Manager under a heading (the group name).",
@@ -96,6 +107,7 @@
 												"type": "string"
 											}
 										},
+										"required": ["type", "name", "group"],
 										"type": "object"
 									},
 									{
@@ -109,11 +121,13 @@
 										"properties": {
 											"condition": {
 												"description": "A condition which will enable the option when met. Passed the framework config under the `config` global object. Refer to the Filtrex documentation at https://github.com/m93a/filtrex#expressions for syntax.",
-												"type": "string"
+												"type": "string",
+												"minLength": 1
 											},
 											"name": {
 												"description": "The name of the option. Should not be duplicated. Purely for internal reference; conditional options are not shown to the user.",
-												"type": "string"
+												"type": "string",
+												"minLength": 1
 											},
 											"type": {
 												"description": "The type of the option. Conditional options are enabled whenever a condition is met and disabled otherwise. They do not appear in the Mod Manager.",
@@ -121,6 +135,7 @@
 												"type": "string"
 											}
 										},
+										"required": ["type", "name", "condition"],
 										"type": "object"
 									},
 									{
@@ -134,6 +149,7 @@
 				},
 				"updateCheck": {
 					"description": "A link to an update JSON (must be HTTPS). Information on this can be found in the Mod Updates documentation page.",
+					"minLength": 1,
 					"type": "string"
 				},
 				"version": {
@@ -157,14 +173,16 @@
 				"blobsFolders": {
 					"description": "Folders with blobs that will be crawled and automatically deployed.",
 					"items": {
-						"type": "string"
+						"type": "string",
+						"minLength": 1
 					},
 					"type": "array"
 				},
 				"contentFolders": {
 					"description": "Folders with content files that will be crawled and automatically deployed.",
 					"items": {
-						"type": "string"
+						"type": "string",
+						"minLength": 1
 					},
 					"type": "array"
 				},
@@ -178,7 +196,8 @@
 										"type": "boolean"
 									},
 									"runtimeID": {
-										"type": "string"
+										"type": "string",
+										"minLength": 1
 									},
 									"toChunk": {
 										"type": "number"
@@ -187,7 +206,8 @@
 								"type": "object"
 							},
 							{
-								"type": "string"
+								"type": "string",
+								"minLength": 1
 							}
 						]
 					},

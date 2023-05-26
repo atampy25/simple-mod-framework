@@ -2,6 +2,8 @@ const windowStateManager = require("electron-window-state")
 const contextMenu = require("electron-context-menu")
 const { app, BrowserWindow, ipcMain, dialog } = require("electron")
 const serve = require("electron-serve")
+const fs = require("fs")
+const path = require("path")
 
 try {
 	require("electron-reloader")(module)
@@ -16,6 +18,12 @@ const dev = !app.isPackaged
 let mainWindow
 
 function createWindow() {
+	if (!fs.existsSync(path.join("..", "Deploy.exe"))) {
+		process.chdir(path.dirname(app.getPath("exe")))
+		app.relaunch({ execPath: app.getPath("exe"), args: process.argv })
+		app.exit()
+	}
+
 	let windowState = windowStateManager({
 		defaultWidth: 800,
 		defaultHeight: 600
@@ -43,18 +51,18 @@ function createWindow() {
 		mainWindow.webContents.reloadIgnoringCache()
 	})
 
+	if (process.argv[process.argv.length - 1] && process.argv[process.argv.length - 1].startsWith("simple-mod-framework://")) {
+		mainWindow.webContents.once("did-finish-load", () => {
+			mainWindow.webContents.send("urlScheme", process.argv.pop().replace("simple-mod-framework://", ""))
+		})
+	}
+
 	mainWindow.on("close", () => {
 		windowState.saveState(mainWindow)
 	})
 
 	return mainWindow
 }
-
-contextMenu({
-	showLookUpSelection: false,
-	showSearchWithGoogle: false,
-	showCopyImage: false
-})
 
 function loadVite(port) {
 	mainWindow.loadURL(`http://localhost:${port}`).catch((e) => {
@@ -75,15 +83,46 @@ function createMainWindow() {
 	else serveURL(mainWindow)
 }
 
-app.once("ready", createMainWindow)
-app.on("activate", () => {
-	if (!mainWindow) {
-		createMainWindow()
+if (process.defaultApp) {
+	if (process.argv.length >= 2) {
+		app.setAsDefaultProtocolClient("simple-mod-framework", process.execPath, [path.resolve(process.argv[1])])
 	}
-})
-app.on("window-all-closed", () => {
-	if (process.platform !== "darwin") app.quit()
-})
+} else {
+	app.setAsDefaultProtocolClient("simple-mod-framework")
+}
+
+const lock = app.requestSingleInstanceLock()
+
+if (!lock) {
+	app.quit()
+} else {
+	app.on("second-instance", (event, commandLine, workingDirectory) => {
+		if (mainWindow) {
+			if (mainWindow.isMinimized()) mainWindow.restore()
+			mainWindow.focus()
+		}
+
+		if (commandLine[commandLine.length - 1] && commandLine[commandLine.length - 1].startsWith("simple-mod-framework://")) {
+			mainWindow.webContents.send("urlScheme", commandLine.pop().replace("simple-mod-framework://", ""))
+		}
+	})
+
+	contextMenu({
+		showLookUpSelection: false,
+		showSearchWithGoogle: false,
+		showCopyImage: false
+	})
+
+	app.once("ready", createMainWindow)
+	app.on("activate", () => {
+		if (!mainWindow) {
+			createMainWindow()
+		}
+	})
+	app.on("window-all-closed", () => {
+		if (process.platform !== "darwin") app.quit()
+	})
+}
 
 ipcMain.on("deploy", () => {
 	let deployProcess = require("child_process").spawn("Deploy.exe --doNotPause --colors", ["--doNotPause --colors"], {
