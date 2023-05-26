@@ -14,6 +14,8 @@
 	window.ipc.receive("urlScheme", async (path: string) => {
 		if (path.startsWith("install/")) {
 			window.location.href = "/modList?urlScheme=" + encodeURIComponent(path.replace("install/", ""))
+		} else if (path.startsWith("open-docs-page/")) {
+			window.location.href = "/docs/" + path.replace("open-docs-page/", "")
 		}
 	})
 </script>

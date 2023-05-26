@@ -306,7 +306,7 @@
 						let currentSection = ""
 						for (const item of allNewReleases) {
 							for (const line of item.split("\n")) {
-								if (line.trim() !== "") {
+								if (line.trim() !== "" && !line.includes("hitman-resources.netlify.app/smf-install-link")) {
 									if (line.trim().startsWith("##")) {
 										sections[line.trim()] ??= []
 										currentSection = line.trim()
