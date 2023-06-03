@@ -482,7 +482,7 @@
 					{/if}
 				{:else}
 					<div class="flex items-center">
-						<p class="flex-grow">Up to date (version {FrameworkVersion})</p>
+						<p class="flex-grow">The framework is up to date (version {FrameworkVersion})</p>
 						<Checkmark />
 					</div>
 				{/if}

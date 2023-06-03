@@ -346,7 +346,7 @@ export default async function discover(): Promise<{ [x: string]: { hash: string;
 								affected.push(normaliseToHash(entityContent.hash))
 								break
 							default: // Replaces a file with a raw file
-								if (path.basename(contentFilePath).split(".").slice(1).join(".").length === 4) {
+								if (path.basename(contentFilePath).split(".").slice(1).join(".").length === 4 || path.basename(contentFilePath).split(".").slice(1).join(".").endsWith("meta") || path.basename(contentFilePath).split(".").slice(1).join(".").endsWith("meta.json")) {
 									fileToReplace = path.basename(contentFilePath).split(".")[0]
 
 									if (baseGameEntityHashes.has(fileToReplace)) {

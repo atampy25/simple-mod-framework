@@ -1651,7 +1651,8 @@ export default async function deploy(
 				default: // Copy the file to the staging directory; we don't cache these for obvious reasons
 					if (
 						(content.source === "disk" ? path.basename(content.path).split(".").slice(1).join(".") : content.extraInformation.fileType!).length === 4 ||
-						(content.source === "disk" ? path.basename(content.path).split(".").slice(1).join(".") : content.extraInformation.fileType!).endsWith("meta")
+						(content.source === "disk" ? path.basename(content.path).split(".").slice(1).join(".") : content.extraInformation.fileType!).endsWith("meta") ||
+						(content.source === "disk" ? path.basename(content.path).split(".").slice(1).join(".") : content.extraInformation.fileType!).endsWith("meta.json")
 					) {
 						fs.writeFileSync(
 							content.source === "disk"
