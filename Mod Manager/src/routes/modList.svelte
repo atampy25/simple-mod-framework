@@ -134,6 +134,16 @@
 
 	async function addMod() {
 		if (modFilePath.endsWith(".rpkg")) {
+			let result = [...modFilePath.matchAll(/(chunk[0-9]*(?:patch.*)?)\.rpkg/g)]
+			result = [...result[result.length - 1][result[result.length - 1].length - 1].matchAll(/(chunk[0-9]*)/g)]
+			let chunk = result[result.length - 1][result[result.length - 1].length - 1]
+
+			if (!chunk) {
+				chunk = "chunk0"
+			}
+			
+			rpkgsToInstall = [{ path: modFilePath, chunk }]
+
 			modNameInputModalOpen = true
 		} else {
 			window.fs.emptyDirSync("./staging")
