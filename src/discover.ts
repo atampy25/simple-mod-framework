@@ -32,7 +32,15 @@ export default async function discover(): Promise<{ [x: string]: { hash: string;
 	// All base game TEMP and TBLU hashes
 	const baseGameEntityHashes = new Set(
 		fs
-			.readFileSync(path.join(process.cwd(), "Third-Party", "baseGameHashes.txt"), "utf8")
+			.readFileSync(path.join(process.cwd(), "Third-Party", "baseGameEntities.txt"), "utf8")
+			.split("\n")
+			.map((a) => a.trim())
+	)
+
+	// All base game WWEV hashes
+	const baseGameSoundbankHashes = new Set(
+		fs
+			.readFileSync(path.join(process.cwd(), "Third-Party", "baseGameSoundbanks.txt"), "utf8")
 			.split("\n")
 			.map((a) => a.trim())
 	)
@@ -367,7 +375,7 @@ export default async function discover(): Promise<{ [x: string]: { hash: string;
 										)
 									}
 
-									if (path.basename(contentFilePath).split(".")[1] === "WWEV") {
+									if (baseGameSoundbankHashes.has(fileToReplace)) {
 										await logger.warn(
 											`Mod ${manifest.name} replaces a sound bank file in its entirety. This can cause compatibility issues, it makes the mod harder to work with and it can require more work when the game updates. Mod developers can fix this easily by using an sfx.wem file.`
 										)
