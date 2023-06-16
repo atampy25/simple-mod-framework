@@ -2494,20 +2494,26 @@ export default async function deploy(
 	})
 	configureSentryScope(sentryPackagedefPatchingTransaction)
 
+	await logger.verbose("Emptying temp directory")
 	fs.emptyDirSync(path.join(process.cwd(), "temp"))
 
 	if (!fs.existsSync(path.join(process.cwd(), "cleanPackageDefinition.txt"))) {
 		// If there is no clean PD, copy the one from Runtime
+		await logger.verbose("Copying clean packagedefinition")
 		fs.copyFileSync(path.join(config.runtimePath, "packagedefinition.txt"), path.join(process.cwd(), "cleanPackageDefinition.txt"))
 	}
 
 	execCommand(`"Third-Party\\h6xtea.exe" -d --src "${path.join(config.runtimePath, "packagedefinition.txt")}" --dst "${path.join(process.cwd(), "temp", "packagedefinitionVersionCheck.txt")}"`)
 	if (!fs.readFileSync(path.join(process.cwd(), "temp", "packagedefinitionVersionCheck.txt")).includes("patchlevel=310")) {
 		// Check if Runtime PD is unmodded and if so overwrite current "clean" version
+		await logger.verbose("Overwriting clean packagedefinition")
 		fs.copyFileSync(path.join(config.runtimePath, "packagedefinition.txt"), path.join(process.cwd(), "cleanPackageDefinition.txt"))
 	}
 
-	execCommand(`"Third-Party\\h6xtea.exe" -d --src "${path.join(process.cwd(), "cleanPackageDefinition.txt")}" --dst "${path.join(process.cwd(), "temp", "packagedefinition.txt.decrypted")}"`) // Decrypt PD
+	// Decrypt PD
+	execCommand(`"Third-Party\\h6xtea.exe" -d --src "${path.join(process.cwd(), "cleanPackageDefinition.txt")}" --dst "${path.join(process.cwd(), "temp", "packagedefinition.txt.decrypted")}"`)
+
+	await logger.verbose("Reading packagedefinition")
 	let packagedefinitionContent = fs
 		.readFileSync(path.join(process.cwd(), "temp", "packagedefinition.txt.decrypted"), "utf8")
 		.split(/\r?\n/)
@@ -2516,6 +2522,7 @@ export default async function deploy(
 
 	for (const brick of packagedefinition) {
 		// Apply all PD changes
+		await logger.verbose(`Applying packagedefinition change ${JSON.stringify(brick)}`)
 		switch (brick.type) {
 			case "partition":
 				packagedefinitionContent += "\r\n"
@@ -2538,7 +2545,11 @@ export default async function deploy(
 		}
 	}
 
-	fs.writeFileSync(path.join(process.cwd(), "temp", "packagedefinition.txt.decrypted"), `${packagedefinitionContent}\r\n\r\n\r\n\r\n`) // Add blank lines to ensure correct encryption (XTEA uses blocks of 8 bytes)
+	await logger.verbose("Writing new packagedefinition")
+
+	// Add blank lines to ensure correct encryption (XTEA uses blocks of 8 bytes)
+	fs.writeFileSync(path.join(process.cwd(), "temp", "packagedefinition.txt.decrypted"), `${packagedefinitionContent}\r\n\r\n\r\n\r\n`)
+
 	execCommand(
 		`"Third-Party\\h6xtea.exe" -e --src "${path.join(process.cwd(), "temp", "packagedefinition.txt.decrypted")}" --dst "${path.join(
 			process.cwd(),
@@ -2546,6 +2557,8 @@ export default async function deploy(
 			"packagedefinition.txt.decrypted.encrypted"
 		)}"`
 	) // Encrypt PD
+
+	await logger.verbose("Copying new packagedefinition to output")
 
 	fs.copyFileSync(
 		path.join(process.cwd(), "temp", "packagedefinition.txt.decrypted.encrypted"),

@@ -50,19 +50,32 @@ if (typeof config.developerMode === "undefined") {
 config.runtimePath = path.resolve(process.cwd(), config.runtimePath)
 config.retailPath = path.resolve(process.cwd(), config.retailPath)
 
+let deployLog = ""
+
 const logger = args["--useConsoleLogging"]
 	? {
-			verbose: async (text: string, mod?: string) => {},
+			verbose: async (text: string, mod?: string) => {
+				deployLog += `\nDETAIL\t${mod || "Deploy"}\t${text}`
+				fs.writeFileSync(path.join(process.cwd(), "Deploy.log"), deployLog)
+			},
 			debug: async (text: string, mod?: string) => {
+				deployLog += `\nDEBUG\t${mod || "Deploy"}\t${text}`
+				fs.writeFileSync(path.join(process.cwd(), "Deploy.log"), deployLog)
 				console.debug("DEBUG", ...(mod ? [mod, text] : [text]))
 			},
 			info: async (text: string, mod?: string) => {
+				deployLog += `\nINFO\t${mod || "Deploy"}\t${text}`
+				fs.writeFileSync(path.join(process.cwd(), "Deploy.log"), deployLog)
 				console.info("INFO", ...(mod ? [mod, text] : [text]))
 			},
 			warn: async (text: string, mod?: string) => {
+				deployLog += `\nWARN\t${mod || "Deploy"}\t${text}`
+				fs.writeFileSync(path.join(process.cwd(), "Deploy.log"), deployLog)
 				console.warn("WARN", ...(mod ? [mod, text] : [text]))
 			},
 			error: async function (text: string, exitAfter = true, mod?: string) {
+				deployLog += `\nERROR\t${mod || "Deploy"}\t${text}`
+				fs.writeFileSync(path.join(process.cwd(), "Deploy.log"), deployLog)
 				console.log("ERROR", ...(mod ? [mod, text] : [text]))
 
 				if (mod) {
@@ -95,6 +108,9 @@ const logger = args["--useConsoleLogging"]
 	  }
 	: {
 			verbose: async function (text: string, mod?: string) {
+				deployLog += `\nDETAIL\t${mod || "Deploy"}\t${text}`
+				fs.writeFileSync(path.join(process.cwd(), "Deploy.log"), deployLog)
+				
 				if (args["--logLevel"]!.includes("verbose")) {
 					process.stdout.write(chalk(Object.assign([], { raw: [`{grey DETAIL${mod ? `\t${mod}` : ""}\t${text.replace(/\\/gi, "\\\\")}}\n`] })))
 
@@ -109,6 +125,9 @@ const logger = args["--useConsoleLogging"]
 			},
 
 			debug: async function (text: string, mod?: string) {
+				deployLog += `\nDEBUG\t${mod || "Deploy"}\t${text}`
+				fs.writeFileSync(path.join(process.cwd(), "Deploy.log"), deployLog)
+
 				if (args["--logLevel"]!.includes("debug")) {
 					process.stdout.write(chalk(Object.assign([], { raw: [`{grey DEBUG${mod ? `\t${mod}` : ""}\t${text.replace(/\\/gi, "\\\\")}}\n`] })))
 
@@ -123,6 +142,9 @@ const logger = args["--useConsoleLogging"]
 			},
 
 			info: async function (text: string, mod?: string) {
+				deployLog += `\nINFO\t${mod || "Deploy"}\t${text}`
+				fs.writeFileSync(path.join(process.cwd(), "Deploy.log"), deployLog)
+
 				if (args["--logLevel"]!.includes("info")) {
 					process.stdout.write(chalk(Object.assign([], { raw: [`{blue INFO}${mod ? `\t{magenta ${mod}}` : ""}\t${text.replace(/\\/gi, "\\\\")}\n`] })))
 
@@ -137,6 +159,9 @@ const logger = args["--useConsoleLogging"]
 			},
 
 			warn: async function (text: string, mod?: string) {
+				deployLog += `\nWARN\t${mod || "Deploy"}\t${text}`
+				fs.writeFileSync(path.join(process.cwd(), "Deploy.log"), deployLog)
+
 				if (args["--logLevel"]!.includes("warn")) {
 					process.stdout.write(chalk(Object.assign([], { raw: [`{yellow WARN}${mod ? `\t{magenta ${mod}}` : ""}\t${text.replace(/\\/gi, "\\\\")}\n`] })))
 
@@ -151,6 +176,9 @@ const logger = args["--useConsoleLogging"]
 			},
 
 			error: async function (text: string, exitAfter = true, mod?: string) {
+				deployLog += `\nERROR\t${mod || "Deploy"}\t${text}`
+				fs.writeFileSync(path.join(process.cwd(), "Deploy.log"), deployLog)
+
 				if (args["--logLevel"]!.includes("error")) {
 					process.stderr.write(chalk(Object.assign([], { raw: [`{red ERROR}${mod ? `\t{magenta ${mod}}` : ""}\t${text.replace(/\\/gi, "\\\\")}\n`] })))
 
