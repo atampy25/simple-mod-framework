@@ -545,7 +545,7 @@
 				.map((a) => a.trim())
 				.filter((a) => a.length)
 				.at(-1)
-				.match(/\tDone in .*/) && !deployOutput.split(/\r?\n/).some((a) => a.startsWith("WARN"))}
+				.match(/\tDone in .*/) && !deployOutput.split(/\r?\n/).some((a) => a.match(/.*WARN.*?\t/))}
 				<Button kind="primary" icon={Close} on:click={() => (frameworkDeployModalOpen = false)}>Close</Button>
 				<span class="text-green-300">Deploy successful</span>
 			{:else if deployOutput
@@ -553,7 +553,7 @@
 				.map((a) => a.trim())
 				.filter((a) => a.length)
 				.at(-1)
-				.match(/\tDone in .*/) && deployOutput.split(/\r?\n/).some((a) => a.startsWith("WARN"))}
+				.match(/\tDone in .*/) && deployOutput.split(/\r?\n/).some((a) => a.match(/.*WARN.*?\t/))}
 				<Button kind="primary" icon={Close} on:click={() => (frameworkDeployModalOpen = false)}>Close</Button>
 				<span class="text-yellow-300">Potential issues in deployment</span>
 			{:else}
@@ -567,7 +567,7 @@
 							headers: {
 								"Content-Type": "application/json"
 							},
-							body: JSON.stringify({ content: "Config:\n" + JSON.stringify(getConfig()) + "\n\nDeploy log:\n" + deployOutput })
+							body: JSON.stringify({ content: "Config:\n" + JSON.stringify(getConfig()) + "\n\nDeploy log:\n" + window.fs.readFileSync("../Deploy.log", "utf8") })
 						})
 
 						if (req.status == 200) {
