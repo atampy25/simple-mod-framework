@@ -1,4 +1,3 @@
-import * as LosslessJSON from "lossless-json"
 import * as ts from "./typescript"
 
 import { FrameworkVersion, config, logger, rpkgInstance } from "./core-singleton"
@@ -14,7 +13,7 @@ import semver from "semver"
 import { xxhash3 } from "hash-wasm"
 import { ModuleKind, ScriptTarget } from "typescript"
 import { compileExpression, useDotAccessOperatorAndOptionalChaining } from "filtrex"
-import { normaliseToHash } from "./utils"
+import { fastParse, normaliseToHash } from "./utils"
 
 const deepMerge = function (x: any, y: any) {
 	return mergeWith(x, y, (orig, src) => {
@@ -105,7 +104,7 @@ export default async function discover(): Promise<{ [x: string]: { hash: string;
 
 			await logger.verbose("Validating manifest")
 
-			for (const key of ["id", "name", "description", "authors", "version", "frameworkVersion"]) {
+			for (const key of ["id", "name", "description", "authors", "version", "frameworkVersion"] as const) {
 				if (typeof manifest[key] === "undefined") {
 					await logger.error(`Mod ${manifest.name} is missing required manifest field "${key}"!`)
 				}
@@ -262,39 +261,19 @@ export default async function discover(): Promise<{ [x: string]: { hash: string;
 						let fileToReplace
 						switch (path.basename(contentFilePath).split(".").slice(1).join(".")) {
 							case "entity.json": // Edits the given entity; doesn't depend on anything
-								entityContent = LosslessJSON.parse(fs.readFileSync(contentFilePath, "utf8"))
+								entityContent = fastParse(fs.readFileSync(contentFilePath, "utf8"))
 
-								if (+entityContent.quickEntityVersion < 3) {
-									await logger.info(
-										`Mod ${manifest.name} uses a version of QuickEntity prior to 3.0 in ${path.basename(
-											contentFilePath
-										)}. This makes deployment of this file significantly slower. Mod developers can fix this easily by using an automatic updater available at the QuickEntity GitHub releases.`
-									)
+								if (+entityContent.quickEntityVersion < 3.1) {
+									await logger.error(`Mod ${manifest.name} uses a version of QuickEntity prior to 3.1 in ${path.basename(contentFilePath)}. This is not supported.`)
 								}
 
 								affected.push(entityContent.tempHash, entityContent.tbluHash)
 								break
 							case "entity.patch.json": // Depends on and edits the patched entity
-								entityContent = LosslessJSON.parse(fs.readFileSync(contentFilePath, "utf8"))
+								entityContent = fastParse(fs.readFileSync(contentFilePath, "utf8"))
 
-								if (entityContent.tempHash === "004F945201F83AB1" && +entityContent.patchVersion < 5) {
-									await logger.error(
-										`Mod ${manifest.name} uses a version of QuickEntity prior to 3.0 in a patch to Dartmoor's scenario. This causes noticeable issues with entity positioning and rotation, one of which is the bushes in Dartmoor. This can be fixed easily by the mod's developer by using an automatic updater available at the QuickEntity Github releases.`
-									)
-								}
-
-								if (+entityContent.patchVersion < 5) {
-									await logger.info(
-										`Mod ${manifest.name} uses a version of QuickEntity prior to 3.0 in ${path.basename(
-											contentFilePath
-										)}. This makes deployment of this file significantly slower. Mod developers can fix this easily by using an automatic updater available at the QuickEntity GitHub releases.`
-									)
-								} else if (+entityContent.patchVersion < 6) {
-									await logger.info(
-										`Mod ${manifest.name} uses a QuickEntity 3.0 patch in ${path.basename(
-											contentFilePath
-										)}. This is acceptable in most cases but can cause compatibility issues. Mod developers can fix this easily by using an automatic updater available at the QuickEntity GitHub releases.`
-									)
+								if (+entityContent.patchVersion < 6) {
+									await logger.info(`Mod ${manifest.name} uses a patch version prior to QuickEntity 3.1 in ${path.basename(contentFilePath)}. This is not supported.`)
 								}
 
 								dependencies.push(entityContent.tempHash, entityContent.tbluHash)
@@ -309,7 +288,7 @@ export default async function discover(): Promise<{ [x: string]: { hash: string;
 								affected.push("00204D1AFD76AB13")
 								break
 							case "contract.json": // Edits the contract, depends on and edits the contracts ORES
-								entityContent = LosslessJSON.parse(fs.readFileSync(contentFilePath, "utf8"))
+								entityContent = JSON.parse(fs.readFileSync(contentFilePath, "utf8"))
 
 								affected.push(`00${(await md5(`smfContract${entityContent.Metadata.Id}`.toLowerCase())).slice(2, 16).toUpperCase()}`)
 
@@ -317,13 +296,13 @@ export default async function discover(): Promise<{ [x: string]: { hash: string;
 								affected.push("002B07020D21D727")
 								break
 							case "JSON.patch.json": // Depends on and edits the patched file
-								entityContent = LosslessJSON.parse(fs.readFileSync(contentFilePath, "utf8"))
+								entityContent = JSON.parse(fs.readFileSync(contentFilePath, "utf8"))
 
 								dependencies.push(entityContent.file)
 								affected.push(entityContent.file)
 								break
 							case "material.json": // Depends on nothing, edits several files depending on contents
-								entityContent = LosslessJSON.parse(fs.readFileSync(contentFilePath, "utf8"))
+								entityContent = JSON.parse(fs.readFileSync(contentFilePath, "utf8"))
 
 								if (entityContent.MATI !== "") {
 									affected.push(entityContent.MATI.includes(":") ? `00${(await md5(entityContent.MATI.toLowerCase())).slice(2, 16).toUpperCase()}` : entityContent.MATI)
@@ -349,12 +328,16 @@ export default async function discover(): Promise<{ [x: string]: { hash: string;
 							case "rtlv.json":
 							// Depends on nothing, edits the RTLV file
 							case "locr.json": // Depends on nothing, edits the LOCR file
-								entityContent = LosslessJSON.parse(fs.readFileSync(contentFilePath, "utf8"))
+								entityContent = JSON.parse(fs.readFileSync(contentFilePath, "utf8"))
 
 								affected.push(normaliseToHash(entityContent.hash))
 								break
 							default: // Replaces a file with a raw file
-								if (path.basename(contentFilePath).split(".").slice(1).join(".").length === 4 || path.basename(contentFilePath).split(".").slice(1).join(".").endsWith("meta") || path.basename(contentFilePath).split(".").slice(1).join(".").endsWith("meta.json")) {
+								if (
+									path.basename(contentFilePath).split(".").slice(1).join(".").length === 4 ||
+									path.basename(contentFilePath).split(".").slice(1).join(".").endsWith("meta") ||
+									path.basename(contentFilePath).split(".").slice(1).join(".").endsWith("meta.json")
+								) {
 									fileToReplace = path.basename(contentFilePath).split(".")[0]
 
 									if (baseGameEntityHashes.has(fileToReplace)) {
@@ -432,12 +415,8 @@ export default async function discover(): Promise<{ [x: string]: { hash: string;
 
 			/* ---------------------------------------- Localisation ---------------------------------------- */
 			if (manifest.localisation) {
-				for (const language of Object.keys(manifest.localisation)) {
-					for (const string of Object.entries(manifest.localisation[language])) {
-						manifestDependencies.push("00F5817876E691F1")
-						manifestAffected.push("00F5817876E691F1")
-					}
-				}
+				manifestDependencies.push("00F5817876E691F1")
+				manifestAffected.push("00F5817876E691F1")
 			}
 
 			if (manifest.localisationOverrides) {

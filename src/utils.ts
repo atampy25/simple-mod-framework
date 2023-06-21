@@ -1,38 +1,55 @@
+import * as LosslessJSON from "lossless-json"
+
 import { config, logger, rpkgInstance } from "./core-singleton"
 
+import Decimal from "decimal.js"
 import { freeDiskSpace } from "./smf-rust"
 import fs from "fs-extra"
 import md5 from "md5"
 import path from "path"
 
 const QuickEntity = {
-	"0.1": require("./quickentity1136"),
-	"2.0": require("./quickentity20"),
-	"2.1": require("./quickentity"),
-	"3.0": require("./quickentity-3"),
 	"3.1": require("./quickentity-rs"),
 
 	"999.999": require("./quickentity-rs")
 } as {
 	[k: string]: {
-		convert: (game: string, TEMP: string, TEMPmeta: string, TBLU: string, TBLUmeta: string, output: string) => Promise<void>
-		generate: (game: string, input: string, TEMP: string, TEMPmeta: string, TBLU: string, TBLUmeta: string) => Promise<void>
+		convert: (TEMP: string, TEMPmeta: string, TBLU: string, TBLUmeta: string, output: string) => Promise<void>
+		generate: (input: string, TEMP: string, TEMPmeta: string, TBLU: string, TBLUmeta: string) => Promise<void>
+		convertPatchGenerate: (
+			inTEMP: string,
+			inTEMPmeta: string,
+			inTBLU: string,
+			inTBLUmeta: string,
+			patches: string[],
+			outTEMP: string,
+			outTEMPmeta: string,
+			outTBLU: string,
+			outTBLUmeta: string
+		) => Promise<void>
 		applyPatchJSON: (original: string, patch: string, output: string) => Promise<void>
 	}
 }
 
 const QuickEntityPatch = {
-	"0": require("./quickentity1136"),
-	"3": require("./quickentity20"),
-	"4": require("./quickentity"),
-	"5": require("./quickentity-3"),
 	"6": require("./quickentity-rs"),
 
 	"999": require("./quickentity-rs")
 } as {
 	[k: string]: {
-		convert: (game: string, TEMP: string, TEMPmeta: string, TBLU: string, TBLUmeta: string, output: string) => Promise<void>
-		generate: (game: string, input: string, TEMP: string, TEMPmeta: string, TBLU: string, TBLUmeta: string) => Promise<void>
+		convert: (TEMP: string, TEMPmeta: string, TBLU: string, TBLUmeta: string, output: string) => Promise<void>
+		generate: (input: string, TEMP: string, TEMPmeta: string, TBLU: string, TBLUmeta: string) => Promise<void>
+		convertPatchGenerate: (
+			inTEMP: string,
+			inTEMPmeta: string,
+			inTBLU: string,
+			inTBLUmeta: string,
+			patches: string[],
+			outTEMP: string,
+			outTEMPmeta: string,
+			outTBLU: string,
+			outTBLUmeta: string
+		) => Promise<void>
 		applyPatchJSON: (original: string, patch: string, output: string) => Promise<void>
 	}
 }
@@ -123,4 +140,15 @@ export function isValidHash(hash: string) {
 
 export function normaliseToHash(hashOrPath: string) {
 	return isValidHash(hashOrPath) ? hashOrPath : `00${md5(hashOrPath.toLowerCase()).slice(2, 16).toUpperCase()}`
+}
+
+export function fastParse(data: string) {
+	// eslint-disable-next-line no-control-regex
+	return JSON.parse(String(data).replace(/(\\(?:["\\bfnrt]|u[0-9a-fA-F])|[^\u0000-\u001F\\])": ?([-+Ee0-9.]+)/g, '$1":"\uE000$2"'), (_, value) =>
+		typeof value === "string" && value.startsWith("\uE000") ? new Decimal(value.slice(1)) : value
+	)
+}
+
+export function stringify(data: any): string {
+	return LosslessJSON.stringify(data, (_, value) => (value instanceof Decimal ? new LosslessJSON.LosslessNumber(value.toString()) : value))
 }

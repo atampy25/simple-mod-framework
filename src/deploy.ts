@@ -1,4 +1,3 @@
-import * as LosslessJSON from "lossless-json"
 import * as rfc6902 from "rfc6902"
 import * as rust_utils from "./smf-rust"
 import * as ts from "./typescript"
@@ -7,7 +6,7 @@ import type { DeployInstruction, HMLanguageToolsLOCR, Manifest, ManifestOptionDa
 import { ModuleKind, ScriptTarget } from "typescript"
 import { compileExpression, useDotAccessOperatorAndOptionalChaining } from "filtrex"
 import { config, logger, rpkgInstance } from "./core-singleton"
-import { copyFromCache, copyToCache, extractOrCopyToTemp, getQuickEntityFromPatchVersion, getQuickEntityFromVersion, hexflip, normaliseToHash } from "./utils"
+import { copyFromCache, copyToCache, extractOrCopyToTemp, fastParse, getQuickEntityFromPatchVersion, getQuickEntityFromVersion, hexflip, normaliseToHash, stringify } from "./utils"
 
 import { OptionType } from "./types"
 import Piscina from "piscina"
@@ -672,11 +671,11 @@ export default async function deploy(
 				case "entity.json": {
 					await logger.debug(`Converting entity ${contentIdentifier}`)
 
-					entityContent = LosslessJSON.parse(String(content.source === "disk" ? fs.readFileSync(content.path) : await content.content.text()))
+					entityContent = fastParse(content.source === "disk" ? fs.readFileSync(content.path, "utf8") : await content.content.text())
 
 					try {
-						if (!getQuickEntityFromVersion(entityContent.quickEntityVersion.value)) {
-							await logger.error(`Could not find matching QuickEntity version for ${Number(entityContent.quickEntityVersion.value)}!`)
+						if (!getQuickEntityFromVersion(entityContent.quickEntityVersion.toString())) {
+							await logger.error(`Could not find matching QuickEntity version for ${entityContent.quickEntityVersion.toString()}!`)
 						}
 					} catch {
 						await logger.error("Improper QuickEntity JSON; couldn't find the version!")
@@ -684,112 +683,6 @@ export default async function deploy(
 
 					RPKGHashCache[entityContent.tempHash] = [`chunk${content.chunk}`, true]
 					RPKGHashCache[entityContent.tbluHash] = [`chunk${content.chunk}`, true]
-
-					if (+entityContent.quickEntityVersion.value < 3) {
-						if (content.source === "disk") {
-							await logger.info(`Optimising entity.json file ${contentIdentifier}`)
-
-							fs.ensureDirSync(path.join(process.cwd(), "qn-update"))
-
-							const comments = Object.entries(entityContent.entities).filter((a) => (a[1] as { type: string | undefined }).type === "comment")
-
-							await getQuickEntityFromVersion(entityContent.quickEntityVersion.value).generate(
-								"HM3",
-								content.path,
-								path.join(process.cwd(), "qn-update", "temp.json"),
-								path.join(process.cwd(), "qn-update", "temp.meta.json"),
-								path.join(process.cwd(), "qn-update", "tblu.json"),
-								path.join(process.cwd(), "qn-update", "tblu.meta.json")
-							)
-
-							await getQuickEntityFromVersion("3.1").convert(
-								"HM3",
-								path.join(process.cwd(), "qn-update", "temp.json"),
-								path.join(process.cwd(), "qn-update", "temp.meta.json"),
-								path.join(process.cwd(), "qn-update", "tblu.json"),
-								path.join(process.cwd(), "qn-update", "tblu.meta.json"),
-								content.path
-							)
-
-							fs.writeFileSync(
-								content.path,
-								LosslessJSON.stringify(
-									Object.assign(LosslessJSON.parse(fs.readFileSync(content.path, "utf8")), {
-										comments: comments.map((a: [string, { parent: string; name: string; text: string }]) => {
-											return {
-												parent: a[1].parent,
-												name: a[1].name,
-												text: a[1].text
-											}
-										})
-									})
-								)
-							)
-
-							fs.removeSync(path.join(process.cwd(), "qn-update"))
-
-							entityContent = LosslessJSON.parse(fs.readFileSync(content.path, "utf8"))
-
-							if (!config.developerMode) {
-								await logger.warn(
-									`Optimised an entity.json file from ${instruction.id}. This should improve the speed of deploys from now on. Consider contacting the mod developer to run this process on their end rather than the user's computer.`
-								)
-							} else {
-								await logger.warn(`Automatically upgraded an entity.json file from ${instruction.id} to the latest QuickEntity version.`)
-							}
-						} else {
-							await logger.warn(`Mod ${instruction.id} emits a virtual QuickEntity JSON with a version less than 3.1 using scripting. This should not be the case.`)
-						}
-					} else if (+entityContent.quickEntityVersion.value < 3.1) {
-						if (content.source === "disk") {
-							await logger.info(`Optimising entity.json file ${contentIdentifier}`)
-
-							fs.ensureDirSync(path.join(process.cwd(), "qn-update"))
-
-							const comments = entityContent.comments
-
-							await getQuickEntityFromVersion(entityContent.quickEntityVersion.value).generate(
-								"HM3",
-								content.path,
-								path.join(process.cwd(), "qn-update", "temp.json"),
-								path.join(process.cwd(), "qn-update", "temp.meta.json"),
-								path.join(process.cwd(), "qn-update", "tblu.json"),
-								path.join(process.cwd(), "qn-update", "tblu.meta.json")
-							)
-
-							await getQuickEntityFromVersion("3.1").convert(
-								"HM3",
-								path.join(process.cwd(), "qn-update", "temp.json"),
-								path.join(process.cwd(), "qn-update", "temp.meta.json"),
-								path.join(process.cwd(), "qn-update", "tblu.json"),
-								path.join(process.cwd(), "qn-update", "tblu.meta.json"),
-								content.path
-							)
-
-							fs.writeFileSync(
-								content.path,
-								LosslessJSON.stringify(
-									Object.assign(LosslessJSON.parse(fs.readFileSync(content.path, "utf8")), {
-										comments
-									})
-								)
-							)
-
-							fs.removeSync(path.join(process.cwd(), "qn-update"))
-
-							entityContent = LosslessJSON.parse(fs.readFileSync(content.path, "utf8"))
-
-							if (!config.developerMode) {
-								await logger.warn(
-									`Optimised an entity.json file from ${instruction.id}. This should improve the speed of deploys from now on. Consider contacting the mod developer to run this process on their end rather than the user's computer.`
-								)
-							} else {
-								await logger.warn(`Automatically upgraded an entity.json file from ${instruction.id} to the latest QuickEntity version.`)
-							}
-						} else {
-							await logger.warn(`Mod ${instruction.id} emits a virtual QuickEntity JSON with a version less than 3.1 using scripting. This should not be the case.`)
-						}
-					}
 
 					await logger.verbose("Cache check")
 					if (
@@ -813,8 +706,7 @@ export default async function deploy(
 						try {
 							await logger.verbose("QN generate")
 
-							await getQuickEntityFromVersion(entityContent.quickEntityVersion.value).generate(
-								"HM3",
+							await getQuickEntityFromVersion(entityContent.quickEntityVersion.toString()).generate(
 								contentPath,
 								path.join(process.cwd(), "temp", "temp.TEMP.json"),
 								path.join(process.cwd(), "temp", `${entityContent.tempHash}.TEMP.meta.json`),
@@ -872,137 +764,11 @@ export default async function deploy(
 				case "entity.patch.json": {
 					await logger.debug(`Preparing to apply patch ${contentIdentifier}`)
 
-					entityContent = content.source === "disk" ? LosslessJSON.parse(fs.readFileSync(content.path, "utf8")) : LosslessJSON.parse(await content.content.text())
+					entityContent = fastParse(content.source === "disk" ? fs.readFileSync(content.path, "utf8") : await content.content.text())
 					entityContent.path = contentIdentifier
 
-					if (+entityContent.patchVersion.value < 6) {
-						if (content.source === "disk") {
-							await logger.info(`Optimising entity.patch.json file ${contentIdentifier}`)
-
-							const tempRPKG = await rpkgInstance.getRPKGOfHash(entityContent.tempHash)
-							const tbluRPKG = await rpkgInstance.getRPKGOfHash(entityContent.tbluHash)
-
-							fs.ensureDirSync("qn-update")
-
-							await callRPKGFunction(`-extract_from_rpkg "${path.join(config.runtimePath, `${tempRPKG}.rpkg`)}" -filter "${entityContent.tempHash}" -output_path "qn-update"`)
-							await callRPKGFunction(`-extract_from_rpkg "${path.join(config.runtimePath, `${tbluRPKG}.rpkg`)}" -filter "${entityContent.tbluHash}" -output_path "qn-update"`)
-
-							await Promise.all([
-								execCommand(
-									`"${path.join(process.cwd(), "Third-Party", "ResourceTool.exe")}" HM3 convert TEMP "${path.join(
-										process.cwd(),
-										"qn-update",
-										tempRPKG,
-										"TEMP",
-										`${entityContent.tempHash}.TEMP`
-									)}" "${path.join(process.cwd(), "qn-update", tempRPKG, "TEMP", `${entityContent.tempHash}.TEMP`)}.json" --simple`
-								),
-								execCommand(
-									`"${path.join(process.cwd(), "Third-Party", "ResourceTool.exe")}" HM3 convert TBLU "${path.join(
-										process.cwd(),
-										"qn-update",
-										tbluRPKG,
-										"TBLU",
-										`${entityContent.tbluHash}.TBLU`
-									)}" "${path.join(process.cwd(), "qn-update", tbluRPKG, "TBLU", `${entityContent.tbluHash}.TBLU`)}.json" --simple`
-								)
-							])
-
-							await callRPKGFunction(`-hash_meta_to_json "${path.join(process.cwd(), "qn-update", tempRPKG, "TEMP", `${entityContent.tempHash}.TEMP.meta`)}"`)
-							await callRPKGFunction(`-hash_meta_to_json "${path.join(process.cwd(), "qn-update", tbluRPKG, "TBLU", `${entityContent.tbluHash}.TBLU.meta`)}"`)
-
-							if (+entityContent.patchVersion.value < 3) {
-								await getQuickEntityFromPatchVersion(entityContent.patchVersion.value).convert(
-									"HM3",
-									"ids",
-									path.join(process.cwd(), "qn-update", tempRPKG, "TEMP", `${entityContent.tempHash}.TEMP.json`),
-									path.join(process.cwd(), "qn-update", tempRPKG, "TEMP", `${entityContent.tempHash}.TEMP.meta.JSON`),
-									path.join(process.cwd(), "qn-update", tbluRPKG, "TBLU", `${entityContent.tbluHash}.TBLU.json`),
-									path.join(process.cwd(), "qn-update", tbluRPKG, "TBLU", `${entityContent.tbluHash}.TBLU.meta.JSON`),
-									// @ts-expect-error Two different versions of the same function; TypeScript doesn't have a way of overloading a "type-only" function
-									path.join(process.cwd(), "qn-update", "QuickEntityJSON.json")
-								) // Generate the QN json from the RT files
-							} else {
-								await getQuickEntityFromPatchVersion(entityContent.patchVersion.value).convert(
-									"HM3",
-									path.join(process.cwd(), "qn-update", tempRPKG, "TEMP", `${entityContent.tempHash}.TEMP.json`),
-									path.join(process.cwd(), "qn-update", tempRPKG, "TEMP", `${entityContent.tempHash}.TEMP.meta.JSON`),
-									path.join(process.cwd(), "qn-update", tbluRPKG, "TBLU", `${entityContent.tbluHash}.TBLU.json`),
-									path.join(process.cwd(), "qn-update", tbluRPKG, "TBLU", `${entityContent.tbluHash}.TBLU.meta.JSON`),
-									path.join(process.cwd(), "qn-update", "QuickEntityJSON.json")
-								) // Generate the QN json from the RT files
-							}
-
-							fs.writeFileSync(path.join(process.cwd(), "qn-update", "patch.json"), LosslessJSON.stringify(entityContent))
-
-							await getQuickEntityFromPatchVersion(entityContent.patchVersion.value).applyPatchJSON(
-								path.join(process.cwd(), "qn-update", "QuickEntityJSON.json"),
-								path.join(process.cwd(), "qn-update", "patch.json"),
-								path.join(process.cwd(), "qn-update", "PatchedQuickEntityJSON.json")
-							) // Patch the QN json
-
-							await getQuickEntityFromPatchVersion(entityContent.patchVersion.value).generate(
-								"HM3",
-								path.join(process.cwd(), "qn-update", "QuickEntityJSON.json"),
-								path.join(process.cwd(), "qn-update", "temp.json"),
-								path.join(process.cwd(), "qn-update", "temp.meta.json"),
-								path.join(process.cwd(), "qn-update", "tblu.json"),
-								path.join(process.cwd(), "qn-update", "tblu.meta.json")
-							)
-
-							await getQuickEntityFromVersion("3.1").convert(
-								"HM3",
-								path.join(process.cwd(), "qn-update", "temp.json"),
-								path.join(process.cwd(), "qn-update", "temp.meta.json"),
-								path.join(process.cwd(), "qn-update", "tblu.json"),
-								path.join(process.cwd(), "qn-update", "tblu.meta.json"),
-								path.join(process.cwd(), "qn-update", "QuickEntityJSON-qn31.json")
-							)
-
-							await getQuickEntityFromPatchVersion(entityContent.patchVersion.value).generate(
-								"HM3",
-								path.join(process.cwd(), "qn-update", "PatchedQuickEntityJSON.json"),
-								path.join(process.cwd(), "qn-update", "temp.json"),
-								path.join(process.cwd(), "qn-update", "temp.meta.json"),
-								path.join(process.cwd(), "qn-update", "tblu.json"),
-								path.join(process.cwd(), "qn-update", "tblu.meta.json")
-							)
-
-							await getQuickEntityFromVersion("3.1").convert(
-								"HM3",
-								path.join(process.cwd(), "qn-update", "temp.json"),
-								path.join(process.cwd(), "qn-update", "temp.meta.json"),
-								path.join(process.cwd(), "qn-update", "tblu.json"),
-								path.join(process.cwd(), "qn-update", "tblu.meta.json"),
-								path.join(process.cwd(), "qn-update", "PatchedQuickEntityJSON-qn31.json")
-							)
-
-							// @ts-expect-error The method isn't defined on the interface but is defined in the actual shim
-							await getQuickEntityFromVersion("3.1").createPatchJSON(
-								path.join(process.cwd(), "qn-update", "QuickEntityJSON-qn31.json"),
-								path.join(process.cwd(), "qn-update", "PatchedQuickEntityJSON-qn31.json"),
-								content.path
-							)
-
-							fs.removeSync(path.join(process.cwd(), "qn-update"))
-
-							entityContent = LosslessJSON.parse(fs.readFileSync(content.path, "utf8"))
-							entityContent.path = contentIdentifier
-
-							if (!config.developerMode) {
-								await logger.warn(
-									`Optimised an entity.patch.json file from ${instruction.id}. This should improve the speed of deploys from now on. Consider contacting the mod developer to run this process on their end rather than the user's computer.`
-								)
-							} else {
-								await logger.warn(`Automatically upgraded an entity.patch.json file from ${instruction.id} to the latest QuickEntity version.`)
-							}
-						} else {
-							await logger.warn(`Mod ${instruction.id} emits a virtual QuickEntity patch JSON with a patch version less than 6 using scripting. This should not be the case.`)
-						}
-					}
-
 					if (entityPatches.some((a) => a.tempHash === entityContent.tempHash)) {
-						entityPatches.find((a) => a.tempHash === entityContent.tempHash)!.patches.push(entityContent)
+						entityPatches.find((a) => a.tempHash === entityContent.tempHash)!.patches.push(stringify(entityContent))
 					} else {
 						entityPatches.push({
 							tempHash: entityContent.tempHash,
@@ -1010,7 +776,7 @@ export default async function deploy(
 							tbluHash: entityContent.tbluHash,
 							tbluRPKG: await getRPKGOfHash(entityContent.tbluHash),
 							chunkFolder: `chunk${content.chunk}`,
-							patches: [entityContent],
+							patches: [stringify(entityContent)],
 							mod: instruction.cacheFolder
 						})
 					}
@@ -1131,7 +897,7 @@ export default async function deploy(
 				case "contract.json": {
 					await logger.debug(`Adding contract ${contentIdentifier}`)
 
-					entityContent = content.source === "disk" ? LosslessJSON.parse(fs.readFileSync(content.path, "utf8")) : LosslessJSON.parse(await content.content.text())
+					entityContent = JSON.parse(content.source === "disk" ? fs.readFileSync(content.path, "utf8") : await content.content.text())
 
 					if (entityContent.SMF) {
 						if (entityContent.SMF.destinations?.addToDestinations) {
@@ -1161,7 +927,7 @@ export default async function deploy(
 						contractHash = Object.entries(contractsORESContent).find((a) => a[1] === entityContent.Metadata.Id)![0]
 					}
 
-					fs.writeFileSync(path.join(process.cwd(), "staging", "chunk0", `${contractHash}.JSON`), LosslessJSON.stringify(entityContent)) // Write the actual contract to the staging directory
+					fs.writeFileSync(path.join(process.cwd(), "staging", "chunk0", `${contractHash}.JSON`), JSON.stringify(entityContent)) // Write the actual contract to the staging directory
 					break
 				}
 				case "JSON.patch.json": {
