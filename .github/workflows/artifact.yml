@@ -16,6 +16,12 @@ jobs:
         with:
           node-version: 18
 
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: x86_64-pc-windows-msvc
+          default: true
+
       - name: Cache
         id: cache
         uses: actions/cache@v2.1.6
@@ -37,7 +43,16 @@ jobs:
 
       - name: Prep
         run: |
-          npm install -g pkg typescript
+          npm install -g pkg typescript @napi-rs/cli
+
+      - name: Build Rust code
+        run: |
+          cd rust
+          yarn
+          yarn build
+          cd ../
+          copy ./rust/index.d.ts ./src/smf-rust.d.ts
+          copy ./rust/rust.win32-x64-msvc.node ./src/smf-rust.node
 
       - name: Build EXE
         env:
