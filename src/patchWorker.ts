@@ -1,6 +1,3 @@
-// @ts-expect-error Need to assign on global because of QuickEntity
-global.THREE = require("./three-onlymath.min")
-
 import { config, logger } from "./core-singleton"
 import { copyFromCache, copyToCache, fastParse, getQuickEntityFromPatchVersion, stringify } from "./utils"
 
