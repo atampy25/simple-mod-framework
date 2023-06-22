@@ -852,31 +852,39 @@ export default async function deploy(
 
 						await callRPKGFunction(`-hash_meta_to_json "${path.join(process.cwd(), "temp", repoRPKG, "REPO", "00204D1AFD76AB13.REPO.meta")}"`)
 						const metaContent = JSON.parse(fs.readFileSync(path.join(process.cwd(), "temp", repoRPKG, "REPO", "00204D1AFD76AB13.REPO.meta.JSON"), "utf8"))
+
+						const repoDepends = new Set(metaContent["hash_reference_data"].map((a: { hash: string }) => a.hash))
+
 						for (const repoItem of repoToWrite) {
 							if (editedItems.has(repoItem.ID_)) {
 								if (repoItem.Runtime) {
-									if (!metaContent["hash_reference_data"].find((a: { hash: string }) => a.hash === parseInt(repoItem.Runtime).toString(16).toUpperCase())) {
+									const x = parseInt(repoItem.Runtime).toString(16).toUpperCase()
+
+									if (!repoDepends.has(x)) {
 										metaContent["hash_reference_data"].push({
-											hash: parseInt(repoItem.Runtime).toString(16).toUpperCase(),
+											hash: x,
 											flag: "9F"
 										}) // Add Runtime of any items to REPO depends if not already there
+
+										repoDepends.add(x)
 									}
 								}
 
 								if (repoItem.Image) {
-									if (
-										!metaContent["hash_reference_data"].find(
-											(a: { hash: string }) => a.hash === `00${md5(`[assembly:/_pro/online/default/cloudstorage/resources/${repoItem.Image}].pc_gfx`.toLowerCase()).slice(2, 16).toUpperCase()}`
-										)
-									) {
+									const x = `00${md5(`[assembly:/_pro/online/default/cloudstorage/resources/${repoItem.Image}].pc_gfx`.toLowerCase()).slice(2, 16).toUpperCase()}`
+
+									if (!repoDepends.has(x)) {
 										metaContent["hash_reference_data"].push({
-											hash: `00${md5(`[assembly:/_pro/online/default/cloudstorage/resources/${repoItem.Image}].pc_gfx`.toLowerCase()).slice(2, 16).toUpperCase()}`,
+											hash: x,
 											flag: "9F"
 										}) // Add Image of any items to REPO depends if not already there
+
+										repoDepends.add(x)
 									}
 								}
 							}
 						}
+
 						fs.writeFileSync(path.join(process.cwd(), "temp", repoRPKG, "REPO", "00204D1AFD76AB13.REPO.meta.JSON"), JSON.stringify(metaContent))
 						fs.rmSync(path.join(process.cwd(), "temp", repoRPKG, "REPO", "00204D1AFD76AB13.REPO.meta"))
 						await callRPKGFunction(`-json_to_hash_meta "${path.join(process.cwd(), "temp", repoRPKG, "REPO", "00204D1AFD76AB13.REPO.meta.JSON")}"`) // Add all runtimes to REPO depends
