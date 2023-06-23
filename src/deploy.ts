@@ -846,7 +846,7 @@ export default async function deploy(
 
 						const repoToPatch = Object.fromEntries(repoContent.map((a: { [x: string]: unknown }) => [a["ID_"], a]))
 						deepMerge(repoToPatch, entityContent)
-						const repoToWrite = Object.values(repoToPatch)
+						const repoToWrite = Object.entries(repoToPatch).map((a) => ({ ...a[1], ID_: a[1].ID_ || a[0] }))
 
 						const editedItems = new Set(Object.keys(entityContent))
 
