@@ -1,12 +1,16 @@
 import * as LosslessJSON from "lossless-json"
 
 import { config, logger, rpkgInstance } from "./core-singleton"
+import { convertPath, ppath } from "@yarnpkg/fslib/lib/path"
 
 import Decimal from "decimal.js"
+import { JailFS } from "@yarnpkg/fslib"
+import { NodeVM } from "vm2"
 import { freeDiskSpace } from "./smf-rust"
 import fs from "fs-extra"
 import md5 from "md5"
 import path from "path"
+import quickentityScript from "quickentity-script"
 
 const QuickEntity = {
 	"3.1": require("./quickentity-rs"),
@@ -151,4 +155,18 @@ export function fastParse(data: string) {
 
 export function stringify(data: any): string {
 	return LosslessJSON.stringify(data, (_, value) => (value instanceof Decimal ? new LosslessJSON.LosslessNumber(value.toString()) : value))
+}
+
+export async function getModScript(script: string) {
+	return new NodeVM({
+		sandbox: {},
+		require: {
+			builtin: ["path"],
+			context: "sandbox",
+			mock: {
+				fs: new JailFS(convertPath(ppath, process.cwd())),
+				"quickentity-script": quickentityScript
+			}
+		}
+	}).run(fs.readFileSync(script, "utf8"), { filename: path.basename(script) })
 }
