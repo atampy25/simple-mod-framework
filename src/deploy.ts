@@ -6,7 +6,7 @@ import type { DeployInstruction, HMLanguageToolsLOCR, Manifest, ManifestOptionDa
 import { ModuleKind, ScriptTarget } from "typescript"
 import { compileExpression, useDotAccessOperatorAndOptionalChaining } from "filtrex"
 import { config, logger, rpkgInstance } from "./core-singleton"
-import { copyFromCache, copyToCache, extractOrCopyToTemp, fastParse, getQuickEntityFromPatchVersion, getQuickEntityFromVersion, hexflip, normaliseToHash, stringify } from "./utils"
+import { copyFromCache, copyToCache, extractOrCopyToTemp, fastParse, getModScript, getQuickEntityFromPatchVersion, getQuickEntityFromVersion, hexflip, normaliseToHash, stringify } from "./utils"
 
 import { OptionType } from "./types"
 import Piscina from "piscina"
@@ -373,7 +373,7 @@ export default async function deploy(
 				configureSentryScope(sentryScriptsTransaction)
 
 				for (const files of deployInstruction.manifestSources.scripts) {
-					ts.compile(
+					await ts.compile(
 						files.map((a) => path.join(process.cwd(), "Mods", mod, a)),
 						{
 							esModuleInterop: true,
@@ -385,12 +385,9 @@ export default async function deploy(
 						path.join(process.cwd(), "Mods", mod)
 					)
 
-					// eslint-disable-next-line @typescript-eslint/no-var-requires
-					const modScript = (await require(path.join(
-						process.cwd(),
-						"compiled",
-						path.relative(path.join(process.cwd(), "Mods", mod), path.join(process.cwd(), "Mods", mod, files[0].replace(".ts", ".js")))
-					))) as ModScript
+					const modScript = (await getModScript(
+						path.join(process.cwd(), "compiled", path.relative(path.join(process.cwd(), "Mods", mod), path.join(process.cwd(), "Mods", mod, files[0].replace(".ts", ".js"))))
+					)) as ModScript
 
 					fs.ensureDirSync(path.join(process.cwd(), "scriptTempFolder"))
 
@@ -467,7 +464,7 @@ export default async function deploy(
 			for (const files of instruction.manifestSources.scripts) {
 				await logger.verbose(`Executing script: ${files[0]}`)
 
-				ts.compile(
+				await ts.compile(
 					files.map((a) => path.join(process.cwd(), "Mods", instruction.cacheFolder, a)),
 					{
 						esModuleInterop: true,
@@ -479,12 +476,13 @@ export default async function deploy(
 					path.join(process.cwd(), "Mods", instruction.cacheFolder)
 				)
 
-				// eslint-disable-next-line @typescript-eslint/no-var-requires
-				const modScript = (await require(path.join(
-					process.cwd(),
-					"compiled",
-					path.relative(path.join(process.cwd(), "Mods", instruction.cacheFolder), path.join(process.cwd(), "Mods", instruction.cacheFolder, files[0].replace(".ts", ".js")))
-				))) as ModScript
+				const modScript = (await getModScript(
+					path.join(
+						process.cwd(),
+						"compiled",
+						path.relative(path.join(process.cwd(), "Mods", instruction.cacheFolder), path.join(process.cwd(), "Mods", instruction.cacheFolder, files[0].replace(".ts", ".js")))
+					)
+				)) as ModScript
 
 				fs.ensureDirSync(path.join(process.cwd(), "scriptTempFolder"))
 
@@ -1819,7 +1817,7 @@ export default async function deploy(
 			for (const files of instruction.manifestSources.scripts) {
 				await logger.verbose(`Executing script: ${files[0]}`)
 
-				ts.compile(
+				await ts.compile(
 					files.map((a) => path.join(process.cwd(), "Mods", instruction.cacheFolder, a)),
 					{
 						esModuleInterop: true,
@@ -1831,12 +1829,13 @@ export default async function deploy(
 					path.join(process.cwd(), "Mods", instruction.cacheFolder)
 				)
 
-				// eslint-disable-next-line @typescript-eslint/no-var-requires
-				const modScript = (await require(path.join(
-					process.cwd(),
-					"compiled",
-					path.relative(path.join(process.cwd(), "Mods", instruction.cacheFolder), path.join(process.cwd(), "Mods", instruction.cacheFolder, files[0].replace(".ts", ".js")))
-				))) as ModScript
+				const modScript = (await getModScript(
+					path.join(
+						process.cwd(),
+						"compiled",
+						path.relative(path.join(process.cwd(), "Mods", instruction.cacheFolder), path.join(process.cwd(), "Mods", instruction.cacheFolder, files[0].replace(".ts", ".js")))
+					)
+				)) as ModScript
 
 				fs.ensureDirSync(path.join(process.cwd(), "scriptTempFolder"))
 

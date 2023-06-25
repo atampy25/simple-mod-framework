@@ -13,7 +13,7 @@ import semver from "semver"
 import { xxhash3 } from "hash-wasm"
 import { ModuleKind, ScriptTarget } from "typescript"
 import { compileExpression, useDotAccessOperatorAndOptionalChaining } from "filtrex"
-import { fastParse, normaliseToHash } from "./utils"
+import { fastParse, normaliseToHash, getModScript } from "./utils"
 
 const deepMerge = function (x: any, y: any) {
 	return mergeWith(x, y, (orig, src) => {
@@ -78,6 +78,10 @@ export default async function discover(): Promise<{ [x: string]: { hash: string;
 			await logger.info(`Discovering RPKG mod: ${mod}`)
 
 			for (const chunkFolder of fs.readdirSync(path.join(process.cwd(), "Mods", mod))) {
+				if (!fs.statSync(path.join(process.cwd(), "Mods", mod, chunkFolder)).isDirectory()) {
+					await logger.error(`${mod} is not a valid mod. Click Add a Mod to add mods.`)
+				}
+
 				for (const contentFile of fs.readdirSync(path.join(process.cwd(), "Mods", mod, chunkFolder))) {
 					fs.emptyDirSync(path.join(process.cwd(), "temp"))
 
@@ -214,7 +218,7 @@ export default async function discover(): Promise<{ [x: string]: { hash: string;
 
 			await logger.verbose("Discovering scripts")
 			for (const files of scripts) {
-				ts.compile(
+				await ts.compile(
 					files.map((a) => path.join(process.cwd(), "Mods", mod, a)),
 					{
 						esModuleInterop: true,
@@ -226,12 +230,13 @@ export default async function discover(): Promise<{ [x: string]: { hash: string;
 					path.join(process.cwd(), "Mods", mod)
 				)
 
-				// eslint-disable-next-line @typescript-eslint/no-var-requires
-				const modScript = (await require(path.join(
-					process.cwd(),
-					"compiled",
-					path.relative(path.join(process.cwd(), "Mods", mod), path.join(process.cwd(), "Mods", mod, files[0].replace(".ts", ".js")))
-				))) as ModScript
+				fs.emptyDirSync(path.join(process.cwd(), "scriptWorkingDir"))
+
+				const modScript = (await getModScript(
+					path.join(process.cwd(), "compiled", path.relative(path.join(process.cwd(), "Mods", mod), path.join(process.cwd(), "Mods", mod, files[0].replace(".ts", ".js"))))
+				)) as ModScript
+
+				fs.removeSync(path.join(process.cwd(), "scriptWorkingDir"))
 
 				for (const file of files) {
 					fileMap[file] = {
