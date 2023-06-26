@@ -143,7 +143,9 @@ export default async function deploy(
 			// Find mod with ID in Mods folder, set the current mod to that folder
 			const foundMod = fs
 				.readdirSync(path.join(process.cwd(), "Mods"))
-				.find((a) => fs.existsSync(path.join(process.cwd(), "Mods", a, "manifest.json")) && json5.parse(fs.readFileSync(path.join(process.cwd(), "Mods", a, "manifest.json"), "utf8")).id === mod)
+				.find(
+					(a) => fs.existsSync(path.join(process.cwd(), "Mods", a, "manifest.json")) && json5.parse(fs.readFileSync(path.join(process.cwd(), "Mods", a, "manifest.json"), "utf8")).id === mod
+				)
 
 			if (!foundMod) {
 				await logger.error(`Could not resolve mod ${mod} to its folder in Mods!`)
@@ -240,7 +242,11 @@ export default async function deploy(
 							}))
 				)) {
 					for (const contentFolder of option.contentFolders || []) {
-						if (contentFolder?.length && fs.existsSync(path.join(process.cwd(), "Mods", mod, contentFolder)) && fs.readdirSync(path.join(process.cwd(), "Mods", mod, contentFolder)).length) {
+						if (
+							contentFolder?.length &&
+							fs.existsSync(path.join(process.cwd(), "Mods", mod, contentFolder)) &&
+							fs.readdirSync(path.join(process.cwd(), "Mods", mod, contentFolder)).length
+						) {
 							contentFolders.push(contentFolder)
 						}
 					}
@@ -347,6 +353,7 @@ export default async function deploy(
 				id: manifest.id,
 				name: manifest.name,
 				cacheFolder: manifest.id,
+				modRoot: path.join(process.cwd(), "Mods", mod),
 				manifestSources: {
 					localisation: manifest.localisation,
 					localisationOverrides: manifest.localisationOverrides,
@@ -395,7 +402,6 @@ export default async function deploy(
 						{
 							config,
 							deployInstruction,
-							modRoot: path.join(process.cwd(), "Mods", mod),
 							tempFolder: path.join(process.cwd(), "scriptTempFolder")
 						},
 						{
@@ -410,7 +416,6 @@ export default async function deploy(
 								}
 							},
 							utils: {
-								execCommand,
 								extractOrCopyToTemp,
 								getQuickEntityFromVersion,
 								getQuickEntityFromPatchVersion,
@@ -465,7 +470,7 @@ export default async function deploy(
 				await logger.verbose(`Executing script: ${files[0]}`)
 
 				await ts.compile(
-					files.map((a) => path.join(process.cwd(), "Mods", instruction.cacheFolder, a)),
+					files.map((a) => path.join(instruction.modRoot, a)),
 					{
 						esModuleInterop: true,
 						allowJs: true,
@@ -473,15 +478,11 @@ export default async function deploy(
 						module: ModuleKind.CommonJS,
 						resolveJsonModule: true
 					},
-					path.join(process.cwd(), "Mods", instruction.cacheFolder)
+					path.join(instruction.modRoot)
 				)
 
 				const modScript = (await getModScript(
-					path.join(
-						process.cwd(),
-						"compiled",
-						path.relative(path.join(process.cwd(), "Mods", instruction.cacheFolder), path.join(process.cwd(), "Mods", instruction.cacheFolder, files[0].replace(".ts", ".js")))
-					)
+					path.join(process.cwd(), "compiled", path.relative(path.join(instruction.modRoot), path.join(instruction.modRoot, files[0].replace(".ts", ".js"))))
 				)) as ModScript
 
 				fs.ensureDirSync(path.join(process.cwd(), "scriptTempFolder"))
@@ -490,7 +491,6 @@ export default async function deploy(
 					{
 						config,
 						deployInstruction: instruction,
-						modRoot: path.join(process.cwd(), "Mods", instruction.cacheFolder),
 						tempFolder: path.join(process.cwd(), "scriptTempFolder")
 					},
 					{
@@ -499,11 +499,12 @@ export default async function deploy(
 							getRPKGOfHash,
 							async extractFileFromRPKG(hash: string, rpkg: string) {
 								await logger.verbose(`Extracting ${hash} from ${rpkg}`)
-								await rpkgInstance.callFunction(`-extract_from_rpkg "${path.join(config.runtimePath, `${rpkg}.rpkg`)}" -filter "${hash}" -output_path ${path.join(process.cwd(), "scriptTempFolder")}`)
+								await rpkgInstance.callFunction(
+									`-extract_from_rpkg "${path.join(config.runtimePath, `${rpkg}.rpkg`)}" -filter "${hash}" -output_path ${path.join(process.cwd(), "scriptTempFolder")}`
+								)
 							}
 						},
 						utils: {
-							execCommand,
 							extractOrCopyToTemp,
 							getQuickEntityFromVersion,
 							getQuickEntityFromPatchVersion,
@@ -586,7 +587,10 @@ export default async function deploy(
 				} else {
 					fs.ensureDirSync(path.join(process.cwd(), "temp2", contractsORESChunk, "ORES"))
 					fs.copyFileSync(path.join(process.cwd(), "staging", "chunk0", "002B07020D21D727.ORES"), path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES")) // Use the staging one (for mod compat - one mod can extract, patch and build, then the next can patch that one instead)
-					fs.copyFileSync(path.join(process.cwd(), "staging", "chunk0", "002B07020D21D727.ORES.meta"), path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES.meta"))
+					fs.copyFileSync(
+						path.join(process.cwd(), "staging", "chunk0", "002B07020D21D727.ORES.meta"),
+						path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES.meta")
+					)
 				}
 
 				execCommand(`"Third-Party\\OREStool.exe" "${path.join(process.cwd(), "temp2", contractsORESChunk, "ORES", "002B07020D21D727.ORES")}"`)
@@ -687,7 +691,7 @@ export default async function deploy(
 						invalidatedData.some((a) => a.filePath === contentIdentifier) || // must redeploy, invalid cache
 						!(await copyFromCache(
 							instruction.cacheFolder,
-							path.join(`chunk${content.chunk}`, `${path.basename(contentIdentifier).slice(-15)}-${await xxhash3(contentIdentifier)}`),
+							path.join(`chunk${content.chunk}`, `${path.basename(contentIdentifier).slice(0, 15)}-${await xxhash3(contentIdentifier)}`),
 							path.join(process.cwd(), "staging", `chunk${content.chunk}`)
 						)) // cache is not available
 					) {
@@ -737,12 +741,18 @@ export default async function deploy(
 						await callRPKGFunction(`-json_to_hash_meta "${path.join(process.cwd(), "temp", `${entityContent.tbluHash}.TBLU.meta.json`)}"`)
 						// Generate the binary files from the RT json
 
-						fs.copyFileSync(path.join(process.cwd(), "temp", `${entityContent.tempHash}.TEMP`), path.join(process.cwd(), "staging", `chunk${content.chunk}`, `${entityContent.tempHash}.TEMP`))
+						fs.copyFileSync(
+							path.join(process.cwd(), "temp", `${entityContent.tempHash}.TEMP`),
+							path.join(process.cwd(), "staging", `chunk${content.chunk}`, `${entityContent.tempHash}.TEMP`)
+						)
 						fs.copyFileSync(
 							path.join(process.cwd(), "temp", `${entityContent.tempHash}.TEMP.meta`),
 							path.join(process.cwd(), "staging", `chunk${content.chunk}`, `${entityContent.tempHash}.TEMP.meta`)
 						)
-						fs.copyFileSync(path.join(process.cwd(), "temp", `${entityContent.tbluHash}.TBLU`), path.join(process.cwd(), "staging", `chunk${content.chunk}`, `${entityContent.tbluHash}.TBLU`))
+						fs.copyFileSync(
+							path.join(process.cwd(), "temp", `${entityContent.tbluHash}.TBLU`),
+							path.join(process.cwd(), "staging", `chunk${content.chunk}`, `${entityContent.tbluHash}.TBLU`)
+						)
 						fs.copyFileSync(
 							path.join(process.cwd(), "temp", `${entityContent.tbluHash}.TBLU.meta`),
 							path.join(process.cwd(), "staging", `chunk${content.chunk}`, `${entityContent.tbluHash}.TBLU.meta`)
@@ -752,7 +762,7 @@ export default async function deploy(
 						await copyToCache(
 							instruction.cacheFolder,
 							path.join(process.cwd(), "temp"),
-							path.join(`chunk${content.chunk}`, `${path.basename(contentIdentifier).slice(-15)}-${await xxhash3(contentIdentifier)}`)
+							path.join(`chunk${content.chunk}`, `${path.basename(contentIdentifier).slice(0, 15)}-${await xxhash3(contentIdentifier)}`)
 						)
 						// Copy the binary files to the cache
 					}
@@ -791,7 +801,7 @@ export default async function deploy(
 						invalidatedData.some((a) => a.filePath === contentIdentifier) || // must redeploy, invalid cache
 						!(await copyFromCache(
 							instruction.cacheFolder,
-							path.join(`chunk${content.chunk}`, `${path.basename(contentIdentifier).slice(-15)}-${await xxhash3(contentIdentifier)}`),
+							path.join(`chunk${content.chunk}`, `${path.basename(contentIdentifier).slice(0, 15)}-${await xxhash3(contentIdentifier)}`),
 							path.join(process.cwd(), "temp", oresChunk)
 						)) // cache is not available
 					) {
@@ -812,7 +822,7 @@ export default async function deploy(
 						await copyToCache(
 							instruction.cacheFolder,
 							path.join(process.cwd(), "temp", oresChunk),
-							path.join(`chunk${content.chunk}`, `${path.basename(contentIdentifier).slice(-15)}-${await xxhash3(contentIdentifier)}`)
+							path.join(`chunk${content.chunk}`, `${path.basename(contentIdentifier).slice(0, 15)}-${await xxhash3(contentIdentifier)}`)
 						)
 					}
 
@@ -834,7 +844,7 @@ export default async function deploy(
 						invalidatedData.some((a) => a.filePath === contentIdentifier) || // must redeploy, invalid cache
 						!(await copyFromCache(
 							instruction.cacheFolder,
-							path.join(`chunk${content.chunk}`, `${path.basename(contentIdentifier).slice(-15)}-${await xxhash3(contentIdentifier)}`),
+							path.join(`chunk${content.chunk}`, `${path.basename(contentIdentifier).slice(0, 15)}-${await xxhash3(contentIdentifier)}`),
 							path.join(process.cwd(), "temp", repoRPKG)
 						)) // cache is not available
 					) {
@@ -856,13 +866,39 @@ export default async function deploy(
 						for (const repoItem of repoToWrite) {
 							if (editedItems.has(repoItem.ID_)) {
 								if (repoItem.Runtime) {
-									const x = parseInt(repoItem.Runtime).toString(16).toUpperCase()
+									const x = BigInt(repoItem.Runtime).toString(16).toUpperCase().padStart(16, "0")
 
 									if (!repoDepends.has(x)) {
 										metaContent["hash_reference_data"].push({
 											hash: x,
 											flag: "9F"
 										}) // Add Runtime of any items to REPO depends if not already there
+
+										repoDepends.add(x)
+									}
+								}
+
+								if (repoItem.AmmoImpactEffect) {
+									const x = BigInt(repoItem.AmmoImpactEffect).toString(16).toUpperCase().padStart(16, "0")
+
+									if (!repoDepends.has(x)) {
+										metaContent["hash_reference_data"].push({
+											hash: x,
+											flag: "9F"
+										}) // Add AmmoImpactEffect of any items to REPO depends if not already there
+
+										repoDepends.add(x)
+									}
+								}
+
+								if (repoItem.AmmoInFlightEffect) {
+									const x = BigInt(repoItem.AmmoInFlightEffect).toString(16).toUpperCase().padStart(16, "0")
+
+									if (!repoDepends.has(x)) {
+										metaContent["hash_reference_data"].push({
+											hash: x,
+											flag: "9F"
+										}) // Add AmmoInFlightEffect of any items to REPO depends if not already there
 
 										repoDepends.add(x)
 									}
@@ -892,7 +928,7 @@ export default async function deploy(
 						await copyToCache(
 							instruction.cacheFolder,
 							path.join(process.cwd(), "temp", repoRPKG),
-							path.join(`chunk${content.chunk}`, `${path.basename(contentIdentifier).slice(-15)}-${await xxhash3(contentIdentifier)}`)
+							path.join(`chunk${content.chunk}`, `${path.basename(contentIdentifier).slice(0, 15)}-${await xxhash3(contentIdentifier)}`)
 						)
 					}
 
@@ -949,7 +985,7 @@ export default async function deploy(
 						invalidatedData.some((a) => a.filePath === contentIdentifier) || // must redeploy, invalid cache
 						!(await copyFromCache(
 							instruction.cacheFolder,
-							path.join(`chunk${content.chunk}`, `${path.basename(contentIdentifier).slice(-15)}-${await xxhash3(contentIdentifier)}`),
+							path.join(`chunk${content.chunk}`, `${path.basename(contentIdentifier).slice(0, 15)}-${await xxhash3(contentIdentifier)}`),
 							path.join(process.cwd(), "temp", rpkgOfFile)
 						)) // cache is not available
 					) {
@@ -992,7 +1028,7 @@ export default async function deploy(
 						await copyToCache(
 							instruction.cacheFolder,
 							path.join(process.cwd(), "temp", rpkgOfFile),
-							path.join(`chunk${content.chunk}`, `${path.basename(contentIdentifier).slice(-15)}-${await xxhash3(contentIdentifier)}`)
+							path.join(`chunk${content.chunk}`, `${path.basename(contentIdentifier).slice(0, 15)}-${await xxhash3(contentIdentifier)}`)
 						)
 					}
 
@@ -1039,7 +1075,7 @@ export default async function deploy(
 						invalidatedData.some((a) => a.filePath === contentIdentifier) || // must redeploy, invalid cache
 						!(await copyFromCache(
 							instruction.cacheFolder,
-							path.join(`chunk${content.chunk}`, `${path.basename(contentIdentifier).slice(-15)}-${await xxhash3(contentIdentifier)}`),
+							path.join(`chunk${content.chunk}`, `${path.basename(contentIdentifier).slice(0, 15)}-${await xxhash3(contentIdentifier)}`),
 							path.join(process.cwd(), "temp", `chunk${content.chunk}`)
 						)) // cache is not available
 					) {
@@ -1196,7 +1232,7 @@ export default async function deploy(
 						await copyToCache(
 							instruction.cacheFolder,
 							path.join(process.cwd(), "temp", `chunk${content.chunk}`),
-							path.join(`chunk${content.chunk}`, `${path.basename(contentIdentifier).slice(-15)}-${await xxhash3(contentIdentifier)}`)
+							path.join(`chunk${content.chunk}`, `${path.basename(contentIdentifier).slice(0, 15)}-${await xxhash3(contentIdentifier)}`)
 						)
 					}
 
@@ -1288,7 +1324,7 @@ export default async function deploy(
 						invalidatedData.some((a) => a.filePath === contentIdentifier) || // must redeploy, invalid cache
 						!(await copyFromCache(
 							instruction.cacheFolder,
-							path.join(`chunk${content.chunk}`, `${path.basename(contentIdentifier).slice(-15)}-${await xxhash3(contentIdentifier)}`),
+							path.join(`chunk${content.chunk}`, `${path.basename(contentIdentifier).slice(0, 15)}-${await xxhash3(contentIdentifier)}`),
 							path.join(process.cwd(), "temp", `chunk${content.chunk}`)
 						)) // cache is not available
 					) {
@@ -1321,7 +1357,7 @@ export default async function deploy(
 						await copyToCache(
 							instruction.cacheFolder,
 							path.join(process.cwd(), "temp", `chunk${content.chunk}`),
-							path.join(`chunk${content.chunk}`, `${path.basename(contentIdentifier).slice(-15)}-${await xxhash3(contentIdentifier)}`)
+							path.join(`chunk${content.chunk}`, `${path.basename(contentIdentifier).slice(0, 15)}-${await xxhash3(contentIdentifier)}`)
 						)
 					}
 
@@ -1374,7 +1410,10 @@ export default async function deploy(
 
 					// Copy LOCR files
 					fs.copyFileSync(path.join(process.cwd(), "temp", `chunk${content.chunk}`, `${hash}.RTLV`), path.join(process.cwd(), "staging", `chunk${content.chunk}`, `${hash}.RTLV`))
-					fs.copyFileSync(path.join(process.cwd(), "temp", `chunk${content.chunk}`, `${hash}.RTLV.meta.json`), path.join(process.cwd(), "staging", `chunk${content.chunk}`, `${hash}.RTLV.meta.json`))
+					fs.copyFileSync(
+						path.join(process.cwd(), "temp", `chunk${content.chunk}`, `${hash}.RTLV.meta.json`),
+						path.join(process.cwd(), "staging", `chunk${content.chunk}`, `${hash}.RTLV.meta.json`)
+					)
 					break
 				}
 				case "locr.json": {
@@ -1417,7 +1456,10 @@ export default async function deploy(
 
 					// Copy LOCR files
 					fs.copyFileSync(path.join(process.cwd(), "temp", `chunk${content.chunk}`, `${hash}.LOCR`), path.join(process.cwd(), "staging", `chunk${content.chunk}`, `${hash}.LOCR`))
-					fs.copyFileSync(path.join(process.cwd(), "temp", `chunk${content.chunk}`, `${hash}.LOCR.meta.json`), path.join(process.cwd(), "staging", `chunk${content.chunk}`, `${hash}.LOCR.meta.json`))
+					fs.copyFileSync(
+						path.join(process.cwd(), "temp", `chunk${content.chunk}`, `${hash}.LOCR.meta.json`),
+						path.join(process.cwd(), "staging", `chunk${content.chunk}`, `${hash}.LOCR.meta.json`)
+					)
 					break
 				}
 				default: // Copy the file to the staging directory; we don't cache these for obvious reasons
@@ -1571,7 +1613,8 @@ export default async function deploy(
 				oresContent[blobHash] = blob.blobPath // Add the blob to the ORES
 
 				lastServerSideStates["blobs"] ??= {}
-				lastServerSideStates["blobs"][blob.blobPath] = blob.source === "disk" ? fs.readFileSync(blob.filePath).toString("base64") : Buffer.from(await blob.content.arrayBuffer()).toString("base64")
+				lastServerSideStates["blobs"][blob.blobPath] =
+					blob.source === "disk" ? fs.readFileSync(blob.filePath).toString("base64") : Buffer.from(await blob.content.arrayBuffer()).toString("base64")
 
 				if (!metaContent["hash_reference_data"].find((a: { hash: unknown }) => a.hash === blobHash)) {
 					metaContent["hash_reference_data"].push({
@@ -1762,14 +1805,7 @@ export default async function deploy(
 				) {
 					fs.writeFileSync(
 						path.join(process.cwd(), "temp", "chunk0", `${lineHash}.LINE`),
-						Buffer.from(
-							`${hexflip(
-								crc32(instruction.manifestSources.localisedLines[lineHash].toUpperCase())
-									.toString(16)
-									.padStart(8, "0")
-							)}00`,
-							"hex"
-						)
+						Buffer.from(`${hexflip(crc32(instruction.manifestSources.localisedLines[lineHash].toUpperCase()).toString(16).padStart(8, "0"))}00`, "hex")
 					) // Create the LINE file
 
 					fs.writeFileSync(
@@ -1818,7 +1854,7 @@ export default async function deploy(
 				await logger.verbose(`Executing script: ${files[0]}`)
 
 				await ts.compile(
-					files.map((a) => path.join(process.cwd(), "Mods", instruction.cacheFolder, a)),
+					files.map((a) => path.join(instruction.modRoot, a)),
 					{
 						esModuleInterop: true,
 						allowJs: true,
@@ -1826,15 +1862,11 @@ export default async function deploy(
 						module: ModuleKind.CommonJS,
 						resolveJsonModule: true
 					},
-					path.join(process.cwd(), "Mods", instruction.cacheFolder)
+					path.join(instruction.modRoot)
 				)
 
 				const modScript = (await getModScript(
-					path.join(
-						process.cwd(),
-						"compiled",
-						path.relative(path.join(process.cwd(), "Mods", instruction.cacheFolder), path.join(process.cwd(), "Mods", instruction.cacheFolder, files[0].replace(".ts", ".js")))
-					)
+					path.join(process.cwd(), "compiled", path.relative(path.join(instruction.modRoot), path.join(instruction.modRoot, files[0].replace(".ts", ".js"))))
 				)) as ModScript
 
 				fs.ensureDirSync(path.join(process.cwd(), "scriptTempFolder"))
@@ -1843,7 +1875,6 @@ export default async function deploy(
 					{
 						config,
 						deployInstruction: instruction,
-						modRoot: path.join(process.cwd(), "Mods", instruction.cacheFolder),
 						tempFolder: path.join(process.cwd(), "scriptTempFolder")
 					},
 					{
@@ -1852,11 +1883,12 @@ export default async function deploy(
 							getRPKGOfHash,
 							async extractFileFromRPKG(hash: string, rpkg: string) {
 								await logger.verbose(`Extracting ${hash} from ${rpkg}`)
-								await rpkgInstance.callFunction(`-extract_from_rpkg "${path.join(config.runtimePath, `${rpkg}.rpkg`)}" -filter "${hash}" -output_path ${path.join(process.cwd(), "scriptTempFolder")}`)
+								await rpkgInstance.callFunction(
+									`-extract_from_rpkg "${path.join(config.runtimePath, `${rpkg}.rpkg`)}" -filter "${hash}" -output_path ${path.join(process.cwd(), "scriptTempFolder")}`
+								)
 							}
 						},
 						utils: {
-							execCommand,
 							extractOrCopyToTemp,
 							getQuickEntityFromVersion,
 							getQuickEntityFromPatchVersion,

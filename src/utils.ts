@@ -10,7 +10,6 @@ import { freeDiskSpace } from "./smf-rust"
 import fs from "fs-extra"
 import md5 from "md5"
 import path from "path"
-import quickentityScript from "quickentity-script"
 
 const QuickEntity = {
 	"3.1": require("./quickentity-rs"),
@@ -164,8 +163,7 @@ export async function getModScript(script: string) {
 			builtin: ["path"],
 			context: "sandbox",
 			mock: {
-				fs: new JailFS(convertPath(ppath, process.cwd())),
-				"quickentity-script": quickentityScript
+				fs: new JailFS(convertPath(ppath, process.cwd()))
 			}
 		}
 	}).run(fs.readFileSync(script, "utf8"), { filename: path.basename(script) })
