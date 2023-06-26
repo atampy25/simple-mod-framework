@@ -29,7 +29,7 @@
     "promisify-child-process": "^4.1.1",
     "quickentity-script": "^2.2.1",
     "rfc6902": "^5.0.1",
-    "semver": "^7.3.8",
+    "semver": "^7.5.2",
     "tslib": "^2.4.0",
     "typescript": "^4.7.4",
     "vm2": "^3.9.18"
