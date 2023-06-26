@@ -86,7 +86,7 @@ export type Manifest = {
 				image?: string
 		  }
 		| {
-			/** The name of the option. Should not be duplicated. Purely for internal reference; conditional options are not shown to the user. */
+				/** The name of the option. Should not be duplicated. Purely for internal reference; conditional options are not shown to the user. */
 				name: string
 
 				/** The type of the option. Conditional options are enabled whenever a condition is met and disabled otherwise. They do not appear in the Mod Manager. */
@@ -193,6 +193,9 @@ export interface DeployInstruction {
 
 	/** Cache folder. Should be the mod's ID. */
 	cacheFolder: string
+
+	/** The root folder of the mod. You *must* use this if you want to modify files in the mod folder - process.cwd() or "." will resolve to the framework's folder, not the mod folder! */
+	modRoot: string
 
 	manifestSources: {
 		/** Localisation for each supported language.
@@ -409,9 +412,6 @@ export interface ModContext {
 	 * If you plan to add content or blobs, it's recommended to use the virtual source and pass JS Blobs to the framework. */
 	deployInstruction: DeployInstruction
 
-	/** The root folder of the mod. You *must* use this if you want to modify files in the mod folder - process.cwd() or "." will resolve to the framework's folder, not the mod folder! */
-	modRoot: string
-
 	/** The assigned temporary folder for this script. Do anything requiring filesystem working here - the folder will be cleared after the script is done executing. */
 	tempFolder: string
 }
@@ -431,9 +431,6 @@ export interface ModAPI {
 
 	/** Utility functions. */
 	utils: {
-		/** Execute a shell command. */
-		execCommand(command: string): void
-
 		/** Get the QuickEntity module for a given QuickEntity version. */
 		getQuickEntityFromVersion(version: string): any
 
@@ -443,7 +440,7 @@ export interface ModAPI {
 		/** Copy a file to temp if it has already been staged by a mod, or extract it if it has not. stagingChunk defaults to chunk0. */
 		extractOrCopyToTemp(rpkgOfFile: string, file: string, type: string, stagingChunk: string | undefined): Promise<void>
 
-		/** Flip the hexadecimal bytes of a string. */
+		/** Flip the endianness of a hexadecimal string. */
 		hexflip(input: string): string
 	}
 
