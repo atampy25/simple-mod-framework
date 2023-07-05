@@ -6,6 +6,7 @@
   "dependencies": {
     "@sentry/node": "^7.29.0",
     "@sentry/tracing": "^7.29.0",
+    "@yarnpkg/fslib": "^2.10.1",
     "arg": "^5.0.2",
     "chalk": "^4.1.2",
     "clarify": "^2.1.0",
@@ -26,10 +27,12 @@
     "md5-file": "^5.0.0",
     "minimist": "^1.2.6",
     "promisify-child-process": "^4.1.1",
+    "quickentity-script": "^2.2.1",
     "rfc6902": "^5.0.1",
     "semver": "^7.3.8",
     "tslib": "^2.4.0",
-    "typescript": "^4.7.4"
+    "typescript": "^4.7.4",
+    "vm2": "^3.9.18"
   },
   "devDependencies": {
     "@types/fs-extra": "^9.0.13",
@@ -53,6 +56,10 @@
     "scripts": [
       "node_modules/piscina/dist/src/worker.js",
       "compiled/patchWorker.js"
+    ],
+    "assets": [
+      "node_modules/vm2/lib/setup-node-sandbox.js",
+      "node_modules/vm2/lib/setup-sandbox.js"
     ]
   },
   "author": "Atampy26",

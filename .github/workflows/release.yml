@@ -19,6 +19,12 @@ jobs:
         with:
           node-version: 18
 
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: x86_64-pc-windows-msvc
+          default: true
+
       - name: Cache
         id: cache
         uses: actions/cache@v3
@@ -40,7 +46,16 @@ jobs:
 
       - name: Prep
         run: |
-          npm install -g pkg typescript
+          npm install -g pkg typescript @napi-rs/cli
+
+      - name: Build Rust code
+        run: |
+          cd rust
+          yarn
+          yarn build
+          cd ../
+          copy ./rust/index.d.ts ./src/smf-rust.d.ts
+          copy ./rust/rust.win32-x64-msvc.node ./src/smf-rust.node
 
       - name: Build EXE
         env:
@@ -160,4 +175,4 @@ jobs:
         with:
           environment: production
           version: ${{ github.ref }}
-          sourcemaps: './compiled/core-singleton.js.map ./compiled/core.js.map ./compiled/crc32.js.map ./compiled/deploy.js.map ./compiled/difference.js.map ./compiled/discover.js.map ./compiled/main.js.map ./compiled/patchWorker.js.map ./compiled/quickentity-3.js.map ./compiled/quickentity-rs.js.map ./compiled/quickentity.js.map ./compiled/quickentity20.js.map ./compiled/quickentity1136.js.map ./compiled/rpkg.js.map ./compiled/three-onlymath.min.js.map ./compiled/types.js.map ./compiled/typescript.js.map ./compiled/utils.js.map'
+          sourcemaps: './compiled/core-singleton.js.map ./compiled/core.js.map ./compiled/crc32.js.map ./compiled/deploy.js.map ./compiled/difference.js.map ./compiled/discover.js.map ./compiled/main.js.map ./compiled/patchWorker.js.map ./compiled/quickentity-rs.js.map ./compiled/rpkg.js.map ./compiled/types.js.map ./compiled/typescript.js.map ./compiled/utils.js.map'

@@ -141,7 +141,7 @@
 			if (!chunk) {
 				chunk = "chunk0"
 			}
-			
+
 			rpkgsToInstall = [{ path: modFilePath, chunk }]
 
 			modNameInputModalOpen = true
@@ -643,8 +643,8 @@
 	}}
 >
 	<p>
-		This mod contains scripts; that means it is able to execute its own (external to the framework) code and effectively has complete control over your PC whenever you apply your mods. Scripts can
-		do cool things and make a lot of mods possible, but they can also do bad things like installing malware on your computer. Make sure you trust whoever developed this mod, and wherever you
+		This mod contains scripts; that means it is able to execute its own (external to the framework) code whenever you apply your mods. Scripts can do cool things and make a lot of mods possible,
+		but it's possible for them to cause problems, or even install malware (though the framework tries its best to avoid this). Make sure you trust whoever developed this mod, and wherever you
 		downloaded it from. Are you sure you want to add this mod?
 	</p>
 </Modal>

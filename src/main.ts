@@ -1,6 +1,3 @@
-// @ts-expect-error Need to assign on global because of QuickEntity
-global.THREE = require("./three-onlymath.min")
-
 import * as Sentry from "@sentry/node"
 import * as Tracing from "@sentry/tracing"
 
@@ -20,14 +17,14 @@ import { xxhash3 } from "hash-wasm"
 require("clarify")
 
 const gameHashes = {
-	"f9b0347f278b533ace9a744b5b5353f9": Platform.epic, // base game
-	"c811d53d32fe1dc4e44546df2ab45638": Platform.epic, // ansel unlock
+	f9b0347f278b533ace9a744b5b5353f9: Platform.epic, // base game
+	c811d53d32fe1dc4e44546df2ab45638: Platform.epic, // ansel unlock
 	"1e245f331499dfd25206276e58f0f81f": Platform.epic, // ansel no collision
-	"f0c6daf3f4610965c45aba2c9edda254": Platform.epic, // ansel unlock + no collision
+	f0c6daf3f4610965c45aba2c9edda254: Platform.epic, // ansel unlock + no collision
 	"81f5ec2450d4369583d28495445311f6": Platform.steam, // base game
-	"d5a26538d4500aac83a4767293f10921": Platform.steam, // ansel unlock
+	d5a26538d4500aac83a4767293f10921: Platform.steam, // ansel unlock
 	"7be8ce65668d007d4d1f4d0ab80153e3": Platform.steam, // ansel no collision
-	"c5dcb9edd2c348ca21bcd490a867f717": Platform.steam, // ansel unlock + no collision
+	c5dcb9edd2c348ca21bcd490a867f717: Platform.steam, // ansel unlock + no collision
 
 	// Gamepass/store protects the EXE from reading so we can't hash it, instead we hash the game config
 	"05a3152429d216c83a612dfbc25d3e63": Platform.microsoft
