@@ -1,0 +1,36 @@
+{
+  "name": "smf-rust",
+  "version": "0.0.0",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "napi": {
+    "name": "rust",
+    "triples": {
+      "defaults": false,
+      "additional": [
+        "x86_64-pc-windows-msvc"
+      ]
+    }
+  },
+  "private": true,
+  "license": "LGPL-3.0-only",
+  "devDependencies": {
+    "@napi-rs/cli": "^2.13.3",
+    "ava": "^4.3.3"
+  },
+  "ava": {
+    "timeout": "3m"
+  },
+  "engines": {
+    "node": ">= 10"
+  },
+  "scripts": {
+    "artifacts": "napi artifacts",
+    "build": "napi build --platform --release",
+    "build:debug": "napi build --platform",
+    "prepublishOnly": "napi prepublish -t npm",
+    "test": "ava",
+    "version": "napi version"
+  },
+  "packageManager": "yarn@3.6.0"
+}

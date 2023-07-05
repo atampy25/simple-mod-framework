@@ -462,12 +462,10 @@ export function validateModFolder(modFolder: string): [boolean, string] {
 
 				switch (file.split(".").slice(1).join(".")) {
 					case "entity.json":
-						if (fileContents.quickEntityVersion === 3.1 && !validateEntity(fileContents))
-							return [false, `Invalid file ${file} due to non-matching schema: ${new Ajv({ strict: false }).errorsText(validateEntity.errors)}`]
+						if (!validateEntity(fileContents)) return [false, `Invalid file ${file} due to non-matching schema: ${new Ajv({ strict: false }).errorsText(validateEntity.errors)}`]
 						break
 					case "entity.patch.json":
-						if (fileContents.patchVersion === 6 && !validateEntityPatch(fileContents))
-							return [false, `Invalid file ${file} due to non-matching schema: ${new Ajv({ strict: false }).errorsText(validateEntityPatch.errors)}`]
+						if (!validateEntityPatch(fileContents)) return [false, `Invalid file ${file} due to non-matching schema: ${new Ajv({ strict: false }).errorsText(validateEntityPatch.errors)}`]
 						break
 					case "repository.json":
 						if (!validateRepository(fileContents)) return [false, `Invalid file ${file} due to non-matching schema: ${new Ajv({ strict: false }).errorsText(validateRepository.errors)}`]
