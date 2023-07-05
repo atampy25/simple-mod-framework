@@ -130,18 +130,18 @@ ipcMain.on("deploy", () => {
 		cwd: ".."
 	})
 
-	let deployOutput = ""
+	let deployOutput = Buffer.from("")
 
 	mainWindow.webContents.send("frameworkDeployModalOpen")
 
 	deployProcess.stdout.on("data", (data) => {
-		deployOutput += String(data)
-		mainWindow.webContents.send("frameworkDeployOutput", deployOutput)
+		deployOutput = Buffer.concat([deployOutput, data])
+		mainWindow.webContents.send("frameworkDeployOutput", String(deployOutput))
 	})
 
 	deployProcess.stderr.on("data", (data) => {
-		deployOutput += String(data)
-		mainWindow.webContents.send("frameworkDeployOutput", deployOutput)
+		deployOutput = Buffer.concat([deployOutput, data])
+		mainWindow.webContents.send("frameworkDeployOutput", String(deployOutput))
 	})
 
 	deployProcess.on("close", (data) => {

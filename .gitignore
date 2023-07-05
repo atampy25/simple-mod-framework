@@ -13,3 +13,9 @@ Third-Party/ResourceTool.pdb
 compiled
 /Mods
 config.json
+rust/npm/win32-x64-msvc/package.json
+rust/npm/win32-x64-msvc/README.md
+rust/index.d.ts
+rust/index.js
+src/smf-rust.node
+src/smf-rust.d.ts

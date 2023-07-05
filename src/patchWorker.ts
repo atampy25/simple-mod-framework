@@ -1,10 +1,5 @@
-// @ts-expect-error Need to assign on global because of QuickEntity
-global.THREE = require("./three-onlymath.min")
-
-import * as LosslessJSON from "lossless-json"
-
 import { config, logger } from "./core-singleton"
-import { copyFromCache, copyToCache, getQuickEntityFromPatchVersion } from "./utils"
+import { copyFromCache, copyToCache, fastParse, getQuickEntityFromPatchVersion, stringify } from "./utils"
 
 import RPKGInstance from "./rpkg"
 import child_process from "child_process"
@@ -49,6 +44,8 @@ export = async ({
 	cacheFolder: string
 }) => {
 	fs.ensureDirSync(path.join(process.cwd(), assignedTemporaryDirectory))
+
+	patches = patches.map((a) => fastParse(a))
 
 	if (
 		!(
@@ -115,59 +112,25 @@ export = async ({
 		await callRPKGFunction(`-hash_meta_to_json "${path.join(process.cwd(), assignedTemporaryDirectory, tempRPKG, "TEMP", `${tempHash}.TEMP.meta`)}"`)
 		await callRPKGFunction(`-hash_meta_to_json "${path.join(process.cwd(), assignedTemporaryDirectory, tbluRPKG, "TBLU", `${tbluHash}.TBLU.meta`)}"`) // Generate the RT files from the binary files
 
-		/* ---------------------------------------- Convert to QN --------------------------------------- */
-		if (Number(patches[0].patchVersion.value) < 3) {
-			await getQuickEntityFromPatchVersion(patches[0].patchVersion.value).convert(
-				"HM3",
-				"ids",
-				path.join(process.cwd(), assignedTemporaryDirectory, tempRPKG, "TEMP", `${tempHash}.TEMP.json`),
-				path.join(process.cwd(), assignedTemporaryDirectory, tempRPKG, "TEMP", `${tempHash}.TEMP.meta.JSON`),
-				path.join(process.cwd(), assignedTemporaryDirectory, tbluRPKG, "TBLU", `${tbluHash}.TBLU.json`),
-				path.join(process.cwd(), assignedTemporaryDirectory, tbluRPKG, "TBLU", `${tbluHash}.TBLU.meta.JSON`),
-				// @ts-expect-error Two different versions of the same function; TypeScript doesn't have a way of overloading a "type-only" function
-				path.join(process.cwd(), assignedTemporaryDirectory, "QuickEntityJSON.json")
-			) // Generate the QN json from the RT files
-		} else {
-			await getQuickEntityFromPatchVersion(patches[0].patchVersion.value).convert(
-				"HM3",
-				path.join(process.cwd(), assignedTemporaryDirectory, tempRPKG, "TEMP", `${tempHash}.TEMP.json`),
-				path.join(process.cwd(), assignedTemporaryDirectory, tempRPKG, "TEMP", `${tempHash}.TEMP.meta.JSON`),
-				path.join(process.cwd(), assignedTemporaryDirectory, tbluRPKG, "TBLU", `${tbluHash}.TBLU.json`),
-				path.join(process.cwd(), assignedTemporaryDirectory, tbluRPKG, "TBLU", `${tbluHash}.TBLU.meta.JSON`),
-				path.join(process.cwd(), assignedTemporaryDirectory, "QuickEntityJSON.json")
-			) // Generate the QN json from the RT files
-		}
+		await logger.debug(`Applying patches: ${patches.map((patch) => patch.path).join(", ")}`)
 
+		const patchPaths = []
 		for (const patch of patches) {
-			await logger.debug(`Applying patch ${patch.path}`)
-
-			if (!getQuickEntityFromPatchVersion(patch.patchVersion.value)) {
-				rpkgInstance.exit()
-				fs.removeSync(path.join(process.cwd(), assignedTemporaryDirectory))
-
-				await logger.error(`Could not find matching QuickEntity version for patch version ${Number(patch.patchVersion.value)}!`)
-			}
-
-			fs.writeFileSync(path.join(process.cwd(), assignedTemporaryDirectory, "patch.json"), LosslessJSON.stringify(patch))
-
-			/* ----------------------------------------- Apply patch ---------------------------------------- */
-			await getQuickEntityFromPatchVersion(patch.patchVersion.value).applyPatchJSON(
-				path.join(process.cwd(), assignedTemporaryDirectory, "QuickEntityJSON.json"),
-				path.join(process.cwd(), assignedTemporaryDirectory, "patch.json"),
-				path.join(process.cwd(), assignedTemporaryDirectory, "PatchedQuickEntityJSON.json")
-			) // Patch the QN json
-			fs.copySync(path.join(process.cwd(), assignedTemporaryDirectory, "PatchedQuickEntityJSON.json"), path.join(process.cwd(), assignedTemporaryDirectory, "QuickEntityJSON.json"))
+			fs.writeFileSync(path.join(process.cwd(), assignedTemporaryDirectory, `patch${patchPaths.length}.json`), stringify(patch))
+			patchPaths.push(path.join(process.cwd(), assignedTemporaryDirectory, `patch${patchPaths.length}.json`))
 		}
 
-		/* ------------------------------------ Convert to RT Source ------------------------------------ */
-		await getQuickEntityFromPatchVersion(patches[0].patchVersion.value).generate(
-			"HM3",
-			path.join(process.cwd(), assignedTemporaryDirectory, "QuickEntityJSON.json"),
+		await getQuickEntityFromPatchVersion(patches[0].patchVersion.toString()).convertPatchGenerate(
+			path.join(process.cwd(), assignedTemporaryDirectory, tempRPKG, "TEMP", `${tempHash}.TEMP.json`),
+			path.join(process.cwd(), assignedTemporaryDirectory, tempRPKG, "TEMP", `${tempHash}.TEMP.meta.JSON`),
+			path.join(process.cwd(), assignedTemporaryDirectory, tbluRPKG, "TBLU", `${tbluHash}.TBLU.json`),
+			path.join(process.cwd(), assignedTemporaryDirectory, tbluRPKG, "TBLU", `${tbluHash}.TBLU.meta.JSON`),
+			patchPaths,
 			path.join(process.cwd(), assignedTemporaryDirectory, "temp.TEMP.json"),
 			path.join(process.cwd(), assignedTemporaryDirectory, `${tempHash}.TEMP.meta.JSON`),
 			path.join(process.cwd(), assignedTemporaryDirectory, "temp.TBLU.json"),
 			path.join(process.cwd(), assignedTemporaryDirectory, `${tbluHash}.TBLU.meta.JSON`)
-		) // Generate the RT files from the QN json
+		)
 
 		/* -------------------------------------- Convert to binary ------------------------------------- */
 		await Promise.all([
@@ -190,7 +153,6 @@ export = async ({
 		await callRPKGFunction(`-json_to_hash_meta "${path.join(process.cwd(), assignedTemporaryDirectory, `${tbluHash}.TBLU.meta.JSON`)}"`) // Generate the binary files from the RT json
 
 		await Promise.all([
-			fs.rm(path.join(process.cwd(), assignedTemporaryDirectory, "QuickEntityJSON.json")),
 			fs.rm(path.join(process.cwd(), assignedTemporaryDirectory, "temp.TEMP.json")),
 			fs.rm(path.join(process.cwd(), assignedTemporaryDirectory, `${tempHash}.TEMP.meta.JSON`)),
 			fs.rm(path.join(process.cwd(), assignedTemporaryDirectory, "temp.TBLU.json")),

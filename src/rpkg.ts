@@ -44,6 +44,10 @@ class RPKGInstance {
 			}
 		})
 
+		this.rpkgProcess.stderr.on("data", (data) => {
+			this.output += String(data)
+		})
+
 		this.rpkgProcess.on("close", () => {
 			if (!this.shouldExit) {
 				console.error("Fatal error!")

@@ -409,10 +409,8 @@
 				"BurstAngleVMultiplier": { "type": "number" },
 				"BurstRandomizationFactorMultiplier": { "type": "number" },
 				"Items": { "type": "array", "items": { "type": "string" } },
-				"Guids": { "type": "array", "items": { "type": "string" } },
-				"_popdensitycomment": { "type": "string" }
-			},
-			"title": "Unlockable"
+				"Guids": { "type": "array", "items": { "type": "string" } }
+			}
 		},
 		"Configuration": {
 			"type": "object",
