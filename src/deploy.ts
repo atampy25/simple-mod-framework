@@ -796,7 +796,7 @@ export default async function deploy(
 						invalidatedData.some((a) => a.filePath === contentIdentifier) || // must redeploy, invalid cache
 						!(await copyFromCache(
 							instruction.cacheFolder,
-							path.join(`chunk${content.chunk}`, `${path.basename(contentIdentifier).slice(-15)}-${await xxhash3(contentIdentifier)}`),
+							path.join(`chunk${content.chunk}`, `${path.basename(contentIdentifier).slice(0, 15)}-${await xxhash3(contentIdentifier)}`),
 							path.join(process.cwd(), "staging", `chunk${content.chunk}`)
 						)) // cache is not available
 					) {
@@ -862,7 +862,7 @@ export default async function deploy(
 						await copyToCache(
 							instruction.cacheFolder,
 							path.join(process.cwd(), "temp"),
-							path.join(`chunk${content.chunk}`, `${path.basename(contentIdentifier).slice(-15)}-${await xxhash3(contentIdentifier)}`)
+							path.join(`chunk${content.chunk}`, `${path.basename(contentIdentifier).slice(0, 15)}-${await xxhash3(contentIdentifier)}`)
 						)
 						// Copy the binary files to the cache
 					}
@@ -1027,7 +1027,7 @@ export default async function deploy(
 						invalidatedData.some((a) => a.filePath === contentIdentifier) || // must redeploy, invalid cache
 						!(await copyFromCache(
 							instruction.cacheFolder,
-							path.join(`chunk${content.chunk}`, `${path.basename(contentIdentifier).slice(-15)}-${await xxhash3(contentIdentifier)}`),
+							path.join(`chunk${content.chunk}`, `${path.basename(contentIdentifier).slice(0, 15)}-${await xxhash3(contentIdentifier)}`),
 							path.join(process.cwd(), "temp", oresChunk)
 						)) // cache is not available
 					) {
@@ -1048,7 +1048,7 @@ export default async function deploy(
 						await copyToCache(
 							instruction.cacheFolder,
 							path.join(process.cwd(), "temp", oresChunk),
-							path.join(`chunk${content.chunk}`, `${path.basename(contentIdentifier).slice(-15)}-${await xxhash3(contentIdentifier)}`)
+							path.join(`chunk${content.chunk}`, `${path.basename(contentIdentifier).slice(0, 15)}-${await xxhash3(contentIdentifier)}`)
 						)
 					}
 
@@ -1070,7 +1070,7 @@ export default async function deploy(
 						invalidatedData.some((a) => a.filePath === contentIdentifier) || // must redeploy, invalid cache
 						!(await copyFromCache(
 							instruction.cacheFolder,
-							path.join(`chunk${content.chunk}`, `${path.basename(contentIdentifier).slice(-15)}-${await xxhash3(contentIdentifier)}`),
+							path.join(`chunk${content.chunk}`, `${path.basename(contentIdentifier).slice(0, 15)}-${await xxhash3(contentIdentifier)}`),
 							path.join(process.cwd(), "temp", repoRPKG)
 						)) // cache is not available
 					) {
@@ -1120,7 +1120,7 @@ export default async function deploy(
 						await copyToCache(
 							instruction.cacheFolder,
 							path.join(process.cwd(), "temp", repoRPKG),
-							path.join(`chunk${content.chunk}`, `${path.basename(contentIdentifier).slice(-15)}-${await xxhash3(contentIdentifier)}`)
+							path.join(`chunk${content.chunk}`, `${path.basename(contentIdentifier).slice(0, 15)}-${await xxhash3(contentIdentifier)}`)
 						)
 					}
 
@@ -1177,7 +1177,7 @@ export default async function deploy(
 						invalidatedData.some((a) => a.filePath === contentIdentifier) || // must redeploy, invalid cache
 						!(await copyFromCache(
 							instruction.cacheFolder,
-							path.join(`chunk${content.chunk}`, `${path.basename(contentIdentifier).slice(-15)}-${await xxhash3(contentIdentifier)}`),
+							path.join(`chunk${content.chunk}`, `${path.basename(contentIdentifier).slice(0, 15)}-${await xxhash3(contentIdentifier)}`),
 							path.join(process.cwd(), "temp", rpkgOfFile)
 						)) // cache is not available
 					) {
@@ -1220,7 +1220,7 @@ export default async function deploy(
 						await copyToCache(
 							instruction.cacheFolder,
 							path.join(process.cwd(), "temp", rpkgOfFile),
-							path.join(`chunk${content.chunk}`, `${path.basename(contentIdentifier).slice(-15)}-${await xxhash3(contentIdentifier)}`)
+							path.join(`chunk${content.chunk}`, `${path.basename(contentIdentifier).slice(0, 15)}-${await xxhash3(contentIdentifier)}`)
 						)
 					}
 
@@ -1267,7 +1267,7 @@ export default async function deploy(
 						invalidatedData.some((a) => a.filePath === contentIdentifier) || // must redeploy, invalid cache
 						!(await copyFromCache(
 							instruction.cacheFolder,
-							path.join(`chunk${content.chunk}`, `${path.basename(contentIdentifier).slice(-15)}-${await xxhash3(contentIdentifier)}`),
+							path.join(`chunk${content.chunk}`, `${path.basename(contentIdentifier).slice(0, 15)}-${await xxhash3(contentIdentifier)}`),
 							path.join(process.cwd(), "temp", `chunk${content.chunk}`)
 						)) // cache is not available
 					) {
@@ -1424,7 +1424,7 @@ export default async function deploy(
 						await copyToCache(
 							instruction.cacheFolder,
 							path.join(process.cwd(), "temp", `chunk${content.chunk}`),
-							path.join(`chunk${content.chunk}`, `${path.basename(contentIdentifier).slice(-15)}-${await xxhash3(contentIdentifier)}`)
+							path.join(`chunk${content.chunk}`, `${path.basename(contentIdentifier).slice(0, 15)}-${await xxhash3(contentIdentifier)}`)
 						)
 					}
 
@@ -1516,7 +1516,7 @@ export default async function deploy(
 						invalidatedData.some((a) => a.filePath === contentIdentifier) || // must redeploy, invalid cache
 						!(await copyFromCache(
 							instruction.cacheFolder,
-							path.join(`chunk${content.chunk}`, `${path.basename(contentIdentifier).slice(-15)}-${await xxhash3(contentIdentifier)}`),
+							path.join(`chunk${content.chunk}`, `${path.basename(contentIdentifier).slice(0, 15)}-${await xxhash3(contentIdentifier)}`),
 							path.join(process.cwd(), "temp", `chunk${content.chunk}`)
 						)) // cache is not available
 					) {
@@ -1549,7 +1549,7 @@ export default async function deploy(
 						await copyToCache(
 							instruction.cacheFolder,
 							path.join(process.cwd(), "temp", `chunk${content.chunk}`),
-							path.join(`chunk${content.chunk}`, `${path.basename(contentIdentifier).slice(-15)}-${await xxhash3(contentIdentifier)}`)
+							path.join(`chunk${content.chunk}`, `${path.basename(contentIdentifier).slice(0, 15)}-${await xxhash3(contentIdentifier)}`)
 						)
 					}
 
