@@ -14,5 +14,11 @@
 			"from": "build",
 			"to": ""
 		}
+	],
+	"protocols": [
+		{
+			"name": "Simple Mod Framework",
+			"schemes": ["simple-mod-framework"]
+		}
 	]
 }

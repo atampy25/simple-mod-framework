@@ -14,6 +14,7 @@ import semver from "semver"
 import { xxhash3 } from "hash-wasm"
 import { ModuleKind, ScriptTarget } from "typescript"
 import { compileExpression, useDotAccessOperatorAndOptionalChaining } from "filtrex"
+import { normaliseToHash } from "./utils"
 
 const deepMerge = function (x: any, y: any) {
 	return mergeWith(x, y, (orig, src) => {
@@ -31,7 +32,15 @@ export default async function discover(): Promise<{ [x: string]: { hash: string;
 	// All base game TEMP and TBLU hashes
 	const baseGameEntityHashes = new Set(
 		fs
-			.readFileSync(path.join(process.cwd(), "Third-Party", "baseGameHashes.txt"), "utf8")
+			.readFileSync(path.join(process.cwd(), "Third-Party", "baseGameEntities.txt"), "utf8")
+			.split("\n")
+			.map((a) => a.trim())
+	)
+
+	// All base game WWEV hashes
+	const baseGameSoundbankHashes = new Set(
+		fs
+			.readFileSync(path.join(process.cwd(), "Third-Party", "baseGameSoundbanks.txt"), "utf8")
 			.split("\n")
 			.map((a) => a.trim())
 	)
@@ -53,9 +62,16 @@ export default async function discover(): Promise<{ [x: string]: { hash: string;
 			)
 		) {
 			// Find mod with ID in Mods folder, set the current mod to that folder
-			mod = fs
+			const foundMod = fs
 				.readdirSync(path.join(process.cwd(), "Mods"))
 				.find((a) => fs.existsSync(path.join(process.cwd(), "Mods", a, "manifest.json")) && json5.parse(fs.readFileSync(path.join(process.cwd(), "Mods", a, "manifest.json"), "utf8")).id === mod)
+
+			if (!foundMod) {
+				await logger.error(`Could not resolve mod ${mod} to its folder in Mods!`)
+				return null as unknown as Promise<{ [x: string]: { hash: string; dependencies: string[]; affected: string[] } }>
+			}
+
+			mod = foundMod
 		} // Essentially, if the mod isn't an RPKG mod, it is referenced by its ID, so this finds the mod folder with the right ID
 
 		await logger.verbose(`Beginning mod discovery of ${mod}`)
@@ -324,42 +340,49 @@ export default async function discover(): Promise<{ [x: string]: { hash: string;
 							case "texture.tga": // Depends on nothing, edits the texture files
 								affected.push(...path.basename(contentFilePath).split(".")[0].split("~"))
 								break
-							case "sfx.wem": // Depends on and edits the patched WWEV
+							case "sfx.wem":
+							// Depends on and edits the patched WWEV (HASH~index)
+							case "delta": // Depends on and edits the patched file (HASH~filetype)
 								dependencies.push(path.basename(contentFilePath).split(".")[0].split("~")[0])
 								affected.push(path.basename(contentFilePath).split(".")[0].split("~")[0])
 								break
-							case "delta": // Depends on and edits the patched file
-								dependencies.push(path.basename(contentFilePath).split(".")[0].split("~")[0])
-								affected.push(path.basename(contentFilePath).split(".")[0].split("~")[0])
+							case "rtlv.json":
+							// Depends on nothing, edits the RTLV file
+							case "locr.json": // Depends on nothing, edits the LOCR file
+								entityContent = LosslessJSON.parse(fs.readFileSync(contentFilePath, "utf8"))
+
+								affected.push(normaliseToHash(entityContent.hash))
 								break
 							default: // Replaces a file with a raw file
-								fileToReplace = path.basename(contentFilePath).split(".")[0]
+								if (path.basename(contentFilePath).split(".").slice(1).join(".").length === 4 || path.basename(contentFilePath).split(".").slice(1).join(".").endsWith("meta") || path.basename(contentFilePath).split(".").slice(1).join(".").endsWith("meta.json")) {
+									fileToReplace = path.basename(contentFilePath).split(".")[0]
 
-								if (baseGameEntityHashes.has(fileToReplace)) {
-									await logger.warn(
-										`Mod ${manifest.name} replaces a base game entity file (${fileToReplace}) with a raw file. This can cause compatibility issues, it makes the mod harder to work with and it requires more work when the game updates. Mod developers can fix this easily by using an entity.patch.json file.`
-									)
+									if (baseGameEntityHashes.has(fileToReplace)) {
+										await logger.warn(
+											`Mod ${manifest.name} replaces a base game entity file (${fileToReplace}) with a raw file. This can cause compatibility issues, it makes the mod harder to work with and it requires more work when the game updates. Mod developers can fix this easily by using an entity.patch.json file.`
+										)
+									}
+
+									if (fileToReplace === "00204D1AFD76AB13") {
+										await logger.warn(
+											`Mod ${manifest.name} replaces the repository file (${fileToReplace}) in its entirety. This can cause compatibility issues, it makes the mod harder to work with and it requires more work when the game updates. Mod developers can fix this easily by using a repository.json or JSON.patch.json file.`
+										)
+									}
+
+									if (fileToReplace === "0057C2C3941115CA") {
+										await logger.warn(
+											`Mod ${manifest.name} replaces the unlockables file (${fileToReplace}) in its entirety. This can cause compatibility issues, it makes the mod harder to work with and it requires more work when the game updates. Mod developers can fix this easily by using an unlockables.json or JSON.patch.json file.`
+										)
+									}
+
+									if (baseGameSoundbankHashes.has(fileToReplace)) {
+										await logger.warn(
+											`Mod ${manifest.name} replaces a sound bank file in its entirety. This can cause compatibility issues, it makes the mod harder to work with and it can require more work when the game updates. Mod developers can fix this easily by using an sfx.wem file.`
+										)
+									}
+
+									affected.push(fileToReplace)
 								}
-
-								if (fileToReplace === "00204D1AFD76AB13") {
-									await logger.warn(
-										`Mod ${manifest.name} replaces the repository file (${fileToReplace}) in its entirety. This can cause compatibility issues, it makes the mod harder to work with and it requires more work when the game updates. Mod developers can fix this easily by using a repository.json or JSON.patch.json file.`
-									)
-								}
-
-								if (fileToReplace === "0057C2C3941115CA") {
-									await logger.warn(
-										`Mod ${manifest.name} replaces the unlockables file (${fileToReplace}) in its entirety. This can cause compatibility issues, it makes the mod harder to work with and it requires more work when the game updates. Mod developers can fix this easily by using an unlockables.json or JSON.patch.json file.`
-									)
-								}
-
-								if (path.basename(contentFilePath).split(".")[1] === "WWEV") {
-									await logger.warn(
-										`Mod ${manifest.name} replaces a sound bank file in its entirety. This can cause compatibility issues, it makes the mod harder to work with and it can require more work when the game updates. Mod developers can fix this easily by using an sfx.wem file.`
-									)
-								}
-
-								affected.push(fileToReplace)
 								break
 						}
 

@@ -30,11 +30,13 @@ The content folder contains chunk folders, which contain files (and folders, the
 | `contract.json`       | A contract that will be added to the contracts ORES                          |
 | `JSON.patch.json`     | An RFC6902 JSON patch that will be applied to the hash the file specifies    |
 | `material.json`       | An RPKG tool material JSON that will replace the targeted material           |
+| `rtlv.json`           | A HMLanguageTools RTLV JSON that will replace the targeted file              |
+| `locr.json`           | A HMLanguageTools LOCR JSON that will replace the targeted file              |
 | `texture.tga`         | A TGA to rebuild into a game texture (TEXT only or TEXT and TEXD)            |
 | `sfx.wem`             | A Wwise sound effect to patch a WWEV file with                               |
-| `delta`               | A VCDiff delta file to patch the hash the file specifies with                |
+| `delta`               | A VCDiff delta file to patch the specified file with                         |
 
-The names of special files do not matter - it is their extensions that do, **except for texture.tga and sfx.wem files**. Raw files, which any non-special file is, are placed directly into the built RPKG and so must be named like usual.
+The names of special files do not matter - it is their extensions that do, **except for texture.tga, sfx.wem and delta files**. Raw files, which any non-special file is, are placed directly into the built RPKG and so must be named like usual.
 
 *Note: these are file types, not file names - instead of adding "repository.json" to your mod, add "edits.repository.json".*
 

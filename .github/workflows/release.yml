@@ -11,7 +11,7 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/')
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
@@ -21,17 +21,17 @@ jobs:
 
       - name: Cache
         id: cache
-        uses: actions/cache@v2.1.6
+        uses: actions/cache@v3
         with:
           path: node_modules
-          key: buildCachev24
+          key: buildCachev25
 
       - name: Cache
         id: cache2
-        uses: actions/cache@v2.1.6
+        uses: actions/cache@v3
         with:
           path: Mod Manager/node_modules
-          key: buildCache2v19
+          key: buildCache2v20
 
       - name: Install dependencies
         if: steps.cache.outputs.cache-hit != 'true'
@@ -43,6 +43,8 @@ jobs:
           npm install -g pkg typescript
 
       - name: Build EXE
+        env:
+          NODE_OPTIONS: "--max-old-space-size=4096"
         run: |
           New-Item -ItemType Directory -Force -Path ./node_modules/piscina
           robocopy ./piscina ./node_modules/piscina /COPYALL /E /is /it; if ($lastexitcode -lt 8) { $global:LASTEXITCODE = $null }
@@ -134,7 +136,7 @@ jobs:
 
       - name: Cache
         id: cache
-        uses: actions/cache@v2.1.6
+        uses: actions/cache@v3
         with:
           path: node_modules
           key: buildCachev23

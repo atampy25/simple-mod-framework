@@ -6,9 +6,18 @@
 	import Icon from "svelte-fa"
 	import { faBook, faCog, faEdit, faHome, faInfoCircle, faList } from "@fortawesome/free-solid-svg-icons"
 	import { getConfig } from "$lib/utils"
+	import { page } from "$app/stores"
 
 	let ready: boolean = false
 	onMount(() => (ready = true))
+
+	window.ipc.receive("urlScheme", async (path: string) => {
+		if (path.startsWith("install/")) {
+			window.location.href = "/modList?urlScheme=" + encodeURIComponent(path.replace("install/", ""))
+		} else if (path.startsWith("open-docs-page/")) {
+			window.location.href = "/docs/" + path.replace("open-docs-page/", "")
+		}
+	})
 </script>
 
 {#if ready}

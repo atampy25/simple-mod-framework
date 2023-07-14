@@ -18,6 +18,7 @@
 	import Checkmark from "carbon-icons-svelte/lib/Checkmark.svelte"
 	import Download from "carbon-icons-svelte/lib/Download.svelte"
 	import Edit from "carbon-icons-svelte/lib/Edit.svelte"
+	import Asterisk from "carbon-icons-svelte/lib/Asterisk.svelte"
 
 	let cannotFindConfig = false
 	let cannotFindRuntime = false
@@ -78,6 +79,10 @@
 	}
 
 	if (!cannotFindConfig && !cannotFindRuntime && !cannotFindRetail && !cannotFindGameConfig && !cannotFindHITMAN3) {
+		if (typeof getConfig().knownMods == "undefined") {
+			mergeConfig({ knownMods: [] })
+		}
+
 		if (typeof getConfig().reportErrors == "undefined") {
 			errorReportingPrompt = true
 		}
@@ -89,7 +94,7 @@
 
 	if (
 		window.fs
-			.readdirSync(window.path.join("..", "Mods"))
+			.readdirSync(window.path.join("..", "Mods")).filter(a=>a!="Managed by SMF, do not touch")
 			.map((a) => window.path.resolve(window.path.join("..", "Mods", a)))
 			.some((a) => window.isFile(a))
 	) {
@@ -102,7 +107,7 @@
 		} catch {
 			invalidModText =
 				window.fs
-					.readdirSync(window.path.join("..", "Mods"))
+					.readdirSync(window.path.join("..", "Mods")).filter(a=>a!="Managed by SMF, do not touch")
 					.map((a) => window.path.resolve(window.path.join("..", "Mods", a)))
 					.find((a) => window.fs.existsSync(window.path.join(a, "manifest.json")) && !json5.parse(window.fs.readFileSync(window.path.join(a, "manifest.json"), "utf8")).id)
 					?.split(window.path.sep)
@@ -181,70 +186,90 @@
 	let frameworkExtracting = false
 
 	async function startFrameworkUpdate() {
-		const response = await fetch("https://github.com/atampy25/simple-mod-framework/releases/latest/download/Release.zip")
-		const reader = response.body!.getReader()
+		let chunksAll
 
-		frameworkDownloadSize = +response.headers.get("Content-Length")!
+		try {
+			const response = await fetch("https://github.com/atampy25/simple-mod-framework/releases/latest/download/Release.zip")
+			const reader = response.body!.getReader()
 
-		let receivedLength = 0
-		let chunks = []
-		while (true) {
-			const { done, value } = await reader.read()
+			frameworkDownloadSize = +response.headers.get("Content-Length")!
 
-			if (done) {
-				break
+			let receivedLength = 0
+			let chunks = []
+			while (true) {
+				const { done, value } = await reader.read()
+
+				if (done) {
+					break
+				}
+
+				chunks.push(value)
+				receivedLength += value.length
+
+				frameworkDownloadProgress = receivedLength
 			}
 
-			chunks.push(value)
-			receivedLength += value.length
-
-			frameworkDownloadProgress = receivedLength
+			chunksAll = new Uint8Array(receivedLength)
+			let position = 0
+			for (let chunk of chunks) {
+				chunksAll.set(chunk, position)
+				position += chunk.length
+			}
+		} catch (e) {
+			window.alert("Couldn't download the update! Check your internet connection.\n\n" + e)
+			updatingFramework = false
+			return
 		}
 
-		let chunksAll = new Uint8Array(receivedLength)
-		let position = 0
-		for (let chunk of chunks) {
-			chunksAll.set(chunk, position)
-			position += chunk.length
+		try {
+			frameworkExtracting = true
+
+			window.fs.emptyDirSync("./staging")
+
+			window.fs.writeFileSync("./tempArchive", chunksAll)
+
+			window.child_process.execSync(`"..\\Third-Party\\7z.exe" x "./tempArchive" -aoa -y -o"./staging"`)
+
+			window.fs.removeSync("./staging/Mods")
+			window.fs.removeSync("./staging/cleanPackageDefinition.txt")
+			window.fs.removeSync("./staging/cleanThumbs.dat")
+			window.fs.removeSync("./staging/config.json")
+			window.fs.removeSync("./staging/Mod Manager/chrome_100_percent.pak")
+			window.fs.removeSync("./staging/Mod Manager/chrome_200_percent.pak")
+			window.fs.removeSync("./staging/Mod Manager/d3dcompiler_47.dll")
+			window.fs.removeSync("./staging/Mod Manager/ffmpeg.dll")
+			window.fs.removeSync("./staging/Mod Manager/icudtl.dat")
+			window.fs.removeSync("./staging/Mod Manager/libEGL.dll")
+			window.fs.removeSync("./staging/Mod Manager/libGLESv2.dll")
+			window.fs.removeSync("./staging/Mod Manager/Mod Manager.exe")
+			window.fs.removeSync("./staging/Mod Manager/locales")
+			window.fs.removeSync("./staging/Mod Manager/resources.pak")
+			window.fs.removeSync("./staging/Mod Manager/snapshot_blob.bin")
+			window.fs.removeSync("./staging/Mod Manager/v8_context_snapshot.bin")
+			window.fs.removeSync("./staging/Mod Manager/vk_swiftshader.dll")
+			window.fs.removeSync("./staging/Mod Manager/vk_swiftshader_icd.json")
+			window.fs.removeSync("./staging/Mod Manager/vulkan_1.dll")
+		} catch (e) {
+			window.alert("Couldn't extract the update! You may want to report this to Atampy26 on Hitman Forum.\n\n" + e)
+			updatingFramework = false
+			return
 		}
 
-		frameworkExtracting = true
+		try {
+			window.fs.removeSync("../Load Order Manager")
 
-		window.fs.emptyDirSync("./staging")
+			window.originalFs.renameSync("./staging/Mod Manager/resources/app.asar", "./temp.asar")
+			window.originalFs.cpSync("./staging", "..", { recursive: true })
+			window.originalFs.copyFileSync("./temp.asar", "./resources/app.asar")
 
-		window.fs.writeFileSync("./tempArchive", chunksAll)
-
-		window.child_process.execSync(`"..\\Third-Party\\7z.exe" x "./tempArchive" -aoa -y -o"./staging"`)
-
-		window.fs.removeSync("./staging/Mods")
-		window.fs.removeSync("./staging/cleanPackageDefinition.txt")
-		window.fs.removeSync("./staging/cleanThumbs.dat")
-		window.fs.removeSync("./staging/config.json")
-		window.fs.removeSync("./staging/Mod Manager/chrome_100_percent.pak")
-		window.fs.removeSync("./staging/Mod Manager/chrome_200_percent.pak")
-		window.fs.removeSync("./staging/Mod Manager/d3dcompiler_47.dll")
-		window.fs.removeSync("./staging/Mod Manager/ffmpeg.dll")
-		window.fs.removeSync("./staging/Mod Manager/icudtl.dat")
-		window.fs.removeSync("./staging/Mod Manager/libEGL.dll")
-		window.fs.removeSync("./staging/Mod Manager/libGLESv2.dll")
-		window.fs.removeSync("./staging/Mod Manager/Mod Manager.exe")
-		window.fs.removeSync("./staging/Mod Manager/locales")
-		window.fs.removeSync("./staging/Mod Manager/resources.pak")
-		window.fs.removeSync("./staging/Mod Manager/snapshot_blob.bin")
-		window.fs.removeSync("./staging/Mod Manager/v8_context_snapshot.bin")
-		window.fs.removeSync("./staging/Mod Manager/vk_swiftshader.dll")
-		window.fs.removeSync("./staging/Mod Manager/vk_swiftshader_icd.json")
-		window.fs.removeSync("./staging/Mod Manager/vulkan_1.dll")
-
-		window.fs.removeSync("../Load Order Manager")
-
-		window.originalFs.renameSync("./staging/Mod Manager/resources/app.asar", "./temp.asar")
-		window.originalFs.cpSync("./staging", "..", { recursive: true })
-		window.originalFs.copyFileSync("./temp.asar", "./resources/app.asar")
-
-		window.fs.removeSync("./staging")
-		window.fs.removeSync("./tempArchive")
-		window.fs.removeSync("./temp.asar")
+			window.fs.removeSync("./staging")
+			window.fs.removeSync("./tempArchive")
+			window.fs.removeSync("./temp.asar")
+		} catch (e) {
+			window.alert("Couldn't apply the update! You may want to report this to Atampy26 on Hitman Forum.\n\n" + e)
+			updatingFramework = false
+			return
+		}
 
 		updatingFramework = false
 
@@ -253,7 +278,7 @@
 
 	let modUpdates = checkForModUpdates()
 
-	async function checkForModUpdates(): Promise<any> {
+	async function checkForModUpdates(): Promise<[string, { version: string; changelog: string; url: string; check_url: string } | false][]> {
 		let modUpdateJSONs = []
 
 		for (let mod of getAllMods()) {
@@ -281,7 +306,7 @@
 						let currentSection = ""
 						for (const item of allNewReleases) {
 							for (const line of item.split("\n")) {
-								if (line.trim() !== "") {
+								if (line.trim() !== "" && !line.includes("hitman-resources.netlify.app/smf-install-link")) {
 									if (line.trim().startsWith("##")) {
 										sections[line.trim()] ??= []
 										currentSection = line.trim()
@@ -297,7 +322,19 @@
 							.join("\n")
 					}
 
-					modUpdateJSONs.push([mod, { version: updateJSON.version, changelog, url: updateJSON.url }])
+					if (!changelog) {
+						throw new Error()
+					}
+
+					if (!updateJSON.url) {
+						throw new Error()
+					}
+
+					if (!semver.valid(updateJSON.version, { loose: false })) {
+						throw new Error()
+					}
+
+					modUpdateJSONs.push([mod, { ...updateJSON, changelog, check_url: getManifestFromModID(mod).updateCheck! }])
 				} catch {
 					modUpdateJSONs.push([mod, false])
 				}
@@ -312,66 +349,79 @@
 		version: string
 		url: string
 		changelog: string
-		managedFilesAndFolders: string[]
 	} | null = null
 	let modDownloadProgress = 0
 	let modDownloadSize = 0
 	let modExtracting = false
 
 	async function startModUpdate() {
-		const response = await fetch(updatingMod!.url)
-		const reader = response.body!.getReader()
+		let chunksAll
 
-		modDownloadSize = +response.headers.get("Content-Length")!
+		try {
+			const response = await fetch(updatingMod!.url)
+			const reader = response.body!.getReader()
 
-		let receivedLength = 0
-		let chunks = []
-		while (true) {
-			const { done, value } = await reader.read()
+			modDownloadSize = +response.headers.get("Content-Length")!
 
-			if (done) {
-				break
+			let receivedLength = 0
+			let chunks = []
+			while (true) {
+				const { done, value } = await reader.read()
+
+				if (done) {
+					break
+				}
+
+				chunks.push(value)
+				receivedLength += value.length
+
+				modDownloadProgress = receivedLength
 			}
 
-			chunks.push(value)
-			receivedLength += value.length
-
-			modDownloadProgress = receivedLength
+			chunksAll = new Uint8Array(receivedLength)
+			let position = 0
+			for (let chunk of chunks) {
+				chunksAll.set(chunk, position)
+				position += chunk.length
+			}
+		} catch (e) {
+			window.alert("Couldn't download the mod update! Check your internet connection, or contact the mod author for help.\n\n" + e)
+			updatingMod = null
+			return
 		}
 
-		let chunksAll = new Uint8Array(receivedLength)
-		let position = 0
-		for (let chunk of chunks) {
-			chunksAll.set(chunk, position)
-			position += chunk.length
+		try {
+			modExtracting = true
+
+			window.fs.emptyDirSync("./staging")
+
+			window.fs.writeFileSync("./tempArchive", chunksAll)
+
+			window.child_process.execSync(`"..\\Third-Party\\7z.exe" x "./tempArchive" -aoa -y -o"./staging"`)
+
+			if (window.klaw("./staging", { depthLimit: 0, nodir: true }).length) {
+				window.alert("Error: mod update ZIP has files in the root!")
+				throw new Error("Mod update ZIP has files in the root!")
+			}
+
+			window.fs.removeSync(getModFolder(updatingMod!.id))
+
+			window.fs.copySync("./staging", "../Mods")
+
+			window.fs.removeSync("./staging")
+			window.fs.removeSync("./tempArchive")
+		} catch (e) {
+			window.alert("Couldn't extract and apply the mod update! Contact the mod author for help.\n\n" + e)
+			updatingMod = null
+			return
 		}
-
-		modExtracting = true
-
-		window.fs.emptyDirSync("./staging")
-
-		window.fs.writeFileSync("./tempArchive", chunksAll)
-
-		window.child_process.execSync(`"..\\Third-Party\\7z.exe" x "./tempArchive" -aoa -y -o"./staging"`)
-
-		if (window.klaw("./staging", { depthLimit: 0, nodir: true }).length) {
-			window.alert("Error: mod update ZIP has files in the root!")
-			throw new Error("Mod update ZIP has files in the root!")
-		}
-
-		window.fs.removeSync(getModFolder(updatingMod!.id))
-
-		window.fs.copySync("./staging", "../Mods")
-
-		window.originalFs.writeFileSync(window.path.join("..", "Mods", window.fs.readdirSync("./staging")[0], "manifest.json:SMFExtractionTag"), "Extracted via SMF")
-
-		window.fs.removeSync("./staging")
-		window.fs.removeSync("./tempArchive")
 
 		updatingMod = null
 
 		window.location.reload()
 	}
+
+	const trustedHosts = new Set(["github.com", "raw.githubusercontent.com", "dropbox.com", "dl.dropboxusercontent.com", "drive.google.com", "hitman-resources.netlify.app"])
 </script>
 
 <div class="w-full h-full overflow-y-auto flex items-center justify-center gap-96">
@@ -406,7 +456,7 @@
 				{#if semver.lt(FrameworkVersion, release.tag_name)}
 					<div class="flex items-center">
 						<h3 class="flex-grow">
-							{({ patch: "Framework patch available", minor: "Minor framework update available", major: "Major framework update available" })[
+							{{ patch: "Patch update available", minor: "Feature update available", major: "Major update available" }[
 								semver.diff(FrameworkVersion, release.tag_name)
 							] || "Update available"}
 						</h3>
@@ -432,7 +482,7 @@
 					{/if}
 				{:else}
 					<div class="flex items-center">
-						<p class="flex-grow">Up to date (version {FrameworkVersion})</p>
+						<p class="flex-grow">The framework is up to date (version {FrameworkVersion})</p>
 						<Checkmark />
 					</div>
 				{/if}
@@ -454,7 +504,9 @@
 					</div>
 				</div>
 			{:then updates}
-				{#each updates.filter(([modID, update]) => !update) as [modID] (modID)}
+				{@const upToDateMods = updates.filter(([modID, update]) => update && !semver.lt(getManifestFromModID(modID).version, update.version))}
+
+				{#each updates.filter(([modID, update]) => !update) as [modID, update] (modID)}
 					<div class="flex items-center">
 						<p class="flex-grow">Couldn't check {getManifestFromModID(modID).name} for updates</p>
 						<div>
@@ -462,12 +514,31 @@
 						</div>
 					</div>
 				{/each}
-				{#each updates.filter(([modID, update]) => update && !semver.lt(getManifestFromModID(modID).version, update.version)) as [modID, update] (modID)}
+				{#each updates.filter(([modID, update]) => update && (!(trustedHosts.has(new URL(update.check_url).hostname) || new URL(update.check_url).hostname.split(".").slice(1).join(".") === "github.io") || !(trustedHosts.has(new URL(update.url).hostname) || new URL(update.url).hostname.split(".").slice(1).join(".") === "github.io"))) as [modID, update]}
 					<div class="flex items-center">
-						<p class="flex-grow">{getManifestFromModID(modID).name} is up to date</p>
-						<Checkmark />
+						<p class="flex-grow">The author of {getManifestFromModID(modID).name} may be able to find which IPs have their mod downloaded</p>
+						<Asterisk />
 					</div>
 				{/each}
+				{#each updates.filter(([modID, update]) => update && Object.keys(update).length !== 4) as [modID, update]}
+					<div class="flex items-center">
+						<p class="flex-grow">{getManifestFromModID(modID).name} has an unused update key</p>
+						<Asterisk />
+					</div>
+				{/each}
+				{#if upToDateMods.length < 6}
+					{#each upToDateMods as [modID, update] (modID)}
+						<div class="flex items-center">
+							<p class="flex-grow">{getManifestFromModID(modID).name} is up to date</p>
+							<Checkmark />
+						</div>
+					{/each}
+				{:else}
+					<div class="flex items-center">
+						<p class="flex-grow">{upToDateMods.length != updates.length ? upToDateMods.length : "All"} mods are up to date</p>
+						<Checkmark />
+					</div>
+				{/if}
 				{#each updates.filter(([modID, update]) => update && semver.lt(getManifestFromModID(modID).version, update.version)) as [modID, update] (modID)}
 					<div class="my-4">
 						<div class="flex items-center">
@@ -551,8 +622,9 @@
 <Modal alert bind:open={installedViaZIP} modalHeading="Installed via alternate means" primaryButtonText="OK" on:submit={() => (installedViaZIP = false)}>
 	<p>
 		The framework has been installed via alternate means (likely by extracting a ZIP file). This could be because you installed the framework before the installer EXE existed (in which case you
-		can safely ignore this warning), or because you deliberately downloaded a ZIP file version from a site other than Nexus Mods. In that case, while it might not affect the functioning of the
-		framework, it's still best to use the officially supported installer available on Nexus Mods.
+		can safely ignore this warning), because you manually updated the framework (which is also OK, though the auto-updater is more convenient when possible), or because you deliberately downloaded
+		a ZIP file version from a site other than Nexus Mods. In that case, while it might not affect the functioning of the framework, it's still best to use the officially supported installer
+		available on Nexus Mods.
 	</p>
 </Modal>
 

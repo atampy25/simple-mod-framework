@@ -4,7 +4,7 @@
 
 	import SortableList from "svelte-sortable-list"
 	import json5 from "json5"
-	import { Button, CodeSnippet, InlineNotification, Modal, Search } from "carbon-components-svelte"
+	import { Button, CodeSnippet, InlineNotification, Modal, ProgressBar, Search } from "carbon-components-svelte"
 	import AnsiToHTML from "ansi-to-html"
 
 	const convertAnsi = new AnsiToHTML({
@@ -48,6 +48,7 @@
 	import CloudUpload from "carbon-icons-svelte/lib/CloudUpload.svelte"
 	import Filter from "carbon-icons-svelte/lib/Filter.svelte"
 	import { OptionType } from "../../../src/types"
+	import { page } from "$app/stores"
 
 	let enabledMods: { value: string }[] = [],
 		disabledMods: { value: string }[] = []
@@ -133,6 +134,16 @@
 
 	async function addMod() {
 		if (modFilePath.endsWith(".rpkg")) {
+			let result = [...modFilePath.matchAll(/(chunk[0-9]*(?:patch.*)?)\.rpkg/g)]
+			result = [...result[result.length - 1][result[result.length - 1].length - 1].matchAll(/(chunk[0-9]*)/g)]
+			let chunk = result[result.length - 1][result[result.length - 1].length - 1]
+
+			if (!chunk) {
+				chunk = "chunk0"
+			}
+			
+			rpkgsToInstall = [{ path: modFilePath, chunk }]
+
 			modNameInputModalOpen = true
 		} else {
 			window.fs.emptyDirSync("./staging")
@@ -185,11 +196,13 @@
 				} else {
 					window.fs.copySync("./staging", "../Mods")
 
-					window.originalFs.writeFileSync(window.path.join("..", "Mods", window.fs.readdirSync("./staging")[0], "manifest.json:SMFExtractionTag"), "Extracted via SMF")
+					mergeConfig({
+						knownMods: [...getConfig().knownMods, json5.parse(window.fs.readFileSync(window.path.join("..", "Mods", window.fs.readdirSync("./staging")[0], "manifest.json"), "utf8")).id]
+					})
 
 					window.fs.removeSync("./staging")
 
-					window.location.reload()
+					window.location.href = "/modList"
 
 					frameworkModExtractionInProgress = false
 				}
@@ -240,6 +253,8 @@
 			window.fs.copyFileSync(file.path, window.path.join("..", "Mods", rpkgModName, file.chunk, window.path.basename(file.path)))
 		}
 
+		mergeConfig({ knownMods: [...getConfig().knownMods, rpkgModName] })
+
 		window.fs.removeSync("./staging")
 
 		window.location.reload()
@@ -251,27 +266,18 @@
 	const extractedMods: string[] = []
 
 	if (!getConfig().developerMode) {
-		// If no mods have the tag (likely updated from older SMF)
-		if (
-			getAllMods()
-				.filter((a) => modIsFramework(a))
-				.every((a) => !window.originalFs.existsSync(window.path.join(getModFolder(a), "manifest.json:SMFExtractionTag")))
-		) {
-			for (const mod of getAllMods().filter((a) => modIsFramework(a))) {
-				const modFolder = getModFolder(mod)
-
-				// Assume every mod has been installed correctly
-				window.originalFs.writeFileSync(window.path.join(modFolder, "manifest.json:SMFExtractionTag"), "Extracted via SMF")
-			}
+		// If no mods are known
+		if (getConfig().knownMods.length == 0) {
+			// Assume all mods are installed correctly
+			mergeConfig({ knownMods: getAllMods() })
 		}
 
-		for (const mod of getAllMods().filter((a) => modIsFramework(a))) {
-			const modFolder = getModFolder(mod)
-
-			if (!window.originalFs.existsSync(window.path.join(modFolder, "manifest.json:SMFExtractionTag"))) {
+		for (const mod of getAllMods()) {
+			if (!getConfig().knownMods.includes(mod)) {
 				extractedMods.push(getManifestFromModID(mod).name)
 				displayExtractedModsDialog = true
-				window.originalFs.writeFileSync(window.path.join(modFolder, "manifest.json:SMFExtractionTag"), "Extracted via SMF") // Will prevent the message from being shown again for the same mod
+
+				mergeConfig({ knownMods: [...getConfig().knownMods, mod] })
 			}
 		}
 	}
@@ -282,6 +288,62 @@
 
 	let availableModFilter = ""
 	let enabledModFilter = ""
+
+	let autoInstallDownloading = false
+	let autoInstallDownloadProgress = 0
+	let autoInstallDownloadSize = 0
+	let autoInstallModName = ""
+	let autoInstallModalOpen = false
+
+	$: if ($page.url.searchParams.get("urlScheme")) {
+		;(async () => {
+			let chunksAll
+
+			try {
+				autoInstallDownloading = true
+
+				const response = await fetch($page.url.searchParams.get("urlScheme")!)
+				const reader = response.body!.getReader()
+
+				autoInstallDownloadSize = +response.headers.get("Content-Length")!
+
+				let receivedLength = 0
+				let chunks = []
+				while (true) {
+					const { done, value } = await reader.read()
+
+					if (done) {
+						break
+					}
+
+					chunks.push(value)
+					receivedLength += value.length
+
+					autoInstallDownloadProgress = receivedLength
+				}
+
+				chunksAll = new Uint8Array(receivedLength)
+				let position = 0
+				for (let chunk of chunks) {
+					chunksAll.set(chunk, position)
+					position += chunk.length
+				}
+			} catch (e) {
+				window.alert("Couldn't download the mod! Check your internet connection, or contact the mod author for help.\n\n" + e)
+				autoInstallDownloading = false
+				return
+			}
+
+			window.fs.writeFileSync("./tempArchive", chunksAll)
+
+			window.fs.emptyDirSync("./staging")
+			window.child_process.execSync(`"..\\Third-Party\\7z.exe" x "./tempArchive" -aoa -y -o"./staging"`)
+
+			autoInstallDownloading = false
+			autoInstallModName = json5.parse(window.fs.readFileSync(window.path.join("./staging", window.fs.readdirSync("./staging")[0], "manifest.json"), "utf8")).name
+			autoInstallModalOpen = true
+		})()
+	}
 </script>
 
 <div class="grid grid-cols-2 gap-4 w-full mb-16">
@@ -435,6 +497,8 @@
 	on:click:button--secondary={() => (deleteModModalOpen = false)}
 	on:submit={() => {
 		window.fs.removeSync(getModFolder(deleteModInProgress))
+		mergeConfig({ knownMods: getConfig().knownMods.filter((a) => a != deleteModInProgress) })
+
 		deleteModModalOpen = false
 		window.location.reload()
 	}}
@@ -459,15 +523,15 @@
 		class="mt-2 h-[10vh] overflow-y-auto whitespace-pre-wrap bg-neutral-800 p-2"
 		style="font-family: 'Fira Code', 'IBM Plex Mono', 'Menlo', 'DejaVu Sans Mono', 'Bitstream Vera Sans Mono', Courier, monospace; color-scheme: dark"
 		id="deployOutputElement">{@html convertAnsi.toHtml(deployOutput)}</pre>
-	{#if deployOutput.split(/\r?\n/).some((a) => a.startsWith("WARN")) || deployOutput.split(/\r?\n/).some((a) => a.startsWith("ERROR"))}
+	{#if deployOutput.split(/\r?\n/).some((a) => a.match(/.*WARN.*?\t/)) || deployOutput.split(/\r?\n/).some((a) => a.match(/.*ERROR.*?\t/))}
 		<br />
 		<div class="flex flex-row gap-2 flex-wrap max-h-[15vh] overflow-y-auto">
-			{#each deployOutput.split(/\r?\n/).filter((a) => a.startsWith("WARN") || a.startsWith("ERROR")) as line}
-				<InlineNotification hideCloseButton lowContrast kind={line.startsWith("WARN") ? "warning" : "error"}>
+			{#each deployOutput.split(/\r?\n/).filter((a) => a.match(/.*WARN.*?\t/) || a.match(/.*ERROR.*?\t/)) as line}
+				<InlineNotification hideCloseButton lowContrast kind={line.includes("WARN") ? "warning" : "error"}>
 					<div slot="title" class="-mt-1 text-lg">
-						{line.startsWith("WARN") ? "Warning" : "Error"}
+						{line.includes("WARN") ? "Warning" : "Error"}
 					</div>
-					<div slot="subtitle">{line.replace("WARN ", "").replace("ERROR ", "")}</div>
+					<div slot="subtitle">{line.replace(/.*WARN.*?\t/, "").replace(/.*ERROR.*?\t/, "")}</div>
 				</InlineNotification>
 			{/each}
 		</div>
@@ -481,7 +545,7 @@
 				.map((a) => a.trim())
 				.filter((a) => a.length)
 				.at(-1)
-				.match(/\tDone in .*\./) && !deployOutput.split(/\r?\n/).some((a) => a.startsWith("WARN"))}
+				.match(/\tDone in .*/) && !deployOutput.split(/\r?\n/).some((a) => a.match(/.*WARN.*?\t/))}
 				<Button kind="primary" icon={Close} on:click={() => (frameworkDeployModalOpen = false)}>Close</Button>
 				<span class="text-green-300">Deploy successful</span>
 			{:else if deployOutput
@@ -489,7 +553,7 @@
 				.map((a) => a.trim())
 				.filter((a) => a.length)
 				.at(-1)
-				.match(/\tDone in .*\./) && deployOutput.split(/\r?\n/).some((a) => a.startsWith("WARN"))}
+				.match(/\tDone in .*/) && deployOutput.split(/\r?\n/).some((a) => a.match(/.*WARN.*?\t/))}
 				<Button kind="primary" icon={Close} on:click={() => (frameworkDeployModalOpen = false)}>Close</Button>
 				<span class="text-yellow-300">Potential issues in deployment</span>
 			{:else}
@@ -503,7 +567,7 @@
 							headers: {
 								"Content-Type": "application/json"
 							},
-							body: JSON.stringify({ content: "Config:\n" + JSON.stringify(getConfig()) + "\n\nDeploy log:\n" + deployOutput })
+							body: JSON.stringify({ content: "Config:\n" + JSON.stringify(getConfig()) + "\n\nDeploy log:\n" + window.fs.readFileSync("../Deploy.log", "utf8") })
 						})
 
 						if (req.status == 200) {
@@ -571,11 +635,11 @@
 	on:click:button--primary={() => {
 		window.fs.copySync("./staging", "../Mods")
 
-		window.originalFs.writeFileSync(window.path.join("..", "Mods", window.fs.readdirSync("./staging")[0], "manifest.json:SMFExtractionTag"), "Extracted via SMF")
+		mergeConfig({ knownMods: [...getConfig().knownMods, json5.parse(window.fs.readFileSync(window.path.join("..", "Mods", window.fs.readdirSync("./staging")[0], "manifest.json"), "utf8")).id] })
 
 		window.fs.removeSync("./staging")
 
-		window.location.reload()
+		window.location.href = "/modList"
 	}}
 >
 	<p>
@@ -616,6 +680,28 @@
 	<CodeSnippet code={uploadedLogURL} />
 	<br />
 	<div class="mb-6" />
+</Modal>
+
+<Modal passiveModal open={autoInstallDownloading} modalHeading={"Downloading the mod"} preventCloseOnClickOutside>
+	<div class="mb-2">The mod is currently being downloaded - please wait.</div>
+	<br />
+	<ProgressBar kind="inline" value={autoInstallDownloadProgress} max={autoInstallDownloadSize} labelText="Downloading..." />
+</Modal>
+
+<Modal
+	bind:open={autoInstallModalOpen}
+	modalHeading="Installing {autoInstallModName}"
+	primaryButtonText="OK"
+	secondaryButtonText="Cancel"
+	shouldSubmitOnEnter={false}
+	on:click:button--secondary={() => (autoInstallModalOpen = false)}
+	on:click:button--primary={() => {
+		autoInstallModalOpen = false
+		modFilePath = "./tempArchive"
+		addMod()
+	}}
+>
+	<p>The mod {autoInstallModName} has been downloaded via a link - would you like to install it?</p>
 </Modal>
 
 <style>

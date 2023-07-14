@@ -83,6 +83,7 @@ The top-level extension key `SMF` can be used to control certain aspects of how 
     "SMF": {
         "destinations": {
             "addToDestinations": true, // Whether the contract should automatically be added to the Destinations page
+            "peacockIntegration": true, // Whether Peacock should respect these settings, defaults to true if omitted
             "narrativeContext": "Mission", // Mission or Campaign in the base game, defaults to Mission if omitted
             "placeBefore": "735d005c-698e-5a3f-9a55-15e4fea0f816", // A contract ID to place this one before; cannot be used with placeAfter
             "placeAfter": "735d005c-698e-5a3f-9a55-15e4fea0f816" // A contract ID to place this one after; cannot be used with placeBefore
@@ -120,6 +121,14 @@ If the file is the REPO, it will be transformed to the format used by the `repos
 
 ## material.json
 An RPKG tool material JSON. Replaces a game material.
+
+## rtlv.json
+An RTLV file obtained from Anthony Fuller's HMLanguageTools. Will be converted to an RTLV file and placed in the staging folder (overriding any existing game file).
+
+## locr.json
+A LOCR file obtained from Anthony Fuller's HMLanguageTools. Will be converted to a LOCR file and placed in the staging folder (overriding any existing game file).
+
+For mod localisation, you should use the `localisation` key in the manifest; this filetype is useful in instances where it is necessary to completely override a localisation file or introduce a new localisation file.
 
 ## texture.tga
 **Note:** The filename matters for this special type.
