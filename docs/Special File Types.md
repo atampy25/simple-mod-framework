@@ -142,7 +142,7 @@ For mod localisation, you should use the `localisation` key in the manifest; thi
 ## texture.tga
 **Note:** The filename matters for this special type.
 
-Must also have a .texture.tga.meta file next to it (obtained from Anthony Fuller's [HMTextureTools](https://tonytools.win/tools/hmlanguages)). If the file should only be converted to a TEXT file, the files should be named `TEXThash.texture.tga` and `TEXThash.texture.tga.meta`. If the file should be converted to both a TEXT file and a TEXD file, the files should be named `TEXThash~TEXDhash.texture.tga` and `TEXThash~TEXDhash.texture.tga.meta`. For example, the TEXT-only Instinct LUT texture would be `008C1F5C7305A978.texture.tga` and `008C1F5C7305A978.texture.tga.meta`.
+Must also have a .texture.tga.meta file next to it (obtained from Anthony Fuller's [HMTextureTools](https://tonytools.win/tools/hmtexturetools)). If the file should only be converted to a TEXT file, the files should be named `TEXThash.texture.tga` and `TEXThash.texture.tga.meta`. If the file should be converted to both a TEXT file and a TEXD file, the files should be named `TEXThash~TEXDhash.texture.tga` and `TEXThash~TEXDhash.texture.tga.meta`. For example, the TEXT-only Instinct LUT texture would be `008C1F5C7305A978.texture.tga` and `008C1F5C7305A978.texture.tga.meta`.
 
 The framework will automatically convert the TGA to the specified texture files and place them in the staging folder based on the specified hash in the file name.
 
