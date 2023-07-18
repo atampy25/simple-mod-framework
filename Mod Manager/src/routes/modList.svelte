@@ -567,7 +567,7 @@
 							headers: {
 								"Content-Type": "application/json"
 							},
-							body: JSON.stringify({ content: "Config:\n" + JSON.stringify(getConfig()) + "\n\nDeploy log:\n" + window.fs.readFileSync("../Deploy.log", "utf8") })
+							body: JSON.stringify({ content: "Config:\n" + JSON.stringify(getConfig()) + "\n\nDeploy log:\n" + deployOutput })
 						})
 
 						if (req.status == 200) {
