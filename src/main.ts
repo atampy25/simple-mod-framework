@@ -151,27 +151,6 @@ async function doTheThing() {
 	if (core.config.reportErrors) {
 		await core.logger.info("Initialising error reporting")
 
-		Sentry.init({
-			dsn: "https://464c3dd1424b4270803efdf7885c1b90@o1144555.ingest.sentry.io/6208676",
-			release: core.isDevBuild ? "dev" : core.FrameworkVersion,
-			environment: core.isDevBuild ? "dev" : "production",
-			tracesSampleRate: 0.5,
-			integrations: [
-				new Sentry.Integrations.OnUncaughtException({
-					onFatalError: (err) => {
-						if (!String(err).includes("write EPIPE")) {
-							void core.logger.info("Reporting an error:").then(() => {
-								void core.logger.error(`Uncaught exception! ${err}`, false)
-							})
-						}
-					}
-				}),
-				new Sentry.Integrations.OnUnhandledRejection({
-					mode: "strict"
-				})
-			]
-		})
-
 		Sentry.setUser({
 			id: core.config.errorReportingID!
 		})

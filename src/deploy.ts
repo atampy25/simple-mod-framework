@@ -607,64 +607,6 @@ export default async function deploy(
 
 			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 			let entityContent: any
-
-			const sentryContentFileTransaction = [
-				"entity.json",
-				"entity.patch.json",
-				"unlockables.json",
-				"repository.json",
-				"contract.json",
-				"JSON.patch.json",
-				"material.json",
-				"texture.tga",
-				"sfx.wem",
-				"delta",
-				"locr.json"
-			].includes(content.type)
-				? sentryContentTransaction.startChild({
-						op: "stageContentFile",
-						description: `Stage ${content.type}`
-				  })
-				: {
-						startChild() {
-							return {
-								startChild() {
-									return {
-										startChild() {
-											return {
-												startChild() {
-													return {
-														startChild() {
-															return {
-																startChild() {
-																	return {
-																		startChild() {
-																			return {
-																				finish() {}
-																			}
-																		},
-																		finish() {}
-																	}
-																},
-																finish() {}
-															}
-														},
-														finish() {}
-													}
-												},
-												finish() {}
-											}
-										},
-										finish() {}
-									}
-								},
-								finish() {}
-							}
-						},
-						finish() {}
-				  } // Don't track raw files, only special file types
-			configureSentryScope(sentryContentFileTransaction)
-
 			content.source === "disk" && logger.verbose(`Staging ${content.type} file ${content.path}`)
 			content.source === "virtual" && logger.verbose(`Staging virtual ${content.type} file ${content.identifier}`)
 
