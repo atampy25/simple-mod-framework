@@ -1563,8 +1563,30 @@ export default async function deploy(
 					)
 					break
 				}
+				case "clng.json":
+				case "ditl.json":
+				case "dlge.json":
+				case "locr.json":
 				case "rtlv.json": {
-					await logger.debug(`Converting video subtitle file ${contentIdentifier}`)
+					const binaryType = content.type.split(".")[0].toUpperCase()
+					await logger.debug(
+						((): string => {
+							switch (binaryType) {
+								case "CLNG":
+									return `Converting languages file ${contentIdentifier}`
+								case "DITL":
+									return `Converting soundtags file ${contentIdentifier}`
+								case "DLGE":
+									return `Converting dialogue file ${contentIdentifier}`
+								case "LOCR":
+									return `Converting localisation file ${contentIdentifier}`
+								case "RLTV":
+									return `Converting runtime video file ${contentIdentifier}`
+								default:
+									return `` // We will never hit this, but stops typescript complaining
+							}
+						})()
+					)
 
 					entityContent = content.source === "disk" ? JSON.parse(fs.readFileSync(content.path, "utf8")) : JSON.parse(await content.content.text())
 
@@ -1581,17 +1603,17 @@ export default async function deploy(
 							contentFilePath = content.path
 						} else {
 							fs.ensureDirSync(path.join(process.cwd(), "virtual"))
-							fs.writeFileSync(path.join(process.cwd(), "virtual", "rtlv.json"), Buffer.from(await content.content.arrayBuffer()))
-							contentFilePath = path.join(process.cwd(), "virtual", "rtlv.json")
+							fs.writeFileSync(path.join(process.cwd(), "virtual", content.type), Buffer.from(await content.content.arrayBuffer()))
+							contentFilePath = path.join(process.cwd(), "virtual", content.type)
 						}
 
 						execCommand(
-							`"Third-Party\\HMLanguageTools" rebuild H3 RTLV "${contentFilePath}" "${path.join(process.cwd(), "temp", `chunk${content.chunk}`, `${hash}.RTLV`)}" --metapath "${path.join(
+							`"Third-Party\\HMLanguageTools" rebuild H3 ${binaryType} "${contentFilePath}" "${path.join(
 								process.cwd(),
 								"temp",
 								`chunk${content.chunk}`,
-								`${hash}.RTLV.meta.json`
-							)}"`
+								`${hash}.${binaryType}`
+							)}" --metapath "${path.join(process.cwd(), "temp", `chunk${content.chunk}`, `${hash}.${binaryType}.meta.json`)}"`
 						)
 
 						fs.removeSync(path.join(process.cwd(), "virtual"))
@@ -1601,52 +1623,12 @@ export default async function deploy(
 
 					fs.ensureDirSync(path.join(process.cwd(), "staging", `chunk${content.chunk}`))
 
-					// Copy LOCR files
-					fs.copyFileSync(path.join(process.cwd(), "temp", `chunk${content.chunk}`, `${hash}.RTLV`), path.join(process.cwd(), "staging", `chunk${content.chunk}`, `${hash}.RTLV`))
-					fs.copyFileSync(path.join(process.cwd(), "temp", `chunk${content.chunk}`, `${hash}.RTLV.meta.json`), path.join(process.cwd(), "staging", `chunk${content.chunk}`, `${hash}.RTLV.meta.json`))
-					break
-				}
-				case "locr.json": {
-					await logger.debug(`Converting localisation file ${contentIdentifier}`)
-
-					entityContent = content.source === "disk" ? JSON.parse(fs.readFileSync(content.path, "utf8")) : JSON.parse(await content.content.text())
-
-					const hash = normaliseToHash(entityContent["hash"])
-
-					if (
-						invalidatedData.some((a) => a.filePath === contentIdentifier) || // must redeploy, invalid cache
-						!(await copyFromCache(instruction.cacheFolder, path.join(`chunk${content.chunk}`, await xxhash3(contentIdentifier)), path.join(process.cwd(), "temp", `chunk${content.chunk}`))) // cache is not available
-					) {
-						fs.ensureDirSync(path.join(process.cwd(), "temp", `chunk${content.chunk}`))
-
-						let contentFilePath
-						if (content.source === "disk") {
-							contentFilePath = content.path
-						} else {
-							fs.ensureDirSync(path.join(process.cwd(), "virtual"))
-							fs.writeFileSync(path.join(process.cwd(), "virtual", "locr.json"), Buffer.from(await content.content.arrayBuffer()))
-							contentFilePath = path.join(process.cwd(), "virtual", "locr.json")
-						}
-
-						execCommand(
-							`"Third-Party\\HMLanguageTools" rebuild H3 LOCR "${contentFilePath}" "${path.join(process.cwd(), "temp", `chunk${content.chunk}`, `${hash}.LOCR`)}" --metapath "${path.join(
-								process.cwd(),
-								"temp",
-								`chunk${content.chunk}`,
-								`${hash}.LOCR.meta.json`
-							)}"`
-						)
-
-						fs.removeSync(path.join(process.cwd(), "virtual"))
-
-						await copyToCache(instruction.cacheFolder, path.join(process.cwd(), "temp", `chunk${content.chunk}`), path.join(`chunk${content.chunk}`, await xxhash3(contentIdentifier)))
-					}
-
-					fs.ensureDirSync(path.join(process.cwd(), "staging", `chunk${content.chunk}`))
-
-					// Copy LOCR files
-					fs.copyFileSync(path.join(process.cwd(), "temp", `chunk${content.chunk}`, `${hash}.LOCR`), path.join(process.cwd(), "staging", `chunk${content.chunk}`, `${hash}.LOCR`))
-					fs.copyFileSync(path.join(process.cwd(), "temp", `chunk${content.chunk}`, `${hash}.LOCR.meta.json`), path.join(process.cwd(), "staging", `chunk${content.chunk}`, `${hash}.LOCR.meta.json`))
+					// Copy converted files
+					fs.copyFileSync(path.join(process.cwd(), "temp", `chunk${content.chunk}`, `${hash}.${binaryType}`), path.join(process.cwd(), "staging", `chunk${content.chunk}`, `${hash}.${binaryType}`))
+					fs.copyFileSync(
+						path.join(process.cwd(), "temp", `chunk${content.chunk}`, `${hash}.${binaryType}.meta.json`),
+						path.join(process.cwd(), "staging", `chunk${content.chunk}`, `${hash}.${binaryType}.meta.json`)
+					)
 					break
 				}
 				default: // Copy the file to the staging directory; we don't cache these for obvious reasons

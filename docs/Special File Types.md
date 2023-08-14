@@ -122,13 +122,22 @@ If the file is the REPO, it will be transformed to the format used by the `repos
 ## material.json
 An RPKG tool material JSON. Replaces a game material.
 
-## rtlv.json
-An RTLV file obtained from Anthony Fuller's HMLanguageTools. Will be converted to an RTLV file and placed in the staging folder (overriding any existing game file).
+## clng.json
+A CLNG file obtained from Anthony Fuller's HMLanguages. Will be converted to a CLNG file and placed in the staging folder (overriding any existing game file).
+
+## ditl.json
+A DITL file obtained from Anthony Fuller's HMLanguages. Will be converted to a DITL file and placed in the staging folder (overriding any existing game file).
+
+## dlge.json
+A DLGE file obtained from Anthony Fuller's HMLanguages. Will be converted to a DLGE file and placed in the staging folder (overriding any existing game file).
 
 ## locr.json
-A LOCR file obtained from Anthony Fuller's HMLanguageTools. Will be converted to a LOCR file and placed in the staging folder (overriding any existing game file).
+A LOCR file obtained from Anthony Fuller's HMLanguages. Will be converted to a LOCR file and placed in the staging folder (overriding any existing game file).
 
 For mod localisation, you should use the `localisation` key in the manifest; this filetype is useful in instances where it is necessary to completely override a localisation file or introduce a new localisation file.
+
+## rtlv.json
+An RTLV file obtained from Anthony Fuller's HMLanguages. Will be converted to an RTLV file and placed in the staging folder (overriding any existing game file).
 
 ## texture.tga
 **Note:** The filename matters for this special type.
