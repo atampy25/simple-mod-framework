@@ -2163,7 +2163,7 @@ export default async function deploy(
 
 		fs.ensureDirSync(path.join(process.cwd(), "staging", "chunk0"))
 
-		fs.writeJSONSync(path.join(process.cwd(), "staging", "chunk0", "JSON", "004F4B738474CEAD.JSON"), registry)
+		fs.writeJSONSync(path.join(process.cwd(), "staging", "chunk0", "004F4B738474CEAD.JSON"), registry)
 
 		sentryContractDestinations.finish()
 	}
