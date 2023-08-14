@@ -340,22 +340,31 @@ export default async function discover(): Promise<{ [x: string]: { hash: string;
 							case "texture.tga": // Depends on nothing, edits the texture files
 								affected.push(...path.basename(contentFilePath).split(".")[0].split("~"))
 								break
-							case "sfx.wem": // Depends on and edits the patched WWEV (HASH~index)
+							case "sfx.wem":
+							// Depends on and edits the patched WWEV (HASH~index)
 							case "delta": // Depends on and edits the patched file (HASH~filetype)
 								dependencies.push(path.basename(contentFilePath).split(".")[0].split("~")[0])
 								affected.push(path.basename(contentFilePath).split(".")[0].split("~")[0])
 								break
-							case "clng.json": // Depends on nothing, edits the CLNG file
-							case "ditl.json": // Depends on nothing, edits the DITL file
-							case "dlge.json": // Depends on nothing, edits the DLGE file
-							case "locr.json": // Depends on nothing, edits the LOCR file
+							case "clng.json":
+							// Depends on nothing, edits the CLNG file
+							case "ditl.json":
+							// Depends on nothing, edits the DITL file
+							case "dlge.json":
+							// Depends on nothing, edits the DLGE file
+							case "locr.json":
+							// Depends on nothing, edits the LOCR file
 							case "rtlv.json": // Depends on nothing, edits the RTLV file
 								entityContent = LosslessJSON.parse(fs.readFileSync(contentFilePath, "utf8"))
 
 								affected.push(normaliseToHash(entityContent.hash))
 								break
 							default: // Replaces a file with a raw file
-								if (path.basename(contentFilePath).split(".").slice(1).join(".").length === 4 || path.basename(contentFilePath).split(".").slice(1).join(".").endsWith("meta") || path.basename(contentFilePath).split(".").slice(1).join(".").endsWith("meta.json")) {
+								if (
+									path.basename(contentFilePath).split(".").slice(1).join(".").length === 4 ||
+									path.basename(contentFilePath).split(".").slice(1).join(".").endsWith("meta") ||
+									path.basename(contentFilePath).split(".").slice(1).join(".").endsWith("meta.json")
+								) {
 									fileToReplace = path.basename(contentFilePath).split(".")[0]
 
 									if (baseGameEntityHashes.has(fileToReplace)) {

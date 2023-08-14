@@ -1567,10 +1567,10 @@ export default async function deploy(
 				case "dlge.json":
 				case "locr.json":
 				case "rtlv.json": {
-					const fourcc = content.type.split(".")[0].toUpperCase()
+					const binaryType = content.type.split(".")[0].toUpperCase()
 					await logger.debug(
 						((): string => {
-							switch (fourcc) {
+							switch (binaryType) {
 								case "CLNG":
 									return `Converting languages file ${contentIdentifier}`
 								case "DITL":
@@ -1607,12 +1607,12 @@ export default async function deploy(
 						}
 
 						execCommand(
-							`"Third-Party\\HMLanguageTools" rebuild H3 ${fourcc} "${contentFilePath}" "${path.join(process.cwd(), "temp", `chunk${content.chunk}`, `${hash}.${fourcc}`)}" --metapath "${path.join(
+							`"Third-Party\\HMLanguageTools" rebuild H3 ${binaryType} "${contentFilePath}" "${path.join(
 								process.cwd(),
 								"temp",
 								`chunk${content.chunk}`,
-								`${hash}.${fourcc}.meta.json`
-							)}"`
+								`${hash}.${binaryType}`
+							)}" --metapath "${path.join(process.cwd(), "temp", `chunk${content.chunk}`, `${hash}.${binaryType}.meta.json`)}"`
 						)
 
 						fs.removeSync(path.join(process.cwd(), "virtual"))
@@ -1623,8 +1623,11 @@ export default async function deploy(
 					fs.ensureDirSync(path.join(process.cwd(), "staging", `chunk${content.chunk}`))
 
 					// Copy converted files
-					fs.copyFileSync(path.join(process.cwd(), "temp", `chunk${content.chunk}`, `${hash}.${fourcc}`), path.join(process.cwd(), "staging", `chunk${content.chunk}`, `${hash}.${fourcc}`))
-					fs.copyFileSync(path.join(process.cwd(), "temp", `chunk${content.chunk}`, `${hash}.${fourcc}.meta.json`), path.join(process.cwd(), "staging", `chunk${content.chunk}`, `${hash}.${fourcc}.meta.json`))
+					fs.copyFileSync(path.join(process.cwd(), "temp", `chunk${content.chunk}`, `${hash}.${binaryType}`), path.join(process.cwd(), "staging", `chunk${content.chunk}`, `${hash}.${binaryType}`))
+					fs.copyFileSync(
+						path.join(process.cwd(), "temp", `chunk${content.chunk}`, `${hash}.${binaryType}.meta.json`),
+						path.join(process.cwd(), "staging", `chunk${content.chunk}`, `${hash}.${binaryType}.meta.json`)
+					)
 					break
 				}
 				default: // Copy the file to the staging directory; we don't cache these for obvious reasons
