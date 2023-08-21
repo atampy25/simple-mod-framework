@@ -620,7 +620,12 @@ export default async function deploy(
 				"texture.tga",
 				"sfx.wem",
 				"delta",
-				"locr.json"
+				"clng.json",
+				"ditl.json",
+				"dlge.json",
+				"locr.json",
+				"rtlv.json",
+				"gfxf.zip"
 			].includes(content.type)
 				? sentryContentTransaction.startChild({
 						op: "stageContentFile",
@@ -1628,6 +1633,46 @@ export default async function deploy(
 					fs.copyFileSync(
 						path.join(process.cwd(), "temp", `chunk${content.chunk}`, `${hash}.${binaryType}.meta.json`),
 						path.join(process.cwd(), "staging", `chunk${content.chunk}`, `${hash}.${binaryType}.meta.json`)
+					)
+					break
+				}
+				case "gfxf.zip": {
+					await logger.debug(`Converting Scaleform GFx package ${contentIdentifier}`)
+
+					if (
+						invalidatedData.some((a) => a.filePath === contentIdentifier) || // must redeploy, invalid cache
+						!(await copyFromCache(instruction.cacheFolder, path.join(`chunk${content.chunk}`, await xxhash3(contentIdentifier)), path.join(process.cwd(), "temp", `chunk${content.chunk}`))) // cache is not available
+					) {
+						fs.ensureDirSync(path.join(process.cwd(), "temp", `chunk${content.chunk}`))
+
+						let contentFilePath
+						if (content.source === "disk") {
+							contentFilePath = content.path
+						} else {
+							fs.ensureDirSync(path.join(process.cwd(), "virtual"))
+							fs.writeFileSync(path.join(process.cwd(), "virtual", content.type), Buffer.from(await content.content.arrayBuffer()))
+							contentFilePath = path.join(process.cwd(), "virtual", content.type)
+						}
+
+						execCommand(
+							`"Third-Party\\GFXFzip" rebuild H3 "${contentFilePath}" "${path.join(
+								process.cwd(),
+								"temp",
+								`chunk${content.chunk}`
+							)}" --folder`
+						)
+
+						fs.removeSync(path.join(process.cwd(), "virtual"))
+
+						await copyToCache(instruction.cacheFolder, path.join(process.cwd(), "temp", `chunk${content.chunk}`), path.join(`chunk${content.chunk}`, await xxhash3(contentIdentifier)))
+					}
+
+					fs.ensureDirSync(path.join(process.cwd(), "staging", `chunk${content.chunk}`))
+
+					// Copy generated files (have to copy the entire folder as we do not know what the final hash is)
+					fs.copySync(
+						path.join(process.cwd(), "temp", `chunk${content.chunk}`),
+						path.join(process.cwd(), "staging", `chunk${content.chunk}`)
 					)
 					break
 				}
