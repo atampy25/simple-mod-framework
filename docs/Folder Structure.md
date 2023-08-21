@@ -30,14 +30,15 @@ The content folder contains chunk folders, which contain files (and folders, the
 | `contract.json`       | A contract that will be added to the contracts ORES                          |
 | `JSON.patch.json`     | An RFC6902 JSON patch that will be applied to the hash the file specifies    |
 | `material.json`       | An RPKG tool material JSON that will replace/add the targeted material       |
-| `clng.json`           | A HMLanguages CLNG JSON that will replace/add the targeted file             |
-| `ditl.json`           | A HMLanguages DITL JSON that will replace/add the targeted file             |
-| `dlge.json`           | A HMLanguages DLGE JSON that will replace/add the targeted file             |
-| `locr.json`           | A HMLanguages LOCR JSON that will replace/add the targeted file             |
-| `rtlv.json`           | A HMLanguages RTLV JSON that will replace/add the targeted file             |
+| `clng.json`           | A HMLanguages CLNG JSON that will replace/add the targeted file              |
+| `ditl.json`           | A HMLanguages DITL JSON that will replace/add the targeted file              |
+| `dlge.json`           | A HMLanguages DLGE JSON that will replace/add the targeted file              |
+| `locr.json`           | A HMLanguages LOCR JSON that will replace/add the targeted file              |
+| `rtlv.json`           | A HMLanguages RTLV JSON that will replace/add the targeted file              |
 | `texture.tga`         | A TGA to rebuild into a game texture (TEXT only or TEXT and TEXD)            |
 | `sfx.wem`             | A Wwise sound effect to patch a WWEV file with                               |
 | `delta`               | A VCDiff delta file to patch the specified file with                         |
+| `gfxf.zip`            | A GFXF zip file that will replace/add the targeted file                      |
 
 The names of special files do not matter - it is their extensions that do, **except for texture.tga, sfx.wem and delta files**. Raw files, which any non-special file is, are placed directly into the built RPKG and so must be named like usual.
 
