@@ -94,7 +94,7 @@ class RPKGInstance {
 						sensitivity: "base"
 					})
 				}
-			})[1]
+			})[0]
 	}
 
 	exit() {
