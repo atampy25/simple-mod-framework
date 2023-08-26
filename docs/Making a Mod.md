@@ -28,13 +28,13 @@ Then, put a file called `manifest.json` in it. Paste the following into it:
 	// see all the available options in VS Code and see documentation for them just by
 	// hovering, so you don't need to refer to the Manifest page too often.
 	"$schema": "https://raw.githubusercontent.com/atampy25/simple-mod-framework/main/Mod%20Manager/src/lib/manifest-schema.json",
-  "version": "1.0.0",
-  "id": "YourNameOrUserName.FirstMod",
-  "name": "Your First Mod",
-  "description": "Extremely good description",
-  "authors": ["YourNameOrUserName"],
-  "contentFolders": ["content"],
-  "frameworkVersion": "2.31.2"
+	"version": "1.0.0",
+	"id": "YourNameOrUserName.FirstMod",
+	"name": "Your First Mod",
+	"description": "Extremely good description",
+	"authors": ["YourNameOrUserName"],
+	"contentFolders": ["content"],
+	"frameworkVersion": "2.31.3"
 }
 ```
 
