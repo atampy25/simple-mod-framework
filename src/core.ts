@@ -1,4 +1,4 @@
-const FrameworkVersion = "2.31.4"
+const FrameworkVersion = "2.32.0"
 const isDevBuild = false
 
 import * as Sentry from "@sentry/node"
@@ -110,7 +110,7 @@ const logger = args["--useConsoleLogging"]
 			verbose: async function (text: string, mod?: string) {
 				deployLog += `\nDETAIL\t${mod || "Deploy"}\t${text}`
 				fs.writeFileSync(path.join(process.cwd(), "Deploy.log"), deployLog)
-				
+
 				if (args["--logLevel"]!.includes("verbose")) {
 					process.stdout.write(chalk(Object.assign([], { raw: [`{grey DETAIL${mod ? `\t${mod}` : ""}\t${text.replace(/\\/gi, "\\\\")}}\n`] })))
 
