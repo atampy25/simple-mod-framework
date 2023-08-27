@@ -24,7 +24,7 @@ const gameHashes = {
 	"633df361e78ec0a1dea0e0602e68af71": Platform.epic, // ansel unlock
 	"ac68540fa55107afac35070e76a95aba": Platform.epic, // ansel no collision
 	"3fb5167e1120b035731aadcf42d75053": Platform.epic, // ansel unlock + no collision
-	"0fda61e5b5c9ec6b187f8cd571f90ba7": Platform.steam, // base game
+	"3840dc0f087d42e7d3127e3f81a73453": Platform.steam, // base game
 	"e7ee086516b878175d475c0e20d3052a": Platform.steam, // ansel unlock
 	"c86cbb1309ed11371ac27cfb88695b5a": Platform.steam, // ansel no collision
 	"9cfc0fd2643513d65d5a71f189fedc6d": Platform.steam, // ansel unlock + no collision
@@ -61,10 +61,12 @@ if (!core.config.reportErrors) {
 	})
 }
 
+// oh shit
 if (!fs.existsSync(core.config.runtimePath)) {
 	void core.logger.error("The Runtime folder couldn't be located, please re-read the installation instructions!")
 }
 
+// oh shit v2
 if (!(fs.existsSync(path.join(core.config.retailPath, "Runtime", "chunk0.rpkg")) || fs.existsSync(path.join(core.config.runtimePath, "..", "Retail", "HITMAN3.exe")))) {
 	void core.logger.error("HITMAN3.exe couldn't be located, please re-read the installation instructions!")
 }
@@ -85,6 +87,8 @@ core.config.platform = fs.existsSync(path.join(core.config.retailPath, "Runtime"
 	? gameHashes[md5File.sync(path.join(core.config.retailPath, "..", "MicrosoftGame.Config"))]
 	: gameHashes[md5File.sync(path.join(core.config.runtimePath, "..", "Retail", "HITMAN3.exe"))] // Platform detection
 
+
+// the most glorious code you've ever seen
 let sentryTransaction = {
 	startChild(...args) {
 		return {
