@@ -1,0 +1,169 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - '*.*.*'
+
+jobs:
+  build:
+    runs-on: windows-latest
+    if: startsWith(github.ref, 'refs/tags/')
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: x86_64-pc-windows-msvc
+          default: true
+
+      - name: Cache
+        id: cache
+        uses: actions/cache@v3
+        with:
+          path: node_modules
+          key: buildCachev25
+
+      - name: Cache
+        id: cache2
+        uses: actions/cache@v3
+        with:
+          path: Mod Manager/node_modules
+          key: buildCache2v20
+
+      - name: Install dependencies
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          npm install
+      - name: Prep
+        run: |
+          npm install -g pkg typescript @napi-rs/cli
+      - name: Build Rust code
+        run: |
+          cd rust
+          yarn
+          yarn build
+          cd ../
+          copy ./rust/index.d.ts ./src/smf-rust.d.ts
+          copy ./rust/rust.win32-x64-msvc.node ./src/smf-rust.node
+      - name: Build EXE
+        env:
+          NODE_OPTIONS: "--max-old-space-size=4096"
+        run: |
+          New-Item -ItemType Directory -Force -Path ./node_modules/piscina
+          robocopy ./piscina ./node_modules/piscina /COPYALL /E /is /it; if ($lastexitcode -lt 8) { $global:LASTEXITCODE = $null }
+          tsc
+          copy ./src/smf-rust.node ./compiled/smf-rust.node
+          pkg package.json --targets node18-win-x64 --output Deploy.exe --compress Brotli
+      - name: Download RPKG
+        uses: aochmann/actions-download-artifact@5709392f11b5937bd316e52687ad87f7deced5f5
+        with:
+          repo: glacier-modding/RPKG-Tool
+          name: rpkg-cli
+          latest: true
+          path: './Third-Party'
+
+      - name: Download ResourceTool
+        uses: aochmann/actions-download-artifact@5709392f11b5937bd316e52687ad87f7deced5f5
+        with:
+          repo: OrfeasZ/ZHMTools
+          name: ResourceTool-win-x64
+          latest: true
+          path: './Third-Party'
+
+      - name: Install GUI dependencies
+        if: steps.cache2.outputs.cache-hit != 'true'
+        run: |
+          cd "Mod Manager"
+          npm install
+          cd ../
+      - name: Build GUI
+        run: |
+          cd "Mod Manager"
+          npm run build
+          cd ../
+      - name: Ready for zip
+        run: |
+          New-Item -ItemType Directory dist
+          New-Item -ItemType Directory dist/Third-Party
+          New-Item -ItemType Directory dist/Info
+          New-Item -ItemType Directory dist/API
+          New-Item -ItemType Directory "dist/Mod Manager"
+          robocopy ./Third-Party ./dist/Third-Party /COPYALL /E; if ($lastexitcode -lt 8) { $global:LASTEXITCODE = $null }
+          robocopy "./For Build" ./dist /COPYALL /E; if ($lastexitcode -lt 8) { $global:LASTEXITCODE = $null }
+          robocopy ./docs ./dist/Info /COPYALL /E; if ($lastexitcode -lt 8) { $global:LASTEXITCODE = $null }
+          robocopy ./compiled ./dist/API /COPYALL /E *.d.ts; if ($lastexitcode -lt 8) { $global:LASTEXITCODE = $null }
+          robocopy ".\Mod Manager\dist\win-unpacked" "./dist/Mod Manager" /COPYALL /E; if ($lastexitcode -lt 8) { $global:LASTEXITCODE = $null }
+          copy Deploy.exe dist
+          New-Item -Path dist -Name "Mod Manager.cmd" -ItemType "file" -Value "@echo off`ncd `"Mod Manager`"`nstart `"`" `"Mod Manager.exe`""
+      - name: Zip
+        uses: TheDoctor0/zip-release@4fb9e4ff72847dd3d1c111cf63834e353ed7cb3d
+        with:
+          filename: Release.zip
+          directory: dist
+
+      - name: Get latest tag
+        id: latestTag
+        uses: 'WyriHaximus/github-action-get-previous-tag@v1.1.0'
+        with:
+          fallback: unknown
+
+      - name: Generate changelog
+        id: changelog
+        uses: loopwerk/tag-changelog@v1.0.4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          config_file: .github/tag-changelog-config.js
+          exclude_types: other,docs,chore,build,amend,refactor
+
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: ${{ steps.latestTag.outputs.tag }}
+          body: ${{ steps.changelog.outputs.changes }}
+          tag_name: ${{ steps.latestTag.outputs.tag }}
+          repository: atampy25/simple-mod-framework
+          files: dist/Release.zip
+
+  sentry-release:
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Cache
+        id: cache
+        uses: actions/cache@v3
+        with:
+          path: node_modules
+          key: buildCachev23
+
+      - name: Install dependencies
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          npm install
+      - name: Compile TypeScript
+        run: |
+          npm install -g tsc-silent
+          tsc-silent -p tsconfig.json --suppress @
+      - name: Sentry release
+        uses: getsentry/action-release@v1.1.6
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+        with:
+          environment: production
+          version: ${{ github.ref }}
+          sourcemaps: './compiled/core-singleton.js.map ./compiled/core.js.map ./compiled/crc32.js.map ./compiled/deploy.js.map ./compiled/difference.js.map ./compiled/discover.js.map ./compiled/main.js.map ./compiled/patchWorker.js.map ./compiled/quickentity-3.js.map ./compiled/quickentity-rs.js.map ./compiled/quickentity.js.map ./compiled/quickentity20.js.map ./compiled/quickentity1136.js.map ./compiled/rpkg.js.map ./compiled/three-onlymath.min.js.map ./compiled/types.js.map ./compiled/typescript.js.map ./compiled/utils.js.map'
