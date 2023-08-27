@@ -534,6 +534,7 @@ export default async function deploy(
 			sentryScriptsTransaction.finish()
 		}
 
+		lastServerSideStates.peacockPlugins ??= []
 		lastServerSideStates.peacockPlugins.push(...instruction.manifestSources.peacockPlugins)
 
 		await logger.verbose("Content")
