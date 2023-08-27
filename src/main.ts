@@ -265,20 +265,9 @@ async function doTheThing() {
 			path.join(process.env.LOCALAPPDATA!, "Simple Mod Framework", "lastDeploy.json"),
 			JSON.stringify({
 				...core.config,
-				lastServerSideStates: {
-					unlockables: lastServerSideStates.unlockables,
-					contracts: lastServerSideStates.contracts,
-					blobs: lastServerSideStates.blobs ? Object.fromEntries(await Promise.all(Object.entries(lastServerSideStates.blobs).map(async (a) => [a[0], await xxhash3(a[1])]))) : undefined
-				}
+				lastServerSideStates
 			})
 		)
-
-		if (lastServerSideStates.blobs) {
-			fs.emptyDirSync(path.join(process.env.LOCALAPPDATA!, "Simple Mod Framework", "blobs"))
-			for (const x of Object.values(lastServerSideStates.blobs)) {
-				fs.writeFileSync(path.join(process.env.LOCALAPPDATA!, "Simple Mod Framework", "blobs", await xxhash3(x)), Buffer.from(x, "base64"))
-			}
-		}
 	}
 
 	await core.logger.info(`Done in ${toHuman(startedDate.until(DateTime.now()).toDuration()) || "less than a second"}`)

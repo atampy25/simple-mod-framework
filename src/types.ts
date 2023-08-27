@@ -178,6 +178,9 @@ export interface ManifestOptionData {
 	 * Used in automatic sorting by the Mod Manager GUI. */
 	loadAfter?: (ModID | [ModID, string])[]
 
+	/** Paths to plugins that Peacock should load when this mod is deployed. */
+	peacockPlugins?: string[]
+
 	/** Paths to TypeScript files that can alter deployment of the mod.
 	 * The first item is considered to be the entry point; it must export the necessary functions.
 	 * Any additional files are transpiled but not used directly; they can be imported from the entry point. */
@@ -224,6 +227,9 @@ export interface DeployInstruction {
 		/** Mod IDs that this mod depends on to function.
 		 * Clients without these mods enabled will be prevented from using this mod. */
 		requirements: ManifestOptionData["requirements"]
+
+		/** Paths to plugins that Peacock should load when this mod is deployed. */
+		peacockPlugins: string[]
 
 		/** Paths to TypeScript files that can alter deployment of the mod.
 		 * The first item is considered to be the entry point; it must export the necessary functions.

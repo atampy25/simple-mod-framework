@@ -108,6 +108,7 @@ Each mod contains a manifest. Manifests have the following format:
 		"Atampy26.RequiredMod", // You'll generally want to load after a required mod
 		"Atampy26.OtherModThatThisModUses"
 	],
+	"peacockPlugins": ["VeryCoolPlugin.plugin.js"], // Relative paths to plugins that Peacock should load
 	"scripts": ["mod.ts", "helpers.ts", "blabla.ts"], // Relative paths to TypeScript files that can alter deployment of the mod - see Scripts for more information
 
 	"options": [

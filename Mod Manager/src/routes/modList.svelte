@@ -131,6 +131,7 @@
 	let rpkgModName: string
 
 	let frameworkModScriptsWarningOpen = false
+	let frameworkModPeacockPluginsWarningOpen = false
 
 	async function addMod() {
 		if (modFilePath.endsWith(".rpkg")) {
@@ -141,7 +142,7 @@
 			if (!chunk) {
 				chunk = "chunk0"
 			}
-			
+
 			rpkgsToInstall = [{ path: modFilePath, chunk }]
 
 			modNameInputModalOpen = true
@@ -194,17 +195,34 @@
 
 					frameworkModScriptsWarningOpen = true
 				} else {
-					window.fs.copySync("./staging", "../Mods")
+					if (
+						window.fs
+							.readdirSync("./staging")
+							.some(
+								(a) =>
+									json5.parse(window.fs.readFileSync(window.path.join("./staging", a, "manifest.json"), "utf8")).peacockPlugins ||
+									json5.parse(window.fs.readFileSync(window.path.join("./staging", a, "manifest.json"), "utf8")).options?.some((b) => b.peacockPlugins)
+							)
+					) {
+						frameworkModExtractionInProgress = false
 
-					mergeConfig({
-						knownMods: [...getConfig().knownMods, json5.parse(window.fs.readFileSync(window.path.join("..", "Mods", window.fs.readdirSync("./staging")[0], "manifest.json"), "utf8")).id]
-					})
+						frameworkModPeacockPluginsWarningOpen = true
+					} else {
+						window.fs.copySync("./staging", "../Mods")
 
-					window.fs.removeSync("./staging")
+						mergeConfig({
+							knownMods: [
+								...getConfig().knownMods,
+								json5.parse(window.fs.readFileSync(window.path.join("..", "Mods", window.fs.readdirSync("./staging")[0], "manifest.json"), "utf8")).id
+							]
+						})
 
-					window.location.href = "/modList"
+						window.fs.removeSync("./staging")
 
-					frameworkModExtractionInProgress = false
+						window.location.href = "/modList"
+
+						frameworkModExtractionInProgress = false
+					}
 				}
 			} else {
 				rpkgsToInstall = []
@@ -633,6 +651,47 @@
 	shouldSubmitOnEnter={false}
 	on:click:button--secondary={() => (frameworkModScriptsWarningOpen = false)}
 	on:click:button--primary={() => {
+		if (
+			window.fs
+				.readdirSync("./staging")
+				.some(
+					(a) =>
+						json5.parse(window.fs.readFileSync(window.path.join("./staging", a, "manifest.json"), "utf8")).peacockPlugins ||
+						json5.parse(window.fs.readFileSync(window.path.join("./staging", a, "manifest.json"), "utf8")).options?.some((b) => b.peacockPlugins)
+				)
+		) {
+			frameworkModScriptsWarningOpen = false
+
+			frameworkModPeacockPluginsWarningOpen = true
+		} else {
+			window.fs.copySync("./staging", "../Mods")
+
+			mergeConfig({
+				knownMods: [...getConfig().knownMods, json5.parse(window.fs.readFileSync(window.path.join("..", "Mods", window.fs.readdirSync("./staging")[0], "manifest.json"), "utf8")).id]
+			})
+
+			window.fs.removeSync("./staging")
+
+			window.location.href = "/modList"
+		}
+	}}
+>
+	<p>
+		This mod contains scripts; that means it is able to execute its own (external to the framework) code and effectively has complete control over your PC whenever you apply your mods. Scripts can
+		do cool things and make a lot of mods possible, but they can also do bad things like installing malware on your computer. Make sure you trust whoever developed this mod, and wherever you
+		downloaded it from. Are you sure you want to add this mod?
+	</p>
+</Modal>
+
+<Modal
+	danger
+	bind:open={frameworkModPeacockPluginsWarningOpen}
+	modalHeading="Mod contains Peacock plugins"
+	primaryButtonText="I'm sure"
+	secondaryButtonText="Cancel"
+	shouldSubmitOnEnter={false}
+	on:click:button--secondary={() => (frameworkModPeacockPluginsWarningOpen = false)}
+	on:click:button--primary={() => {
 		window.fs.copySync("./staging", "../Mods")
 
 		mergeConfig({ knownMods: [...getConfig().knownMods, json5.parse(window.fs.readFileSync(window.path.join("..", "Mods", window.fs.readdirSync("./staging")[0], "manifest.json"), "utf8")).id] })
@@ -643,9 +702,8 @@
 	}}
 >
 	<p>
-		This mod contains scripts; that means it is able to execute its own (external to the framework) code and effectively has complete control over your PC whenever you apply your mods. Scripts can
-		do cool things and make a lot of mods possible, but they can also do bad things like installing malware on your computer. Make sure you trust whoever developed this mod, and wherever you
-		downloaded it from. Are you sure you want to add this mod?
+		This mod contains Peacock plugins; if you use the Peacock server emulator after applying this mod, the mod's plugins will have complete control over your PC. Make sure you trust whoever
+		developed this mod, and wherever you downloaded it from. Are you sure you want to add this mod?
 	</p>
 </Modal>
 

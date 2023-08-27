@@ -121,7 +121,7 @@ export default async function deploy(
 	const lastServerSideStates = {} as {
 		unlockables: any
 		contracts: Record<string, any>
-		blobs: Record<string, string>
+		peacockPlugins: string[]
 	}
 
 	/* ---------------------------------------------------------------------------------------------- */
@@ -276,6 +276,9 @@ export default async function deploy(
 					manifest.thumbs || (manifest.thumbs = [])
 					option.thumbs && manifest.thumbs.push(...option.thumbs)
 
+					manifest.peacockPlugins || (manifest.peacockPlugins = [])
+					option.peacockPlugins && manifest.peacockPlugins.push(...option.peacockPlugins)
+
 					option.scripts && scripts.push(option.scripts)
 				}
 			}
@@ -357,7 +360,8 @@ export default async function deploy(
 					supportedPlatforms: manifest.supportedPlatforms,
 					packagedefinition: manifest.packagedefinition,
 					thumbs: manifest.thumbs,
-					scripts: scripts
+					peacockPlugins: (manifest.peacockPlugins || []).map((a) => path.join(process.cwd(), "Mods", mod, a)),
+					scripts
 				},
 				content,
 				blobs,
@@ -529,6 +533,8 @@ export default async function deploy(
 
 			sentryScriptsTransaction.finish()
 		}
+
+		lastServerSideStates.peacockPlugins.push(...instruction.manifestSources.peacockPlugins)
 
 		await logger.verbose("Content")
 
@@ -1780,9 +1786,6 @@ export default async function deploy(
 				}
 
 				oresContent[blobHash] = blob.blobPath // Add the blob to the ORES
-
-				lastServerSideStates["blobs"] ??= {}
-				lastServerSideStates["blobs"][blob.blobPath] = blob.source === "disk" ? fs.readFileSync(blob.filePath).toString("base64") : Buffer.from(await blob.content.arrayBuffer()).toString("base64")
 
 				if (!metaContent["hash_reference_data"].find((a: { hash: unknown }) => a.hash === blobHash)) {
 					metaContent["hash_reference_data"].push({

@@ -373,6 +373,13 @@
 					},
 					"type": "array"
 				},
+				"peacockPlugins": {
+					"description": "Paths to plugins that Peacock should load when this mod is deployed.",
+					"items": {
+						"type": "string"
+					},
+					"type": "array"
+				},
 				"scripts": {
 					"description": "Paths to TypeScript files that can alter deployment of the mod.\nThe first item is considered to be the entry point; it must export the necessary functions.\nAny additional files are transpiled but not used directly; they can be imported from the entry point.",
 					"items": {

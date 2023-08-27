@@ -190,6 +190,9 @@ export default async function discover(): Promise<{ [x: string]: { hash: string;
 					manifest.thumbs || (manifest.thumbs = [])
 					option.thumbs && manifest.thumbs.push(...option.thumbs)
 
+					manifest.peacockPlugins || (manifest.peacockPlugins = [])
+					option.peacockPlugins && manifest.peacockPlugins.push(...option.peacockPlugins)
+
 					option.scripts && scripts.push(option.scripts)
 				}
 			}
