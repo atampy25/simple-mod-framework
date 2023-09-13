@@ -229,12 +229,11 @@
 
 				if (stagingFileList.some((a) => a.path.endsWith(".rpkg"))) {
 					for (const file of stagingFileList.filter((a) => a.path.endsWith(".rpkg"))) {
-						let result = [...file.path.matchAll(/(chunk[0-9]*(?:patch.*)?)\.rpkg/g)]
-						result = [...result[result.length - 1][result[result.length - 1].length - 1].matchAll(/(chunk[0-9]*)/g)]
-						let chunk = result[result.length - 1][result[result.length - 1].length - 1]
+						let chunk = "chunk0"
 
-						if (!chunk) {
-							chunk = "chunk0"
+						let result = [...file.path.matchAll(/chunk([0-9]*)(?:patch.*)?/g)]
+						if (result.length) {
+							chunk = result[0][1]
 						}
 
 						rpkgsToInstall.push({ path: file.path, chunk })
