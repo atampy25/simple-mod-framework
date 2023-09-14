@@ -2509,7 +2509,7 @@ export default async function deploy(
 
 	for (const brick of packagedefinition) {
 		// Apply all PD changes
-		await logger.verbose(`Applying packagedefinition change ${JSON.stringify(brick)}`)
+		await logger.verbose(`Applying packagedefinition ${brick.type} change`)
 		switch (brick.type) {
 			case "partition":
 				packagedefinitionContent += "\r\n"
