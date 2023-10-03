@@ -23,24 +23,24 @@
 {#if ready}
 	<div class="flex flex-row h-screen w-screen">
 		<div class="bg-neutral-900 w-16 h-full flex flex-col gap-16 items-center justify-center">
-			<a href="/" sveltekit:reload class="text-white">
+			<a href="/" data-sveltekit-reload class="text-white">
 				<Icon icon={faHome} />
 			</a>
-			<a href="/modList" sveltekit:reload class="text-white">
+			<a href="/modList" data-sveltekit-reload class="text-white">
 				<Icon icon={faList} />
 			</a>
-			<a href="/settings" sveltekit:reload class="text-white">
+			<a href="/settings" data-sveltekit-reload class="text-white">
 				<Icon icon={faCog} />
 			</a>
 			{#if getConfig().developerMode}
-				<a href="/authoring" sveltekit:reload class="text-white">
+				<a href="/authoring" data-sveltekit-reload class="text-white">
 					<Icon icon={faEdit} />
 				</a>
 				<a href="/docs/Index.md" class="text-white">
 					<Icon icon={faBook} />
 				</a>
 			{/if}
-			<a href="/info" sveltekit:reload class="text-white">
+			<a href="/info" data-sveltekit-reload class="text-white">
 				<Icon icon={faInfoCircle} />
 			</a>
 		</div>

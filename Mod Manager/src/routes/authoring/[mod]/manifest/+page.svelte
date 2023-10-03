@@ -7,7 +7,7 @@
 	import { alterModManifest, FrameworkVersion, getManifestFromModID, getModFolder, setModManifest } from "$lib/utils"
 	import ModManifestInterface from "$lib/ModManifestInterface.svelte"
 
-	import { Language, Platform, type Manifest } from "../../../../../src/types"
+	import { Language, Platform, type Manifest } from "../../../../../../src/types"
 
 	import isEqual from "lodash.isequal"
 

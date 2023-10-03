@@ -14,7 +14,7 @@
 	import ModManifestInterface from "$lib/ModManifestInterface.svelte"
 	import TextInputModal from "$lib/TextInputModal.svelte"
 
-	import { Language, OptionType, Platform, type Manifest } from "../../../../../../src/types"
+	import { Language, OptionType, Platform, type Manifest } from "../../../../../../../src/types"
 
 	import { Button, Checkbox, RadioButton, RadioButtonGroup } from "carbon-components-svelte"
 	import Edit from "carbon-icons-svelte/lib/Edit.svelte"

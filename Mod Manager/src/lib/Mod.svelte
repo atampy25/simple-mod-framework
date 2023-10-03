@@ -40,8 +40,7 @@
 				<div
 					tabindex="0"
 					aria-pressed="false"
-					class="bx--btn bx--btn--ghost btn-error bx--btn--icon-only bx--tooltip__trigger bx--tooltip--a11y bx--btn--icon-only--bottom bx--tooltip--align-center"
-					style="cursor: pointer"
+					class="bx--btn bx--btn--ghost red-button bx--btn--icon-only bx--tooltip__trigger bx--tooltip--a11y bx--btn--icon-only--bottom bx--tooltip--align-center"
 					on:click={() => {
 						const m = JSON.parse(JSON.stringify(manifest))
 
@@ -111,8 +110,7 @@
 						}}
 						tabindex="0"
 						aria-pressed="false"
-						class="bx--btn bx--btn--ghost btn-error bx--btn--icon-only bx--tooltip__trigger bx--tooltip--a11y bx--btn--icon-only--bottom bx--tooltip--align-center"
-						style="cursor: pointer"
+						class="bx--btn bx--btn--ghost red-button bx--btn--icon-only bx--tooltip__trigger bx--tooltip--a11y bx--btn--icon-only--bottom bx--tooltip--align-center"
 					>
 						<span class="bx--assistive-text">This mod will likely cause issues; {getConfig().developerMode ? "click to see more information" : "contact the mod developer"}</span>
 						<Error color="black" />
@@ -125,15 +123,7 @@
 </Tile>
 
 <style>
-	.bx--btn--ghost {
-		background-color: rgb(255, 196, 0);
-	}
-
-	.btn-error {
+	.red-button {
 		background-color: rgb(255, 60, 0);
-	}
-
-	.bx--btn.bx--btn--icon-only.bx--tooltip__trigger {
-		cursor: default;
 	}
 </style>

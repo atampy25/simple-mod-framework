@@ -2,7 +2,6 @@
 	import { scale, fade } from "svelte/transition"
 	import { flip } from "svelte/animate"
 
-	import SortableList from "svelte-sortable-list"
 	import json5 from "json5"
 	import { Button, CodeSnippet, InlineNotification, Modal, ProgressBar, Search } from "carbon-components-svelte"
 	import AnsiToHTML from "ansi-to-html"
@@ -47,8 +46,9 @@
 	import Close from "carbon-icons-svelte/lib/Close.svelte"
 	import CloudUpload from "carbon-icons-svelte/lib/CloudUpload.svelte"
 	import Filter from "carbon-icons-svelte/lib/Filter.svelte"
-	import { OptionType } from "../../../src/types"
+	import { OptionType } from "../../../../src/types"
 	import { page } from "$app/stores"
+	import SortableList from "$lib/SortableList.svelte"
 
 	let enabledMods: { value: string }[] = [],
 		disabledMods: { value: string }[] = []

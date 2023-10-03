@@ -24,5 +24,6 @@ declare global {
 		sanitizeHtml: typeof sanitizeHtml
 		child_process: typeof child_process
 		nodeVersion: string
+		electronVersion: string
 	}
 }

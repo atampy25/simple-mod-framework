@@ -94,7 +94,8 @@
 
 	if (
 		window.fs
-			.readdirSync(window.path.join("..", "Mods")).filter(a=>a!="Managed by SMF, do not touch")
+			.readdirSync(window.path.join("..", "Mods"))
+			.filter((a) => a != "Managed by SMF, do not touch")
 			.map((a) => window.path.resolve(window.path.join("..", "Mods", a)))
 			.some((a) => window.isFile(a))
 	) {
@@ -107,7 +108,8 @@
 		} catch {
 			invalidModText =
 				window.fs
-					.readdirSync(window.path.join("..", "Mods")).filter(a=>a!="Managed by SMF, do not touch")
+					.readdirSync(window.path.join("..", "Mods"))
+					.filter((a) => a != "Managed by SMF, do not touch")
 					.map((a) => window.path.resolve(window.path.join("..", "Mods", a)))
 					.find((a) => window.fs.existsSync(window.path.join(a, "manifest.json")) && !json5.parse(window.fs.readFileSync(window.path.join(a, "manifest.json"), "utf8")).id)
 					?.split(window.path.sep)
@@ -122,7 +124,7 @@
 		window.originalFs.unlinkSync("../config.json:Zone.Identifier")
 	}
 
-	if (!window.nodeVersion.startsWith("18")) {
+	if (!window.nodeVersion.startsWith("18") || !window.electronVersion.startsWith("26")) {
 		mustRedownloadFrameworkModalOpen = true
 	}
 
@@ -429,18 +431,18 @@
 		<h1 in:fade>Welcome to the Simple Mod Framework</h1>
 		<br />
 		<div class="inline" in:fade={{ delay: 400 }}>
-			<Button kind="primary" icon={List} href="/modList" sveltekit:reload>Enable/disable mods</Button>
+			<Button kind="primary" icon={List} href="/modList" data-sveltekit-reload>Enable/disable mods</Button>
 		</div>
 		<div class="inline" in:fade={{ delay: 800 }}>
-			<Button kind="primary" icon={Settings} href="/settings" sveltekit:reload>Configure mods</Button>
+			<Button kind="primary" icon={Settings} href="/settings" data-sveltekit-reload>Configure mods</Button>
 		</div>
 		{#if getConfig().developerMode}
 			<div class="inline" in:fade={{ delay: 800 }}>
-				<Button kind="primary" icon={Edit} href="/authoring" sveltekit:reload>Author mods</Button>
+				<Button kind="primary" icon={Edit} href="/authoring" data-sveltekit-reload>Author mods</Button>
 			</div>
 		{/if}
 		<div class="inline" in:fade={{ delay: getConfig().developerMode ? 1200 : 800 }}>
-			<Button kind="primary" icon={Info} href="/info" sveltekit:reload>More information</Button>
+			<Button kind="primary" icon={Info} href="/info" data-sveltekit-reload>More information</Button>
 		</div>
 		<p class="mt-4" in:fade={{ delay: 1600 }}>Need help using mods? Consult the pinned post on the Nexus Mods page.</p>
 		<p class="mt-2" in:fade={{ delay: 2000 }}>Need help making mods? There's extensive documentation available in the Info folder.</p>
@@ -456,14 +458,13 @@
 				{#if semver.lt(FrameworkVersion, release.tag_name)}
 					<div class="flex items-center">
 						<h3 class="flex-grow">
-							{{ patch: "Patch update available", minor: "Feature update available", major: "Major update available" }[
-								semver.diff(FrameworkVersion, release.tag_name)
-							] || "Update available"}
+							{{ patch: "Patch update available", minor: "Feature update available", major: "Major update available" }[semver.diff(FrameworkVersion, release.tag_name)] ||
+								"Update available"}
 						</h3>
 						<p>{FrameworkVersion} → {release.tag_name}</p>
 					</div>
 					<hr class="bg-gray-500 border-none h-px" />
-					<div class="mt-2">
+					<div class="mt-2 markdown">
 						{@html githubReleaseMarkdownBody}
 					</div>
 					<br />
@@ -514,7 +515,13 @@
 						</div>
 					</div>
 				{/each}
-				{#each updates.filter(([modID, update]) => update && (!(trustedHosts.has(new URL(update.check_url).hostname) || new URL(update.check_url).hostname.split(".").slice(1).join(".") === "github.io") || !(trustedHosts.has(new URL(update.url).hostname) || new URL(update.url).hostname.split(".").slice(1).join(".") === "github.io"))) as [modID, update]}
+				{#each updates.filter(([modID, update]) => update && (!(trustedHosts.has(new URL(update.check_url).hostname) || new URL(update.check_url).hostname
+								.split(".")
+								.slice(1)
+								.join(".") === "github.io") || !(trustedHosts.has(new URL(update.url).hostname) || new URL(update.url).hostname
+									.split(".")
+									.slice(1)
+									.join(".") === "github.io"))) as [modID, update]}
 					<div class="flex items-center">
 						<p class="flex-grow">The author of {getManifestFromModID(modID).name} may be able to find which IPs have their mod downloaded</p>
 						<Asterisk />
@@ -548,7 +555,7 @@
 							<p>{getManifestFromModID(modID).version} → {update.version}</p>
 						</div>
 						<hr class="bg-gray-500 border-none h-px" />
-						<div class="mt-2">
+						<div class="mt-2 markdown">
 							{@html window.sanitizeHtml(marked(update.changelog, { gfm: true }))}
 						</div>
 						<br />
@@ -607,11 +614,11 @@
 	</p>
 </Modal>
 
-<Modal alert bind:open={mustRedownloadFrameworkModalOpen} modalHeading="Reinstall the framework" primaryButtonText="OK" on:submit={() => (mustRedownloadFrameworkModalOpen = false)}>
+<Modal alert bind:open={mustRedownloadFrameworkModalOpen} modalHeading="Reinstall the Mod Manager" primaryButtonText="OK" on:submit={() => (mustRedownloadFrameworkModalOpen = false)}>
 	<p>
-		The framework needs to be reinstalled due to a change in its internals which can't be automatically updated. Please download the Release.zip file from
+		The framework's Mod Manager needs to be reinstalled due to a change in its internals which can't be automatically updated. Please delete your Mod Manager folder, download the Release.zip file from
 		<code>https://github.com/atampy25/simple-mod-framework/releases/latest</code>
-		and extract it over the existing framework files, overwriting everything except for config.json.
+		and extract the new Mod Manager folder from the ZIP.
 	</p>
 </Modal>
 
@@ -700,7 +707,7 @@
 </Modal>
 
 <Modal passiveModal open={!!updatingMod} modalHeading={updatingMod ? "Updating " + getManifestFromModID(updatingMod.id).name : "Updating the mod"} preventCloseOnClickOutside>
-	<div class="mb-2">
+	<div class="mb-2 markdown">
 		{#if updatingMod}{@html window.sanitizeHtml(marked(updatingMod.changelog, { gfm: true }))}{/if}
 	</div>
 	<br />
@@ -712,13 +719,13 @@
 </Modal>
 
 <style>
-	:global(h2) {
+	:global(.markdown h2) {
 		font-size: 1.5rem;
 		font-weight: 300;
 		margin-bottom: 0.25rem;
 	}
 
-	:global(li) {
+	:global(.markdown li) {
 		margin-bottom: 0.5rem;
 		list-style-position: inside;
 		list-style-type: disclosure-closed;
