@@ -1047,7 +1047,7 @@ export default async function deploy(
 						await logger.verbose("Deep merge")
 						const oresToPatch = Object.fromEntries(oresContent.map((a: { Id: string }) => [a.Id, a]))
 						deepMerge(oresToPatch, entityContent)
-						const oresToWrite = Object.values(oresToPatch)
+						const oresToWrite = Object.entries(oresToPatch).map((a) => ({ ...a[1], Id: a[1].Id || a[0] }))
 
 						fs.writeFileSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "0057C2C3941115CA.ORES.JSON"), JSON.stringify(oresToWrite))
 						fs.rmSync(path.join(process.cwd(), "temp", oresChunk, "ORES", "0057C2C3941115CA.ORES"))
