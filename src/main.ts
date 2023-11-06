@@ -30,7 +30,7 @@ const gameHashes = {
 	"bf2064565cc80fa0c327d67c335fe5c4": Platform.steam, // ansel unlock + no collision
 
 	// Gamepass/store protects the EXE from reading so we can't hash it, instead we hash the game config
-	"8565a9481b5ff9909090b5f8d0e5197c": Platform.microsoft
+	"7575c21412be9b85d129a8cef92efb45": Platform.microsoft
 } as {
 	[k: string]: Platform
 }
