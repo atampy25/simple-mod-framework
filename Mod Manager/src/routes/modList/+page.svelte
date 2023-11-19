@@ -5,6 +5,7 @@
 	import json5 from "json5"
 	import { Button, CodeSnippet, InlineNotification, Modal, ProgressBar, Search } from "carbon-components-svelte"
 	import AnsiToHTML from "ansi-to-html"
+	import throttle from "lodash/throttle"
 
 	const convertAnsi = new AnsiToHTML({
 		newline: true,
@@ -75,17 +76,29 @@
 	let dependencyCycleModalOpen = false
 	let frameworkDeployModalOpen = false
 	let deployOutput = ""
+	let deployOutputHTML = ""
+	let deployDiagnostics: string[] = []
 	let deployFinished = false
 
 	window.ipc.receive("frameworkDeployModalOpen", () => {
 		frameworkDeployModalOpen = true
 	})
 
-	window.ipc.receive("frameworkDeployOutput", (output: string) => {
-		deployOutput = output
+	const convertOutputToHTML = throttle(() => {
+		deployOutputHTML = convertAnsi.toHtml(deployOutput)
+
+		if (deployDiagnostics.length < 20) {
+			deployDiagnostics = deployOutput.split(/\r?\n/).filter((a) => a.match(/.*WARN.*?\t/) || a.match(/.*ERROR.*?\t/))
+		}
+
 		setTimeout(() => {
 			document.getElementById("deployOutputElement")?.children[0].scrollIntoView(false)
 		}, 100)
+	}, 500)
+
+	window.ipc.receive("frameworkDeployOutput", (output: string) => {
+		deployOutput = output
+		convertOutputToHTML()
 	})
 
 	window.ipc.receive("frameworkDeployFinished", () => {
@@ -435,6 +448,7 @@
 				on:click={() => {
 					if (sortMods()) {
 						deployOutput = ""
+						deployOutputHTML = ""
 						deployFinished = false
 						window.ipc.send("deploy")
 					} else {
@@ -539,11 +553,11 @@
 	<pre
 		class="mt-2 h-[10vh] overflow-y-auto whitespace-pre-wrap bg-neutral-800 p-2"
 		style="font-family: 'Fira Code', 'IBM Plex Mono', 'Menlo', 'DejaVu Sans Mono', 'Bitstream Vera Sans Mono', Courier, monospace; color-scheme: dark"
-		id="deployOutputElement">{@html convertAnsi.toHtml(deployOutput)}</pre>
+		id="deployOutputElement">{@html deployOutputHTML}</pre>
 	{#if deployOutput.split(/\r?\n/).some((a) => a.match(/.*WARN.*?\t/)) || deployOutput.split(/\r?\n/).some((a) => a.match(/.*ERROR.*?\t/))}
 		<br />
 		<div class="flex flex-row gap-2 flex-wrap max-h-[15vh] overflow-y-auto">
-			{#each deployOutput.split(/\r?\n/).filter((a) => a.match(/.*WARN.*?\t/) || a.match(/.*ERROR.*?\t/)) as line}
+			{#each deployDiagnostics as line}
 				<InlineNotification hideCloseButton lowContrast kind={line.includes("WARN") ? "warning" : "error"}>
 					<div slot="title" class="-mt-1 text-lg">
 						{line.includes("WARN") ? "Warning" : "Error"}
