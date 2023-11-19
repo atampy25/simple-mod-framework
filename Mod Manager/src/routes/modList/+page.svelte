@@ -5,7 +5,6 @@
 	import json5 from "json5"
 	import { Button, CodeSnippet, InlineNotification, Modal, ProgressBar, Search } from "carbon-components-svelte"
 	import AnsiToHTML from "ansi-to-html"
-	import throttle from "lodash/throttle"
 
 	const convertAnsi = new AnsiToHTML({
 		newline: true,
@@ -71,39 +70,124 @@
 		})
 
 	let changed = false
-
 	let showDropHint = false
 	let dependencyCycleModalOpen = false
 	let frameworkDeployModalOpen = false
 	let deployOutput = ""
-	let deployOutputHTML = ""
-	let deployDiagnostics: string[] = []
 	let deployFinished = false
+	let ignoreScrollEvent = false;
+    let autoScrollDeployOutput = true;
+    let userHasScrolledDeployOutput = false;
+	let autoScrollNotifications = true;
+    let userHasScrolledNotifications = false;
+    let notifications = []; 
+	let outputLines: string | any[] = [];
 
-	window.ipc.receive("frameworkDeployModalOpen", () => {
-		frameworkDeployModalOpen = true
-	})
 
-	const convertOutputToHTML = throttle(() => {
-		deployOutputHTML = convertAnsi.toHtml(deployOutput)
+	$: outputLines = deployOutput.split(/\r?\n/).filter(line => line.trim() !== '');
+	$: if (outputLines.length > 0 && autoScrollDeployOutput) {
+		requestAnimationFrame(() => {
+			const outputElement = document.getElementById('deployOutputElement');
+			if (outputElement) {
+				outputElement.scrollTop = outputElement.scrollHeight;
+			}
+		});
+	}
+	$: { let combinedNotifications = [...warnings, ...errors];
+        if (combinedNotifications.length !== notifications.length) {
+            notifications = combinedNotifications;
+            scrollToBottom('notificationElement');
+        }
+    }
+    $: if (outputLines.length > 0 && autoScrollDeployOutput) {
+        scrollToBottom('deployOutputElement');
+    }
+    $: if (notifications.length > 0 && autoScrollNotifications) {
+        scrollToBottom('notificationElement');
+    }
 
-		if (deployDiagnostics.length < 20) {
-			deployDiagnostics = deployOutput.split(/\r?\n/).filter((a) => a.match(/.*WARN.*?\t/) || a.match(/.*ERROR.*?\t/))
+    function handleScroll(event: UIEvent & { currentTarget: EventTarget & HTMLDivElement }, elementId: string) {
+        if (ignoreScrollEvent) {
+            return;
+        }
+
+        const element = event.target;
+        const nearBottom = element.scrollHeight - element.clientHeight <= element.scrollTop + 10; 
+		// The error is right, so do not add a non-null assertion for it. If you do, the user will not be able to scroll in the deploy and notification output anymore. - Knew
+
+		if (elementId === 'deployOutputElement') {
+			if (!nearBottom) {
+				userHasScrolledDeployOutput = true;
+				autoScrollDeployOutput = false;
+			}
+		} else if (elementId === 'notificationElement') {
+			if (!nearBottom) {
+				userHasScrolledNotifications = true;
+				autoScrollNotifications = false;
+			}
 		}
+    }
 
-		setTimeout(() => {
-			document.getElementById("deployOutputElement")?.children[0].scrollIntoView(false)
-		}, 100)
-	}, 500)
+    function scrollToBottom(elementId: string) {
+        requestAnimationFrame(() => {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.scrollTop = element.scrollHeight;
+            }
+            setTimeout(() => ignoreScrollEvent = false, 100);
+        });
+    }
 
-	window.ipc.receive("frameworkDeployOutput", (output: string) => {
-		deployOutput = output
-		convertOutputToHTML()
-	})
+    function enableAutoScrollDeployOutput() {
+        autoScrollDeployOutput = true;
+        userHasScrolledDeployOutput = false;
+        scrollToBottom('deployOutputElement');
+    }
+
+    function enableAutoScrollNotifications() {
+        autoScrollNotifications = true;
+        userHasScrolledNotifications = false;
+        scrollToBottom('notificationElement');
+    }
+
+    window.ipc.receive("frameworkDeployModalOpen", () => {
+        frameworkDeployModalOpen = true
+    })
+
+    window.ipc.receive("frameworkDeployOutput", (output: string) => {
+        ignoreScrollEvent = true;
+        deployOutput = output;
+        outputLines = deployOutput.split(/\r?\n/).filter(line => line.trim() !== '');
+        if (!userHasScrolledDeployOutput) {
+            scrollToBottom('deployOutputElement');
+        }
+    });
 
 	window.ipc.receive("frameworkDeployFinished", () => {
 		deployFinished = true
 	})
+
+    let warnings: any[] = [];
+    let errors: any[] = [];
+
+    $: {
+        let warningIndex = 1;
+        let errorIndex = 1;
+        warnings = [];
+        errors = [];
+        
+        deployOutput.split(/\r?\n/).forEach(line => {
+            if (line.match(/.*WARN.*?\t/)) {
+                warnings.push({ message: line.replace(/.*WARN.*?\t/, ""), count: warningIndex++ });
+            } else if (line.match(/.*ERROR.*?\t/)) {
+                errors.push({ message: line.replace(/.*ERROR.*?\t/, ""), count: errorIndex++ });
+            }
+        });
+    }
+
+    $: totalWarnings = warnings.length;
+    $: totalErrors = errors.length;
+    $: totalNotifications = totalWarnings + totalErrors;
 
 	document.addEventListener("drop", (event) => {
 		event.preventDefault()
@@ -448,7 +532,6 @@
 				on:click={() => {
 					if (sortMods()) {
 						deployOutput = ""
-						deployOutputHTML = ""
 						deployFinished = false
 						window.ipc.send("deploy")
 					} else {
@@ -550,23 +633,82 @@
 <Modal passiveModal open={frameworkDeployModalOpen} modalHeading="Applying your mods" preventCloseOnClickOutside>
 	Your mods are being deployed. This may take a while - grab a coffee or something.
 	<br />
-	<pre
-		class="mt-2 h-[10vh] overflow-y-auto whitespace-pre-wrap bg-neutral-800 p-2"
-		style="font-family: 'Fira Code', 'IBM Plex Mono', 'Menlo', 'DejaVu Sans Mono', 'Bitstream Vera Sans Mono', Courier, monospace; color-scheme: dark"
-		id="deployOutputElement">{@html deployOutputHTML}</pre>
-	{#if deployOutput.split(/\r?\n/).some((a) => a.match(/.*WARN.*?\t/)) || deployOutput.split(/\r?\n/).some((a) => a.match(/.*ERROR.*?\t/))}
-		<br />
-		<div class="flex flex-row gap-2 flex-wrap max-h-[15vh] overflow-y-auto">
-			{#each deployDiagnostics as line}
-				<InlineNotification hideCloseButton lowContrast kind={line.includes("WARN") ? "warning" : "error"}>
-					<div slot="title" class="-mt-1 text-lg">
-						{line.includes("WARN") ? "Warning" : "Error"}
-					</div>
-					<div slot="subtitle">{line.replace(/.*WARN.*?\t/, "").replace(/.*ERROR.*?\t/, "")}</div>
-				</InlineNotification>
-			{/each}
+    <div 
+		id="deployOutputElement"
+		class="mt-2 h-[40vh] overflow-y-auto bg-neutral-800 p-2"
+        style="font-family: 'Fira Code', 'IBM Plex Mono', 'Menlo', 'DejaVu Sans Mono', 'Bitstream Vera Sans Mono', Courier, monospace; color-scheme: dark"
+		on:scroll={(event) => handleScroll(event, 'deployOutputElement')}>
+
+        {#each outputLines as line}
+            <pre class="whitespace-pre-wrap break-words text-gray-600">{@html convertAnsi.toHtml(line)}</pre>
+        {/each}
+
+        {#if userHasScrolledDeployOutput}
+            <button 
+                class="absolute bottom-[150px] z-2 right-[37px] bg-gray-400 hover:bg-red-500 text-white py-1 px-3 rounded"
+                on:click={enableAutoScrollDeployOutput}>
+                <svg width="24px" height="24px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M4 9l8 8 8-8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </button>
+        {/if}
+
+    </div>
+    {#if warnings.length > 0 || errors.length > 0}
+        <br />
+        <div id="notificationElement"
+			class="flex flex-row gap-2 flex-wrap max-h-[25vh] h-[126px] overflow-y-auto relative" 
+            on:scroll={(event) => handleScroll(event, 'notificationElement')}>
+
+            {#each warnings as warning}
+                <InlineNotification hideCloseButton lowContrast kind="warning">
+                    <div slot="title" class="-mt-1 text-lg">Warning #{warning.count}</div>
+                    <div slot="subtitle">{warning.message}</div>
+                </InlineNotification>
+            {/each}
+
+            {#each errors as error}
+                <InlineNotification hideCloseButton lowContrast kind="error">
+                    <div slot="title" class="-mt-1 text-lg">Error #{error.count}</div>
+                    <div slot="subtitle">{error.message}</div>
+                </InlineNotification>
+            {/each}
+
+			{#if userHasScrolledNotifications}
+				<button 
+					class="fixed bottom-[20px] z-2 right-[38px] bg-gray-400 hover:bg-red-500 text-white py-1 px-3 rounded"
+					on:click={enableAutoScrollNotifications}>
+					<svg width="24px" height="24px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+						<path d="M4 9l8 8 8-8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+					</svg>
+				</button>
+			{/if}
+
 		</div>
 	{/if}
+
+	<div class="inline absolute right-5 text-right">
+		{#if totalNotifications  > 0}
+			<span class="inline-block bg-transparent text-yellow-400 px-2 py-1 rounded mr-2">
+				<svg class="inline-block" width="20" height="20" viewBox="0 0 554.2 554.199" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+					<path d="M538.5,386.199L356.5,70.8c-16.4-28.4-46.7-45.9-79.501-45.9c-32.8,0-63.1,17.5-79.5,45.9L12.3,391.6
+						c-16.4,28.4-16.4,63.4,0,91.8C28.7,511.8,59,529.3,91.8,529.3H462.2c0.101,0,0.2,0,0.2,0c50.7,0,91.8-41.101,91.8-91.8
+						C554.2,418.5,548.4,400.8,538.5,386.199z M316.3,416.899c0,21.7-16.7,38.3-39.2,38.3s-39.2-16.6-39.2-38.3V416
+						c0-21.601,16.7-38.301,39.2-38.301S316.3,394.3,316.3,416V416.899z M317.2,158.7L297.8,328.1c-1.3,12.2-9.4,19.8-20.7,19.8
+						s-19.4-7.7-20.7-19.8L237,158.6c-1.3-13.1,5.801-23,18-23H299.1C311.3,135.7,318.5,145.6,317.2,158.7z"/>
+				</svg>
+				 {totalWarnings}
+			</span>
+
+			<span class="inline-block bg-transparent text-red-500 px-2 py-1 rounded">
+				<svg class="inline-block" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+					<path fill-rule="evenodd" clip-rule="evenodd" d="M7.91 3.23 3.23 7.913v-.01a.81.81 0 0 0-.23.57v7.054c0 .22.08.42.23.57L7.9 20.77c.15.15.36.23.57.23h7.06c.22 0 .42-.08.57-.23l4.67-4.673a.81.81 0 0 0 .23-.57V8.473c0-.22-.08-.42-.23-.57L16.1 3.23a.81.81 0 0 0-.57-.23H8.48c-.22 0-.42.08-.57.23ZM12 7a1 1 0 0 1 1 1v5a1 1 0 1 1-2 0V8a1 1 0 0 1 1-1Zm-1 9a1 1 0 0 1 1-1h.008a1 1 0 1 1 0 2H12a1 1 0 0 1-1-1Z"/>
+				</svg>
+				 {totalErrors}
+			</span>
+		{/if}
+	</div>
+
 
 	{#if deployFinished}
 		<br />
@@ -577,7 +719,7 @@
 				.filter((a) => a.length)
 				.at(-1)
 				.match(/\tDone in .*/) && !deployOutput.split(/\r?\n/).some((a) => a.match(/.*WARN.*?\t/))}
-				<Button kind="primary" icon={Close} on:click={() => (frameworkDeployModalOpen = false)}>Close</Button>
+				<Button  kind="primary" icon={Close} on:click={() => (frameworkDeployModalOpen = false)}>Close</Button>
 				<span class="text-green-300">Deploy successful</span>
 			{:else if deployOutput
 				.split(/\r?\n/)
@@ -805,5 +947,37 @@
 
 	:global(.bx--snippet.bx--snippet--single) {
 		background-color: #262626;
+	}
+
+	.overflow-y-auto {
+		color-scheme: dark !important;
+	}
+
+	:global(.bx--inline-notification) {
+		margin-right: 10px !important;
+		margin-left: 8px !important;
+		background:#2F2F2F !important;
+		max-width: 100% !important;
+		margin-top: 0rem !important;
+		margin-bottom: 0rem !important;
+	}
+
+	:global(.bx--modal-content) {
+		overflow-y: visible !important;
+	}
+
+	@media (min-width: 42rem) {:global(.bx--modal-container) {
+		position: relative !important;
+		height: auto !important;
+		width: 90% !important;
+		min-height: 30rem !important;
+	}}
+
+	:global(.bx--modal-content) {
+		margin-bottom:1.8rem !important;
+	}
+
+	:global(.bx--modal-header) {
+		margin-bottom:0rem !important;
 	}
 </style>
