@@ -5,6 +5,7 @@
 	import json5 from "json5"
 	import { Button, CodeSnippet, InlineNotification, Modal, ProgressBar, Search } from "carbon-components-svelte"
 	import AnsiToHTML from "ansi-to-html"
+	import throttle from "lodash/throttle"
 
 	const convertAnsi = new AnsiToHTML({
 		newline: true,
@@ -74,14 +75,15 @@
 	let dependencyCycleModalOpen = false
 	let frameworkDeployModalOpen = false
 	let deployOutput = ""
+	let deployOutputBuffer = ""
 	let deployFinished = false
-	let ignoreScrollEvent = false;
-    let autoScrollDeployOutput = true;
-    let userHasScrolledDeployOutput = false;
-	let autoScrollNotifications = true;
-    let userHasScrolledNotifications = false;
-    let notifications = []; 
-	let outputLines: string | any[] = [];
+	let ignoreScrollEvent = false
+    let autoScrollDeployOutput = true
+    let userHasScrolledDeployOutput = false
+	let autoScrollNotifications = true
+    let userHasScrolledNotifications = false
+    let notifications = []
+	let outputLines: string | any[] = []
 
 
 	$: outputLines = deployOutput.split(/\r?\n/).filter(line => line.trim() !== '');
@@ -106,6 +108,16 @@
         scrollToBottom('notificationElement');
     }
 
+	const updateDeployOutput = throttle(() => {
+		deployOutput += deployOutputBuffer;
+		deployOutputBuffer = "";
+		outputLines = deployOutput.split(/\r?\n/).filter(line => line.trim() !== '');
+
+		if (!userHasScrolledDeployOutput) {
+			scrollToBottom('deployOutputElement');
+		}
+	}, 150);
+
     function handleScroll(event: UIEvent & { currentTarget: EventTarget & HTMLDivElement }, elementId: string) {
         if (ignoreScrollEvent) {
             return;
@@ -113,7 +125,7 @@
 
         const element = event.target;
         const nearBottom = element.scrollHeight - element.clientHeight <= element.scrollTop + 10; 
-		// The error is right, so do not add a non-null assertion for it. If you do, the user will not be able to scroll in the deploy and notification output anymore. - Knew
+		// The VSC error is right, so do not add a non-null assertion for it. If you do, the user will not be able to scroll in the deploy and notification output anymore. - Knew
 
 		if (elementId === 'deployOutputElement') {
 			if (!nearBottom) {
@@ -128,15 +140,16 @@
 		}
     }
 
-    function scrollToBottom(elementId: string) {
-        requestAnimationFrame(() => {
-            const element = document.getElementById(elementId);
-            if (element) {
-                element.scrollTop = element.scrollHeight;
-            }
-            setTimeout(() => ignoreScrollEvent = false, 100);
-        });
-    }
+	function scrollToBottom(elementId: string) {
+		requestAnimationFrame(() => {
+			requestAnimationFrame(() => { // The double requestAnimationFrame is intentional!! Without it, there is a chance the output will stop scrolling when the user didn't request it. - Knew
+				const element = document.getElementById(elementId);
+				if (element) {
+					element.scrollTop = element.scrollHeight;
+				}
+			});
+		});
+	}
 
     function enableAutoScrollDeployOutput() {
         autoScrollDeployOutput = true;
@@ -154,14 +167,11 @@
         frameworkDeployModalOpen = true
     })
 
-    window.ipc.receive("frameworkDeployOutput", (output: string) => {
-        ignoreScrollEvent = true;
-        deployOutput = output;
-        outputLines = deployOutput.split(/\r?\n/).filter(line => line.trim() !== '');
-        if (!userHasScrolledDeployOutput) {
-            scrollToBottom('deployOutputElement');
-        }
-    });
+	window.ipc.receive("frameworkDeployOutput", (output: string) => {
+		ignoreScrollEvent = true;
+		deployOutputBuffer += output + "\n";
+		updateDeployOutput();
+	});
 
 	window.ipc.receive("frameworkDeployFinished", () => {
 		deployFinished = true
@@ -645,7 +655,7 @@
 
         {#if userHasScrolledDeployOutput}
             <button 
-                class="absolute bottom-[150px] z-2 right-[37px] bg-gray-400 hover:bg-red-500 text-white py-1 px-3 rounded"
+                class="absolute top-[288px] z-10 right-[37px] bg-gray-400 hover:bg-red-500 text-white py-1 px-3 rounded"
                 on:click={enableAutoScrollDeployOutput}>
                 <svg width="24px" height="24px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M4 9l8 8 8-8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -676,7 +686,7 @@
 
 			{#if userHasScrolledNotifications}
 				<button 
-					class="fixed bottom-[20px] z-2 right-[38px] bg-gray-400 hover:bg-red-500 text-white py-1 px-3 rounded"
+					class="fixed top-[479px] z-10 right-[38px] bg-gray-400 hover:bg-red-500 text-white py-1 px-3 rounded"
 					on:click={enableAutoScrollNotifications}>
 					<svg width="24px" height="24px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
 						<path d="M4 9l8 8 8-8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
