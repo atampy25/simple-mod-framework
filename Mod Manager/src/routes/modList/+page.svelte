@@ -147,6 +147,7 @@
 				if (element) {
 					element.scrollTop = element.scrollHeight;
 				}
+				setTimeout(() => ignoreScrollEvent = false, 100);
 			});
 		});
 	}
