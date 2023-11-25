@@ -1630,7 +1630,7 @@ export default async function deploy(
 								case "LOCR":
 									return `Converting localisation file ${contentIdentifier}`
 								case "RTLV":
-									return `Converting runtime video localisation file ${contentIdentifier}`
+									return `Converting runtime localised video file ${contentIdentifier}`
 								default:
 									return `` // We will never hit this, but stops typescript complaining
 							}
