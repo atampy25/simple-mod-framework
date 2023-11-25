@@ -1629,8 +1629,8 @@ export default async function deploy(
 									return `Converting dialogue file ${contentIdentifier}`
 								case "LOCR":
 									return `Converting localisation file ${contentIdentifier}`
-								case "RLTV":
-									return `Converting runtime video file ${contentIdentifier}`
+								case "RTLV":
+									return `Converting runtime localised video file ${contentIdentifier}`
 								default:
 									return `` // We will never hit this, but stops typescript complaining
 							}
