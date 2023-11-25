@@ -163,6 +163,11 @@ ipcMain.on("deploy", async () => {
             reject(error);
         });
     });
+
+	if (isProcessClosed) {
+		mainWindow.webContents.send("frameworkDeployFinished");
+	}
+	
 });
 
 ipcMain.on("modFileOpenDialog", () => {
