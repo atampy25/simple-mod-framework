@@ -133,48 +133,37 @@ ipcMain.on("deploy", async () => {
 
     mainWindow.webContents.send("frameworkDeployModalOpen");
 
-    let deployOutputBuffer = [];
-    let isProcessClosed = false;
-    let lastSendTime = Date.now();
-    const throttleInterval = 150;
+    let partialLine = '';
 
-    const sendOutput = () => {
-        mainWindow.webContents.send("frameworkDeployOutput", deployOutputBuffer.join('\n'));
-        lastSendTime = Date.now();
+    const sendData = (data) => {
+        const lines = (partialLine + data.toString()).split('\n');
+        partialLine = lines.pop();
+    
+        lines.forEach(line => {
+            if (line.trim() !== '') {
+                mainWindow.webContents.send("frameworkDeployOutput", line);
+            }
+        });
     };
 
-	let partialLine = '';
+    deployProcess.stdout.on('data', sendData);
+    deployProcess.stderr.on('data', sendData);
 
-	const onData = (data) => {
-		const lines = (partialLine + data.toString()).split('\n');
-		partialLine = lines.pop();
-	
-		deployOutputBuffer.push(...lines.filter(line => line.trim() !== ''));
-
-		if (lines.length > 0 && Date.now() - lastSendTime > throttleInterval) {
-			sendOutput();
-		}
-	};
-	
-	deployProcess.stdout.on('data', onData);
-	deployProcess.stderr.on('data', onData);
-	
     await new Promise((resolve, reject) => {
-		deployProcess.on('close', () => {
-			isProcessClosed = true;
-			sendOutput();
-			resolve();
-		});
-			deployProcess.on('error', (error) => {
-				mainWindow.webContents.send("frameworkDeployError", error.message);
-				reject(error);
-			});
-		});
+        deployProcess.on('close', () => {
+            if (partialLine.trim() !== '') {
+                mainWindow.webContents.send("frameworkDeployOutput", partialLine);
+            }
+            mainWindow.webContents.send("frameworkDeployFinished");
+            resolve();
+        });
 
-		if (isProcessClosed) {
-			mainWindow.webContents.send("frameworkDeployFinished");
-		}
-	});
+        deployProcess.on('error', (error) => {
+            mainWindow.webContents.send("frameworkDeployError", error.message);
+            reject(error);
+        });
+    });
+});
 
 ipcMain.on("modFileOpenDialog", () => {
 	mainWindow.webContents.send(
