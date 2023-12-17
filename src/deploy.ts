@@ -2400,6 +2400,8 @@ export default async function deploy(
 		for (const locrHash of Object.keys(localisationOverrides)) {
 			const localisationFileRPKG = await getRPKGOfHash(locrHash)
 
+			fs.ensureDirSync(path.join(process.cwd(), "staging", localisationFileRPKG.replace(/patch[0-9]*/gi, "")))
+
 			if (invalidatedData.some((a) => a.data.affected.includes(locrHash)) || !(await copyFromCache("global", path.join("LOCR", locrHash), path.join(process.cwd(), "temp")))) {
 				// we need to re-deploy the localisation files OR the localisation files couldn't be copied from cache
 				await extractOrCopyToTemp(localisationFileRPKG, locrHash, "LOCR", localisationFileRPKG.replace(/patch[0-9]*/gi, ""))
@@ -2414,8 +2416,6 @@ export default async function deploy(
 						`${locrHash}.LOCR.JSON`
 					)}"`
 				)
-
-				fs.ensureDirSync(path.join(process.cwd(), "staging", localisationFileRPKG.replace(/patch[0-9]*/gi, "")))
 
 				const locrFileContent: HMLanguageToolsLOCR = JSON.parse(fs.readFileSync(path.join(process.cwd(), "temp", localisationFileRPKG, "LOCR", `${locrHash}.LOCR.JSON`), "utf8"))
 				const locrContent = locrFileContent["languages"]
@@ -2457,7 +2457,7 @@ export default async function deploy(
 				)}" --metapath "${path.join(process.cwd(), "temp", localisationFileRPKG, "LOCR", `${locrHash}.LOCR.meta.JSON`)}"`
 			)
 
-			fs.copyFileSync(path.join(process.cwd(), "temp", localisationFileRPKG, "LOCR", `${locrHash}.LOCR.meta`), path.join(process.cwd(), "staging", localisationFileRPKG.replace(/patch[0-9]*/gi, ""), "00F5817876E691F1.LOCR.meta"))
+			fs.copyFileSync(path.join(process.cwd(), "temp", localisationFileRPKG, "LOCR", `${locrHash}.LOCR.meta`), path.join(process.cwd(), "staging", localisationFileRPKG.replace(/patch[0-9]*/gi, ""), `${locrHash}.LOCR.meta`))
 
 			fs.emptyDirSync(path.join(process.cwd(), "temp"))
 		}
