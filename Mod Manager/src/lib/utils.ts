@@ -14,7 +14,7 @@ import memoize from "lodash.memoize"
 import merge from "lodash.mergewith"
 import semver from "semver"
 
-export const FrameworkVersion = "2.33.6"
+export const FrameworkVersion = "2.33.7"
 
 const validateManifest = new Ajv({ strict: false }).compile(manifestSchema)
 
