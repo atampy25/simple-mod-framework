@@ -25,5 +25,5 @@ export async function createPatchJSON(original: string, modified: string, output
 }
 
 export async function applyPatchJSON(original: string, patch: string, output: string) {
-	execCommand(`"Third-Party\\quickentity-rs.exe" patch apply --input "${original}" --patch "${patch}" --output "${output}" --permissive`)
+	execCommand(`"Third-Party\\quickentity-rs.exe" patch apply --input "${original}" --patch "${patch}" --output "${output}" --permissive --format-fix`)
 }
