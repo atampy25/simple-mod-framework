@@ -2157,9 +2157,11 @@ export default async function deploy(
 
 		fs.emptyDirSync(path.join(process.cwd(), "temp"))
 
-		await extractOrCopyToTemp("chunk0", "004F4B738474CEAD", "JSON")
+		const rpkgOfDestinations = await getRPKGOfHash("004F4B738474CEAD")
 
-		const registry = fs.readJSONSync(path.join(process.cwd(), "temp", "chunk0", "JSON", "004F4B738474CEAD.JSON"))
+		await extractOrCopyToTemp(rpkgOfDestinations, "004F4B738474CEAD", "JSON")
+
+		const registry = fs.readJSONSync(path.join(process.cwd(), "temp", rpkgOfDestinations, "JSON", "004F4B738474CEAD.JSON"))
 
 		for (const { id, before, after, context } of contractsToAddToDestinations) {
 			await logger.debug(`Adding contract ${id} to Destinations`)
