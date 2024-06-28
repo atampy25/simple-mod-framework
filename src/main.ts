@@ -24,10 +24,10 @@ const gameHashes = {
 	"fca4ea3830d30a486eb4fed444557827": Platform.epic, // ansel unlock
 	"56130f7cb3df6c7e313a10a8c9050759": Platform.epic, // ansel no collision
 	"ed959d30a4701d9df58f162b3c15dc47": Platform.epic, // ansel unlock + no collision
-	"631454730ab6399e6ec99b375cd51053": Platform.steam, // base game
-	"892d00376d6e8e5f4de687fb31886083": Platform.steam, // ansel unlock
-	"56cae4b2bb9ef37489d3e6fee971b29f": Platform.steam, // ansel no collision
-	"913623d20fde3d75f65bb40db75522d3": Platform.steam, // ansel unlock + no collision
+	"89fad9435f2c22b06ff977189b198596": Platform.steam, // base game
+	"b08c8bef3f5c3b28d9ca81e537e0fc5d": Platform.steam, // ansel unlock
+	"368df1a22ca8362e713aba745e2af94f": Platform.steam, // ansel no collision
+	"7fd58f4b28b45dc78bcea600a314cdd0": Platform.steam, // ansel unlock + no collision
 
 	// Gamepass/store protects the EXE from reading so we can't hash it, instead we hash the game config
 	"f610f65c81a20c1f19f9caf96a63b286": Platform.microsoft
