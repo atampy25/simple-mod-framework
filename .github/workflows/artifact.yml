@@ -23,13 +23,6 @@ jobs:
           default: true
 
       - name: Cache
-        id: cache
-        uses: actions/cache@v2.1.6
-        with:
-          path: node_modules
-          key: buildCachev25
-
-      - name: Cache
         id: cache2
         uses: actions/cache@v2.1.6
         with:
@@ -43,26 +36,13 @@ jobs:
 
       - name: Prep
         run: |
-          npm install -g pkg typescript @napi-rs/cli
-
-      - name: Build Rust code
-        run: |
-          cd rust
-          yarn
-          yarn build
-          cd ../
-          copy ./rust/index.d.ts ./src/smf-rust.d.ts
-          copy ./rust/rust.win32-x64-msvc.node ./src/smf-rust.node
+          npm install -g pkg typescript @napi-rs/cli nx
 
       - name: Build EXE
         env:
           NODE_OPTIONS: "--max-old-space-size=4096"
         run: |
-          New-Item -ItemType Directory -Force -Path ./node_modules/piscina
-          robocopy ./piscina ./node_modules/piscina /E /is /it; if ($lastexitcode -lt 8) { $global:LASTEXITCODE = $null }
-          tsc
-          copy ./src/smf-rust.node ./compiled/smf-rust.node
-          pkg package.json --targets node18-win-x64 --output Deploy.exe --compress Brotli
+          nx build simple-mod-framework
 
       - name: Install GUI dependencies
         if: steps.cache2.outputs.cache-hit != 'true'
@@ -87,7 +67,7 @@ jobs:
           robocopy ./Third-Party ./dist/Third-Party /E; if ($lastexitcode -lt 8) { $global:LASTEXITCODE = $null }
           robocopy "./For Build" ./dist /E; if ($lastexitcode -lt 8) { $global:LASTEXITCODE = $null }
           robocopy ./docs ./dist/Info /E; if ($lastexitcode -lt 8) { $global:LASTEXITCODE = $null }
-          robocopy ./compiled ./dist/API /E *.d.ts; if ($lastexitcode -lt 8) { $global:LASTEXITCODE = $null }
+          robocopy ./packages/cli/compiled ./dist/API /E *.d.ts; if ($lastexitcode -lt 8) { $global:LASTEXITCODE = $null }
           robocopy ".\Mod Manager\dist\win-unpacked" "./dist/Mod Manager" /E; if ($lastexitcode -lt 8) { $global:LASTEXITCODE = $null }
           copy Deploy.exe dist
           New-Item -Path dist -Name "Mod Manager.cmd" -ItemType "file" -Value "@echo off`ncd `"Mod Manager`"`nstart `"`" `"Mod Manager.exe`""
