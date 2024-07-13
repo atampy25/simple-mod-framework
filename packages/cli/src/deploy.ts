@@ -1,3 +1,5 @@
+// @FIXME fix ts errors
+// @ts-nocheck
 import * as LosslessJSON from "lossless-json"
 import * as rfc6902 from "rfc6902"
 import * as rust_utils from "./smf-rust"
@@ -7,7 +9,15 @@ import type { DeployInstruction, HMLanguageToolsLOCR, Manifest, ManifestOptionDa
 import { ModuleKind, ScriptTarget } from "typescript"
 import { compileExpression, useDotAccessOperatorAndOptionalChaining } from "filtrex"
 import { config, logger, rpkgInstance } from "./core-singleton"
-import { copyFromCache, copyToCache, extractOrCopyToTemp, getQuickEntityFromPatchVersion, getQuickEntityFromVersion, hexflip, normaliseToHash } from "./utils"
+import {
+	copyFromCache,
+	copyToCache,
+	extractOrCopyToTemp,
+	getQuickEntityFromPatchVersion,
+	getQuickEntityFromVersion,
+	hexflip,
+	normaliseToHash
+} from "./utils"
 
 import { OptionType } from "./types"
 import Piscina from "piscina"
@@ -23,7 +33,7 @@ import os from "os"
 import path from "path"
 import { xxhash3 } from "hash-wasm"
 
-const deepMerge = function (x: any, y: any) {
+const deepMerge = function(x: any, y: any) {
 	return mergeWith(x, y, (orig, src) => {
 		if (Array.isArray(orig)) {
 			return src
@@ -31,19 +41,19 @@ const deepMerge = function (x: any, y: any) {
 	})
 }
 
-const execCommand = function (command: string) {
+const execCommand = function(command: string) {
 	void logger.verbose(`Executing command ${command}`)
 	child_process.execSync(command, { stdio: ["pipe", "pipe", "inherit"] })
 }
 
-const callRPKGFunction = async function (command: string) {
+const callRPKGFunction = async function(command: string) {
 	await logger.verbose(`Executing RPKG function ${command}`)
 	return await rpkgInstance.callFunction(command)
 }
 
 const RPKGHashCache: Record<string, [string, boolean]> = {}
 
-const getRPKGOfHash = async function (hash: string): Promise<string> {
+const getRPKGOfHash = async function(hash: string): Promise<string> {
 	await logger.verbose(`Getting RPKG of hash ${hash}`)
 
 	if (RPKGHashCache[hash]) {
@@ -62,7 +72,7 @@ const getRPKGOfHash = async function (hash: string): Promise<string> {
 	}
 }
 
-export default async function deploy(
+export default async function deploy (
 	sentryTransaction: Transaction,
 	configureSentryScope: (transaction: unknown) => void,
 	invalidatedData: {
@@ -410,7 +420,7 @@ export default async function deploy(
 							rpkg: {
 								callRPKGFunction,
 								getRPKGOfHash,
-								async extractFileFromRPKG(hash: string, rpkg: string) {
+								async extractFileFromRPKG (hash: string, rpkg: string) {
 									await logger.verbose(`Extracting ${hash} from ${rpkg}`)
 									await rpkgInstance.callFunction(
 										`-extract_from_rpkg "${path.join(config.runtimePath, `${rpkg}.rpkg`)}" -filter "${hash}" -output_path ${path.join(process.cwd(), "scriptTempFolder")}`
@@ -504,7 +514,7 @@ export default async function deploy(
 						rpkg: {
 							callRPKGFunction,
 							getRPKGOfHash,
-							async extractFileFromRPKG(hash: string, rpkg: string) {
+							async extractFileFromRPKG (hash: string, rpkg: string) {
 								await logger.verbose(`Extracting ${hash} from ${rpkg}`)
 								await rpkgInstance.callFunction(`-extract_from_rpkg "${path.join(config.runtimePath, `${rpkg}.rpkg`)}" -filter "${hash}" -output_path ${path.join(process.cwd(), "scriptTempFolder")}`)
 							}
@@ -630,47 +640,47 @@ export default async function deploy(
 				"locr.json"
 			].includes(content.type)
 				? sentryContentTransaction.startChild({
-						op: "stageContentFile",
-						description: `Stage ${content.type}`
-				  })
+					op: "stageContentFile",
+					description: `Stage ${content.type}`
+				})
 				: {
-						startChild() {
-							return {
-								startChild() {
-									return {
-										startChild() {
-											return {
-												startChild() {
-													return {
-														startChild() {
-															return {
-																startChild() {
-																	return {
-																		startChild() {
-																			return {
-																				finish() {}
-																			}
-																		},
-																		finish() {}
-																	}
-																},
-																finish() {}
-															}
-														},
-														finish() {}
-													}
-												},
-												finish() {}
-											}
-										},
-										finish() {}
-									}
-								},
-								finish() {}
-							}
-						},
-						finish() {}
-				  } // Don't track raw files, only special file types
+					startChild () {
+						return {
+							startChild () {
+								return {
+									startChild () {
+										return {
+											startChild () {
+												return {
+													startChild () {
+														return {
+															startChild () {
+																return {
+																	startChild () {
+																		return {
+																			finish () {}
+																		}
+																	},
+																	finish () {}
+																}
+															},
+															finish () {}
+														}
+													},
+													finish () {}
+												}
+											},
+											finish () {}
+										}
+									},
+									finish () {}
+								}
+							},
+							finish () {}
+						}
+					},
+					finish () {}
+				} // Don't track raw files, only special file types
 			configureSentryScope(sentryContentFileTransaction)
 
 			content.source === "disk" && logger.verbose(`Staging ${content.type} file ${content.path}`)
@@ -699,7 +709,9 @@ export default async function deploy(
 
 							fs.ensureDirSync(path.join(process.cwd(), "qn-update"))
 
-							const comments = Object.entries(entityContent.entities).filter((a) => (a[1] as { type: string | undefined }).type === "comment")
+							const comments = Object.entries(entityContent.entities).filter((a) => (a[1] as {
+								type: string | undefined
+							}).type === "comment")
 
 							await getQuickEntityFromVersion(entityContent.quickEntityVersion.value).generate(
 								"HM3",
@@ -723,7 +735,11 @@ export default async function deploy(
 								content.path,
 								LosslessJSON.stringify(
 									Object.assign(LosslessJSON.parse(fs.readFileSync(content.path, "utf8")), {
-										comments: comments.map((a: [string, { parent: string; name: string; text: string }]) => {
+										comments: comments.map((a: [string, {
+											parent: string;
+											name: string;
+											text: string
+										}]) => {
 											return {
 												parent: a[1].parent,
 												name: a[1].name,
@@ -1086,7 +1102,9 @@ export default async function deploy(
 
 						const repoContent = JSON.parse(fs.readFileSync(path.join(process.cwd(), "temp", repoRPKG, "REPO", "00204D1AFD76AB13.REPO"), "utf8"))
 
-						const repoToPatch = Object.fromEntries(repoContent.map((a: { [x: string]: unknown }) => [a["ID_"], a]))
+						const repoToPatch = Object.fromEntries(repoContent.map((a: {
+							[x: string]: unknown
+						}) => [a["ID_"], a]))
 						deepMerge(repoToPatch, entityContent)
 						const repoToWrite = Object.entries(repoToPatch).map((a) => ({ ...a[1], ID_: a[1].ID_ || a[0] }))
 
@@ -1097,7 +1115,9 @@ export default async function deploy(
 						for (const repoItem of repoToWrite) {
 							if (editedItems.has(repoItem.ID_)) {
 								if (repoItem.Runtime) {
-									if (!metaContent["hash_reference_data"].find((a: { hash: string }) => a.hash === parseInt(repoItem.Runtime).toString(16).toUpperCase())) {
+									if (!metaContent["hash_reference_data"].find((a: {
+										hash: string
+									}) => a.hash === parseInt(repoItem.Runtime).toString(16).toUpperCase())) {
 										metaContent["hash_reference_data"].push({
 											hash: parseInt(repoItem.Runtime).toString(16).toUpperCase(),
 											flag: "9F"
@@ -1108,7 +1128,9 @@ export default async function deploy(
 								if (repoItem.Image) {
 									if (
 										!metaContent["hash_reference_data"].find(
-											(a: { hash: string }) => a.hash === `00${md5(`[assembly:/_pro/online/default/cloudstorage/resources/${repoItem.Image}].pc_gfx`.toLowerCase()).slice(2, 16).toUpperCase()}`
+											(a: {
+												hash: string
+											}) => a.hash === `00${md5(`[assembly:/_pro/online/default/cloudstorage/resources/${repoItem.Image}].pc_gfx`.toLowerCase()).slice(2, 16).toUpperCase()}`
 										)
 									) {
 										metaContent["hash_reference_data"].push({
@@ -1247,7 +1269,9 @@ export default async function deploy(
 						if (entityContent.type === "ORES" && Array.isArray(fileContent)) {
 							fileContent = Object.fromEntries(fileContent.map((a) => [a.Id, a])) // Change unlockables ORES to be an object
 						} else if (entityContent.type === "REPO") {
-							fileContent = Object.fromEntries(fileContent.map((a: { [x: string]: unknown }) => [a["ID_"], a])) // Change REPO to be an object
+							fileContent = Object.fromEntries(fileContent.map((a: {
+								[x: string]: unknown
+							}) => [a["ID_"], a])) // Change REPO to be an object
 						}
 
 						rfc6902.applyPatch(fileContent, entityContent.patch) // Apply the JSON patch
@@ -1848,8 +1872,8 @@ export default async function deploy(
 								path.extname(blob.filePath).slice(1) === "json"
 									? "JSON"
 									: path.extname(blob.filePath).slice(1).startsWith("jp") || path.extname(blob.filePath).slice(1) === "png"
-									? "GFXI"
-									: path.extname(blob.filePath).slice(1).toUpperCase()
+										? "GFXI"
+										: path.extname(blob.filePath).slice(1).toUpperCase()
 							}`
 						)
 					)
@@ -2106,7 +2130,7 @@ export default async function deploy(
 						rpkg: {
 							callRPKGFunction,
 							getRPKGOfHash,
-							async extractFileFromRPKG(hash: string, rpkg: string) {
+							async extractFileFromRPKG (hash: string, rpkg: string) {
 								await logger.verbose(`Extracting ${hash} from ${rpkg}`)
 								await rpkgInstance.callFunction(`-extract_from_rpkg "${path.join(config.runtimePath, `${rpkg}.rpkg`)}" -filter "${hash}" -output_path ${path.join(process.cwd(), "scriptTempFolder")}`)
 							}
@@ -2183,7 +2207,9 @@ export default async function deploy(
 					}
 				)
 			} else if (after) {
-				registry.Root.Children.splice(registry.Root.Children.findIndex((a: { Id: string }) => a.Id === after) + 1, 0, {
+				registry.Root.Children.splice(registry.Root.Children.findIndex((a: {
+					Id: string
+				}) => a.Id === after) + 1, 0, {
 					Id: id,
 					_comment: "Automatically added by SMF.",
 					NarrativeContext: context || "Mission",

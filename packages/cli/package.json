@@ -1,60 +1,60 @@
 {
-  "name": "simple-mod-framework",
-  "version": "1.0.0",
-  "description": "",
-  "main": "compiled/main.js",
-  "dependencies": {
-    "@sentry/node": "^7.29.0",
-    "@sentry/tracing": "^7.29.0",
-    "arg": "^5.0.2",
-    "chalk": "^4.1.2",
-    "clarify": "^2.1.0",
-    "decimal.js": "^10.3.1",
-    "eventemitter-asyncresource": "^1.0.0",
-    "filtrex": "^3.0.0",
-    "fs-extra": "^10.1.0",
-    "hash-wasm": "^4.9.0",
-    "hdr-histogram-js": "^3.0.0",
-    "hdr-histogram-percentiles-obj": "^3.0.0",
-    "json5": "^2.2.2",
-    "klaw-sync": "^6.0.0",
-    "lodash.isequal": "^4.5.0",
-    "lodash.mergewith": "^4.6.2",
-    "lossless-json": "^1.0.5",
-    "luxon": "^3.0.1",
-    "md5": "^2.3.0",
-    "md5-file": "^5.0.0",
-    "minimist": "^1.2.6",
-    "promisify-child-process": "^4.1.1",
-    "rfc6902": "^5.0.1",
-    "semver": "^7.3.8",
-    "tslib": "^2.4.0",
-    "typescript": "^4.7.4"
-  },
-  "devDependencies": {
-    "@types/fs-extra": "^9.0.13",
-    "@types/klaw-sync": "^6.0.1",
-    "@types/lodash.mergewith": "^4.6.7",
-    "@types/lossless-json": "^1.0.1",
-    "@types/luxon": "^3.0.0",
-    "@types/md5": "^2.3.2",
-    "@types/semver": "^7.3.13",
-    "@typescript-eslint/eslint-plugin": "^5.33.0",
-    "@typescript-eslint/parser": "^5.33.0",
-    "eslint": "^8.31.0",
-    "prettier": "^2.7.1",
-    "prettier-eslint": "^15.0.1"
-  },
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "bin": "compiled/main.js",
-  "pkg": {
-    "scripts": [
-      "node_modules/piscina/dist/src/worker.js",
-      "compiled/patchWorker.js"
-    ]
-  },
-  "author": "Atampy26",
-  "license": "LGPL-3.0-only"
+	"name": "simple-mod-framework",
+	"version": "1.0.0",
+	"description": "",
+	"main": "compiled/main.js",
+	"dependencies": {
+		"@sentry/node": "^7.29.0",
+		"@sentry/tracing": "^7.29.0",
+		"arg": "^5.0.2",
+		"chalk": "^4.1.2",
+		"clarify": "^2.1.0",
+		"decimal.js": "^10.3.1",
+		"eventemitter-asyncresource": "^1.0.0",
+		"filtrex": "^3.0.0",
+		"fs-extra": "^10.1.0",
+		"hash-wasm": "^4.9.0",
+		"hdr-histogram-js": "^3.0.0",
+		"hdr-histogram-percentiles-obj": "^3.0.0",
+		"json5": "^2.2.2",
+		"klaw-sync": "^6.0.0",
+		"lodash.isequal": "^4.5.0",
+		"lodash.mergewith": "^4.6.2",
+		"lossless-json": "^1.0.5",
+		"luxon": "^3.0.1",
+		"md5": "^2.3.0",
+		"md5-file": "^5.0.0",
+		"minimist": "^1.2.6",
+		"promisify-child-process": "^4.1.1",
+		"rfc6902": "^5.0.1",
+		"semver": "^7.3.8",
+		"tslib": "^2.4.0",
+		"typescript": "^4.7.4"
+	},
+	"devDependencies": {
+		"@types/fs-extra": "^9.0.13",
+		"@types/klaw-sync": "^6.0.1",
+		"@types/lodash.mergewith": "^4.6.7",
+		"@types/lossless-json": "^1.0.1",
+		"@types/luxon": "^3.0.0",
+		"@types/md5": "^2.3.2",
+		"@types/semver": "^7.3.13",
+		"@typescript-eslint/eslint-plugin": "^5.33.0",
+		"@typescript-eslint/parser": "^5.33.0",
+		"eslint": "^8.31.0",
+		"prettier": "^2.7.1",
+		"prettier-eslint": "^15.0.1"
+	},
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1"
+	},
+	"bin": "compiled/main.js",
+	"pkg": {
+		"scripts": [
+			"node_modules/piscina/dist/src/worker.js",
+			"compiled/patchWorker.js"
+		]
+	},
+	"author": "Atampy26",
+	"license": "LGPL-3.0-only"
 }

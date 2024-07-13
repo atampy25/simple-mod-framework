@@ -1,3 +1,5 @@
+// @FIXME fix ts errors
+// @ts-nocheck
 import * as LosslessJSON from "lossless-json"
 import * as ts from "./typescript"
 

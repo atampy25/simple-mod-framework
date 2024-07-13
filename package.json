@@ -42,6 +42,7 @@
     "@typescript-eslint/eslint-plugin": "^5.33.0",
     "@typescript-eslint/parser": "^5.33.0",
     "eslint": "^8.31.0",
+    "nx": "19.4.3",
     "prettier": "^2.7.1",
     "prettier-eslint": "^15.0.1"
   },
@@ -57,5 +58,7 @@
   },
   "author": "Atampy26",
   "license": "LGPL-3.0-only",
-  "workspaces": ["./packages/*"]
+  "workspaces": [
+    "./packages/*"
+  ]
 }

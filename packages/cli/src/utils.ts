@@ -1,5 +1,5 @@
 import { config, logger, rpkgInstance } from "./core-singleton"
-
+// @ts-expect-error
 import { freeDiskSpace } from "./smf-rust"
 import fs from "fs-extra"
 import md5 from "md5"

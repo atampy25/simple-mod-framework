@@ -1,0 +1,16 @@
+{
+  "targets": {
+    "build-js": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc",
+        "args": ["--incremental"],
+        "cwd": "{projectRoot}"
+      },
+      "cache": true,
+      "outputs": [
+        "{projectRoot}/compiled/*.{js,ts}"
+      ]
+    }
+  }
+}
