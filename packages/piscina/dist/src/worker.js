@@ -53,7 +53,7 @@ async function getHandler(filename, name) {
 	if (handler !== undefined) {
 		return handler
 	}
-	handler = require(`../../../../compiled/${filename}`)
+	handler = require(`../../../cli/compiled/${filename}`)
 	if (typeof handler !== "function") {
 		return null
 	}

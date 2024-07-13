@@ -42,16 +42,14 @@
 		"@typescript-eslint/eslint-plugin": "^5.33.0",
 		"@typescript-eslint/parser": "^5.33.0",
 		"eslint": "^8.31.0",
+		"pkg": "^5.8.1",
 		"prettier": "^2.7.1",
 		"prettier-eslint": "^15.0.1"
-	},
-	"scripts": {
-		"test": "echo \"Error: no test specified\" && exit 1"
 	},
 	"bin": "compiled/main.js",
 	"pkg": {
 		"scripts": [
-			"node_modules/piscina/dist/src/worker.js",
+			"../../node_modules/piscina/dist/src/worker.js",
 			"compiled/patchWorker.js"
 		]
 	},

@@ -1,10 +1,7 @@
 {
   "$schema": "./node_modules/nx/schemas/nx-schema.json",
-  "targetDefaults": {
-
-  },
   "namedInputs": {
-    "default": ["{projectRoot}/src/**/.*"]
+    "default": ["{projectRoot}/src/**/*"]
   },
   "defaultBase": "main"
 }

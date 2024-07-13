@@ -1,16 +1,35 @@
 {
-  "targets": {
-    "build-js": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "tsc",
-        "args": ["--incremental"],
-        "cwd": "{projectRoot}"
-      },
-      "cache": true,
-      "outputs": [
-        "{projectRoot}/compiled/*.{js,ts}"
-      ]
-    }
-  }
+	"targets": {
+		"build": {
+			"executor": "nx:run-commands",
+			"options": {
+				"command": "pkg package.json --targets node18-win-x64 --output ../../Deploy.exe --compress Brotli",
+				"cwd": "{projectRoot}"
+			},
+			"inputs": ["{projectRoot}/package.json", "{projectRoot}/compiled/*"],
+			"outputs": ["{projectRoot}/Deploy.exe"],
+			"dependsOn": ["build-js", "build-native"]
+		},
+		"build-js": {
+			"executor": "nx:run-commands",
+			"options": {
+				"command": "tsc",
+				"args": ["--incremental"],
+				"cwd": "{projectRoot}"
+			},
+			"cache": true,
+			"outputs": ["{projectRoot}/compiled/*.{js,ts}"]
+		},
+		"build-native": {
+			"executor": "nx:run-commands",
+			"options": {
+				"command": "node ./copy.mjs",
+				"cwd": "{projectRoot}"
+			},
+			"cache": true,
+			"inputs": ["{workspaceRoot}/rust/rust.win32-x64.msvc.node"],
+			"outputs": ["{projectRoot}/compiled/smf-rust.node"],
+			"dependsOn": ["smf-rust:build"]
+		}
+	}
 }
