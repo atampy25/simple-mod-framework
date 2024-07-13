@@ -56,6 +56,5 @@
     ]
   },
   "author": "Atampy26",
-  "license": "LGPL-3.0-only",
-  "workspaces": ["./packages/*"]
+  "license": "LGPL-3.0-only"
 }
