@@ -1,4 +1,4 @@
-import { OptionType, type Config, type Manifest } from "../../../src/types"
+import { OptionType, type Config, type Manifest } from "../../../packages/cli/src/types"
 import { compileExpression, useDotAccessOperatorAndOptionalChaining } from "filtrex"
 
 import Ajv from "ajv"

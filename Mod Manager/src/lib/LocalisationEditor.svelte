@@ -7,7 +7,7 @@
 
 	import { createEventDispatcher } from "svelte"
 
-	import { Language, type ManifestOptionData } from "../../../src/types"
+	import { Language, type ManifestOptionData } from "../../../packages/cli/src/types"
 
 	import TextInputModal from "$lib/TextInputModal.svelte"
 

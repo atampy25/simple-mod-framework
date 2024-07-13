@@ -47,7 +47,7 @@
 	import Close from "carbon-icons-svelte/lib/Close.svelte"
 	import CloudUpload from "carbon-icons-svelte/lib/CloudUpload.svelte"
 	import Filter from "carbon-icons-svelte/lib/Filter.svelte"
-	import { OptionType } from "../../../../src/types"
+	import { OptionType } from "../../../../packages/cli/src/types"
 	import { page } from "$app/stores"
 	import SortableList from "$lib/SortableList.svelte"
 

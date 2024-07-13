@@ -3,7 +3,7 @@
 	import WarningAlt from "carbon-icons-svelte/lib/WarningAlt.svelte"
 	import Error from "carbon-icons-svelte/lib/Error.svelte"
 
-	import type { Manifest } from "../../../src/types"
+	import type { Manifest } from "../../../packages/cli/src/types"
 	import { FrameworkVersion, getConfig, getModFolder, validateModFolder } from "./utils"
 
 	import semver from "semver"

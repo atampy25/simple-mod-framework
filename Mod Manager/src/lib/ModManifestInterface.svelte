@@ -10,7 +10,7 @@
 
 	import { createEventDispatcher } from "svelte"
 
-	import { Platform, type ManifestOptionData } from "../../../src/types"
+	import { Platform, type ManifestOptionData } from "../../../packages/cli/src/types"
 
 	import LocalisationEditor from "$lib/LocalisationEditor.svelte"
 	import TextInputModal from "$lib/TextInputModal.svelte"

@@ -5,7 +5,7 @@
 	import { getConfig, getManifestFromModID, getModFolder, mergeConfig, modIsFramework } from "$lib/utils"
 	import { Checkbox, RadioButtonGroup, RadioButton, Truncate } from "carbon-components-svelte"
 	import { scale } from "svelte/transition"
-	import { OptionType, type Manifest } from "../../../../src/types"
+	import { OptionType, type Manifest } from "../../../../packages/cli/src/types"
 
 	import tippy from "svelte-tippy"
 	import "tippy.js/dist/tippy.css"
