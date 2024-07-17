@@ -3,6 +3,7 @@ global.THREE = require("./three-onlymath.min")
 
 import * as Sentry from "@sentry/node"
 import * as Tracing from "@sentry/tracing"
+import * as LosslessJSON from "lossless-json"
 
 import { DateTime, Duration, DurationLikeObject } from "luxon"
 import type { Span, Transaction } from "@sentry/tracing"
@@ -263,7 +264,7 @@ async function doTheThing() {
 		fs.ensureDirSync(path.join(process.env.LOCALAPPDATA!, "Simple Mod Framework"))
 		fs.writeFileSync(
 			path.join(process.env.LOCALAPPDATA!, "Simple Mod Framework", "lastDeploy.json"),
-			JSON.stringify({
+			LosslessJSON.stringify({
 				...core.config,
 				lastServerSideStates
 			})
