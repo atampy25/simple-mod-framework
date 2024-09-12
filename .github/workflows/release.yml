@@ -120,7 +120,7 @@ jobs:
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
-          token: ${{ GITHUB_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           name: ${{ steps.latestTag.outputs.tag }}
           body: ${{ steps.changelog.outputs.changes }}
           tag_name: ${{ steps.latestTag.outputs.tag }}
