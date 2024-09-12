@@ -21,17 +21,17 @@ import { xxhash3 } from "hash-wasm"
 require("clarify")
 
 const gameHashes = {
-	"7ece206ec0cf963b6fb4174e682e34c7": Platform.epic, // base game
-	"fca4ea3830d30a486eb4fed444557827": Platform.epic, // ansel unlock
-	"56130f7cb3df6c7e313a10a8c9050759": Platform.epic, // ansel no collision
-	"ed959d30a4701d9df58f162b3c15dc47": Platform.epic, // ansel unlock + no collision
-	"89fad9435f2c22b06ff977189b198596": Platform.steam, // base game
-	"b08c8bef3f5c3b28d9ca81e537e0fc5d": Platform.steam, // ansel unlock
-	"368df1a22ca8362e713aba745e2af94f": Platform.steam, // ansel no collision
-	"7fd58f4b28b45dc78bcea600a314cdd0": Platform.steam, // ansel unlock + no collision
+	"00e275c700d86e997892c3caad33870a": Platform.epic, // base game
+	"7eaa9f2bdf76bc036c81e998b69bbb93": Platform.epic, // ansel unlock
+	"fa3d5796b4a7575c4c58c7dd0dacec6c": Platform.epic, // ansel no collision
+	"e03149348c752bba1e73175310d4ae76": Platform.epic, // ansel unlock + no collision
+	"b3ba5ecbf9c2b677f2a1c5cd0f01b907": Platform.steam, // base game
+	"b71da06044f81a81c40874cb9adc3dbe": Platform.steam, // ansel unlock
+	"28607baf7a75271b6924fe0d52263600": Platform.steam, // ansel no collision
+	"d028074b654cb628ef88ced7b5d3eb96": Platform.steam, // ansel unlock + no collision
 
 	// Gamepass/store protects the EXE from reading so we can't hash it, instead we hash the game config
-	"f610f65c81a20c1f19f9caf96a63b286": Platform.microsoft
+	"e8eb17c3f0e1232f3d2ccc5b36078822": Platform.microsoft
 } as {
 	[k: string]: Platform
 }
