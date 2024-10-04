@@ -14,7 +14,7 @@ import memoize from "lodash.memoize"
 import merge from "lodash.mergewith"
 import semver from "semver"
 
-export const FrameworkVersion = "2.33.19"
+export const FrameworkVersion = "2.33.20"
 
 const validateManifest = new Ajv({ strict: false }).compile(manifestSchema)
 
@@ -53,7 +53,9 @@ export function getConfig() {
 						{
 							modOptions: {
 								[mod]: [
-									...manifest.options.filter((a) => (a.type === "checkbox" || a.type === "select" ? a.enabledByDefault : false)).map((a) => (a.type === "select" ? `${a.group}:${a.name}` : a.name))
+									...manifest.options
+										.filter((a) => (a.type === "checkbox" || a.type === "select" ? a.enabledByDefault : false))
+										.map((a) => (a.type === "select" ? `${a.group}:${a.name}` : a.name))
 								]
 							}
 						},
@@ -102,7 +104,10 @@ export function getConfig() {
 					) {
 						if (
 							!manifest.options
-								.find((a) => (a.type === "checkbox" && a.name === config.modOptions[manifest.id][i]) || (a.type === "select" && `${a.group}:${a.name}` === config.modOptions[manifest.id][i]))!
+								.find(
+									(a) =>
+										(a.type === "checkbox" && a.name === config.modOptions[manifest.id][i]) || (a.type === "select" && `${a.group}:${a.name}` === config.modOptions[manifest.id][i])
+								)!
 								.requirements!.every((a) => config.loadOrder.includes(a))
 						) {
 							config.modOptions[manifest.id].splice(i, 1)
