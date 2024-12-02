@@ -159,3 +159,6 @@ The framework will automatically extract the WWEV and copy the wem to it, then r
 Patches a given file with a VCDiff delta using xdelta3. Named in the format `hash~filetype.delta`. For example, to patch `004A314BA75429D7.GFXF`, the file should be named `004A314BA75429D7~GFXF.delta`.
 
 The framework will automatically extract the file and patch it, then place it in the staging folder. You may want to include a meta file for the hash as well, or the RPKG tool will assume the default metadata.
+
+## gfxf.zip
+A GFXF zip file obtained from Anthony Fuller's GFXFzip tool. Will be converted to a GFXF file and placed in the staging folder (overriding any existing game file).
