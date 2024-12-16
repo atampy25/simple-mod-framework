@@ -3,8 +3,10 @@ extern crate napi_derive;
 
 use std::{
 	cmp::Ordering,
-	env, fs,
-	path::{Path, PathBuf}
+	env,
+	ffi::OsStr,
+	fs,
+	path::{Path, PathBuf},
 };
 
 use human_sort::compare;
@@ -36,7 +38,7 @@ pub fn stage_dependencies_from(from_folder: String, to_folder: String) {
 					.next()
 					.unwrap()[1]
 					.to_owned(),
-				x.path().to_owned()
+				x.path().to_owned(),
 			)
 		})
 		.collect::<Vec<_>>();
@@ -48,7 +50,7 @@ pub fn stage_dependencies_from(from_folder: String, to_folder: String) {
 			Ordering::Equal => compare(rpkg_a, rpkg_b).reverse(),
 
 			// If chunks are different, compare chunks in ascending order
-			_ => compare(chunk_a, chunk_b)
+			_ => compare(chunk_a, chunk_b),
 		}
 	});
 
@@ -78,6 +80,12 @@ pub fn stage_dependencies_from(from_folder: String, to_folder: String) {
 			.join(file_path.file_name().unwrap());
 
 		if !p.exists() {
+			if p.extension().and_then(OsStr::to_str) == Some("meta")
+				&& p.with_extension("meta.json").exists()
+			{
+				continue;
+			}
+
 			fs::copy(&file_path, p).unwrap();
 		}
 	}
