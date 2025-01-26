@@ -2169,7 +2169,7 @@ export default async function deploy(
 		const repo = Object.fromEntries((JSON.parse(fs.readFileSync(path.join(process.cwd(), "temp", repoRPKG, "REPO", "00204D1AFD76AB13.REPO"), "utf8")) as RepoEntry[]).map((entry) => [entry.ID_, entry]))
 
 		lastServerSideStates.unlockables = (lastServerSideStates.unlockables as UnlockableEntry[]).map((unlockable) => {
-			if (unlockable["_comment"]) return unlockable
+			if (unlockable._comment) return unlockable
 
 			if (unlockable.Properties?.LoadoutSlot && ["gear", "concealedweapon", "carriedweapon"].includes(unlockable.Properties.LoadoutSlot)) {
 				if (unlockable.Properties.RepositoryId && repo[unlockable.Properties.RepositoryId]) {
