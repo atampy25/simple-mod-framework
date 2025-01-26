@@ -2146,6 +2146,44 @@ export default async function deploy(
 	} // Make output folder
 
 	/* ---------------------------------------------------------------------------------------------- */
+	/*                                 Add item sizes to unlockables                                  */
+	/* ---------------------------------------------------------------------------------------------- */
+
+	interface RepoEntry {
+		ID_: string
+		ItemSize: string
+	}
+
+	interface UnlockableEntry {
+		_comment?: string
+		Properties?: {
+			LoadoutSlot: string
+			RepositoryId: string
+			ItemSize: string
+		}
+	}
+
+	if (lastServerSideStates.unlockables) {
+		const repoRPKG = await getRPKGOfHash("00204D1AFD76AB13")
+		await extractOrCopyToTemp(repoRPKG, "00204D1AFD76AB13", "REPO")
+		const repo = Object.fromEntries((JSON.parse(fs.readFileSync(path.join(process.cwd(), "temp", repoRPKG, "REPO", "00204D1AFD76AB13.REPO"), "utf8")) as RepoEntry[]).map((entry) => [entry.ID_, entry]))
+
+		lastServerSideStates.unlockables = (lastServerSideStates.unlockables as UnlockableEntry[]).map((unlockable) => {
+			if (unlockable["_comment"]) return unlockable
+
+			if (unlockable.Properties?.LoadoutSlot && ["gear", "concealedweapon", "carriedweapon"].includes(unlockable.Properties.LoadoutSlot)) {
+				if (unlockable.Properties.RepositoryId && repo[unlockable.Properties.RepositoryId]) {
+					unlockable.Properties.ItemSize = repo[unlockable.Properties.RepositoryId].ItemSize
+				}
+			}
+
+			return unlockable
+		})
+
+		fs.emptyDirSync(path.join(process.cwd(), "temp"))
+	}
+
+	/* ---------------------------------------------------------------------------------------------- */
 	/*                                      Contract destinations                                     */
 	/* ---------------------------------------------------------------------------------------------- */
 	if (contractsToAddToDestinations.length) {
