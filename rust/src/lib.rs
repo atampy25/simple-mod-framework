@@ -11,7 +11,7 @@ use std::{
 
 use human_sort::compare;
 use regex::Regex;
-use sysinfo::{DiskExt, RefreshKind, System, SystemExt};
+use sysinfo::{Disk, DiskExt, RefreshKind, System, SystemExt};
 use walkdir::WalkDir;
 
 #[napi]
@@ -96,21 +96,26 @@ pub fn free_disk_space() -> Result<f64, napi::Error> {
 	let cur_path = env::current_dir()?;
 	let sys = System::new_with_specifics(RefreshKind::new().with_disks_list());
 
-	let cur_disk = sys
-		.disks()
-		.iter()
-		.find_map(|x| {
-			if cur_path
-				.to_string_lossy()
-				.to_lowercase()
-				.starts_with(&x.mount_point().to_str()?.to_lowercase())
-			{
-				Some(x)
-			} else {
-				None
-			}
-		})
-		.expect("Couldn't get current disk!");
+    let cur_disk: &Disk;
+    if cur_path.to_string_lossy().to_lowercase().starts_with("z:\\") {
+        // most likely running inside wine, default to first disk
+        cur_disk = &sys.disks().get(0).expect("Couldn't get current disk!");
+    } else {
+        cur_disk = sys.disks()
+		    .iter()
+		    .find_map(|x| {
+			    if cur_path
+				    .to_string_lossy()
+				    .to_lowercase()
+				    .starts_with(&x.mount_point().to_str()?.to_lowercase())
+			    {
+				    Some(x)
+			    } else {
+				    None
+			    }
+		    })
+		    .expect("Couldn't get current disk!");
+    }
 
 	Ok(cur_disk.available_space() as f64)
 }
