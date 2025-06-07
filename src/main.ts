@@ -216,8 +216,12 @@ async function doTheThing() {
 					// The mod framework manages patch files between 200 (inc) and 300 (inc), allowing mods to place runtime files in those ranges
 					fs.rmSync(path.join(core.config.runtimePath, chunkPatchFile))
 				}
-			} else if (parseInt(chunkPatchFile.split(".")[0].slice(5)) > 29) {
-				fs.rmSync(path.join(core.config.runtimePath, chunkPatchFile))
+			} else if (chunkPatchFile.match(/chunk[0-9]+/)) {
+				if (parseInt(chunkPatchFile.split(".")[0].slice(5)) > 29) {
+					fs.rmSync(path.join(core.config.runtimePath, chunkPatchFile))
+				}
+			} else {
+				await core.logger.warn(`${chunkPatchFile} in your Runtime folder is not from the vanilla game. This might cause issues with SMF!`)
 			}
 		} catch {}
 	}
