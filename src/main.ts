@@ -21,17 +21,17 @@ import { xxhash3 } from "hash-wasm"
 require("clarify")
 
 const gameHashes = {
-	"cfd1f9b35c26d03a15985168738ec517": Platform.epic, // base game
-	"7282e06f66f23822e6d7ddb69614a92c": Platform.epic, // ansel unlock
+	"bf93b21877ca6b94b99af14832497028": Platform.epic, // base game
+	"39f48db74dbee602942c13af061f62e0": Platform.epic, // ansel unlock
 	//"09278760d4943ad21d04921169366d54": Platform.epic, // ansel no collision
 	//"a8752bc4b36a74600549778685db3b4c": Platform.epic, // ansel unlock + no collision
-	"1f7232ecfba8333bf1486784696c06c4": Platform.steam, // base game
-	"d50469b19734ffd6edb206e478542938": Platform.steam, // ansel unlock
+	"09d6139753bc619570860707dc8a05d4": Platform.steam, // base game
+	"f435b7d6be29b772d7193f507cb4dab1": Platform.steam, // ansel unlock
 	//"28607baf7a75271b6924fe0d52263600": Platform.steam, // ansel no collision
 	//"d028074b654cb628ef88ced7b5d3eb96": Platform.steam, // ansel unlock + no collision
 
 	// Gamepass/store protects the EXE from reading so we can't hash it, instead we hash the game config
-	"13205f50e0b2ce2a5a35ad105d12f914": Platform.microsoft
+	"46c8230da02f8194fc8b1ee20b61d3af": Platform.microsoft
 } as {
 	[k: string]: Platform
 }
@@ -217,7 +217,7 @@ async function doTheThing() {
 					fs.rmSync(path.join(core.config.runtimePath, chunkPatchFile))
 				}
 			} else if (chunkPatchFile.match(/chunk[0-9]+/)) {
-				if (parseInt(chunkPatchFile.split(".")[0].slice(5)) > 29) {
+				if (parseInt(chunkPatchFile.split(".")[0].slice(5)) > 30) {
 					fs.rmSync(path.join(core.config.runtimePath, chunkPatchFile))
 				}
 			} else {
