@@ -352,7 +352,7 @@
 					"type": "string"
 				},
 				"externalScene": {
-					"type": "string"
+					"type": ["string", "null"]
 				},
 				"ref": {
 					"type": "string"
