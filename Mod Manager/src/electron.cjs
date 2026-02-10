@@ -4,6 +4,7 @@ const { app, BrowserWindow, ipcMain, dialog } = require("electron")
 const serve = require("electron-serve")
 const fs = require("fs")
 const path = require("path")
+const { spawn } = require('child_process');
 
 try {
 	require("electron-reloader")(module)
@@ -124,30 +125,50 @@ if (!lock) {
 	})
 }
 
-ipcMain.on("deploy", () => {
-	let deployProcess = require("child_process").spawn("Deploy.exe --doNotPause --colors", ["--doNotPause --colors"], {
-		shell: true,
-		cwd: ".."
-	})
+ipcMain.on("deploy", async () => {
+    const deployProcess = spawn("Deploy.exe", ["--doNotPause", "--colors"], {
+        shell: true,
+        cwd: ".."
+    });
 
-	let deployOutput = ""
+    mainWindow.webContents.send("frameworkDeployModalOpen");
 
-	mainWindow.webContents.send("frameworkDeployModalOpen")
+    let partialLine = '';
 
-	deployProcess.stdout.on("data", (data) => {
-		deployOutput += String(data)
-		mainWindow.webContents.send("frameworkDeployOutput", deployOutput)
-	})
+    const sendData = (data) => {
+        const lines = (partialLine + data.toString()).split('\n');
+        partialLine = lines.pop();
+    
+        lines.forEach(line => {
+            if (line.trim() !== '') {
+                mainWindow.webContents.send("frameworkDeployOutput", line);
+            }
+        });
+    };
 
-	deployProcess.stderr.on("data", (data) => {
-		deployOutput += String(data)
-		mainWindow.webContents.send("frameworkDeployOutput", deployOutput)
-	})
+    deployProcess.stdout.on('data', sendData);
+    deployProcess.stderr.on('data', sendData);
 
-	deployProcess.on("close", (data) => {
-		mainWindow.webContents.send("frameworkDeployFinished")
-	})
-})
+    await new Promise((resolve, reject) => {
+        deployProcess.on('close', () => {
+            if (partialLine.trim() !== '') {
+                mainWindow.webContents.send("frameworkDeployOutput", partialLine);
+            }
+            mainWindow.webContents.send("frameworkDeployFinished");
+            resolve();
+        });
+
+        deployProcess.on('error', (error) => {
+            mainWindow.webContents.send("frameworkDeployError", error.message);
+            reject(error);
+        });
+    });
+
+	if (isProcessClosed) {
+		mainWindow.webContents.send("frameworkDeployFinished");
+	}
+	
+});
 
 ipcMain.on("modFileOpenDialog", () => {
 	mainWindow.webContents.send(
