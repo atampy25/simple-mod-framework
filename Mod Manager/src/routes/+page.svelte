@@ -423,7 +423,7 @@
 		window.location.reload()
 	}
 
-	const trustedHosts = new Set(["github.com", "raw.githubusercontent.com", "dropbox.com", "dl.dropboxusercontent.com", "drive.google.com", "hitman-resources.netlify.app"])
+	const trustedHosts = new Set(["github.com", "gist.githubusercontent.com", "raw.githubusercontent.com", "dropbox.com", "dl.dropboxusercontent.com", "drive.google.com", "hitman-resources.netlify.app", "codeberg.org"])
 </script>
 
 <div class="w-full h-full overflow-y-auto flex items-center justify-center gap-96">
