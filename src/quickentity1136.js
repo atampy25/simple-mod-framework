@@ -1302,8 +1302,8 @@ async function createPatchJSON(automateQN1Path = false, automateQN2Path = false,
 		}
 
 		if (entry.exposedInterfaces)
-		for (let interface of entry.exposedInterfaces) {
-			interface[1] = entity1.entities[findEntityCacheEntity1[interface[1]]].entityID
+		for (let int of entry.exposedInterfaces) {
+			int[1] = entity1.entities[findEntityCacheEntity1[int[1]]].entityID
 		}
 
 		if (entry.entitySubsets)
@@ -1386,8 +1386,8 @@ async function createPatchJSON(automateQN1Path = false, automateQN2Path = false,
 		}
 
 		if (entry.exposedInterfaces)
-		for (let interface of entry.exposedInterfaces) {
-			interface[1] = entity2.entities[findEntityCacheEntity2[interface[1]]].entityID
+		for (let int of entry.exposedInterfaces) {
+			int[1] = entity2.entities[findEntityCacheEntity2[int[1]]].entityID
 		}
 
 		if (entry.entitySubsets)
@@ -1538,8 +1538,8 @@ async function applyPatchJSON(automateQNPath = false, automatePatchPath = false,
 		}
 
 		if (entry.exposedInterfaces)
-		for (let interface of entry.exposedInterfaces) {
-			interface[1] = entity.entities[findEntityCache[interface[1]]].entityID
+		for (let int of entry.exposedInterfaces) {
+			int[1] = entity.entities[findEntityCache[int[1]]].entityID
 		}
 
 		if (entry.entitySubsets)
@@ -1654,8 +1654,8 @@ async function applyPatchJSON(automateQNPath = false, automatePatchPath = false,
 		}
 
 		if (entry.exposedInterfaces)
-		for (let interface of entry.exposedInterfaces) {
-			interface[1] = new LosslessJSON.LosslessNumber(newFindEntityCache[interface[1]])
+		for (let int of entry.exposedInterfaces) {
+			int[1] = new LosslessJSON.LosslessNumber(newFindEntityCache[int[1]])
 		}
 
 		if (entry.entitySubsets)
