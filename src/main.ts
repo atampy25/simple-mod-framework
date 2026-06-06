@@ -21,17 +21,17 @@ import { xxhash3 } from "hash-wasm"
 require("clarify")
 
 const gameHashes = {
-	"eba61aa0a92b76579e977fb9a057bb81": Platform.epic, // base game
-	"e64c439a45c8c868956345c99b2d036b": Platform.epic, // ansel unlock
+	"3b4b9ce155c1b00828613b18506dd795": Platform.epic, // base game
+	"831fa458660ca9e4a1f6ee1b2fc098e5": Platform.epic, // ansel unlock
 	//"09278760d4943ad21d04921169366d54": Platform.epic, // ansel no collision
 	//"a8752bc4b36a74600549778685db3b4c": Platform.epic, // ansel unlock + no collision
-	"062d384cae3813e5e0fbc1e2861e4f88": Platform.steam, // base game
-	"18c2ff82f076f7904d4f0fcaa2e0d2f6": Platform.steam, // ansel unlock
+	"9ea2968927e7fd69d7a6f3104b193726": Platform.steam, // base game
+	a09ba30672470b517f075a7d707e5f9f: Platform.steam, // ansel unlock
 	//"28607baf7a75271b6924fe0d52263600": Platform.steam, // ansel no collision
 	//"d028074b654cb628ef88ced7b5d3eb96": Platform.steam, // ansel unlock + no collision
 
 	// Gamepass/store protects the EXE from reading so we can't hash it, instead we hash the game config
-	"37df6b0755060b48e0959516b0deea62": Platform.microsoft
+	"4fd41b03dfd8a780b959c74ad155245f": Platform.microsoft
 } as {
 	[k: string]: Platform
 }
@@ -126,10 +126,10 @@ let sentryTransaction = {
 } as Transaction
 
 function configureSentryScope(transaction: Span) {
-	if (core.config.reportErrors)
-		Sentry.configureScope((scope) => {
-			scope.setSpan(transaction)
-		})
+	// if (core.config.reportErrors)
+	// 	Sentry.configureScope((scope) => {
+	// 		scope.setSpan(transaction)
+	// 	})
 }
 
 function toHuman(dur: Duration) {
@@ -184,15 +184,14 @@ async function doTheThing() {
 			id: core.config.errorReportingID!
 		})
 
-		// @ts-expect-error TypeScript what are you on
-		sentryTransaction = Sentry.startTransaction({
-			op: "deploy",
-			name: "Deploy"
-		})
+		// sentryTransaction = Sentry.startTransaction({
+		// 	op: "deploy",
+		// 	name: "Deploy"
+		// })
 
-		Sentry.configureScope((scope) => {
-			scope.setSpan(sentryTransaction)
-		})
+		// Sentry.configureScope((scope) => {
+		// 	scope.setSpan(sentryTransaction)
+		// })
 
 		Sentry.setTag(
 			"game_hash",
@@ -209,19 +208,22 @@ async function doTheThing() {
 	for (const chunkPatchFile of fs.readdirSync(core.config.runtimePath)) {
 		try {
 			if (chunkPatchFile.includes("patch")) {
-				const chunkPatchNumberMatches = [...chunkPatchFile.matchAll(/chunk[0-9]*patch([0-9]*)\.rpkg/g)]
-				const chunkPatchNumber = parseInt(chunkPatchNumberMatches[chunkPatchNumberMatches.length - 1][chunkPatchNumberMatches[chunkPatchNumberMatches.length - 1].length - 1])
-
-				if (chunkPatchNumber >= 200 && chunkPatchNumber <= 300) {
-					// The mod framework manages patch files between 200 (inc) and 300 (inc), allowing mods to place runtime files in those ranges
-					fs.rmSync(path.join(core.config.runtimePath, chunkPatchFile))
+				const match = chunkPatchFile.match(/^chunk[0-9]+patch([0-9]+)\.rpkg$/)
+				if (match) {
+					const patchNumber = parseInt(match[1])
+					if (patchNumber >= 200 && patchNumber <= 300) {
+						// The mod framework manages patch files between 200 (inc) and 300 (inc), allowing mods to place runtime files in those ranges
+						fs.rmSync(path.join(core.config.runtimePath, chunkPatchFile))
+					}
+				} else {
+					await core.logger.warn(`${chunkPatchFile} in your Runtime folder is not from the vanilla game. This might cause issues with SMF - move it elsewhere!`)
 				}
-			} else if (chunkPatchFile.match(/chunk[0-9]+/)) {
+			} else if (chunkPatchFile.match(/^chunk[0-9]+\.rpkg$/)) {
 				if (parseInt(chunkPatchFile.split(".")[0].slice(5)) > 30) {
 					fs.rmSync(path.join(core.config.runtimePath, chunkPatchFile))
 				}
-			} else if (!chunkPatchFile.includes("packagedefinition.txt")) {
-				await core.logger.warn(`${chunkPatchFile} in your Runtime folder is not from the vanilla game. This might cause issues with SMF!`)
+			} else if (chunkPatchFile !== "packagedefinition.txt") {
+				await core.logger.warn(`${chunkPatchFile} in your Runtime folder is not from the vanilla game. This might cause issues with SMF - move it elsewhere!`)
 			}
 		} catch {}
 	}

@@ -22,19 +22,22 @@ jobs:
           target: x86_64-pc-windows-msvc
           default: true
 
+      - name: Set up 7-Zip
+        uses: milliewalky/setup-7-zip@ce4c26956d369e4cce6c1a7c114a4ed6c98f458f
+
       - name: Cache
         id: cache
         uses: actions/cache@v4
         with:
           path: node_modules
-          key: buildCachev25
+          key: buildCachev26
 
       - name: Cache
         id: cache2
         uses: actions/cache@v4
         with:
           path: Mod Manager/node_modules
-          key: buildCache2v20
+          key: buildCache2v21
 
       - name: Install dependencies
         if: steps.cache.outputs.cache-hit != 'true'
@@ -59,26 +62,10 @@ jobs:
           NODE_OPTIONS: "--max-old-space-size=4096"
         run: |
           New-Item -ItemType Directory -Force -Path ./node_modules/piscina
-          robocopy ./piscina ./node_modules/piscina /COPYALL /E /is /it; if ($lastexitcode -lt 8) { $global:LASTEXITCODE = $null }
+          robocopy ./piscina ./node_modules/piscina /E /is /it; if ($lastexitcode -lt 8) { $global:LASTEXITCODE = $null }
           tsc
           copy ./src/smf-rust.node ./compiled/smf-rust.node
           pkg package.json --targets node18-win-x64 --output Deploy.exe --compress Brotli
-
-      - name: Download RPKG
-        uses: aochmann/actions-download-artifact@5709392f11b5937bd316e52687ad87f7deced5f5
-        with:
-          repo: glacier-modding/RPKG-Tool
-          name: rpkg-cli
-          latest: true
-          path: './Third-Party'
-
-      - name: Download ResourceTool
-        uses: aochmann/actions-download-artifact@5709392f11b5937bd316e52687ad87f7deced5f5
-        with:
-          repo: OrfeasZ/ZHMTools
-          name: ResourceTool-win-x64
-          latest: true
-          path: './Third-Party'
 
       - name: Install GUI dependencies
         if: steps.cache2.outputs.cache-hit != 'true'
@@ -100,15 +87,23 @@ jobs:
           New-Item -ItemType Directory dist/Info
           New-Item -ItemType Directory dist/API
           New-Item -ItemType Directory "dist/Mod Manager"
-          robocopy ./Third-Party ./dist/Third-Party /COPYALL /E; if ($lastexitcode -lt 8) { $global:LASTEXITCODE = $null }
-          robocopy "./For Build" ./dist /COPYALL /E; if ($lastexitcode -lt 8) { $global:LASTEXITCODE = $null }
-          robocopy ./docs ./dist/Info /COPYALL /E; if ($lastexitcode -lt 8) { $global:LASTEXITCODE = $null }
-          robocopy ./compiled ./dist/API /COPYALL /E *.d.ts; if ($lastexitcode -lt 8) { $global:LASTEXITCODE = $null }
-          robocopy ".\Mod Manager\dist\win-unpacked" "./dist/Mod Manager" /COPYALL /E; if ($lastexitcode -lt 8) { $global:LASTEXITCODE = $null }
+          Invoke-WebRequest -Uri "https://github.com/glacier-modding/hitman-hashes/releases/latest/download/latest-hashes.7z" -OutFile "latest-hashes.7z"
+          7z x "latest-hashes.7z" -o"./dist/Third-Party"
+          robocopy ./Third-Party ./dist/Third-Party /E; if ($lastexitcode -lt 8) { $global:LASTEXITCODE = $null }
+          robocopy "./For Build" ./dist /E; if ($lastexitcode -lt 8) { $global:LASTEXITCODE = $null }
+          robocopy ./docs ./dist/Info /E; if ($lastexitcode -lt 8) { $global:LASTEXITCODE = $null }
+          robocopy ./compiled ./dist/API /E *.d.ts; if ($lastexitcode -lt 8) { $global:LASTEXITCODE = $null }
+          robocopy ".\Mod Manager\dist\win-unpacked" "./dist/Mod Manager" /E; if ($lastexitcode -lt 8) { $global:LASTEXITCODE = $null }
           copy Deploy.exe dist
           New-Item -Path dist -Name "Mod Manager.cmd" -ItemType "file" -Value "@echo off`ncd `"Mod Manager`"`nstart `"`" `"Mod Manager.exe`""
+
+      - name: Zip
+        uses: TheDoctor0/zip-release@4fb9e4ff72847dd3d1c111cf63834e353ed7cb3d
+        with:
+          filename: Release.zip
+          directory: dist
 
       - uses: actions/upload-artifact@v4
         with:
           name: Output
-          path: dist
+          path: dist/Release.zip
