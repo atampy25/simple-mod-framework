@@ -1,4 +1,4 @@
-const FrameworkVersion = "2.33.35"
+const FrameworkVersion = "2.33.36"
 const isDevBuild = false
 
 import * as Sentry from "@sentry/node"
@@ -92,7 +92,7 @@ const logger = args["--useConsoleLogging"]
 
 				if (exitAfter) {
 					if (config.reportErrors) {
-						Sentry.getCurrentHub().getScope()!.getTransaction()!.finish()
+						// Sentry.getCurrentHub().getScope()!.getTransaction()!.finish()
 					}
 
 					await Sentry.close()
@@ -196,7 +196,7 @@ const logger = args["--useConsoleLogging"]
 
 					if (exitAfter) {
 						if (config.reportErrors) {
-							Sentry.getCurrentHub().getScope()!.getTransaction()!.finish()
+							// Sentry.getCurrentHub().getScope()!.getTransaction()!.finish()
 						}
 
 						await Sentry.close()
@@ -221,7 +221,7 @@ export default {
 	args,
 	cleanExit: async () => {
 		if (config.reportErrors) {
-			Sentry.getCurrentHub().getScope()!.getTransaction()!.finish()
+			// Sentry.getCurrentHub().getScope()!.getTransaction()!.finish()
 		}
 
 		await Sentry.close()

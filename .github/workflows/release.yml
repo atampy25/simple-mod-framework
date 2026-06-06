@@ -25,19 +25,22 @@ jobs:
           target: x86_64-pc-windows-msvc
           default: true
 
+      - name: Set up 7-Zip
+        uses: milliewalky/setup-7-zip@ce4c26956d369e4cce6c1a7c114a4ed6c98f458f
+
       - name: Cache
         id: cache
         uses: actions/cache@v3
         with:
           path: node_modules
-          key: buildCachev25
+          key: buildCachev26
 
       - name: Cache
         id: cache2
         uses: actions/cache@v3
         with:
           path: Mod Manager/node_modules
-          key: buildCache2v20
+          key: buildCache2v21
 
       - name: Install dependencies
         if: steps.cache.outputs.cache-hit != 'true'
@@ -63,7 +66,7 @@ jobs:
         run: |
           New-Item -ItemType Directory -Force -Path ./node_modules/piscina
           robocopy ./piscina ./node_modules/piscina /E /is /it; if ($lastexitcode -lt 8) { $global:LASTEXITCODE = $null }
-          tsc
+          tsc --noCheck
           copy ./src/smf-rust.node ./compiled/smf-rust.node
           pkg package.json --targets node18-win-x64 --output Deploy.exe --compress Brotli
 
@@ -87,6 +90,8 @@ jobs:
           New-Item -ItemType Directory dist/Info
           New-Item -ItemType Directory dist/API
           New-Item -ItemType Directory "dist/Mod Manager"
+          Invoke-WebRequest -Uri "https://github.com/glacier-modding/hitman-hashes/releases/latest/download/latest-hashes.7z" -OutFile "latest-hashes.7z"
+          7z x "latest-hashes.7z" -o"./dist/Third-Party"
           robocopy ./Third-Party ./dist/Third-Party /E; if ($lastexitcode -lt 8) { $global:LASTEXITCODE = $null }
           robocopy "./For Build" ./dist /E; if ($lastexitcode -lt 8) { $global:LASTEXITCODE = $null }
           robocopy ./docs ./dist/Info /E; if ($lastexitcode -lt 8) { $global:LASTEXITCODE = $null }
@@ -138,7 +143,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: node_modules
-          key: buildCachev23
+          key: buildCachev26
 
       - name: Install dependencies
         if: steps.cache.outputs.cache-hit != 'true'

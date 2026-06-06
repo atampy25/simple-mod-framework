@@ -31,12 +31,12 @@ pub fn stage_dependencies_from(from_folder: String, to_folder: String) {
 				re_rpkg
 					.captures_iter(x.path().to_str().unwrap())
 					.next()
-					.unwrap()[1]
+					.expect("Invalid RPKG file, remove it from Runtime")[1]
 					.to_owned(),
 				re_rpkg_chunk
 					.captures_iter(x.path().to_str().unwrap())
 					.next()
-					.unwrap()[1]
+					.expect("Invalid RPKG file, remove it from Runtime")[1]
 					.to_owned(),
 				x.path().to_owned(),
 			)
