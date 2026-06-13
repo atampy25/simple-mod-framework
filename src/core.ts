@@ -1,4 +1,4 @@
-const FrameworkVersion = "2.33.37"
+const FrameworkVersion = "2.33.38"
 const isDevBuild = false
 
 import * as Sentry from "@sentry/node"
@@ -105,7 +105,7 @@ const logger = args["--useConsoleLogging"]
 					process.exit(1)
 				}
 			}
-	  }
+		}
 	: {
 			verbose: async function (text: string, mod?: string) {
 				deployLog += `\nDETAIL\t${mod || "Deploy"}\t${text}`
@@ -210,7 +210,7 @@ const logger = args["--useConsoleLogging"]
 					}
 				}
 			}
-	  }
+		}
 
 export default {
 	FrameworkVersion,
