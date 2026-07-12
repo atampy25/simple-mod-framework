@@ -10,13 +10,13 @@
 	import tippy from "svelte-tippy"
 	import "tippy.js/dist/tippy.css"
 
-	import { FrameworkVersion, getManifestFromModID, getModFolder, setModManifest } from "$lib/utils"
+	import { FrameworkVersion, getManifestFromModID, getModFolder, setModManifest, preloadModsCache } from "$lib/utils"
 	import ModManifestInterface from "$lib/ModManifestInterface.svelte"
 	import TextInputModal from "$lib/TextInputModal.svelte"
 
 	import { Language, OptionType, Platform, type Manifest } from "../../../../../../../src/types"
 
-	import { Button, Checkbox, RadioButton, RadioButtonGroup } from "carbon-components-svelte"
+	import { Button, Checkbox, RadioButton, RadioButtonGroup, Loading } from "carbon-components-svelte"
 	import Edit from "carbon-icons-svelte/lib/Edit.svelte"
 	import CloseOutline from "carbon-icons-svelte/lib/CloseOutline.svelte"
 
@@ -35,27 +35,35 @@
 		frameworkVersion: FrameworkVersion
 	} as Manifest
 
-	$: manifest = $page.params.mod
-		? getManifestFromModID($page.params.mod, dummyForceUpdate)
-		: ({
-				version: "1.0.0",
-				id: "Example.Example",
-				name: "Loading...",
-				description: "Extremely good description",
-				authors: ["Example"],
-				contentFolders: ["content"],
-				frameworkVersion: FrameworkVersion
-		  } as Manifest)
+	let cacheLoaded = false
+	let showBuildingCache = false
 
-	$: option = $page.params.option
+	onMount(async () => {
+		const timer = setTimeout(() => {
+			showBuildingCache = true
+		}, 1500)
+		try {
+			await preloadModsCache("authoring-option")
+		} catch (err) {
+			console.error("Failed to preload mods cache for authoring-option:", err)
+		} finally {
+			clearTimeout(timer)
+			cacheLoaded = true
+			dummyForceUpdate = Math.random()
+		}
+	})
+
+	$: if (cacheLoaded && $page.params.mod) {
+		manifest = getManifestFromModID($page.params.mod, dummyForceUpdate)
+	}
+
+	$: option = cacheLoaded && $page.params.option && manifest && manifest.options
 		? manifest.options!.find((a) =>
 				$page.params.option.split("$|$")[0] == "-"
 					? (a.type == "checkbox" || a.type == "conditional") && a.name == $page.params.option.split("$|$")[1]
 					: a.type == "select" && a.group == $page.params.option.split("$|$")[0] && a.name == $page.params.option.split("$|$")[1]
 		  )!
 		: ({} as ArrayElement<Manifest["options"]>)
-
-	onMount(() => (dummyForceUpdate = Math.random()))
 
 	function alterOption(_useless: string, data: Partial<ArrayElement<Manifest["options"]>>) {
 		const m = getManifestFromModID(manifest.id)
@@ -127,6 +135,14 @@
 	})
 </script>
 
+{#if !cacheLoaded}
+	<div class="flex flex-col items-center justify-center h-[80vh] w-full gap-4 mt-8">
+		<Loading withOverlay={false} />
+		<span class="text-gray-400 text-sm">
+			{showBuildingCache ? "Still building cache 💅" : "Loading mod settings..."}
+		</span>
+	</div>
+{:else}
 <div class="flex gap-8 items-center">
 	<h4 class="text-center" transition:scale>
 		<a href="/authoring/{$page.params.mod}">← Back</a>
@@ -930,5 +946,7 @@
 		}
 	}}
 />
+
+{/if}
 
 <div class="mb-[100vh]" />

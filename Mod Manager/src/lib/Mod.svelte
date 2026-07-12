@@ -8,6 +8,7 @@
 
 	import semver from "semver"
 	import { goto } from "$app/navigation"
+	import { onDestroy } from "svelte"
 
 	export let isFrameworkMod: boolean
 
@@ -16,7 +17,38 @@
 
 	export let darken: boolean = false
 
-	const modValidation = isFrameworkMod ? validateModFolder(getModFolder(manifest.id)) : [true, ""]
+	let modValidation: [boolean, string] = [true, ""]
+	let validationTimeout: any
+
+	$: {
+		clearTimeout(validationTimeout)
+		if (isFrameworkMod && manifest && manifest.id) {
+			const targetId = manifest.id
+			validationTimeout = setTimeout(() => {
+				if (isFrameworkMod && manifest && manifest.id === targetId) {
+					try {
+						validateModFolder(getModFolder(targetId))
+							.then((res) => {
+								if (isFrameworkMod && manifest && manifest.id === targetId) {
+									modValidation = res
+								}
+							})
+							.catch((err) => {
+								console.error("Failed to validate mod folder:", err)
+							})
+					} catch (err) {
+						console.error("Failed to get mod folder:", err)
+					}
+				}
+			}, 0)
+		} else {
+			modValidation = [true, ""]
+		}
+	}
+
+	onDestroy(() => {
+		clearTimeout(validationTimeout)
+	})
 </script>
 
 <Tile style={darken ? "filter: brightness(0.75); transition: 250ms filter" : "transition: 250ms filter"}>

@@ -7,3 +7,7 @@ code.h {
     font-family: "Fira Code", "IBM Plex Mono", "Menlo", "DejaVu Sans Mono", "Bitstream Vera Sans Mono", Courier, monospace !important;
     padding: 0.1rem 0.2rem !important;
 }
+
+:root {
+    color-scheme: dark;
+}

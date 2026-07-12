@@ -1,45 +1,102 @@
 import { OptionType, type Config, type Manifest } from "../../../src/types"
 import { compileExpression, useDotAccessOperatorAndOptionalChaining } from "filtrex"
 
-import Ajv from "ajv"
 import json5 from "json5"
-import manifestSchema from "$lib/manifest-schema.json"
-import entitySchema from "$lib/entity-schema.json"
-import entityPatchSchema from "$lib/entity-patch-schema.json"
-import repositorySchema from "$lib/repository-schema.json"
-import unlockablesSchema from "$lib/unlockables-schema.json"
-import contractSchema from "$lib/contract-schema.json"
-import jsonPatchSchema from "$lib/json-patch-schema.json"
-import memoize from "lodash.memoize"
 import merge from "lodash.mergewith"
 import semver from "semver"
+import { writable } from "svelte/store"
 
 export const FrameworkVersion = "2.33.40"
+export const trustedHosts = new Set(["github.com", "raw.githubusercontent.com", "dropbox.com", "dl.dropboxusercontent.com", "drive.google.com", "hitman-resources.netlify.app"])
 
-const validateManifest = new Ajv({ strict: false }).compile(manifestSchema)
+let cachedConfig: Config | null = null
+let loadOrderValidated = false
+export const configStore = writable<Config | null>(null)
 
-const validateEntity = new Ajv({ strict: false }).compile(entitySchema)
-const validateEntityPatch = new Ajv({ strict: false }).compile(entityPatchSchema)
-const validateRepository = new Ajv({ strict: false }).compile(repositorySchema)
-const validateUnlockables = new Ajv({ strict: false }).compile(unlockablesSchema)
-const validateContract = new Ajv({ strict: false }).compile(contractSchema)
-const validateJSONPatch = new Ajv({ strict: false }).compile(jsonPatchSchema)
+let modsCacheInitialized = false
+let modsList: string[] = []
+const manifestsMap = new Map<string, Manifest>()
+const foldersMap = new Map<string, string>()
+const isFrameworkMap = new Map<string, boolean>()
 
-export function getConfig() {
-	const config: Config = json5.parse(String(window.fs.readFileSync("../config.json", "utf8")))
+// skipcq: JS-C1003, JS-W1028
+import ValidationWorker from "./validation.worker?worker"
+
+let worker: Worker | null = null
+let currentWorkerId = 0
+const pendingResolvers = new Map<number, (res: [boolean, string]) => void>()
+
+// skipcq: JS-0067
+function getWorker(): Worker {
+	if (!worker) {
+		worker = new ValidationWorker()
+		worker.onmessage = (event) => {
+			const { id, result } = event.data
+			const resolver = pendingResolvers.get(id)
+			if (resolver) {
+				resolver(result)
+				pendingResolvers.delete(id)
+			}
+		}
+		worker.onerror = (error) => {
+			console.error("Validation worker error:", error)
+			for (const [id, resolver] of pendingResolvers.entries()) {
+				resolver([false, "Validation worker crashed"])
+				pendingResolvers.delete(id)
+			}
+			worker?.terminate()
+			worker = null
+		}
+	}
+	return worker
+}
+
+// skipcq: JS-0067
+function validateInWorker(
+	modFolder: string,
+	manifest: unknown,
+	contentFoldersStatus: Record<string, boolean>,
+	jsonFilesData: Record<string, string>
+): Promise<[boolean, string]> {
+	const id = ++currentWorkerId
+	return new Promise((resolve) => {
+		pendingResolvers.set(id, resolve)
+		getWorker().postMessage({
+			id,
+			modFolder,
+			manifest,
+			contentFoldersStatus,
+			jsonFilesData
+		})
+	})
+}
+
+export function validateConfigOptions(config: Config) {
+	if (!modsCacheInitialized) {
+		return
+	}
+
+	// Initialize modOptions if missing
+	config.modOptions = config.modOptions || {}
+
+	// Initialize loadOrder if missing or not an array
+	if (!Array.isArray(config.loadOrder)) {
+		config.loadOrder = []
+	}
 
 	// Remove duplicate items in load order
 	config.loadOrder = config.loadOrder.filter((value, index, array) => array.indexOf(value) === index)
 
+	// Collect all missing mods and warn user once
+	const missingMods = config.loadOrder.filter((value) => !foldersMap.has(value))
+
+	if (missingMods.length > 0) {
+		// skipcq: JS-0052, eslint-disable-next-line no-alert
+		window.alert(`The following mods could not be found:\n${missingMods.map(m => `- ${m}`).join("\n")}\n\nThey have been removed from your mods list.\n\nIf you intended to uninstall these mods, please use the "Delete Mod" option in the Mod Manager next time to ensure they are cleaned up properly. If you did not intend to uninstall them and this warning is shown, you can ignore this message.`)
+	}
+
 	// Remove non-existent mods from load order
-	config.loadOrder = config.loadOrder.filter((value) => {
-		try {
-			getModFolder(value)
-			return true
-		} catch {
-			return false
-		}
-	})
+	config.loadOrder = config.loadOrder.filter((value) => foldersMap.has(value))
 
 	// Validate mod options
 	config.loadOrder.forEach((mod) => {
@@ -48,24 +105,16 @@ export function getConfig() {
 
 			if (manifest.options) {
 				if (!config.modOptions[mod]) {
-					merge(
-						config,
-						{
-							modOptions: {
-								[mod]: [
-									...manifest.options
-										.filter((a) => (a.type === "checkbox" || a.type === "select" ? a.enabledByDefault : false))
-										.map((a) => (a.type === "select" ? `${a.group}:${a.name}` : a.name))
-								]
-							}
-						},
-						(orig, src) => {
-							if (Array.isArray(orig)) {
-								return src
-							}
-						}
-					)
+					config.modOptions[mod] = [
+						...manifest.options
+							.filter((a) => (a.type === "checkbox" || a.type === "select" ? a.enabledByDefault : false))
+							.map((a) => (a.type === "select" ? `${a.group}:${a.name}` : a.name))
+					]
 				} // Select default options when a mod has no options set
+
+				if (!config.modOptions[mod]) {
+					config.modOptions[mod] = []
+				}
 
 				config.modOptions[mod].push(
 					...manifest.options
@@ -96,45 +145,58 @@ export function getConfig() {
 					}
 				} // Remove non-existent options and update from the old name format in select options
 
-				for (let i = config.modOptions[manifest.id].length - 1; i >= 0; i--) {
+				for (let i = config.modOptions[mod].length - 1; i >= 0; i--) {
 					if (
 						manifest.options.find(
-							(a) => (a.type === "checkbox" && a.name === config.modOptions[manifest.id][i]) || (a.type === "select" && `${a.group}:${a.name}` === config.modOptions[manifest.id][i])
+							(a) => (a.type === "checkbox" && a.name === config.modOptions[mod][i]) || (a.type === "select" && `${a.group}:${a.name}` === config.modOptions[mod][i])
 						)?.requirements
 					) {
 						if (
 							!manifest.options
 								.find(
 									(a) =>
-										(a.type === "checkbox" && a.name === config.modOptions[manifest.id][i]) || (a.type === "select" && `${a.group}:${a.name}` === config.modOptions[manifest.id][i])
+										(a.type === "checkbox" && a.name === config.modOptions[mod][i]) || (a.type === "select" && `${a.group}:${a.name}` === config.modOptions[mod][i])
 								)!
 								.requirements!.every((a) => config.loadOrder.includes(a))
 						) {
-							config.modOptions[manifest.id].splice(i, 1)
+							config.modOptions[mod].splice(i, 1)
 						}
 					}
 				} // Disable mod options that require non-present mods
-
-				merge(
-					config,
-					{
-						modOptions: config.modOptions
-					},
-					(orig, src) => {
-						if (Array.isArray(orig)) {
-							return src
-						}
-					}
-				)
 			}
 		}
 	})
+}
 
-	setConfig(config)
+export function getConfig() {
+	if (cachedConfig && loadOrderValidated) {
+		configStore.set(cachedConfig)
+		return cachedConfig
+	}
+
+	const config: Config = json5.parse(String(window.fs.readFileSync("../config.json", "utf8")))
+
+	config.knownMods = config.knownMods || []
+	config.developerMode = config.developerMode || false
+
+	if (modsCacheInitialized) {
+		validateConfigOptions(config)
+		loadOrderValidated = true
+	}
+
+	cachedConfig = config
+	configStore.set(config)
+
 	return config
 }
 
 export function setConfig(config: Config) {
+	if (modsCacheInitialized) {
+		validateConfigOptions(config)
+	}
+	cachedConfig = config
+	loadOrderValidated = modsCacheInitialized
+	configStore.set(config)
 	window.fs.writeFileSync("../config.json", json5.stringify(config))
 }
 
@@ -172,8 +234,8 @@ export function sortMods() {
 				...(manifestA.options
 					.filter(
 						(x) =>
-							config.modOptions[a].includes(x.name) ||
-							config.modOptions[a].includes(`${x.group}:${x.name}`) ||
+							(config.modOptions[a] || []).includes(x.name) ||
+							(config.modOptions[a] || []).includes(`${x.group}:${x.name}`) ||
 							(x.type === OptionType.conditional &&
 								compileExpression(x.condition, { customProp: useDotAccessOperatorAndOptionalChaining })({
 									config
@@ -196,8 +258,8 @@ export function sortMods() {
 				...(manifestB.options
 					.filter(
 						(x) =>
-							config.modOptions[b].includes(x.name) ||
-							config.modOptions[b].includes(`${x.group}:${x.name}`) ||
+							(config.modOptions[b] || []).includes(x.name) ||
+							(config.modOptions[b] || []).includes(`${x.group}:${x.name}`) ||
 							(x.type === OptionType.conditional &&
 								compileExpression(x.condition, { customProp: useDotAccessOperatorAndOptionalChaining })({
 									config
@@ -220,8 +282,8 @@ export function sortMods() {
 				...(manifestA.options
 					.filter(
 						(x) =>
-							config.modOptions[a].includes(x.name) ||
-							config.modOptions[a].includes(`${x.group}:${x.name}`) ||
+							(config.modOptions[a] || []).includes(x.name) ||
+							(config.modOptions[a] || []).includes(`${x.group}:${x.name}`) ||
 							(x.type === OptionType.conditional &&
 								compileExpression(x.condition, { customProp: useDotAccessOperatorAndOptionalChaining })({
 									config
@@ -244,8 +306,8 @@ export function sortMods() {
 				...(manifestB.options
 					.filter(
 						(x) =>
-							config.modOptions[b].includes(x.name) ||
-							config.modOptions[b].includes(`${x.group}:${x.name}`) ||
+							(config.modOptions[b] || []).includes(x.name) ||
+							(config.modOptions[b] || []).includes(`${x.group}:${x.name}`) ||
 							(x.type === OptionType.conditional &&
 								compileExpression(x.condition, { customProp: useDotAccessOperatorAndOptionalChaining })({
 									config
@@ -322,11 +384,252 @@ export function alterModManifest(modID: string, data: Partial<Manifest>) {
 	setModManifest(modID, manifest)
 }
 
-export function setModManifest(modID: string, manifest: Manifest) {
-	window.fs.writeFileSync(window.path.join(getModFolder(modID), "manifest.json"), JSON.stringify(manifest, undefined, "\t"))
+export function clearModsCache() {
+	modsCacheInitialized = false
+	loadOrderValidated = false
+	cachedConfig = null
+	preloadModsCache("clearModsCache", true)
 }
 
-export const getModFolder = memoize(function (id: string) {
+const modsBeingDeleted = new Set<string>()
+
+/**
+ * Marks a mod as undergoing deletion to suppress missing-folder alert dialogs.
+ * 
+ * @param id The ID of the mod being deleted.
+ */
+export function markModAsDeleting(id: string) {
+	modsBeingDeleted.add(id)
+}
+
+/**
+ * Removes a mod from the active deletion tracking set.
+ * 
+ * @param id The ID of the mod.
+ */
+export function unmarkModAsDeleting(id: string) {
+	modsBeingDeleted.delete(id)
+}
+
+
+let cacheLoadStartTimestamp: number | null = null
+let cacheLoadStartCaller: string | null = null
+
+export function getCacheLoadStartTimestamp() {
+	return cacheLoadStartTimestamp
+}
+
+export function getCacheLoadStartCaller() {
+	return cacheLoadStartCaller
+}
+
+let cacheGeneration = 0
+let cacheLoadingPromise: Promise<void> | null = null
+
+// skipcq: JS-0067
+export function preloadModsCache(caller?: string, force = false): Promise<void> {
+	if (modsCacheInitialized && !force) {
+		return Promise.resolve()
+	}
+	if (cacheLoadingPromise && !force) {
+		return cacheLoadingPromise
+	}
+
+	cacheLoadStartTimestamp = Date.now()
+	cacheLoadStartCaller = caller || "unknown"
+
+	const currentGeneration = ++cacheGeneration
+
+	// skipcq: JS-R1005
+	cacheLoadingPromise = (async () => {
+		try {
+			const modsDir = window.path.join("..", "Mods")
+			if (!(await window.fs.pathExists(modsDir))) {
+				if (currentGeneration !== cacheGeneration) {
+					await cacheLoadingPromise
+					return
+				}
+				modsList = []
+				manifestsMap.clear()
+				foldersMap.clear()
+				isFrameworkMap.clear()
+				modsCacheInitialized = true
+				return
+			}
+
+			const subdirs = await window.fs.readdir(modsDir)
+			const tempModsList: string[] = []
+			const tempManifestsMap = new Map<string, Manifest>()
+			const tempFoldersMap = new Map<string, string>()
+			const tempIsFrameworkMap = new Map<string, boolean>()
+			const validationPromises: Promise<unknown>[] = []
+
+			for (const subdir of subdirs) {
+				if (subdir === "Managed by SMF, do not touch") {
+					continue
+				}
+
+				const fullPath = window.path.resolve(window.path.join(modsDir, subdir))
+				const manifestPath = window.path.join(fullPath, "manifest.json")
+
+				if (await window.fs.pathExists(manifestPath)) {
+					try {
+						const manifestContent = await window.fs.readFile(manifestPath, "utf8")
+						const manifest = json5.parse(String(manifestContent)) as Manifest
+						const id = manifest.id
+						if (id) {
+							tempModsList.push(id)
+							tempManifestsMap.set(id, manifest)
+							tempFoldersMap.set(id, fullPath)
+							tempIsFrameworkMap.set(id, true)
+
+							if (id !== subdir) {
+								tempManifestsMap.set(subdir, manifest)
+								tempFoldersMap.set(subdir, fullPath)
+								tempIsFrameworkMap.set(subdir, true)
+							}
+						} else {
+							const idFallback = subdir
+							tempModsList.push(idFallback)
+							tempFoldersMap.set(idFallback, fullPath)
+							tempIsFrameworkMap.set(idFallback, false)
+						}
+					} catch {
+						const idFallback = subdir
+						tempModsList.push(idFallback)
+						tempFoldersMap.set(idFallback, fullPath)
+						tempIsFrameworkMap.set(idFallback, false)
+					}
+				} else {
+					const id = subdir
+					tempModsList.push(id)
+					tempFoldersMap.set(id, fullPath)
+					tempIsFrameworkMap.set(id, false)
+				}
+
+				validationPromises.push(
+					validateModFolder(fullPath).catch((e) => {
+						console.error(`Validation failed for subdir: ${subdir}`, e)
+					})
+				)
+			}
+
+			await Promise.all(validationPromises)
+
+			if (currentGeneration !== cacheGeneration) {
+				await cacheLoadingPromise
+				return
+			}
+
+			// Swap double-buffered cache
+			modsList = tempModsList
+			manifestsMap.clear()
+			tempManifestsMap.forEach((v, k) => manifestsMap.set(k, v))
+			foldersMap.clear()
+			tempFoldersMap.forEach((v, k) => foldersMap.set(k, v))
+			isFrameworkMap.clear()
+			tempIsFrameworkMap.forEach((v, k) => isFrameworkMap.set(k, v))
+			modsCacheInitialized = true
+
+			if (cachedConfig) {
+				validateConfigOptions(cachedConfig)
+				loadOrderValidated = true
+				configStore.set(cachedConfig)
+			}
+		} catch (err) {
+			if (currentGeneration === cacheGeneration) {
+				console.error("Failed to preload mods cache:", err)
+			}
+		} finally {
+			if (currentGeneration === cacheGeneration) {
+				cacheLoadingPromise = null
+			}
+		}
+	})()
+
+	return cacheLoadingPromise
+}
+
+export function initializeModsCache() {
+	if (modsCacheInitialized) {
+		return
+	}
+	console.warn("[WARNING] Mods cache is not initialized. Performing synchronous disk scan fallback in initializeModsCache().")
+
+	modsList = []
+	manifestsMap.clear()
+	foldersMap.clear()
+	isFrameworkMap.clear()
+
+	const modsDir = window.path.join("..", "Mods")
+	if (!window.fs.existsSync(modsDir)) {
+		modsCacheInitialized = true
+		return
+	}
+
+	const subdirs = window.fs.readdirSync(modsDir)
+	for (const subdir of subdirs) {
+		if (subdir === "Managed by SMF, do not touch") {
+			continue
+		}
+
+		const fullPath = window.path.resolve(window.path.join(modsDir, subdir))
+		const manifestPath = window.path.join(fullPath, "manifest.json")
+
+		if (window.fs.existsSync(manifestPath)) {
+			try {
+				const manifestContent = window.fs.readFileSync(manifestPath, "utf8")
+				const manifest = json5.parse(String(manifestContent)) as Manifest
+				const id = manifest.id
+				if (id) {
+					modsList.push(id)
+					manifestsMap.set(id, manifest)
+					foldersMap.set(id, fullPath)
+					isFrameworkMap.set(id, true)
+
+					if (id !== subdir) {
+						manifestsMap.set(subdir, manifest)
+						foldersMap.set(subdir, fullPath)
+						isFrameworkMap.set(subdir, true)
+					}
+				} else {
+					const idFallback = subdir
+					modsList.push(idFallback)
+					foldersMap.set(idFallback, fullPath)
+					isFrameworkMap.set(idFallback, false)
+				}
+			} catch {
+				const idFallback = subdir
+				modsList.push(idFallback)
+				foldersMap.set(idFallback, fullPath)
+				isFrameworkMap.set(idFallback, false)
+			}
+		} else {
+			const id = subdir
+			modsList.push(id)
+			foldersMap.set(id, fullPath)
+			isFrameworkMap.set(id, false)
+		}
+	}
+
+	modsCacheInitialized = true
+}
+
+export function setModManifest(modID: string, manifest: Manifest) {
+	const modFolder = getModFolder(modID)
+	window.fs.writeFileSync(window.path.join(modFolder, "manifest.json"), JSON.stringify(manifest, undefined, "\t"))
+	clearValidationCacheForFolder(modFolder)
+	manifestsMap.set(modID, manifest)
+}
+
+export function getModFolder(id: string): string {
+	initializeModsCache()
+	const cachedFolder = foldersMap.get(id)
+	if (cachedFolder) {
+		return cachedFolder
+	}
+
+	console.warn(`Cache miss for mod folder ID: ${id}. Performing synchronous fallback directory search.`)
 	const folder = modIsFramework(id)
 		? window.fs
 				.readdirSync(window.path.join("..", "Mods"))
@@ -334,164 +637,207 @@ export const getModFolder = memoize(function (id: string) {
 					(a) =>
 						window.fs.existsSync(window.path.join("..", "Mods", a, "manifest.json")) &&
 						json5.parse(String(window.fs.readFileSync(window.path.join("..", "Mods", a, "manifest.json"), "utf8"))).id === id
-				) // Find mod by ID
-		: window.path.join("..", "Mods", id) // Mod is an RPKG mod, use folder name
+				)
+		: id
 
 	if (!folder) {
-		window.alert(`The mod ${id} couldn't be located! This will likely cause issues in parts of the framework. If you deleted a mod folder, use the Delete Mod option next time.`)
-
-		if (getConfig().loadOrder.includes(id)) {
-			mergeConfig({
-				loadOrder: getConfig().loadOrder.filter((a) => a != id)
-			})
+		if (!modsBeingDeleted.has(id)) {
+			// skipcq: JS-0052
+			window.alert(`The mod ${id} couldn't be located! This will likely cause issues in parts of the framework. If you deleted a mod folder, use the Delete Mod option next time.`)
 		}
-
 		throw new Error(`Couldn't find mod ${id}`)
 	}
 
 	return window.path.resolve(window.path.join("..", "Mods", folder))
-})
+}
 
-export const modIsFramework = memoize(function (id: string) {
-	return !(
-		(
-			window.fs.existsSync(window.path.join("..", "Mods", id)) && // mod exists in folder
-			!window.fs.existsSync(window.path.join("..", "Mods", id, "manifest.json")) && // mod has no manifest
-			window
-				.klaw(window.path.join("..", "Mods", id), { nodir: true })
-				.map((a) => a.path)
-				.some((a) => a.endsWith(".rpkg"))
-		) // mod contains RPKG files
-	)
-})
-
-export const getManifestFromModID = memoize(function (id: string, dummy = 1): Manifest {
-	if (modIsFramework(id)) {
-		return json5.parse(String(window.fs.readFileSync(window.path.join(getModFolder(id), "manifest.json"), "utf8")))
-	} else {
-		throw new Error(`Mod ${id} is not a framework mod`)
+export function modIsFramework(id: string): boolean {
+	initializeModsCache()
+	const cachedValue = isFrameworkMap.get(id)
+	if (cachedValue !== undefined) {
+		return cachedValue
 	}
-})
 
-export const getAllMods = memoize(function () {
-	return window.fs
-		.readdirSync(window.path.join("..", "Mods"))
-		.filter((a) => a !== "Managed by SMF, do not touch")
-		.map((a) => window.path.resolve(window.path.join("..", "Mods", a)))
-		.map((a) =>
-			window.fs.existsSync(window.path.join(a, "manifest.json"))
-				? (json5.parse(String(window.fs.readFileSync(window.path.join(a, "manifest.json"), "utf8"))).id as string)
-				: a.split(window.path.sep).pop()!
-		)
-})
+	const modPath = window.path.join("..", "Mods", id)
+	if (window.fs.existsSync(modPath)) {
+		return window.fs.existsSync(window.path.join(modPath, "manifest.json"))
+	}
+	return true
+}
 
-export function validateModFolder(modFolder: string): [boolean, string] {
-	if (!window.fs.existsSync(window.path.join(modFolder, "manifest.json"))) {
-		return [false, "No manifest"]
+/**
+ * Retrieves a mod manifest by its ID, with synchronous fallback read.
+ * Returns a default manifest structure on failure to prevent UI crashes.
+ * 
+ * @param id The ID of the mod.
+ * @param _dummy Unused parameter kept for API compatibility.
+ * @returns The parsed Manifest object or a default manifest layout.
+ */
+export function getManifestFromModID(id: string, _dummy = 1): Manifest {
+	if (manifestsMap.has(id)) {
+		return manifestsMap.get(id)!
+	}
+
+	console.warn(`[WARNING] Cache miss for manifest ID: ${id}. Performing synchronous fallback file read.`)
+	try {
+		if (modIsFramework(id)) {
+			return json5.parse(String(window.fs.readFileSync(window.path.join(getModFolder(id), "manifest.json"), "utf8")))
+		}
+	} catch (e) {
+		console.warn(`[WARNING] Failed to read fallback manifest for ${id}:`, e)
+	}
+	return {
+		id,
+		name: id,
+		description: "",
+		authors: [],
+		version: "0.0.0",
+		frameworkVersion: ""
+	} as Manifest
+}
+
+export function getAllMods(): string[] {
+	initializeModsCache()
+	return [...modsList]
+}
+
+const validationCache = new Map<string, [boolean, string]>()
+
+export function clearValidationCache() {
+	validationCache.clear()
+	for (let i = localStorage.length - 1; i >= 0; i--) {
+		const key = localStorage.key(i)
+		if (key?.startsWith("val-cache:")) {
+			localStorage.removeItem(key)
+		}
+	}
+}
+
+/**
+ * Clears validation cache entries for a specific folder from memory and localStorage.
+ * Normalizes the folder path to ensure both raw and resolved paths are cleared.
+ * 
+ * @param modFolder The path to the mod folder.
+ */
+export function clearValidationCacheForFolder(modFolder: string) {
+	const resolvedFolder = window.path.resolve(modFolder)
+	validationCache.delete(modFolder)
+	validationCache.delete(resolvedFolder)
+
+	const prefix1 = `val-cache:${window.path.join(modFolder, "manifest.json")}`
+	const prefix2 = `val-cache:${window.path.join(resolvedFolder, "manifest.json")}`
+
+	for (let i = localStorage.length - 1; i >= 0; i--) {
+		const key = localStorage.key(i)
+		if (key && (key.startsWith(prefix1) || key.startsWith(prefix2))) {
+			localStorage.removeItem(key)
+		}
+	}
+}
+
+let validationQueue = Promise.resolve()
+
+// skipcq: JS-0067
+export async function validateModFolder(modFolder: string): Promise<[boolean, string]> {
+	if (validationCache.has(modFolder)) {
+		return validationCache.get(modFolder)!
 	}
 
 	try {
-		json5.parse(window.fs.readFileSync(window.path.join(modFolder, "manifest.json"), "utf8"))
-	} catch {
-		return [false, "Invalid manifest due to invalid JSON"]
-	}
+		const manifestPath = window.path.join(modFolder, "manifest.json")
+		const { statsParts, manifest, contentFoldersStatus, jsonFilesData } = await window.ipc.invoke("get-mod-stats", modFolder)
+		const cacheKey = `val-cache:${statsParts.join("|")}`
 
-	if (!validateManifest(json5.parse(window.fs.readFileSync(window.path.join(modFolder, "manifest.json"), "utf8")))) {
-		return [false, `Invalid manifest due to non-matching schema: ${new Ajv({ strict: false }).errorsText(validateManifest.errors)}`]
-	}
-
-	const manifest: Manifest = json5.parse(window.fs.readFileSync(window.path.join(modFolder, "manifest.json"), "utf8"))
-
-	for (const contentFolder of [...(manifest.contentFolders || []), ...(manifest.options || []).flatMap((a) => a.contentFolders || [])]) {
-		if (!window.fs.existsSync(window.path.resolve(modFolder, contentFolder))) {
-			return [false, `Invalid content folder "${contentFolder}" due to nonexistent path`]
+		const cached = localStorage.getItem(cacheKey)
+		if (cached) {
+			const result = JSON.parse(cached)
+			validationCache.set(modFolder, result)
+			return result
 		}
 
-		const chunkFolders = window.fs.readdirSync(window.path.resolve(modFolder, contentFolder))
-
-		if (chunkFolders.length === 0) {
-			return [false, `Empty content folder "${contentFolder}"`]
-		}
-
-		for (const chunkFolder of chunkFolders) {
-			if (!chunkFolder.match(/chunk([0-9]*)/)) {
-				return [false, `Invalid chunk folder "${chunkFolder}" in "${contentFolder}"`]
+		const promise = validationQueue.then(async () => {
+			if (validationCache.has(modFolder)) {
+				return validationCache.get(modFolder)!
 			}
-		}
-	}
 
-	for (const blobsFolder of [...(manifest.blobsFolders || []), ...(manifest.options || []).flatMap((a) => a.blobsFolders || [])]) {
-		if (!window.fs.existsSync(window.path.resolve(modFolder, blobsFolder))) {
-			return [false, `Invalid blobs folder "${blobsFolder}" due to nonexistent path`]
-		}
+			const result = await validateInWorker(modFolder, manifest, contentFoldersStatus, jsonFilesData)
+			if (result[1] !== "Validation worker crashed") {
+				validationCache.set(modFolder, result)
 
-		if (window.fs.readdirSync(window.path.resolve(modFolder, blobsFolder)).length === 0) {
-			return [false, `Empty blobs folder "${blobsFolder}"`]
-		}
-	}
-
-	const groups: Record<string, [number, number]> = {}
-
-	for (const option of manifest.options || []) {
-		if (option.type === OptionType.select) {
-			groups[option.group] ??= [0, 0]
-			groups[option.group][0] = groups[option.group][0] + 1
-
-			if (option.enabledByDefault) {
-				groups[option.group][1] = groups[option.group][1] + 1
-			}
-		}
-	}
-
-	for (const [group, [members, enabledByDefault]] of Object.entries(groups)) {
-		if (members === 1) {
-			return [false, `Option group "${group}" has only one member`]
-		}
-
-		if (enabledByDefault > 1) {
-			return [false, `Option group "${group}" has more than one member enabled by default`]
-		}
-	}
-
-	for (const file of window.klaw(modFolder, { nodir: true }).map((a) => a.path)) {
-		if (
-			file.endsWith("entity.json") ||
-			file.endsWith("entity.patch.json") ||
-			file.endsWith("repository.json") ||
-			file.endsWith("unlockables.json") ||
-			file.endsWith("JSON.patch.json") ||
-			file.endsWith("contract.json")
-		) {
-			try {
-				const fileContents = window.fs.readJSONSync(file)
-
-				switch (file.split(".").slice(1).join(".")) {
-					case "entity.json":
-						if (fileContents.quickEntityVersion === 3.1 && !validateEntity(fileContents))
-							return [false, `Invalid file ${file} due to non-matching schema: ${new Ajv({ strict: false }).errorsText(validateEntity.errors)}`]
-						break
-					case "entity.patch.json":
-						if (fileContents.patchVersion === 6 && !validateEntityPatch(fileContents))
-							return [false, `Invalid file ${file} due to non-matching schema: ${new Ajv({ strict: false }).errorsText(validateEntityPatch.errors)}`]
-						break
-					case "repository.json":
-						if (!validateRepository(fileContents)) return [false, `Invalid file ${file} due to non-matching schema: ${new Ajv({ strict: false }).errorsText(validateRepository.errors)}`]
-						break
-					case "unlockables.json":
-						if (!validateUnlockables(fileContents)) return [false, `Invalid file ${file} due to non-matching schema: ${new Ajv({ strict: false }).errorsText(validateUnlockables.errors)}`]
-						break
-					case "contract.json":
-						if (!validateContract(fileContents)) return [false, `Invalid file ${file} due to non-matching schema: ${new Ajv({ strict: false }).errorsText(validateContract.errors)}`]
-						break
-					case "JSON.patch.json":
-						if (!validateJSONPatch(fileContents)) return [false, `Invalid file ${file} due to non-matching schema: ${new Ajv({ strict: false }).errorsText(validateJSONPatch.errors)}`]
-						break
+				const prefix = `val-cache:${manifestPath}`
+				for (let i = localStorage.length - 1; i >= 0; i--) {
+					const key = localStorage.key(i)
+					if (key?.startsWith(prefix)) {
+						localStorage.removeItem(key)
+					}
 				}
-			} catch {
-				return [false, `Invalid file ${file} due to invalid JSON`]
+
+				localStorage.setItem(cacheKey, JSON.stringify(result))
 			}
-		}
+			return result
+		})
+
+		validationQueue = promise.then(() => {}).catch(() => {})
+
+		return promise
+	} catch {
+		const result: [boolean, string] = [false, "Validation crashed"]
+		validationCache.set(modFolder, result)
+		return result
+	}
+}
+
+export async function removeDirectoryRecursive(dirPath: string) {
+	if (!window.fs.existsSync(dirPath)) {
+		return
 	}
 
-	return [true, ""]
+	try {
+		if (typeof window.fs.rmSync === "function") {
+			window.fs.rmSync(dirPath, { recursive: true, force: true })
+		} else {
+			window.fs.removeSync(dirPath)
+		}
+		return
+	} catch (initialErr) {
+		let removeSuccess = false
+		let removeError: unknown = initialErr
+
+		for (let attempt = 1; attempt <= 3; attempt++) {
+			try {
+				if (window.fs.existsSync(dirPath)) {
+					makeWritableRecursive(dirPath)
+					if (typeof window.fs.rmSync === "function") {
+						window.fs.rmSync(dirPath, { recursive: true, force: true })
+					} else {
+						window.fs.removeSync(dirPath)
+					}
+				}
+				removeSuccess = true
+				break
+			} catch (err) {
+				removeError = err
+				await new Promise((resolve) => setTimeout(resolve, 150))
+			}
+		}
+
+		if (!removeSuccess) {
+			throw removeError || new Error(`Failed to remove directory: ${dirPath}`)
+		}
+	}
+}
+
+function makeWritableRecursive(dirPath: string) {
+	try {
+		const stat = window.fs.statSync(dirPath)
+		if (stat.isDirectory()) {
+			window.fs.chmodSync(dirPath, 0o777)
+			const files = window.fs.readdirSync(dirPath)
+			for (const file of files) {
+				makeWritableRecursive(window.path.join(dirPath, file))
+			}
+		} else {
+			window.fs.chmodSync(dirPath, 0o666)
+		}
+	} catch {}
 }

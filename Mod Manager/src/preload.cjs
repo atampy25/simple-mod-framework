@@ -16,6 +16,9 @@ contextBridge.exposeInMainWorld("ipc", {
 	sendSync: (channel, data) => {
 		ipcRenderer.sendSync(channel, data)
 	},
+	invoke: (channel, ...args) => {
+		return ipcRenderer.invoke(channel, ...args)
+	},
 	receive: (channel, func) => {
 		ipcRenderer.on(channel, (event, ...args) => func(...args))
 	},

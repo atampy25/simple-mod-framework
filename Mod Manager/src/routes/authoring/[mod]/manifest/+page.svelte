@@ -3,8 +3,9 @@
 	import { onMount } from "svelte"
 
 	import { page } from "$app/stores"
+	import { InlineLoading } from "carbon-components-svelte"
 
-	import { alterModManifest, FrameworkVersion, getManifestFromModID, getModFolder, setModManifest } from "$lib/utils"
+	import { alterModManifest, FrameworkVersion, getManifestFromModID, getModFolder, setModManifest, preloadModsCache } from "$lib/utils"
 	import ModManifestInterface from "$lib/ModManifestInterface.svelte"
 
 	import { Language, Platform, type Manifest } from "../../../../../../src/types"
@@ -23,20 +24,29 @@
 		frameworkVersion: FrameworkVersion
 	} as Manifest
 
-	$: manifest = $page.params.mod
-		? getManifestFromModID($page.params.mod, dummyForceUpdate)
-		: ({
-				version: "1.0.0",
-				id: "Example.Example",
-				name: "Loading...",
-				description: "Extremely good description",
-				authors: ["Example"],
-				contentFolders: ["content"],
-				frameworkVersion: FrameworkVersion
-		  } as Manifest)
+	let cacheLoaded = false
 
-	onMount(() => (dummyForceUpdate = Math.random()))
+	onMount(async () => {
+		try {
+			await preloadModsCache("authoring-manifest")
+		} catch (err) {
+			console.error("Failed to preload mods cache for authoring-manifest:", err)
+		} finally {
+			cacheLoaded = true
+			dummyForceUpdate = Math.random()
+		}
+	})
+
+	$: if (cacheLoaded && $page.params.mod) {
+		manifest = getManifestFromModID($page.params.mod, dummyForceUpdate)
+	}
 </script>
+
+{#if !cacheLoaded}
+	<div class="flex flex-col items-center justify-center h-full w-full gap-4 mt-8">
+		<InlineLoading description="Loading mod manifest..." />
+	</div>
+{:else}
 
 <div class="flex gap-4 items-center justify-center">
 	<h1 class="text-center" transition:scale>
@@ -656,5 +666,6 @@
 		}}
 	/>
 </div>
+{/if}
 
 <div class="mb-[100vh]" />

@@ -85,7 +85,8 @@ if (fs.existsSync(path.join(core.config.retailPath, "Runtime", "chunk0.rpkg"))) 
 core.config.platform = fs.existsSync(path.join(core.config.retailPath, "Runtime", "chunk0.rpkg"))
 	? gameHashes[md5File.sync(path.join(core.config.retailPath, "..", "MicrosoftGame.Config"))]
 	: gameHashes[md5File.sync(path.join(core.config.runtimePath, "..", "Retail", "HITMAN3.exe"))] // Platform detection
-
+// why someone build these bad ui and i have to fix?
+// btw why ignore these bellow linting problem 👍 👇?
 let sentryTransaction = {
 	startChild(...args) {
 		return {
@@ -131,7 +132,8 @@ function configureSentryScope(transaction: Span) {
 	// 		scope.setSpan(transaction)
 	// 	})
 }
-
+// meh
+// meh what?
 function toHuman(dur: Duration) {
 	const units: (keyof DurationLikeObject)[] = ["years", "months", "days", "hours", "minutes", "seconds", "milliseconds"]
 	const smallestIdx = units.indexOf("seconds")

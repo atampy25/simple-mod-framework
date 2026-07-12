@@ -1,10 +1,35 @@
+<script context="module" lang="ts">
+	let latestGithubReleasePromise: Promise<any> | null = null
+	let modUpdatesPromise: Promise<any> | null = null
+	let cachedReleaseMarkdownBody = ""
+	let cachedCanAutomaticallyUpdate = false
+	let lastCheckTimestamp = 0
+</script>
+
 <script lang="ts">
 	import { fade } from "svelte/transition"
 	import { page } from "$app/stores"
+	import { onMount } from "svelte"
+
+	let homeDeveloperMode = false
 
 	import { Button, InlineLoading, Modal, ProgressBar } from "carbon-components-svelte"
 
-	import { getAllMods, getConfig, getManifestFromModID, modIsFramework, getModFolder, mergeConfig, FrameworkVersion } from "$lib/utils"
+	import {
+		getAllMods,
+		getConfig,
+		getManifestFromModID,
+		modIsFramework,
+		getModFolder,
+		mergeConfig,
+		FrameworkVersion,
+		clearModsCache,
+		preloadModsCache,
+		getCacheLoadStartTimestamp,
+		getCacheLoadStartCaller,
+		removeDirectoryRecursive,
+		trustedHosts
+	} from "$lib/utils"
 
 	import { v4 } from "uuid"
 	import { marked } from "marked"
@@ -34,105 +59,166 @@
 	let fileInModFolder = false
 
 	let mustRedownloadFrameworkModalOpen = false
-
-	try {
-		getConfig()
-	} catch {
-		cannotFindConfig = true
-	}
-
-	if (typeof getConfig().retailPath === "undefined") {
-		mergeConfig({
-			retailPath: "..\\Retail"
-		})
-	}
-
-	if (!cannotFindConfig) {
-		if (!window.fs.existsSync(window.path.resolve("..", getConfig().runtimePath))) {
-			if (window.fs.existsSync(window.path.join(window.path.resolve("..", getConfig().retailPath), "Runtime", "chunk0.rpkg")) && getConfig().runtimePath == "..\\Runtime") {
-				mergeConfig({
-					runtimePath: "..\\Retail\\Runtime"
-				})
-				window.fs.copyFileSync(window.path.join("..", "cleanMicrosoftThumbs.dat"), window.path.join("..", "cleanThumbs.dat"))
-			} else {
-				cannotFindRuntime = true
-			}
-		} else {
-			if (!window.fs.existsSync(window.path.resolve("..", getConfig().retailPath))) {
-				cannotFindRetail = true
-			} else {
-				if (
-					!window.fs.existsSync(window.path.join(window.path.resolve("..", getConfig().retailPath), "Runtime", "chunk0.rpkg")) &&
-					!window.fs.existsSync(window.path.join(window.path.resolve("..", getConfig().retailPath), "HITMAN3.exe"))
-				) {
-					cannotFindHITMAN3 = true
-				}
-
-				if (
-					window.fs.existsSync(window.path.join(window.path.resolve("..", getConfig().retailPath), "Runtime", "chunk0.rpkg")) &&
-					!window.fs.existsSync(window.path.join(window.path.resolve("..", getConfig().retailPath), "..", "MicrosoftGame.Config"))
-				) {
-					cannotFindGameConfig = true
-				}
-			}
-		}
-	}
-
-	if (!cannotFindConfig && !cannotFindRuntime && !cannotFindRetail && !cannotFindGameConfig && !cannotFindHITMAN3) {
-		if (typeof getConfig().knownMods == "undefined") {
-			mergeConfig({ knownMods: [] })
-		}
-
-		if (typeof getConfig().reportErrors == "undefined") {
-			errorReportingPrompt = true
-		}
-
-		if (typeof getConfig().developerMode == "undefined") {
-			developerModePrompt = true
-		}
-	}
-
-	if (
-		window.fs
-			.readdirSync(window.path.join("..", "Mods"))
-			.filter((a) => a != "Managed by SMF, do not touch")
-			.map((a) => window.path.resolve(window.path.join("..", "Mods", a)))
-			.some((a) => window.isFile(a))
-	) {
-		fileInModFolder = true
-	}
-
-	if (!fileInModFolder) {
-		try {
-			getAllMods().map((a) => (modIsFramework(a) ? getManifestFromModID(a) : a))
-		} catch {
-			invalidModText =
-				window.fs
-					.readdirSync(window.path.join("..", "Mods"))
-					.filter((a) => a != "Managed by SMF, do not touch")
-					.map((a) => window.path.resolve(window.path.join("..", "Mods", a)))
-					.find((a) => window.fs.existsSync(window.path.join(a, "manifest.json")) && !json5.parse(window.fs.readFileSync(window.path.join(a, "manifest.json"), "utf8")).id)
-					?.split(window.path.sep)
-					?.pop() || "<can't find which one>"
-			invalidModOpen = true
-		}
-	}
-
 	let installedViaZIP = false
-	if (window.originalFs.existsSync("../config.json:Zone.Identifier")) {
-		installedViaZIP = true
-		window.originalFs.unlinkSync("../config.json:Zone.Identifier")
-	}
 
-	if (!window.nodeVersion.startsWith("18") || !window.electronVersion.startsWith("26")) {
-		mustRedownloadFrameworkModalOpen = true
-	}
+	let githubReleaseMarkdownBody = cachedReleaseMarkdownBody
+	let canAutomaticallyUpdate = cachedCanAutomaticallyUpdate
+	let latestGithubRelease = latestGithubReleasePromise || new Promise(() => {})
+	let modUpdates = modUpdatesPromise || new Promise(() => {})
 
-	let latestGithubRelease = checkForUpdates()
+	onMount(async () => {
+		const domLoadedTime = Date.now()
+		if (Date.now() - lastCheckTimestamp >= 20 * 60 * 1000) {
+			latestGithubReleasePromise = null
+			modUpdatesPromise = null
+		}
+		try {
+			await preloadModsCache("homepage")
 
-	let githubReleaseMarkdownBody = ""
+			const startTimestamp = getCacheLoadStartTimestamp()
+			const startTimeStr = startTimestamp ? `${new Date(startTimestamp).toLocaleTimeString()} (${startTimestamp})` : "not started yet"
+			const callerStr = getCacheLoadStartCaller() || "unknown"
+			console.warn(`[DEBUG] Homepage DOM loaded at ${new Date(domLoadedTime).toLocaleTimeString()} (${domLoadedTime}). Cache preload started by: ${callerStr} at time: ${startTimeStr}`)
 
-	async function checkForUpdates(): Promise<any> {
+			try {
+				getConfig()
+			} catch {
+				cannotFindConfig = true
+			}
+
+			if (!cannotFindConfig) {
+				homeDeveloperMode = getConfig().developerMode
+				if (typeof getConfig().retailPath === "undefined") {
+					mergeConfig({
+						retailPath: "..\\Retail"
+					})
+				}
+
+				if (!window.fs.existsSync(window.path.resolve("..", getConfig().runtimePath))) {
+					if (window.fs.existsSync(window.path.join(window.path.resolve("..", getConfig().retailPath), "Runtime", "chunk0.rpkg")) && getConfig().runtimePath == "..\\Runtime") {
+						mergeConfig({
+							runtimePath: "..\\Retail\\Runtime"
+						})
+						window.fs.copyFileSync(window.path.join("..", "cleanMicrosoftThumbs.dat"), window.path.join("..", "cleanThumbs.dat"))
+					} else {
+						cannotFindRuntime = true
+					}
+				} else {
+					if (!window.fs.existsSync(window.path.resolve("..", getConfig().retailPath))) {
+						cannotFindRetail = true
+					} else {
+						if (
+							!window.fs.existsSync(window.path.join(window.path.resolve("..", getConfig().retailPath), "Runtime", "chunk0.rpkg")) &&
+							!window.fs.existsSync(window.path.join(window.path.resolve("..", getConfig().retailPath), "HITMAN3.exe"))
+						) {
+							cannotFindHITMAN3 = true
+						}
+
+						if (
+							window.fs.existsSync(window.path.join(window.path.resolve("..", getConfig().retailPath), "Runtime", "chunk0.rpkg")) &&
+							!window.fs.existsSync(window.path.join(window.path.resolve("..", getConfig().retailPath), "..", "MicrosoftGame.Config"))
+						) {
+							cannotFindGameConfig = true
+						}
+					}
+				}
+			}
+
+			if (!cannotFindConfig && !cannotFindRuntime && !cannotFindRetail && !cannotFindGameConfig && !cannotFindHITMAN3) {
+				if (typeof getConfig().knownMods == "undefined") {
+					mergeConfig({ knownMods: [] })
+				}
+
+				if (typeof getConfig().reportErrors == "undefined") {
+					errorReportingPrompt = true
+				}
+
+				if (typeof getConfig().developerMode == "undefined") {
+					developerModePrompt = true
+				}
+			}
+
+			try {
+				if (
+					window.fs
+						.readdirSync(window.path.join("..", "Mods"))
+						.filter((a) => a != "Managed by SMF, do not touch")
+						.map((a) => window.path.resolve(window.path.join("..", "Mods", a)))
+						.some((a) => window.isFile(a))
+				) {
+					fileInModFolder = true
+				}
+			} catch (e) {
+				console.error("Failed to read Mods directory:", e)
+			}
+
+			if (!fileInModFolder) {
+				try {
+					getAllMods().map((a) => (modIsFramework(a) ? getManifestFromModID(a) : a))
+				} catch {
+					try {
+						invalidModText =
+							window.fs
+								.readdirSync(window.path.join("..", "Mods"))
+								.filter((a) => a != "Managed by SMF, do not touch")
+								.map((a) => window.path.resolve(window.path.join("..", "Mods", a)))
+								.find((a) => window.fs.existsSync(window.path.join(a, "manifest.json")) && !json5.parse(window.fs.readFileSync(window.path.join(a, "manifest.json"), "utf8")).id)
+								?.split(window.path.sep)
+								?.pop() || "<can't find which one>"
+						invalidModOpen = true
+					} catch (e) {
+						// ignore readdir sync errors inside catch
+					}
+				}
+			}
+
+			try {
+				if (window.originalFs.existsSync("../config.json:Zone.Identifier")) {
+					installedViaZIP = true
+					window.originalFs.unlinkSync("../config.json:Zone.Identifier")
+				}
+			} catch (e) {
+				console.error("Failed to check Zone.Identifier:", e)
+			}
+
+			if (!window.nodeVersion.startsWith("18") || !window.electronVersion.startsWith("26")) {
+				mustRedownloadFrameworkModalOpen = true
+			}
+		} catch (err) {
+			console.error("Failed welcome page onMount:", err)
+		} finally {
+			if (!latestGithubReleasePromise) {
+				latestGithubReleasePromise = checkForUpdates()
+			}
+			latestGithubRelease = latestGithubReleasePromise
+
+			if (!modUpdatesPromise) {
+				modUpdatesPromise = checkForModUpdates()
+			}
+			modUpdates = modUpdatesPromise
+		}
+	})
+
+	async function checkForUpdates(force = false): Promise<any> {
+		if (!force) {
+			try {
+				const cacheStr = localStorage.getItem("smf-framework-update-cache")
+				if (cacheStr) {
+					const cached = JSON.parse(cacheStr)
+					if (Date.now() - cached.timestamp < 20 * 60 * 1000 && cached.localVersion === FrameworkVersion) {
+						console.info("Framework update cache hit! Reusing cached check.")
+						githubReleaseMarkdownBody = cached.markdownBody
+						cachedReleaseMarkdownBody = cached.markdownBody
+						canAutomaticallyUpdate = cached.canAutomaticallyUpdate
+						cachedCanAutomaticallyUpdate = cached.canAutomaticallyUpdate
+						return { release: cached.release, releases: cached.releases }
+					}
+				}
+			} catch (e) {
+				console.error(e)
+			}
+		}
+
 		const release = await (
 			await fetch("https://api.github.com/repos/atampy25/simple-mod-framework/releases/latest", {
 				headers: {
@@ -168,20 +254,40 @@
 				}
 			}
 
-			githubReleaseMarkdownBody = marked(
-				Object.entries(sections)
-					.map(([a, b]) => a + "\n" + b.join("\n"))
-					.join("\n"),
-				{ gfm: true }
+			githubReleaseMarkdownBody = window.sanitizeHtml(
+				marked(
+					Object.entries(sections)
+						.map(([a, b]) => a + "\n" + b.join("\n"))
+						.join("\n"),
+					{ gfm: true }
+				)
 			)
 
 			canAutomaticallyUpdate = !githubReleaseMarkdownBody.includes("CANNOT AUTOMATICALLY UPDATE")
 		}
 
+		try {
+			localStorage.setItem(
+				"smf-framework-update-cache",
+				JSON.stringify({
+					timestamp: Date.now(),
+					release,
+					releases,
+					markdownBody: githubReleaseMarkdownBody,
+					canAutomaticallyUpdate,
+					localVersion: FrameworkVersion
+				})
+			)
+			lastCheckTimestamp = Date.now()
+			cachedReleaseMarkdownBody = githubReleaseMarkdownBody
+			cachedCanAutomaticallyUpdate = canAutomaticallyUpdate
+		} catch (e) {
+			console.error(e)
+		}
+
 		return { release, releases }
 	}
 
-	let canAutomaticallyUpdate = false
 	let updatingFramework = false
 	let frameworkDownloadProgress = 0
 	let frameworkDownloadSize = 0
@@ -278,13 +384,41 @@
 		window.ipc.send("relaunchApp")
 	}
 
-	let modUpdates = checkForModUpdates()
+	function forceRecheckFramework() {
+		latestGithubReleasePromise = checkForUpdates(true)
+		latestGithubRelease = latestGithubReleasePromise
+	}
 
-	async function checkForModUpdates(): Promise<[string, { version: string; changelog: string; url: string; check_url: string } | false][]> {
+	function forceRecheckMods() {
+		clearModsCache()
+		modUpdatesPromise = checkForModUpdates(true)
+		modUpdates = modUpdatesPromise
+	}
+
+	async function checkForModUpdates(force = false): Promise<[string, { version: string; changelog: string; url: string; check_url: string } | false][]> {
 		let modUpdateJSONs = []
+		let cachedData: Record<string, any> = {}
+
+		if (!force) {
+			try {
+				const cacheStr = localStorage.getItem("smf-mod-update-cache")
+				if (cacheStr) {
+					cachedData = JSON.parse(cacheStr)
+				}
+			} catch (e) {
+				console.error(e)
+			}
+		}
 
 		for (let mod of getAllMods()) {
 			if (modIsFramework(mod) && getManifestFromModID(mod).updateCheck) {
+				const currentVersion = getManifestFromModID(mod).version
+				const cached = cachedData[mod]
+				if (!force && cached && Date.now() - cached.timestamp < 20 * 60 * 1000 && cached.localVersion === currentVersion) {
+					modUpdateJSONs.push([mod, cached.updateResult])
+					continue
+				}
+
 				try {
 					const updateJSON = await (await fetch(getManifestFromModID(mod).updateCheck! + "?t=" + Date.now())).json()
 
@@ -336,11 +470,29 @@
 						throw new Error()
 					}
 
-					modUpdateJSONs.push([mod, { ...updateJSON, changelog, check_url: getManifestFromModID(mod).updateCheck! }])
+					const result = { ...updateJSON, changelog, check_url: getManifestFromModID(mod).updateCheck! }
+					modUpdateJSONs.push([mod, result])
+					cachedData[mod] = {
+						timestamp: Date.now(),
+						updateResult: result,
+						localVersion: currentVersion
+					}
 				} catch {
 					modUpdateJSONs.push([mod, false])
+					cachedData[mod] = {
+						timestamp: Date.now(),
+						updateResult: false,
+						localVersion: currentVersion
+					}
 				}
 			}
+		}
+
+		try {
+			localStorage.setItem("smf-mod-update-cache", JSON.stringify(cachedData))
+			lastCheckTimestamp = Date.now()
+		} catch (e) {
+			console.error(e)
 		}
 
 		return modUpdateJSONs
@@ -358,6 +510,24 @@
 
 	async function startModUpdate() {
 		let chunksAll
+
+		try {
+			const url = new URL(updatingMod!.url)
+			if (url.protocol !== "https:") {
+				window.alert("Security error: Update URL must use HTTPS protocol")
+				updatingMod = null
+				return
+			}
+			if (!(trustedHosts.has(url.hostname) || url.hostname.split(".").slice(-2).join(".") === "github.io")) {
+				window.alert("Security error: Untrusted host for mod update: " + url.hostname)
+				updatingMod = null
+				return
+			}
+		} catch (err) {
+			window.alert("Security error: Invalid update URL")
+			updatingMod = null
+			return
+		}
 
 		try {
 			const response = await fetch(updatingMod!.url)
@@ -406,9 +576,36 @@
 				throw new Error("Mod update ZIP has files in the root!")
 			}
 
-			window.fs.removeSync(getModFolder(updatingMod!.id))
+			const destFolder = getModFolder(updatingMod!.id)
+			const backupFolder = destFolder + ".bak"
+			let backedUp = false
 
-			window.fs.copySync("./staging", "../Mods")
+			if (window.fs.existsSync(destFolder)) {
+				if (window.fs.existsSync(backupFolder)) {
+					window.fs.removeSync(backupFolder)
+				}
+				window.fs.renameSync(destFolder, backupFolder)
+				backedUp = true
+			}
+
+			try {
+				window.fs.copySync("./staging", "../Mods")
+				if (backedUp) {
+					window.fs.removeSync(backupFolder)
+				}
+			} catch (copyError) {
+				if (backedUp) {
+					try {
+						if (window.fs.existsSync(destFolder)) {
+							window.fs.removeSync(destFolder)
+						}
+						window.fs.renameSync(backupFolder, destFolder)
+					} catch (rollbackError) {
+						console.error("Failed to rollback during mod update:", rollbackError)
+					}
+				}
+				throw copyError
+			}
 
 			window.fs.removeSync("./staging")
 			window.fs.removeSync("./tempArchive")
@@ -420,33 +617,37 @@
 
 		updatingMod = null
 
-		window.location.reload()
+		clearModsCache()
+		modUpdatesPromise = checkForModUpdates(true)
+		modUpdates = modUpdatesPromise
 	}
-
-	const trustedHosts = new Set(["github.com", "raw.githubusercontent.com", "dropbox.com", "dl.dropboxusercontent.com", "drive.google.com", "hitman-resources.netlify.app"])
 </script>
 
-<div class="w-full h-full overflow-y-auto flex items-center justify-center gap-96">
-	<div>
+<div class="w-full h-full overflow-y-auto flex items-start justify-center py-16 gap-96">
+	<div class="w-[900px] max-w-full px-4">
 		<h1 in:fade>Welcome to the Simple Mod Framework</h1>
 		<br />
 		<div class="inline" in:fade={{ delay: 400 }}>
-			<Button kind="primary" icon={List} href="/modList" data-sveltekit-reload>Enable/disable mods</Button>
+			<Button kind="primary" icon={List} href="/modList">Enable/disable mods</Button>
 		</div>
 		<div class="inline" in:fade={{ delay: 800 }}>
-			<Button kind="primary" icon={Settings} href="/settings" data-sveltekit-reload>Configure mods</Button>
+			<Button kind="primary" icon={Settings} href="/settings">Configure mods</Button>
 		</div>
-		{#if getConfig().developerMode}
+		{#if homeDeveloperMode}
 			<div class="inline" in:fade={{ delay: 800 }}>
-				<Button kind="primary" icon={Edit} href="/authoring" data-sveltekit-reload>Author mods</Button>
+				<Button kind="primary" icon={Edit} href="/authoring">Author mods</Button>
 			</div>
 		{/if}
-		<div class="inline" in:fade={{ delay: getConfig().developerMode ? 1200 : 800 }}>
-			<Button kind="primary" icon={Info} href="/info" data-sveltekit-reload>More information</Button>
+		<div class="inline" in:fade={{ delay: homeDeveloperMode ? 1200 : 800 }}>
+			<Button kind="primary" icon={Info} href="/info">More information</Button>
 		</div>
 		<p class="mt-4" in:fade={{ delay: 1600 }}>Need help using mods? Consult the pinned post on the Nexus Mods page.</p>
 		<p class="mt-2" in:fade={{ delay: 2000 }}>Need help making mods? There's extensive documentation available in the Info folder.</p>
 		<div class="mt-4 bg-neutral-900 rounded-md p-4" in:fade={{ delay: 2400 }}>
+			<div class="flex justify-between items-center mb-2">
+				<h3 class="text-sm font-semibold text-gray-400">Framework Updates</h3>
+				<Button size="small" kind="ghost" on:click={forceRecheckFramework}>Recheck</Button>
+			</div>
 			{#await latestGithubRelease}
 				<div class="flex items-center">
 					<p class="flex-grow">Checking for framework updates...</p>
@@ -497,6 +698,10 @@
 			{/await}
 		</div>
 		<div class="mt-4 bg-neutral-900 rounded-md p-4" in:fade={{ delay: 2800 }}>
+			<div class="flex justify-between items-center mb-2">
+				<h3 class="text-sm font-semibold text-gray-400">Mod Updates</h3>
+				<Button size="small" kind="ghost" on:click={forceRecheckMods}>Recheck</Button>
+			</div>
 			{#await modUpdates}
 				<div class="flex items-center">
 					<p class="flex-grow">Checking for mod updates...</p>
@@ -616,7 +821,8 @@
 
 <Modal alert bind:open={mustRedownloadFrameworkModalOpen} modalHeading="Reinstall the Mod Manager" primaryButtonText="OK" on:submit={() => (mustRedownloadFrameworkModalOpen = false)}>
 	<p>
-		The framework's Mod Manager needs to be reinstalled due to a change in its internals which can't be automatically updated. Please delete your Mod Manager folder, download the Release.zip file from
+		The framework's Mod Manager needs to be reinstalled due to a change in its internals which can't be automatically updated. Please delete your Mod Manager folder, download the Release.zip file
+		from
 		<code>https://github.com/atampy25/simple-mod-framework/releases/latest</code>
 		and extract the new Mod Manager folder from the ZIP.
 	</p>
@@ -676,14 +882,14 @@
 		mergeConfig({
 			developerMode: false
 		})
-
+		homeDeveloperMode = false
 		developerModePrompt = false
 	}}
 	on:submit={() => {
 		mergeConfig({
 			developerMode: true
 		})
-
+		homeDeveloperMode = true
 		developerModePrompt = false
 	}}
 >

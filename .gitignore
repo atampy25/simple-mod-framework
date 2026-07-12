@@ -18,3 +18,18 @@ rust/index.d.ts
 rust/index.js
 src/smf-rust.node
 src/smf-rust.d.ts
+
+tmp_default_app/
+
+cache/
+temp/
+staging/
+.vscode/
+Mod Manager/simulate-deploy.cjs
+*patchWorker*/*
+*patchWorker*
+Third-Party/rpkg-cli.exe
+Third-Party/quickentity_ffi.dll
+Third-Party/hash_list.hmla
+Third-Party/assimp.dll
+Deploy.log
