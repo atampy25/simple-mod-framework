@@ -9,7 +9,7 @@
     "arg": "^5.0.2",
     "chalk": "^4.1.2",
     "clarify": "^2.1.0",
-    "decimal.js": "^10.3.1",
+    "decimal.js": "^10.4.3",
     "eventemitter-asyncresource": "^1.0.0",
     "filtrex": "^3.0.0",
     "fs-extra": "^10.1.0",
