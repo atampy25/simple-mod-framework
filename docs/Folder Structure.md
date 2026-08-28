@@ -38,6 +38,7 @@ The content folder contains chunk folders, which contain files (and folders, the
 | `texture.tga`         | A TGA to rebuild into a game texture (TEXT only or TEXT and TEXD)            |
 | `sfx.wem`             | A Wwise sound effect to patch a WWEV file with                               |
 | `delta`               | A VCDiff delta file to patch the specified file with                         |
+| `gfxf.zip`            | A GFXF zip file that will replace/add the targeted file                      |
 
 The names of special files do not matter - it is their extensions that do, **except for texture.tga, sfx.wem and delta files**. Raw files, which any non-special file is, are placed directly into the built RPKG and so must be named like usual.
 
