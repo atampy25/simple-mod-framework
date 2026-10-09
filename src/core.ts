@@ -52,30 +52,44 @@ config.retailPath = path.resolve(process.cwd(), config.retailPath)
 
 let deployLog = ""
 
+// The main thread and every patch worker rewrite Deploy.log concurrently, which on Windows can fail with a sharing violation (EBUSY/EPERM); retry briefly and never let a log write crash the deploy
+const sleepBuffer = new Int32Array(new SharedArrayBuffer(4))
+function writeDeployLog() {
+	for (let attempt = 0; attempt < 20; attempt++) {
+		try {
+			fs.writeFileSync(path.join(process.cwd(), "Deploy.log"), deployLog)
+			return
+		} catch (e) {
+			if (!["EBUSY", "EPERM", "EACCES"].includes((e as NodeJS.ErrnoException).code!)) throw e
+			Atomics.wait(sleepBuffer, 0, 0, 5 + attempt * 5)
+		}
+	}
+}
+
 const logger = args["--useConsoleLogging"]
 	? {
 			verbose: async (text: string, mod?: string) => {
 				deployLog += `\nDETAIL\t${mod || "Deploy"}\t${text}`
-				fs.writeFileSync(path.join(process.cwd(), "Deploy.log"), deployLog)
+				writeDeployLog()
 			},
 			debug: async (text: string, mod?: string) => {
 				deployLog += `\nDEBUG\t${mod || "Deploy"}\t${text}`
-				fs.writeFileSync(path.join(process.cwd(), "Deploy.log"), deployLog)
+				writeDeployLog()
 				console.debug("DEBUG", ...(mod ? [mod, text] : [text]))
 			},
 			info: async (text: string, mod?: string) => {
 				deployLog += `\nINFO\t${mod || "Deploy"}\t${text}`
-				fs.writeFileSync(path.join(process.cwd(), "Deploy.log"), deployLog)
+				writeDeployLog()
 				console.info("INFO", ...(mod ? [mod, text] : [text]))
 			},
 			warn: async (text: string, mod?: string) => {
 				deployLog += `\nWARN\t${mod || "Deploy"}\t${text}`
-				fs.writeFileSync(path.join(process.cwd(), "Deploy.log"), deployLog)
+				writeDeployLog()
 				console.warn("WARN", ...(mod ? [mod, text] : [text]))
 			},
 			error: async function (text: string, exitAfter = true, mod?: string) {
 				deployLog += `\nERROR\t${mod || "Deploy"}\t${text}`
-				fs.writeFileSync(path.join(process.cwd(), "Deploy.log"), deployLog)
+				writeDeployLog()
 				console.log("ERROR", ...(mod ? [mod, text] : [text]))
 
 				if (mod) {
@@ -109,7 +123,7 @@ const logger = args["--useConsoleLogging"]
 	: {
 			verbose: async function (text: string, mod?: string) {
 				deployLog += `\nDETAIL\t${mod || "Deploy"}\t${text}`
-				fs.writeFileSync(path.join(process.cwd(), "Deploy.log"), deployLog)
+				writeDeployLog()
 
 				if (args["--logLevel"]!.includes("verbose")) {
 					process.stdout.write(chalk(Object.assign([], { raw: [`{grey DETAIL${mod ? `\t${mod}` : ""}\t${text.replace(/\\/gi, "\\\\")}}\n`] })))
@@ -126,7 +140,7 @@ const logger = args["--useConsoleLogging"]
 
 			debug: async function (text: string, mod?: string) {
 				deployLog += `\nDEBUG\t${mod || "Deploy"}\t${text}`
-				fs.writeFileSync(path.join(process.cwd(), "Deploy.log"), deployLog)
+				writeDeployLog()
 
 				if (args["--logLevel"]!.includes("debug")) {
 					process.stdout.write(chalk(Object.assign([], { raw: [`{grey DEBUG${mod ? `\t${mod}` : ""}\t${text.replace(/\\/gi, "\\\\")}}\n`] })))
@@ -143,7 +157,7 @@ const logger = args["--useConsoleLogging"]
 
 			info: async function (text: string, mod?: string) {
 				deployLog += `\nINFO\t${mod || "Deploy"}\t${text}`
-				fs.writeFileSync(path.join(process.cwd(), "Deploy.log"), deployLog)
+				writeDeployLog()
 
 				if (args["--logLevel"]!.includes("info")) {
 					process.stdout.write(chalk(Object.assign([], { raw: [`{blue INFO}${mod ? `\t{magenta ${mod}}` : ""}\t${text.replace(/\\/gi, "\\\\")}\n`] })))
@@ -160,7 +174,7 @@ const logger = args["--useConsoleLogging"]
 
 			warn: async function (text: string, mod?: string) {
 				deployLog += `\nWARN\t${mod || "Deploy"}\t${text}`
-				fs.writeFileSync(path.join(process.cwd(), "Deploy.log"), deployLog)
+				writeDeployLog()
 
 				if (args["--logLevel"]!.includes("warn")) {
 					process.stdout.write(chalk(Object.assign([], { raw: [`{yellow WARN}${mod ? `\t{magenta ${mod}}` : ""}\t${text.replace(/\\/gi, "\\\\")}\n`] })))
@@ -177,7 +191,7 @@ const logger = args["--useConsoleLogging"]
 
 			error: async function (text: string, exitAfter = true, mod?: string) {
 				deployLog += `\nERROR\t${mod || "Deploy"}\t${text}`
-				fs.writeFileSync(path.join(process.cwd(), "Deploy.log"), deployLog)
+				writeDeployLog()
 
 				if (args["--logLevel"]!.includes("error")) {
 					process.stderr.write(chalk(Object.assign([], { raw: [`{red ERROR}${mod ? `\t{magenta ${mod}}` : ""}\t${text.replace(/\\/gi, "\\\\")}\n`] })))
