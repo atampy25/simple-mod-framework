@@ -21,12 +21,12 @@ import { xxhash3 } from "hash-wasm"
 require("clarify")
 
 const gameHashes = {
-	"e72ee951f153bd8858f37e36d09cfaf5": Platform.epic, // base game
-	"a8761edd766e4016a9ccc64a8c5ed883": Platform.epic, // ansel unlock
+	"76e9afcb3863527cb491add07d772587": Platform.epic, // base game
+	"f267bc41f9677710fbfdcd01d53ba674": Platform.epic, // ansel unlock
 	//"09278760d4943ad21d04921169366d54": Platform.epic, // ansel no collision
 	//"a8752bc4b36a74600549778685db3b4c": Platform.epic, // ansel unlock + no collision
-	"ceaff768215bf97014f023673f65c4c8": Platform.steam, // base game
-	"fa2caabd0293edab43d44e823c1f152e": Platform.steam, // ansel unlock
+	"a56f59157f2ac0cb0254164bb0676661": Platform.steam, // base game
+	"53e2cfc62c0cdda9ba572665e3213389": Platform.steam, // ansel unlock
 	//"28607baf7a75271b6924fe0d52263600": Platform.steam, // ansel no collision
 	//"d028074b654cb628ef88ced7b5d3eb96": Platform.steam, // ansel unlock + no collision
 
