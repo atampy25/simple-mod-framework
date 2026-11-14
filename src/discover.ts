@@ -362,6 +362,15 @@ export default async function discover(): Promise<{ [x: string]: { hash: string;
 
 								affected.push(normaliseToHash(entityContent.hash))
 								break
+							case "gfxf.zip": // Depends on nothing, edits the GFXF file
+								// Now this is a tricky one, we don't exactly know which GFXF
+								// will be affected. Forcing the user to use the hash of the file for
+								// the name defeats the purpose of this file type. Which was to allow for
+								// end users to easily make changes to this file, so having an easily identifiable 
+								// or descriptive name makes this better.
+
+								// Right now, we don't do anything to the affected or dependencies arrays.
+								break
 							default: // Replaces a file with a raw file
 								if (
 									path.basename(contentFilePath).split(".").slice(1).join(".").length === 4 ||
