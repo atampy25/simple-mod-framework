@@ -170,10 +170,16 @@ Each mod contains a manifest. Manifests have the following format:
 			}
 		},
 		{
-			"name": "Use epic content",
+			"name": "Use epicContent if Atampy26.SomeOtherMod is loaded",
 			"type": "conditional", // This variation will be active if its condition returns true and inactive otherwise - it will not be shown in the GUI
-			"condition": "\"Atampy26.SomeOtherMod\" in config.loadOrder", // The condition is passed the framework's config; you can check the syntax at https://github.com/m93a/filtrex#expressions
+			"condition": "\"Atampy26.SomeOtherMod\" in config.loadOrder", // The condition is passed the framework's config (see Config docs); you can check the syntax at https://github.com/cshaa/filtrex#expressions
 			"contentFolders": ["epicContent"]
+		},
+		{
+			"name": "Use awesomeContent only if two specific options are enabled",
+			"type": "conditional",
+			"condition": "\"Use additional content\" in ('Atampy26.ExampleMod' of config.modOptions) and \"Use lowercase or uppercase text:Uppercase text\" in ('Atampy26.ExampleMod' of config.modOptions)",
+			"contentFolders": ["awesomeContent"]
 		}
 	]
 }
